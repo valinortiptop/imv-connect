@@ -140,8 +140,19 @@ function FacturaDetalle() {
 
   return (
     <section className="space-y-6">
-      <div>
+      <div className="flex items-start justify-between">
         <Link to="/admin/facturas" className="text-xs text-primary hover:underline">← Facturas</Link>
+        {data.estado !== "cancelada" && (
+          <Link
+            to="/admin/devoluciones/new"
+            search={{ factura: data.id }}
+            className="text-xs text-primary hover:underline"
+          >
+            + Nueva devolución
+          </Link>
+        )}
+      </div>
+      <div>
         <div className="mt-1 flex items-center gap-3">
           <h1 className="text-2xl font-bold font-mono">{data.folio}</h1>
           <span className={`rounded px-2 py-0.5 text-xs ${
