@@ -19,6 +19,8 @@ type Cliente = {
   token_portal: string;
   portal_activo: boolean;
   notas: string | null;
+  representante_id: string | null;
+  representante?: { nombre: string } | null;
 };
 
 function ClientesPage() {
@@ -31,11 +33,24 @@ function ClientesPage() {
       const { data, error } = await supabase
         .from("clientes")
         .select(
-          "id, razon_social, nombre_comercial, rfc, email, telefono, direccion, token_portal, portal_activo, notas",
+          "id, razon_social, nombre_comercial, rfc, email, telefono, direccion, token_portal, portal_activo, notas, representante_id, representante:representantes(nombre)",
         )
         .order("razon_social");
       if (error) throw error;
       return data as unknown as Cliente[];
+    },
+  });
+
+  const reps = useQuery({
+    queryKey: ["representantes-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("representantes")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return data as { id: string; nombre: string }[];
     },
   });
 
@@ -50,6 +65,7 @@ function ClientesPage() {
         direccion: c.direccion || null,
         portal_activo: c.portal_activo ?? true,
         notas: c.notas || null,
+        representante_id: c.representante_id || null,
       };
       if (c.id) {
         const { error } = await supabase.from("clientes").update(payload).eq("id", c.id);
@@ -126,7 +142,7 @@ function ClientesPage() {
               <tr>
                 <th className="px-3 py-2">Razón social</th>
                 <th className="px-3 py-2">Comercial</th>
-                <th className="px-3 py-2">RFC</th>
+                <th className="px-3 py-2">Representante</th>
                 <th className="px-3 py-2">Contacto</th>
                 <th className="px-3 py-2">Portal</th>
                 <th className="px-3 py-2 text-right">Acciones</th>
@@ -137,7 +153,9 @@ function ClientesPage() {
                 <tr key={c.id} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{c.razon_social}</td>
                   <td className="px-3 py-2 text-muted-foreground">{c.nombre_comercial ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{c.rfc ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {c.representante?.nombre ?? "—"}
+                  </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {c.email ?? "—"}
                     {c.telefono ? ` · ${c.telefono}` : ""}
@@ -210,6 +228,7 @@ function ClientesPage() {
       {editing && (
         <ClienteModal
           value={editing}
+          reps={reps.data ?? []}
           onClose={() => setEditing(null)}
           onSave={(v) => save.mutate(v)}
           saving={save.isPending}
@@ -221,11 +240,13 @@ function ClientesPage() {
 
 function ClienteModal({
   value,
+  reps,
   onClose,
   onSave,
   saving,
 }: {
   value: Partial<Cliente>;
+  reps: { id: string; nombre: string }[];
   onClose: () => void;
   onSave: (v: Partial<Cliente>) => void;
   saving: boolean;
@@ -294,6 +315,19 @@ function ClienteModal({
               onChange={(e) => setV({ ...v, direccion: e.target.value })}
               className="input mt-1"
             />
+          </div>
+          <div className="col-span-2">
+            <label className="text-sm font-medium">Representante</label>
+            <select
+              value={v.representante_id ?? ""}
+              onChange={(e) => setV({ ...v, representante_id: e.target.value || null })}
+              className="input mt-1"
+            >
+              <option value="">— Sin asignar —</option>
+              {reps.map((r) => (
+                <option key={r.id} value={r.id}>{r.nombre}</option>
+              ))}
+            </select>
           </div>
           <div className="col-span-2">
             <label className="text-sm font-medium">Notas</label>

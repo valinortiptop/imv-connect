@@ -30,6 +30,8 @@ type Pedido = {
   subtotal: number;
   iva: number;
   total: number;
+  comision_pct: number | null;
+  comision_monto: number | null;
   notas_cliente: string | null;
   notas_internas: string | null;
   contacto_nombre: string | null;
@@ -45,6 +47,7 @@ type Pedido = {
     email: string | null;
     telefono: string | null;
   } | null;
+  representante: { id: string; nombre: string } | null;
   pedido_items: Item[];
 };
 
@@ -59,7 +62,7 @@ function PedidoDetalle() {
       const { data, error } = await supabase
         .from("pedidos")
         .select(
-          "id, folio, estado, subtotal, iva, total, notas_cliente, notas_internas, contacto_nombre, contacto_telefono, contacto_email, created_at, updated_at, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, telefono), pedido_items(id, producto_id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
+          "id, folio, estado, subtotal, iva, total, comision_pct, comision_monto, notas_cliente, notas_internas, contacto_nombre, contacto_telefono, contacto_email, created_at, updated_at, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, telefono), representante:representantes(id, nombre), pedido_items(id, producto_id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
         )
         .eq("id", id)
         .single();
@@ -178,6 +181,27 @@ function PedidoDetalle() {
                 <option key={e} value={e}>{e}</option>
               ))}
             </select>
+          </div>
+
+          <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Representante</h2>
+            <p className="font-medium">{data.representante?.nombre ?? "Sin asignar"}</p>
+            {data.representante && (
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">% Comisión</p>
+                  <p className="font-semibold tabular-nums">
+                    {data.comision_pct != null ? `${Number(data.comision_pct).toFixed(2)}%` : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Monto</p>
+                  <p className="font-semibold tabular-nums">
+                    ${Number(data.comision_monto ?? 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-md border border-border bg-card p-4">
