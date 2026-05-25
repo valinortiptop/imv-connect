@@ -32,8 +32,7 @@ function PortalCliente() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["portal-catalogo", token],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)("get_catalog_for_token", { _token: token });
+      const { data, error } = await supabase.rpc("get_catalog_for_token", { _token: token });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       return row as unknown as CatalogoResponse;
