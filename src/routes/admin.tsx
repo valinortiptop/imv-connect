@@ -34,6 +34,8 @@ function AdminLayout() {
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <NavLink to="/admin/pedidos">Pedidos</NavLink>
+            <NavLink to="/admin/facturas">Facturas</NavLink>
+            <NavLink to="/admin/cobranza">Cobranza</NavLink>
             <NavLink to="/admin/inventario">Inventario</NavLink>
             <NavLink to="/admin/almacenes">Almacenes</NavLink>
             <NavLink to="/admin/comisiones">Comisiones</NavLink>
