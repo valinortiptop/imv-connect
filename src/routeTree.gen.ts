@@ -20,6 +20,7 @@ import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
+import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
@@ -27,6 +28,8 @@ import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
+import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
+import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
@@ -85,6 +88,11 @@ const AdminFacturasRoute = AdminFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDevolucionesRoute = AdminDevolucionesRouteImport.update({
+  id: '/devoluciones',
+  path: '/devoluciones',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminComprasRoute = AdminComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
@@ -120,6 +128,16 @@ const AdminFacturasIdRoute = AdminFacturasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminFacturasRoute,
 } as any)
+const AdminDevolucionesNewRoute = AdminDevolucionesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminDevolucionesRoute,
+} as any)
+const AdminDevolucionesIdRoute = AdminDevolucionesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminDevolucionesRoute,
+} as any)
 const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -140,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
+  '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -149,6 +168,8 @@ export interface FileRoutesByFullPath {
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -161,6 +182,7 @@ export interface FileRoutesByTo {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
+  '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -170,6 +192,8 @@ export interface FileRoutesByTo {
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -184,6 +208,7 @@ export interface FileRoutesById {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
+  '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -193,6 +218,8 @@ export interface FileRoutesById {
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -208,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
+    | '/admin/devoluciones'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -217,6 +245,8 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/admin/'
     | '/admin/compras/$id'
+    | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -229,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
+    | '/admin/devoluciones'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -238,6 +269,8 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/admin'
     | '/admin/compras/$id'
+    | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -251,6 +284,7 @@ export interface FileRouteTypes {
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
+    | '/admin/devoluciones'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -260,6 +294,8 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/admin/'
     | '/admin/compras/$id'
+    | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -351,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFacturasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/devoluciones': {
+      id: '/admin/devoluciones'
+      path: '/devoluciones'
+      fullPath: '/admin/devoluciones'
+      preLoaderRoute: typeof AdminDevolucionesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/compras': {
       id: '/admin/compras'
       path: '/compras'
@@ -400,6 +443,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFacturasIdRouteImport
       parentRoute: typeof AdminFacturasRoute
     }
+    '/admin/devoluciones/new': {
+      id: '/admin/devoluciones/new'
+      path: '/new'
+      fullPath: '/admin/devoluciones/new'
+      preLoaderRoute: typeof AdminDevolucionesNewRouteImport
+      parentRoute: typeof AdminDevolucionesRoute
+    }
+    '/admin/devoluciones/$id': {
+      id: '/admin/devoluciones/$id'
+      path: '/$id'
+      fullPath: '/admin/devoluciones/$id'
+      preLoaderRoute: typeof AdminDevolucionesIdRouteImport
+      parentRoute: typeof AdminDevolucionesRoute
+    }
     '/admin/compras/$id': {
       id: '/admin/compras/$id'
       path: '/$id'
@@ -441,6 +498,19 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
   AdminComprasRouteChildren,
 )
 
+interface AdminDevolucionesRouteChildren {
+  AdminDevolucionesIdRoute: typeof AdminDevolucionesIdRoute
+  AdminDevolucionesNewRoute: typeof AdminDevolucionesNewRoute
+}
+
+const AdminDevolucionesRouteChildren: AdminDevolucionesRouteChildren = {
+  AdminDevolucionesIdRoute: AdminDevolucionesIdRoute,
+  AdminDevolucionesNewRoute: AdminDevolucionesNewRoute,
+}
+
+const AdminDevolucionesRouteWithChildren =
+  AdminDevolucionesRoute._addFileChildren(AdminDevolucionesRouteChildren)
+
 interface AdminFacturasRouteChildren {
   AdminFacturasIdRoute: typeof AdminFacturasIdRoute
 }
@@ -471,6 +541,7 @@ interface AdminRouteChildren {
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
+  AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
@@ -486,6 +557,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
+  AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
@@ -506,3 +578,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
