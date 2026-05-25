@@ -17,8 +17,10 @@ import { Route as AdminRepresentantesRouteImport } from './routes/admin.represen
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
+import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
@@ -62,6 +64,11 @@ const AdminLaboratoriosRoute = AdminLaboratoriosRouteImport.update({
   path: '/laboratorios',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInventarioRoute = AdminInventarioRouteImport.update({
+  id: '/inventario',
+  path: '/inventario',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminComisionesRoute = AdminComisionesRouteImport.update({
   id: '/comisiones',
   path: '/comisiones',
@@ -70,6 +77,11 @@ const AdminComisionesRoute = AdminComisionesRouteImport.update({
 const AdminClientesRoute = AdminClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
+  id: '/almacenes',
+  path: '/almacenes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
@@ -87,8 +99,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
@@ -101,8 +115,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
@@ -116,8 +132,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
@@ -132,8 +150,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/almacenes'
     | '/admin/clientes'
     | '/admin/comisiones'
+    | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
@@ -146,8 +166,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/almacenes'
     | '/admin/clientes'
     | '/admin/comisiones'
+    | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
@@ -160,8 +182,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/almacenes'
     | '/admin/clientes'
     | '/admin/comisiones'
+    | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
@@ -236,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLaboratoriosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/inventario': {
+      id: '/admin/inventario'
+      path: '/inventario'
+      fullPath: '/admin/inventario'
+      preLoaderRoute: typeof AdminInventarioRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comisiones': {
       id: '/admin/comisiones'
       path: '/comisiones'
@@ -248,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/admin/clientes'
       preLoaderRoute: typeof AdminClientesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/almacenes': {
+      id: '/admin/almacenes'
+      path: '/almacenes'
+      fullPath: '/admin/almacenes'
+      preLoaderRoute: typeof AdminAlmacenesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pedidos/$id': {
@@ -292,8 +330,10 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
   AdminComisionesRoute: typeof AdminComisionesRoute
+  AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminProductosRoute: typeof AdminProductosRoute
@@ -301,8 +341,10 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
   AdminComisionesRoute: AdminComisionesRoute,
+  AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminProductosRoute: AdminProductosRoute,
@@ -320,3 +362,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
