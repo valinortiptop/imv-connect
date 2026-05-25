@@ -19,6 +19,8 @@ type Cliente = {
   token_portal: string;
   portal_activo: boolean;
   notas: string | null;
+  representante_id: string | null;
+  representante?: { nombre: string } | null;
 };
 
 function ClientesPage() {
@@ -31,11 +33,24 @@ function ClientesPage() {
       const { data, error } = await supabase
         .from("clientes")
         .select(
-          "id, razon_social, nombre_comercial, rfc, email, telefono, direccion, token_portal, portal_activo, notas",
+          "id, razon_social, nombre_comercial, rfc, email, telefono, direccion, token_portal, portal_activo, notas, representante_id, representante:representantes(nombre)",
         )
         .order("razon_social");
       if (error) throw error;
       return data as unknown as Cliente[];
+    },
+  });
+
+  const reps = useQuery({
+    queryKey: ["representantes-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("representantes")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return data as { id: string; nombre: string }[];
     },
   });
 
@@ -50,6 +65,7 @@ function ClientesPage() {
         direccion: c.direccion || null,
         portal_activo: c.portal_activo ?? true,
         notas: c.notas || null,
+        representante_id: c.representante_id || null,
       };
       if (c.id) {
         const { error } = await supabase.from("clientes").update(payload).eq("id", c.id);
