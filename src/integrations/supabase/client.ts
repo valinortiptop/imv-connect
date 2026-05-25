@@ -1,9 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Permissive Database type until we generate from the IMV schema via:
-//   bunx supabase gen types typescript --project-id "$VITE_SUPABASE_PROJECT_ID" \
-//     > src/integrations/supabase/database-types.ts
-// Then swap this inline type for an import.
 export type Database = {
   public: {
     Tables: Record<string, { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown> }>;
@@ -22,16 +18,24 @@ const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error(
-    "Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. Copy .env.example to .env and fill in your IMV Supabase project credentials.",
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+
+if (!isSupabaseConfigured && typeof window !== "undefined") {
+  console.warn(
+    "[IMV] VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY missing. Copy .env.example to .env.",
   );
 }
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storage: typeof window !== "undefined" ? window.localStorage : undefined,
+// Safe placeholders so module import doesn't crash when .env is empty.
+// Any query against them will fail at runtime, which we surface in the UI.
+export const supabase = createClient<Database>(
+  SUPABASE_URL ?? "https://placeholder.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY ?? "placeholder-anon-key",
+  {
+    auth: {
+      persistSession: isSupabaseConfigured,
+      autoRefreshToken: isSupabaseConfigured,
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
+    },
   },
-});
+);
