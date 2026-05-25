@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,7 @@ type Pedido = {
 function PedidoDetalle() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [internas, setInternas] = useState<string>("");
 
   const { data, isLoading, error } = useQuery({
@@ -92,6 +93,38 @@ function PedidoDetalle() {
       if (error) throw error;
     },
     onSuccess: () => toast.success("Notas guardadas"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const factura = useQuery({
+    queryKey: ["pedido-factura", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("facturas")
+        .select("id, folio")
+        .eq("pedido_id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; folio: string } | null;
+    },
+  });
+
+  const crearFactura = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("crear_factura_desde_pedido", {
+        _pedido: id,
+        _dias_credito: 30,
+        _fecha_emision: null,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: (facturaId) => {
+      toast.success("Factura creada");
+      qc.invalidateQueries({ queryKey: ["pedido-factura", id] });
+      qc.invalidateQueries({ queryKey: ["facturas"] });
+      navigate({ to: "/admin/facturas/$id", params: { id: facturaId } });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
