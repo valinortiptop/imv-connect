@@ -184,6 +184,27 @@ function PedidoDetalle() {
           </div>
 
           <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Representante</h2>
+            <p className="font-medium">{data.representante?.nombre ?? "Sin asignar"}</p>
+            {data.representante && (
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">% Comisión</p>
+                  <p className="font-semibold tabular-nums">
+                    {data.comision_pct != null ? `${Number(data.comision_pct).toFixed(2)}%` : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Monto</p>
+                  <p className="font-semibold tabular-nums">
+                    ${Number(data.comision_monto ?? 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-md border border-border bg-card p-4">
             <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Cliente</h2>
             <p className="font-medium">
               {data.cliente?.nombre_comercial ?? data.cliente?.razon_social ?? "—"}
