@@ -38,6 +38,7 @@ function AdminLayout() {
             <NavLink to="/admin/facturas">Facturas</NavLink>
             <NavLink to="/admin/cobranza">Cobranza</NavLink>
             <NavLink to="/admin/inventario">Inventario</NavLink>
+            <NavLink to="/admin/compras">Compras</NavLink>
             <NavLink to="/admin/almacenes">Almacenes</NavLink>
             <NavLink to="/admin/comisiones">Comisiones</NavLink>
             <NavLink to="/admin/productos">Productos</NavLink>

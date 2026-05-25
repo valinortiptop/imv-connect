@@ -20,12 +20,14 @@ import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
+import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
+import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
 const LoginRoute = LoginRouteImport.update({
@@ -83,6 +85,11 @@ const AdminFacturasRoute = AdminFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminComprasRoute = AdminComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminComisionesRoute = AdminComisionesRouteImport.update({
   id: '/comisiones',
   path: '/comisiones',
@@ -113,6 +120,11 @@ const AdminFacturasIdRoute = AdminFacturasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminFacturasRoute,
 } as any)
+const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
 const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   id: '/$id/precios',
   path: '/$id/precios',
@@ -127,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -135,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -146,6 +160,7 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -154,6 +169,7 @@ export interface FileRoutesByTo {
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -167,6 +183,7 @@ export interface FileRoutesById {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -175,6 +192,7 @@ export interface FileRoutesById {
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -189,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/compras'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -197,6 +216,7 @@ export interface FileRouteTypes {
     | '/admin/representantes'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/compras/$id'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -208,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/compras'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -216,6 +237,7 @@ export interface FileRouteTypes {
     | '/admin/representantes'
     | '/portal/$token'
     | '/admin'
+    | '/admin/compras/$id'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -228,6 +250,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/compras'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -236,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/representantes'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/compras/$id'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -327,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFacturasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/compras': {
+      id: '/admin/compras'
+      path: '/compras'
+      fullPath: '/admin/compras'
+      preLoaderRoute: typeof AdminComprasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comisiones': {
       id: '/admin/comisiones'
       path: '/comisiones'
@@ -369,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFacturasIdRouteImport
       parentRoute: typeof AdminFacturasRoute
     }
+    '/admin/compras/$id': {
+      id: '/admin/compras/$id'
+      path: '/$id'
+      fullPath: '/admin/compras/$id'
+      preLoaderRoute: typeof AdminComprasIdRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
     '/admin/clientes/$id/precios': {
       id: '/admin/clientes/$id/precios'
       path: '/$id/precios'
@@ -389,6 +427,18 @@ const AdminClientesRouteChildren: AdminClientesRouteChildren = {
 
 const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
   AdminClientesRouteChildren,
+)
+
+interface AdminComprasRouteChildren {
+  AdminComprasIdRoute: typeof AdminComprasIdRoute
+}
+
+const AdminComprasRouteChildren: AdminComprasRouteChildren = {
+  AdminComprasIdRoute: AdminComprasIdRoute,
+}
+
+const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
+  AdminComprasRouteChildren,
 )
 
 interface AdminFacturasRouteChildren {
@@ -420,6 +470,7 @@ interface AdminRouteChildren {
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
+  AdminComprasRoute: typeof AdminComprasRouteWithChildren
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
@@ -434,6 +485,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminClientesRoute: AdminClientesRouteWithChildren,
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
+  AdminComprasRoute: AdminComprasRouteWithChildren,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
@@ -454,3 +506,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
