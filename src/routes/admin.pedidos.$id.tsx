@@ -1,0 +1,231 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/admin/pedidos/$id")({
+  component: PedidoDetalle,
+});
+
+type Estado = "pendiente" | "confirmado" | "enviado" | "entregado" | "cancelado";
+const ESTADOS: Estado[] = ["pendiente", "confirmado", "enviado", "entregado", "cancelado"];
+
+type Item = {
+  id: string;
+  producto_id: string;
+  nombre_snapshot: string;
+  sku_snapshot: string | null;
+  unidad_snapshot: string;
+  cantidad: number;
+  precio_unitario: number;
+  iva_pct: number;
+  importe: number;
+};
+
+type Pedido = {
+  id: string;
+  folio: string;
+  estado: Estado;
+  subtotal: number;
+  iva: number;
+  total: number;
+  notas_cliente: string | null;
+  notas_internas: string | null;
+  contacto_nombre: string | null;
+  contacto_telefono: string | null;
+  contacto_email: string | null;
+  created_at: string;
+  updated_at: string;
+  cliente: {
+    id: string;
+    razon_social: string;
+    nombre_comercial: string | null;
+    rfc: string | null;
+    email: string | null;
+    telefono: string | null;
+  } | null;
+  pedido_items: Item[];
+};
+
+function PedidoDetalle() {
+  const { id } = Route.useParams();
+  const qc = useQueryClient();
+  const [internas, setInternas] = useState<string>("");
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["pedido", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select(
+          "id, folio, estado, subtotal, iva, total, notas_cliente, notas_internas, contacto_nombre, contacto_telefono, contacto_email, created_at, updated_at, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, telefono), pedido_items(id, producto_id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
+        )
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      const p = data as unknown as Pedido;
+      setInternas(p.notas_internas ?? "");
+      return p;
+    },
+  });
+
+  const setEstado = useMutation({
+    mutationFn: async (estado: Estado) => {
+      const { error } = await supabase.from("pedidos").update({ estado }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Estado actualizado");
+      qc.invalidateQueries({ queryKey: ["pedido", id] });
+      qc.invalidateQueries({ queryKey: ["pedidos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveNotas = useMutation({
+    mutationFn: async (notas_internas: string) => {
+      const { error } = await supabase.from("pedidos").update({ notas_internas }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Notas guardadas"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
+  if (error) {
+    return (
+      <p className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+        {(error as Error).message}
+      </p>
+    );
+  }
+  if (!data) return null;
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <Link to="/admin/pedidos" className="text-xs text-primary hover:underline">
+          ← Pedidos
+        </Link>
+        <div className="mt-1 flex items-center gap-3">
+          <h1 className="text-2xl font-bold font-mono">{data.folio}</h1>
+          <span className="text-sm text-muted-foreground">
+            {new Date(data.created_at).toLocaleString("es-MX")}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2 rounded-md border border-border bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Productos</h2>
+          <table className="w-full text-sm">
+            <thead className="text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="py-2 text-left">Producto</th>
+                <th className="py-2 text-right">Cant.</th>
+                <th className="py-2 text-right">P. Unit.</th>
+                <th className="py-2 text-right">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.pedido_items.map((it) => (
+                <tr key={it.id} className="border-t border-border">
+                  <td className="py-2">
+                    <div className="font-medium">{it.nombre_snapshot}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
+                    </div>
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{Number(it.cantidad)}</td>
+                  <td className="py-2 text-right tabular-nums">
+                    ${Number(it.precio_unitario).toFixed(2)}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">
+                    ${Number(it.importe).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="text-sm">
+              <tr className="border-t border-border">
+                <td colSpan={3} className="py-2 text-right text-muted-foreground">Subtotal</td>
+                <td className="py-2 text-right tabular-nums">${Number(data.subtotal).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td colSpan={3} className="py-1 text-right text-muted-foreground">IVA</td>
+                <td className="py-1 text-right tabular-nums">${Number(data.iva).toFixed(2)}</td>
+              </tr>
+              <tr className="border-t border-border">
+                <td colSpan={3} className="py-2 text-right font-semibold">Total</td>
+                <td className="py-2 text-right font-bold tabular-nums">
+                  ${Number(data.total).toFixed(2)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Estado</h2>
+            <select
+              value={data.estado}
+              onChange={(e) => setEstado.mutate(e.target.value as Estado)}
+              className="input w-full"
+            >
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Cliente</h2>
+            <p className="font-medium">
+              {data.cliente?.nombre_comercial ?? data.cliente?.razon_social ?? "—"}
+            </p>
+            {data.cliente?.rfc && (
+              <p className="text-xs font-mono text-muted-foreground">{data.cliente.rfc}</p>
+            )}
+            <div className="mt-2 text-xs text-muted-foreground">
+              {data.cliente?.email && <div>{data.cliente.email}</div>}
+              {data.cliente?.telefono && <div>{data.cliente.telefono}</div>}
+            </div>
+          </div>
+
+          <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Contacto pedido</h2>
+            <p className="text-sm">{data.contacto_nombre ?? "—"}</p>
+            <div className="text-xs text-muted-foreground">
+              {data.contacto_email && <div>{data.contacto_email}</div>}
+              {data.contacto_telefono && <div>{data.contacto_telefono}</div>}
+            </div>
+            {data.notas_cliente && (
+              <>
+                <p className="mt-3 text-xs font-medium uppercase text-muted-foreground">Notas cliente</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm">{data.notas_cliente}</p>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Notas internas</h2>
+            <textarea
+              rows={4} value={internas}
+              onChange={(e) => setInternas(e.target.value)}
+              className="input w-full"
+            />
+            <button
+              onClick={() => saveNotas.mutate(internas)}
+              disabled={saveNotas.isPending}
+              className="btn-primary mt-2 w-full text-sm"
+            >
+              {saveNotas.isPending ? "Guardando…" : "Guardar notas"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
