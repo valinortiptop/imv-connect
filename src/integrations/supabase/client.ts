@@ -1,14 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-export type Database = {
-  public: {
-    Tables: Record<string, { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown> }>;
-    Views: Record<string, { Row: Record<string, unknown> }>;
-    Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
-    Enums: Record<string, string>;
-    CompositeTypes: Record<string, Record<string, unknown>>;
-  };
-};
+// Permissive Database type until generated. Allows any table/RPC name + payload.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Database = any;
 
 const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL ??
