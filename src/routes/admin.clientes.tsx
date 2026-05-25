@@ -142,7 +142,7 @@ function ClientesPage() {
               <tr>
                 <th className="px-3 py-2">Razón social</th>
                 <th className="px-3 py-2">Comercial</th>
-                <th className="px-3 py-2">RFC</th>
+                <th className="px-3 py-2">Representante</th>
                 <th className="px-3 py-2">Contacto</th>
                 <th className="px-3 py-2">Portal</th>
                 <th className="px-3 py-2 text-right">Acciones</th>
@@ -153,7 +153,9 @@ function ClientesPage() {
                 <tr key={c.id} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{c.razon_social}</td>
                   <td className="px-3 py-2 text-muted-foreground">{c.nombre_comercial ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{c.rfc ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {c.representante?.nombre ?? "—"}
+                  </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {c.email ?? "—"}
                     {c.telefono ? ` · ${c.telefono}` : ""}
@@ -226,6 +228,7 @@ function ClientesPage() {
       {editing && (
         <ClienteModal
           value={editing}
+          reps={reps.data ?? []}
           onClose={() => setEditing(null)}
           onSave={(v) => save.mutate(v)}
           saving={save.isPending}
@@ -237,11 +240,13 @@ function ClientesPage() {
 
 function ClienteModal({
   value,
+  reps,
   onClose,
   onSave,
   saving,
 }: {
   value: Partial<Cliente>;
+  reps: { id: string; nombre: string }[];
   onClose: () => void;
   onSave: (v: Partial<Cliente>) => void;
   saving: boolean;
