@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,6 +162,13 @@ function ClientesPage() {
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right">
+                    <Link
+                      to="/admin/clientes/$id/precios"
+                      params={{ id: c.id }}
+                      className="mr-2 text-xs text-primary hover:underline"
+                    >
+                      Precios
+                    </Link>
                     <button
                       onClick={() => setEditing(c)}
                       className="mr-2 text-xs text-primary hover:underline"

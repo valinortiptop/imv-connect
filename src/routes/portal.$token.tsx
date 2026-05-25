@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/portal/$token")({
   component: PortalCliente,
@@ -68,15 +70,60 @@ function PortalCliente() {
     return acc;
   }, {});
 
+  const exportPDF = () => {
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const margin = 40;
+    doc.setFontSize(16);
+    doc.text("IMV Portal — Catálogo", margin, 50);
+    doc.setFontSize(11);
+    doc.text(data.cliente.nombre_comercial ?? data.cliente.razon_social, margin, 68);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(new Date().toLocaleDateString("es-MX"), margin, 82);
+    doc.setTextColor(0);
+
+    let startY = 100;
+    Object.entries(porLab).forEach(([lab, items]) => {
+      autoTable(doc, {
+        startY,
+        head: [[lab, "SKU", "Presentación", "Unidad", "Precio"]],
+        body: items.map((p) => [
+          p.nombre,
+          p.sku ?? "",
+          p.presentacion ?? "",
+          p.unidad,
+          `$${Number(p.precio).toFixed(2)}`,
+        ]),
+        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [30, 30, 30], textColor: 255 },
+        columnStyles: { 4: { halign: "right" } },
+        margin: { left: margin, right: margin },
+      });
+      startY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20;
+    });
+
+    const filename = `catalogo-${(data.cliente.nombre_comercial ?? data.cliente.razon_social)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")}.pdf`;
+    doc.save(filename);
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-6xl px-6 py-6">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">IMV Portal</p>
-          <h1 className="mt-1 text-2xl font-bold">
-            {data.cliente.nombre_comercial ?? data.cliente.razon_social}
-          </h1>
-          <p className="text-sm text-muted-foreground">Catálogo personalizado</p>
+        <div className="mx-auto max-w-6xl px-6 py-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">IMV Portal</p>
+            <h1 className="mt-1 text-2xl font-bold">
+              {data.cliente.nombre_comercial ?? data.cliente.razon_social}
+            </h1>
+            <p className="text-sm text-muted-foreground">Catálogo personalizado</p>
+          </div>
+          {productos.length > 0 && (
+            <button onClick={exportPDF} className="btn-primary print:hidden">
+              Descargar PDF
+            </button>
+          )}
         </div>
       </header>
 
