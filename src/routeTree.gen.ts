@@ -18,10 +18,13 @@ import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
+import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
+import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
+import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
 const LoginRoute = LoginRouteImport.update({
@@ -69,9 +72,19 @@ const AdminInventarioRoute = AdminInventarioRouteImport.update({
   path: '/inventario',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFacturasRoute = AdminFacturasRouteImport.update({
+  id: '/facturas',
+  path: '/facturas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminComisionesRoute = AdminComisionesRouteImport.update({
   id: '/comisiones',
   path: '/comisiones',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCobranzaRoute = AdminCobranzaRouteImport.update({
+  id: '/cobranza',
+  path: '/cobranza',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminClientesRoute = AdminClientesRouteImport.update({
@@ -89,6 +102,11 @@ const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminPedidosRoute,
 } as any)
+const AdminFacturasIdRoute = AdminFacturasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminFacturasRoute,
+} as any)
 const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   id: '/$id/precios',
   path: '/$id/precios',
@@ -101,13 +119,16 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
@@ -117,13 +138,16 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
@@ -134,13 +158,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
@@ -152,13 +179,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacenes'
     | '/admin/clientes'
+    | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/portal/$token'
+    | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
   fileRoutesByTo: FileRoutesByTo
@@ -168,13 +198,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacenes'
     | '/admin/clientes'
+    | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/portal/$token'
+    | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
   id:
@@ -184,13 +217,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacenes'
     | '/admin/clientes'
+    | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/portal/$token'
+    | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
   fileRoutesById: FileRoutesById
@@ -267,11 +303,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInventarioRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/facturas': {
+      id: '/admin/facturas'
+      path: '/facturas'
+      fullPath: '/admin/facturas'
+      preLoaderRoute: typeof AdminFacturasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comisiones': {
       id: '/admin/comisiones'
       path: '/comisiones'
       fullPath: '/admin/comisiones'
       preLoaderRoute: typeof AdminComisionesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/cobranza': {
+      id: '/admin/cobranza'
+      path: '/cobranza'
+      fullPath: '/admin/cobranza'
+      preLoaderRoute: typeof AdminCobranzaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/clientes': {
@@ -295,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosIdRouteImport
       parentRoute: typeof AdminPedidosRoute
     }
+    '/admin/facturas/$id': {
+      id: '/admin/facturas/$id'
+      path: '/$id'
+      fullPath: '/admin/facturas/$id'
+      preLoaderRoute: typeof AdminFacturasIdRouteImport
+      parentRoute: typeof AdminFacturasRoute
+    }
     '/admin/clientes/$id/precios': {
       id: '/admin/clientes/$id/precios'
       path: '/$id/precios'
@@ -317,6 +374,18 @@ const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
   AdminClientesRouteChildren,
 )
 
+interface AdminFacturasRouteChildren {
+  AdminFacturasIdRoute: typeof AdminFacturasIdRoute
+}
+
+const AdminFacturasRouteChildren: AdminFacturasRouteChildren = {
+  AdminFacturasIdRoute: AdminFacturasIdRoute,
+}
+
+const AdminFacturasRouteWithChildren = AdminFacturasRoute._addFileChildren(
+  AdminFacturasRouteChildren,
+)
+
 interface AdminPedidosRouteChildren {
   AdminPedidosIdRoute: typeof AdminPedidosIdRoute
 }
@@ -332,7 +401,9 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
+  AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
+  AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
@@ -343,7 +414,9 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
+  AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
+  AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
@@ -362,3 +435,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
