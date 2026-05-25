@@ -49,7 +49,7 @@ function NuevaDevolucion() {
         .neq("estado", "cancelada")
         .order("fecha_emision", { ascending: false })
         .limit(200);
-      return (data ?? []) as { id: string; folio: string; cliente: { razon_social: string } | null }[];
+      return (data ?? []) as unknown as { id: string; folio: string; cliente: { razon_social: string } | null }[];
     },
   });
 
