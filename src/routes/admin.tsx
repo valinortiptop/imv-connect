@@ -33,6 +33,7 @@ function AdminLayout() {
             IMV Admin
           </Link>
           <nav className="flex items-center gap-1 text-sm">
+            <NavLink to="/admin/pedidos">Pedidos</NavLink>
             <NavLink to="/admin/productos">Productos</NavLink>
             <NavLink to="/admin/laboratorios">Laboratorios</NavLink>
             <NavLink to="/admin/clientes">Clientes</NavLink>
