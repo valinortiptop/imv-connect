@@ -317,6 +317,19 @@ function ClienteModal({
             />
           </div>
           <div className="col-span-2">
+            <label className="text-sm font-medium">Representante</label>
+            <select
+              value={v.representante_id ?? ""}
+              onChange={(e) => setV({ ...v, representante_id: e.target.value || null })}
+              className="input mt-1"
+            >
+              <option value="">— Sin asignar —</option>
+              {reps.map((r) => (
+                <option key={r.id} value={r.id}>{r.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2">
             <label className="text-sm font-medium">Notas</label>
             <textarea
               rows={2}
