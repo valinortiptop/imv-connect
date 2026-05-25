@@ -217,6 +217,29 @@ function PedidoDetalle() {
           </div>
 
           <div className="rounded-md border border-border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Facturación</h2>
+            {factura.data ? (
+              <Link
+                to="/admin/facturas/$id"
+                params={{ id: factura.data.id }}
+                className="block rounded-md border border-border bg-muted/50 px-3 py-2 text-sm hover:bg-accent"
+              >
+                <div className="text-xs text-muted-foreground">Factura</div>
+                <div className="font-mono font-semibold">{factura.data.folio}</div>
+              </Link>
+            ) : (
+              <button
+                onClick={() => crearFactura.mutate()}
+                disabled={crearFactura.isPending || data.estado === "cancelado"}
+                className="btn-primary w-full text-sm"
+              >
+                {crearFactura.isPending ? "Creando…" : "Crear factura"}
+              </button>
+            )}
+          </div>
+
+
+          <div className="rounded-md border border-border bg-card p-4">
             <h2 className="mb-2 text-sm font-semibold uppercase text-muted-foreground">Representante</h2>
             <p className="font-medium">{data.representante?.nombre ?? "Sin asignar"}</p>
             {data.representante && (
