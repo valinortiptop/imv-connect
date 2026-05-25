@@ -30,6 +30,8 @@ type Pedido = {
   subtotal: number;
   iva: number;
   total: number;
+  comision_pct: number | null;
+  comision_monto: number | null;
   notas_cliente: string | null;
   notas_internas: string | null;
   contacto_nombre: string | null;
@@ -45,6 +47,7 @@ type Pedido = {
     email: string | null;
     telefono: string | null;
   } | null;
+  representante: { id: string; nombre: string } | null;
   pedido_items: Item[];
 };
 
@@ -59,7 +62,7 @@ function PedidoDetalle() {
       const { data, error } = await supabase
         .from("pedidos")
         .select(
-          "id, folio, estado, subtotal, iva, total, notas_cliente, notas_internas, contacto_nombre, contacto_telefono, contacto_email, created_at, updated_at, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, telefono), pedido_items(id, producto_id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
+          "id, folio, estado, subtotal, iva, total, comision_pct, comision_monto, notas_cliente, notas_internas, contacto_nombre, contacto_telefono, contacto_email, created_at, updated_at, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, telefono), representante:representantes(id, nombre), pedido_items(id, producto_id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
         )
         .eq("id", id)
         .single();
