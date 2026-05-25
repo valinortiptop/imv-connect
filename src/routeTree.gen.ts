@@ -13,9 +13,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as AdminRepresentantesRouteImport } from './routes/admin.representantes'
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
+import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
@@ -40,6 +42,11 @@ const PortalTokenRoute = PortalTokenRouteImport.update({
   path: '/portal/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRepresentantesRoute = AdminRepresentantesRouteImport.update({
+  id: '/representantes',
+  path: '/representantes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProductosRoute = AdminProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
@@ -53,6 +60,11 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
 const AdminLaboratoriosRoute = AdminLaboratoriosRouteImport.update({
   id: '/laboratorios',
   path: '/laboratorios',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminComisionesRoute = AdminComisionesRouteImport.update({
+  id: '/comisiones',
+  path: '/comisiones',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminClientesRoute = AdminClientesRouteImport.update({
@@ -76,9 +88,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -88,9 +102,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -101,9 +117,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/representantes': typeof AdminRepresentantesRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -115,9 +133,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/clientes'
+    | '/admin/comisiones'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
+    | '/admin/representantes'
     | '/portal/$token'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -127,9 +147,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/clientes'
+    | '/admin/comisiones'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
+    | '/admin/representantes'
     | '/portal/$token'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -139,9 +161,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/clientes'
+    | '/admin/comisiones'
     | '/admin/laboratorios'
     | '/admin/pedidos'
     | '/admin/productos'
+    | '/admin/representantes'
     | '/portal/$token'
     | '/admin/pedidos/$id'
     | '/admin/clientes/$id/precios'
@@ -184,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/representantes': {
+      id: '/admin/representantes'
+      path: '/representantes'
+      fullPath: '/admin/representantes'
+      preLoaderRoute: typeof AdminRepresentantesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/productos': {
       id: '/admin/productos'
       path: '/productos'
@@ -203,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/laboratorios'
       fullPath: '/admin/laboratorios'
       preLoaderRoute: typeof AdminLaboratoriosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/comisiones': {
+      id: '/admin/comisiones'
+      path: '/comisiones'
+      fullPath: '/admin/comisiones'
+      preLoaderRoute: typeof AdminComisionesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/clientes': {
@@ -255,16 +293,20 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
+  AdminComisionesRoute: typeof AdminComisionesRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminProductosRoute: typeof AdminProductosRoute
+  AdminRepresentantesRoute: typeof AdminRepresentantesRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClientesRoute: AdminClientesRouteWithChildren,
+  AdminComisionesRoute: AdminComisionesRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminProductosRoute: AdminProductosRoute,
+  AdminRepresentantesRoute: AdminRepresentantesRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -278,3 +320,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
