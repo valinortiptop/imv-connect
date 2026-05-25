@@ -46,6 +46,7 @@ function AdminLayout() {
             <NavLink to="/admin/laboratorios">Laboratorios</NavLink>
             <NavLink to="/admin/clientes">Clientes</NavLink>
             <NavLink to="/admin/representantes">Representantes</NavLink>
+            <NavLink to="/admin/usuarios">Usuarios</NavLink>
             <div className="ml-4 flex items-center gap-3 border-l border-border pl-4">
               <span className="text-xs text-muted-foreground">{email}</span>
               <button
