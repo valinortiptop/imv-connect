@@ -87,6 +87,7 @@ export function AdminSidebar({
   onSignOut: () => void;
 }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { canAccessKey, loading } = usePermissions();
 
   const isItemActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
@@ -100,13 +101,19 @@ export function AdminSidebar({
   const toggle = (key: string) =>
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  const visibleGroups = loading
+    ? navGroups
+    : navGroups
+        .map((g) => ({ ...g, items: g.items.filter((i) => canAccessKey(i.key)) }))
+        .filter((g) => g.items.length > 0);
+
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navGroups.map((group) => {
+              {visibleGroups.map((group) => {
                 const isOpen = open[group.label] ?? true;
                 return (
                   <div key={group.label}>
