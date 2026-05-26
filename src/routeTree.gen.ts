@@ -36,6 +36,7 @@ import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
 import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
+import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
 const LoginRoute = LoginRouteImport.update({
@@ -173,10 +174,15 @@ const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminComprasRoute,
 } as any)
-const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
-  id: '/$id/precios',
-  path: '/$id/precios',
+const AdminClientesIdRoute = AdminClientesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => AdminClientesRoute,
+} as any)
+const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
+  id: '/precios',
+  path: '/precios',
+  getParentRoute: () => AdminClientesIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/new'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin'
+    | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/new'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/new'
@@ -559,22 +571,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminComprasIdRouteImport
       parentRoute: typeof AdminComprasRoute
     }
+    '/admin/clientes/$id': {
+      id: '/admin/clientes/$id'
+      path: '/$id'
+      fullPath: '/admin/clientes/$id'
+      preLoaderRoute: typeof AdminClientesIdRouteImport
+      parentRoute: typeof AdminClientesRoute
+    }
     '/admin/clientes/$id/precios': {
       id: '/admin/clientes/$id/precios'
-      path: '/$id/precios'
+      path: '/precios'
       fullPath: '/admin/clientes/$id/precios'
       preLoaderRoute: typeof AdminClientesIdPreciosRouteImport
-      parentRoute: typeof AdminClientesRoute
+      parentRoute: typeof AdminClientesIdRoute
     }
   }
 }
 
-interface AdminClientesRouteChildren {
+interface AdminClientesIdRouteChildren {
   AdminClientesIdPreciosRoute: typeof AdminClientesIdPreciosRoute
 }
 
-const AdminClientesRouteChildren: AdminClientesRouteChildren = {
+const AdminClientesIdRouteChildren: AdminClientesIdRouteChildren = {
   AdminClientesIdPreciosRoute: AdminClientesIdPreciosRoute,
+}
+
+const AdminClientesIdRouteWithChildren = AdminClientesIdRoute._addFileChildren(
+  AdminClientesIdRouteChildren,
+)
+
+interface AdminClientesRouteChildren {
+  AdminClientesIdRoute: typeof AdminClientesIdRouteWithChildren
+}
+
+const AdminClientesRouteChildren: AdminClientesRouteChildren = {
+  AdminClientesIdRoute: AdminClientesIdRouteWithChildren,
 }
 
 const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
