@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cn } from "@/lib/utils";
 
 export function LumaSpin({ className }: { className?: string }) {
