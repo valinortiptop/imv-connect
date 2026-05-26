@@ -91,7 +91,7 @@ export async function downloadInventoryExcel(
   header.height = 22;
   header.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
   header.alignment = { vertical: "middle", horizontal: "center" };
-  header.eachCell((cell) => {
+  header.eachCell((cell: any) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
