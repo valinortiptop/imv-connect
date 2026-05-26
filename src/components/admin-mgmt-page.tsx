@@ -212,15 +212,19 @@ export default function Admin() {
       return;
     }
     setSaving(userId);
+    await supabase.from("user_roles").delete().eq("user_id", userId);
     const { error } = await supabase
       .from("user_roles")
-      .update({ role: newRole, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .insert({ user_id: userId, role: newRole, approved: true });
 
     if (error) toast.error(error.message);
     else {
       toast.success(lang === "es" ? "Rol actualizado" : "Role updated");
-      setUsers((prev) => prev.map((u) => (u.user_id === userId ? { ...u, role: newRole } : u)));
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.user_id === userId ? { ...u, role: newRole, approved: true } : u,
+        ),
+      );
     }
     setSaving(null);
   };
@@ -231,10 +235,14 @@ export default function Admin() {
       return;
     }
     setSaving(userId);
+    const target = users.find((u) => u.user_id === userId);
+    const role = target?.role ?? ("viewer" as AppRole);
     const { error } = await supabase
       .from("user_roles")
-      .update({ approved: !currentApproved, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .upsert(
+        { user_id: userId, role, approved: !currentApproved, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,role" },
+      );
 
     if (error) toast.error(error.message);
     else {
