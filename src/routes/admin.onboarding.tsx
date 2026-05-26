@@ -201,16 +201,30 @@ function OnboardingPage() {
                           <p className="mt-1 text-xs text-muted-foreground">{it.descripcion}</p>
                         )}
                       </div>
-                      <select
-                        value={it.estado}
-                        onChange={(e) => updateItem(it.id, { estado: e.target.value as Item["estado"] })}
-                        className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-                      >
-                        <option value="pendiente">Pendiente</option>
-                        <option value="en_proceso">En proceso</option>
-                        <option value="entregado">Entregado</option>
-                        <option value="no_aplica">No aplica</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-muted">
+                          + Subir
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) uploadFile(it, f);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <select
+                          value={it.estado}
+                          onChange={(e) => updateItem(it.id, { estado: e.target.value as Item["estado"] })}
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="pendiente">Pendiente</option>
+                          <option value="en_proceso">En proceso</option>
+                          <option value="entregado">Entregado</option>
+                          <option value="no_aplica">No aplica</option>
+                        </select>
+                      </div>
                     </div>
 
                     {!it.requiere_archivo && (
