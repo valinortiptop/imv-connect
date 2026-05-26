@@ -244,7 +244,7 @@ export default function Logistics() {
       if (ordErr) throw ordErr;
       if (!orders?.length) return [];
 
-      const orderIds = orders.map(o => o.id);
+      const orderIds = orders.map((o: any) => o.id);
       const { data: items, error: itemErr } = await supabase
         .from("order_items")
         .select("order_id, product_id, quantity, unit_price_override, products(clave, name, sale_price_with_iva, image_url)")
@@ -326,7 +326,7 @@ export default function Logistics() {
   const changedDates = useMemo(() => {
     const dates = new Set<string>();
     for (const c of changes) {
-      const order = orderDays.find(o => o.order_id === c.order_id);
+      const order = orderDays.find((o: any) => o.order_id === c.order_id);
       if (order) dates.add(order.delivery_date);
     }
     return dates;
@@ -1429,7 +1429,7 @@ export default function Logistics() {
                               ? "bg-blue-500/15 text-blue-600 border-blue-500/30"
                               : "bg-teal-500/15 text-teal-600 border-teal-500/30";
                             const isExpanded = expandedTrips.has(t.id);
-                            const orderData = t.order_ids?.length ? orderDays.find(o => t.order_ids.includes(o.order_id)) : null;
+                            const orderData = t.order_ids?.length ? orderDays.find((o: any) => t.order_ids.includes(o.order_id)) : null;
                             return (
                               <div key={t.id} className="rounded-lg border border-border bg-card/50 overflow-hidden">
                                 <div className="flex items-center gap-3 p-3 flex-wrap">
@@ -1489,7 +1489,7 @@ export default function Logistics() {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {orderData.items.map((item, i) => (
+                                        {orderData.items.map((item: any, i: number) => (
                                           <TableRow key={i} className="border-border">
                                             <TableCell className="font-mono text-xs">{item.product_clave}</TableCell>
                                             <TableCell className="text-xs">
