@@ -30,6 +30,7 @@ import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
@@ -144,6 +145,11 @@ const AdminClientesRoute = AdminClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCatalogoRoute = AdminCatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
   id: '/almacenes',
   path: '/almacenes',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/almacenes'
+    | '/admin/catalogo'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin/almacenes'
+    | '/admin/catalogo'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/admin/almacenes'
+    | '/admin/catalogo'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -529,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/catalogo': {
+      id: '/admin/catalogo'
+      path: '/catalogo'
+      fullPath: '/admin/catalogo'
+      preLoaderRoute: typeof AdminCatalogoRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/almacenes': {
       id: '/admin/almacenes'
       path: '/almacenes'
@@ -663,6 +682,7 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
+  AdminCatalogoRoute: typeof AdminCatalogoRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
@@ -684,6 +704,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAlmacenesRoute: AdminAlmacenesRoute,
+  AdminCatalogoRoute: AdminCatalogoRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
