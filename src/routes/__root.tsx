@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "IMV" },
+      { name: "description", content: "IMV Connect is a wholesale distribution platform for a Mexican veterinary medicine distributor." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "IMV" },
+      { property: "og:description", content: "IMV Connect is a wholesale distribution platform for a Mexican veterinary medicine distributor." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "IMV" },
+      { name: "twitter:description", content: "IMV Connect is a wholesale distribution platform for a Mexican veterinary medicine distributor." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c8313309-cd60-4208-8589-b658b2eba37f/id-preview-4557bc33--e40d4a9c-4930-4ed0-b9a2-854b51d12f79.lovable.app-1779833699720.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c8313309-cd60-4208-8589-b658b2eba37f/id-preview-4557bc33--e40d4a9c-4930-4ed0-b9a2-854b51d12f79.lovable.app-1779833699720.png" },
     ],
     links: [
       {
