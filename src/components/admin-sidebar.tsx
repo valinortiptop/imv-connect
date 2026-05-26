@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   UserCog,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -63,6 +64,10 @@ const catalogos = [
   { title: "Clientes", url: "/admin/clientes", icon: Users },
   { title: "Representantes", url: "/admin/representantes", icon: UserSquare2 },
   { title: "Usuarios", url: "/admin/usuarios", icon: ShieldCheck },
+];
+
+const integraciones = [
+  { title: "Uso de APIs", url: "/admin/uso-apis", icon: Activity },
 ];
 
 export function AdminSidebar({
@@ -114,6 +119,7 @@ export function AdminSidebar({
         {renderGroup("Operación", operacion)}
         {renderGroup("Inventario", inventario)}
         {renderGroup("Catálogos", catalogos)}
+        {renderGroup("Integraciones", integraciones)}
       </SidebarContent>
 
       <SidebarFooter>

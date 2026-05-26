@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AdminUsoApisRouteImport } from './routes/admin.uso-apis'
 import { Route as AdminRepresentantesRouteImport } from './routes/admin.representantes'
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
@@ -64,6 +65,11 @@ const PortalTokenRoute = PortalTokenRouteImport.update({
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsoApisRoute = AdminUsoApisRouteImport.update({
+  id: '/uso-apis',
+  path: '/uso-apis',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRepresentantesRoute = AdminRepresentantesRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
+  '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
+  '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
+  '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
+    | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin/'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
+    | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
+    | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/portal/$token'
     | '/admin/'
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/admin/usuarios'
       preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/uso-apis': {
+      id: '/admin/uso-apis'
+      path: '/uso-apis'
+      fullPath: '/admin/uso-apis'
+      preLoaderRoute: typeof AdminUsoApisRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/representantes': {
@@ -607,6 +626,7 @@ interface AdminRouteChildren {
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminProductosRoute: typeof AdminProductosRoute
   AdminRepresentantesRoute: typeof AdminRepresentantesRoute
+  AdminUsoApisRoute: typeof AdminUsoApisRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -626,6 +646,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminProductosRoute: AdminProductosRoute,
   AdminRepresentantesRoute: AdminRepresentantesRoute,
+  AdminUsoApisRoute: AdminUsoApisRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
