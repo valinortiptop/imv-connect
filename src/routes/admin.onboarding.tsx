@@ -666,13 +666,7 @@ function AiUploader({
                 )}
 
               {(() => {
-                const validClaves = new Set(items.map((i) => i.clave));
-                const extras = (suggestion.extra_fills ?? []).filter(
-                  (ef) =>
-                    ef.clave &&
-                    validClaves.has(ef.clave) &&
-                    ef.clave !== targetClave,
-                );
+                const extras = combineExtras(suggestion, items, targetClave);
                 if (extras.length === 0) return null;
                 return (
                   <div className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
