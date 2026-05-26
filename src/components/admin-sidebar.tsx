@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
   Sidebar,
   SidebarContent,
@@ -18,62 +19,62 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-type NavItem = { label: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
+type NavItem = { key: string; label: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
   {
     label: "General",
     items: [
-      { label: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
-      { label: "Gandalf", url: "/admin/gandalf", icon: Bot },
-      { label: "Tareas", url: "/admin/tareas", icon: CheckSquare },
-      { label: "Calculadora", url: "/admin/calculadora", icon: Calculator },
+      { key: "navDashboard",    label: "Dashboard",            url: "/admin",                icon: LayoutDashboard, exact: true },
+      { key: "navAIChat",       label: "Gandalf",              url: "/admin/gandalf",        icon: Bot },
+      { key: "navTareas",       label: "Tareas",               url: "/admin/tareas",         icon: CheckSquare },
+      { key: "navCalculator",   label: "Calculadora",          url: "/admin/calculadora",    icon: Calculator },
     ],
   },
   {
     label: "Ventas",
     items: [
-      { label: "Prospectos", url: "/admin/prospectos", icon: UserPlus },
-      { label: "Pedidos", url: "/admin/pedidos", icon: ShoppingCart },
-      { label: "Clientes", url: "/admin/clientes", icon: Users },
-      { label: "Vendedores", url: "/admin/representantes", icon: UserSquare2 },
-      { label: "Facturación", url: "/admin/facturas", icon: FileText },
-      { label: "Promociones", url: "/admin/promos", icon: Tag },
-      { label: "Partners", url: "/admin/partners", icon: Handshake },
-      { label: "Listas de Precios", url: "/admin/listas-precios", icon: TrendingUp },
-      { label: "Sales", url: "/admin/sales", icon: TrendingUp },
-      { label: "P&L", url: "/admin/pnl", icon: BarChart3 },
-      { label: "Ventas", url: "/admin/ventas", icon: FileText },
+      { key: "navProspects",    label: "Prospectos",           url: "/admin/prospectos",     icon: UserPlus },
+      { key: "navOrders",       label: "Pedidos",              url: "/admin/pedidos",        icon: ShoppingCart },
+      { key: "navClients",      label: "Clientes",             url: "/admin/clientes",       icon: Users },
+      { key: "navReps",         label: "Vendedores",           url: "/admin/representantes", icon: UserSquare2 },
+      { key: "navDirectory",    label: "Facturación",          url: "/admin/facturas",       icon: FileText },
+      { key: "navPromos",       label: "Promociones",          url: "/admin/promos",         icon: Tag },
+      { key: "navPartners",     label: "Partners",             url: "/admin/partners",       icon: Handshake },
+      { key: "navPriceLists",   label: "Listas de Precios",    url: "/admin/listas-precios", icon: TrendingUp },
+      { key: "navSales",        label: "Sales",                url: "/admin/sales",          icon: TrendingUp },
+      { key: "navPnL",          label: "P&L",                  url: "/admin/pnl",            icon: BarChart3 },
+      { key: "navVentasReport", label: "Ventas",               url: "/admin/ventas",         icon: FileText },
     ],
   },
   {
     label: "Inventario",
     items: [
-      { label: "Productos", url: "/admin/productos", icon: Package },
-      { label: "Inventario", url: "/admin/inventario", icon: Warehouse },
-      { label: "Almacén", url: "/admin/almacen", icon: Warehouse },
-      { label: "Kardex", url: "/admin/kardex", icon: History },
-      { label: "Entradas", url: "/admin/entradas", icon: Truck },
-      { label: "Necesidades de Compra", url: "/admin/necesidades", icon: ClipboardList },
-      { label: "Devoluciones", url: "/admin/devoluciones/lista", icon: Undo2 },
-      { label: "Dañados", url: "/admin/danados", icon: AlertOctagon },
+      { key: "navProducts",      label: "Productos",            url: "/admin/productos",          icon: Package },
+      { key: "navInventory",     label: "Inventario",           url: "/admin/inventario",         icon: Warehouse },
+      { key: "navInventario",    label: "Almacén",              url: "/admin/almacen",            icon: Warehouse },
+      { key: "navKardex",        label: "Kardex",               url: "/admin/kardex",             icon: History },
+      { key: "navStock",         label: "Entradas",             url: "/admin/entradas",           icon: Truck },
+      { key: "navPurchaseNeeds", label: "Necesidades de Compra", url: "/admin/necesidades",       icon: ClipboardList },
+      { key: "navDevoluciones",  label: "Devoluciones",         url: "/admin/devoluciones/lista", icon: Undo2 },
+      { key: "navDamaged",       label: "Dañados",              url: "/admin/danados",            icon: AlertOctagon },
     ],
   },
   {
     label: "Operaciones",
     items: [
-      { label: "Logística", url: "/admin/logistica", icon: RouteIcon },
-      { label: "Maniobra", url: "/admin/maniobra", icon: Package },
-      { label: "Catálogo", url: "/admin/catalogo", icon: BookOpen },
-      { label: "Documentos", url: "/admin/documentos", icon: FileText },
+      { key: "navLogistics",   label: "Logística",  url: "/admin/logistica",  icon: RouteIcon },
+      { key: "navManiobra",    label: "Maniobra",   url: "/admin/maniobra",   icon: Package },
+      { key: "navCatalogo",    label: "Catálogo",   url: "/admin/catalogo",   icon: BookOpen },
+      { key: "navDocuments",   label: "Documentos", url: "/admin/documentos", icon: FileText },
     ],
   },
   {
     label: "Configuración",
     items: [
-      { label: "Portal Clientes", url: "/admin/portal", icon: Link2 },
-      { label: "Admin", url: "/admin/administracion", icon: Settings },
+      { key: "navPortalAdmin", label: "Portal Clientes", url: "/admin/portal",          icon: Link2 },
+      { key: "navAdmin",       label: "Admin",           url: "/admin/administracion",  icon: Settings },
     ],
   },
 ];
