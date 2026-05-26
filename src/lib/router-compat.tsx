@@ -23,7 +23,7 @@ export function useNavigate() {
 
 // useParams<{ id: string }>() → TanStack's strict params
 export function useParams<T extends Record<string, string> = Record<string, string>>(): T {
-  return tsParams({ strict: false }) as T;
+  return (tsParams as any)({ strict: false }) as T;
 }
 
 // useSearchParams: minimal URLSearchParams-compatible API
