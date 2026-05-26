@@ -19,22 +19,29 @@ import { Route as EntregaTokenRouteImport } from './routes/entrega.$token'
 import { Route as AdminVentasRouteImport } from './routes/admin.ventas'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminUsoApisRouteImport } from './routes/admin.uso-apis'
+import { Route as AdminTareasRouteImport } from './routes/admin.tareas'
 import { Route as AdminSelfiesRouteImport } from './routes/admin.selfies'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
 import { Route as AdminRepresentantesRouteImport } from './routes/admin.representantes'
+import { Route as AdminProspectosRouteImport } from './routes/admin.prospectos'
+import { Route as AdminPromosRouteImport } from './routes/admin.promos'
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
+import { Route as AdminPortalRouteImport } from './routes/admin.portal'
 import { Route as AdminPnlRouteImport } from './routes/admin.pnl'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
 import { Route as AdminNecesidadesRouteImport } from './routes/admin.necesidades'
 import { Route as AdminManiobraRouteImport } from './routes/admin.maniobra'
 import { Route as AdminLogisticaRouteImport } from './routes/admin.logistica'
+import { Route as AdminListasPreciosRouteImport } from './routes/admin.listas-precios'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminKardexRouteImport } from './routes/admin.kardex'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
+import { Route as AdminGandalfRouteImport } from './routes/admin.gandalf'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminEstadoApisRouteImport } from './routes/admin.estado-apis'
 import { Route as AdminEntradasRouteImport } from './routes/admin.entradas'
+import { Route as AdminDocumentosRouteImport } from './routes/admin.documentos'
 import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
 import { Route as AdminDanadosRouteImport } from './routes/admin.danados'
 import { Route as AdminCuentaRouteImport } from './routes/admin.cuenta'
@@ -42,7 +49,9 @@ import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminCentralesRouteImport } from './routes/admin.centrales'
 import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
+import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
@@ -104,6 +113,11 @@ const AdminUsoApisRoute = AdminUsoApisRouteImport.update({
   path: '/uso-apis',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTareasRoute = AdminTareasRouteImport.update({
+  id: '/tareas',
+  path: '/tareas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSelfiesRoute = AdminSelfiesRouteImport.update({
   id: '/selfies',
   path: '/selfies',
@@ -119,9 +133,24 @@ const AdminRepresentantesRoute = AdminRepresentantesRouteImport.update({
   path: '/representantes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProspectosRoute = AdminProspectosRouteImport.update({
+  id: '/prospectos',
+  path: '/prospectos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPromosRoute = AdminPromosRouteImport.update({
+  id: '/promos',
+  path: '/promos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProductosRoute = AdminProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPortalRoute = AdminPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPnlRoute = AdminPnlRouteImport.update({
@@ -154,6 +183,11 @@ const AdminLogisticaRoute = AdminLogisticaRouteImport.update({
   path: '/logistica',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminListasPreciosRoute = AdminListasPreciosRouteImport.update({
+  id: '/listas-precios',
+  path: '/listas-precios',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLaboratoriosRoute = AdminLaboratoriosRouteImport.update({
   id: '/laboratorios',
   path: '/laboratorios',
@@ -169,6 +203,11 @@ const AdminInventarioRoute = AdminInventarioRouteImport.update({
   path: '/inventario',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGandalfRoute = AdminGandalfRouteImport.update({
+  id: '/gandalf',
+  path: '/gandalf',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFacturasRoute = AdminFacturasRouteImport.update({
   id: '/facturas',
   path: '/facturas',
@@ -182,6 +221,11 @@ const AdminEstadoApisRoute = AdminEstadoApisRouteImport.update({
 const AdminEntradasRoute = AdminEntradasRouteImport.update({
   id: '/entradas',
   path: '/entradas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDocumentosRoute = AdminDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDevolucionesRoute = AdminDevolucionesRouteImport.update({
@@ -219,9 +263,19 @@ const AdminClientesRoute = AdminClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCentralesRoute = AdminCentralesRouteImport.update({
+  id: '/centrales',
+  path: '/centrales',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogoRoute = AdminCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalculadoraRoute = AdminCalculadoraRouteImport.update({
+  id: '/calculadora',
+  path: '/calculadora',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
@@ -281,7 +335,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
+  '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -289,22 +345,29 @@ export interface FileRoutesByFullPath {
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/documentos': typeof AdminDocumentosRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
+  '/admin/gandalf': typeof AdminGandalfRoute
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/kardex': typeof AdminKardexRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/listas-precios': typeof AdminListasPreciosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
+  '/admin/portal': typeof AdminPortalRoute
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/promos': typeof AdminPromosRoute
+  '/admin/prospectos': typeof AdminProspectosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/selfies': typeof AdminSelfiesRoute
+  '/admin/tareas': typeof AdminTareasRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/ventas': typeof AdminVentasRoute
@@ -326,7 +389,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
+  '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -334,22 +399,29 @@ export interface FileRoutesByTo {
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/documentos': typeof AdminDocumentosRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
+  '/admin/gandalf': typeof AdminGandalfRoute
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/kardex': typeof AdminKardexRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/listas-precios': typeof AdminListasPreciosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
+  '/admin/portal': typeof AdminPortalRoute
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/promos': typeof AdminPromosRoute
+  '/admin/prospectos': typeof AdminProspectosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/selfies': typeof AdminSelfiesRoute
+  '/admin/tareas': typeof AdminTareasRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/ventas': typeof AdminVentasRoute
@@ -373,7 +445,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
+  '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
@@ -381,22 +455,29 @@ export interface FileRoutesById {
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/documentos': typeof AdminDocumentosRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
+  '/admin/gandalf': typeof AdminGandalfRoute
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/kardex': typeof AdminKardexRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/listas-precios': typeof AdminListasPreciosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
+  '/admin/portal': typeof AdminPortalRoute
   '/admin/productos': typeof AdminProductosRoute
+  '/admin/promos': typeof AdminPromosRoute
+  '/admin/prospectos': typeof AdminProspectosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/selfies': typeof AdminSelfiesRoute
+  '/admin/tareas': typeof AdminTareasRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/ventas': typeof AdminVentasRoute
@@ -421,7 +502,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacen'
     | '/admin/almacenes'
+    | '/admin/calculadora'
     | '/admin/catalogo'
+    | '/admin/centrales'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -429,22 +512,29 @@ export interface FileRouteTypes {
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/documentos'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
+    | '/admin/gandalf'
     | '/admin/inventario'
     | '/admin/kardex'
     | '/admin/laboratorios'
+    | '/admin/listas-precios'
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
+    | '/admin/portal'
     | '/admin/productos'
+    | '/admin/promos'
+    | '/admin/prospectos'
     | '/admin/representantes'
     | '/admin/sales'
     | '/admin/selfies'
+    | '/admin/tareas'
     | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/admin/ventas'
@@ -466,7 +556,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacen'
     | '/admin/almacenes'
+    | '/admin/calculadora'
     | '/admin/catalogo'
+    | '/admin/centrales'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -474,22 +566,29 @@ export interface FileRouteTypes {
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/documentos'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
+    | '/admin/gandalf'
     | '/admin/inventario'
     | '/admin/kardex'
     | '/admin/laboratorios'
+    | '/admin/listas-precios'
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
+    | '/admin/portal'
     | '/admin/productos'
+    | '/admin/promos'
+    | '/admin/prospectos'
     | '/admin/representantes'
     | '/admin/sales'
     | '/admin/selfies'
+    | '/admin/tareas'
     | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/admin/ventas'
@@ -512,7 +611,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/almacen'
     | '/admin/almacenes'
+    | '/admin/calculadora'
     | '/admin/catalogo'
+    | '/admin/centrales'
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
@@ -520,22 +621,29 @@ export interface FileRouteTypes {
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/documentos'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
+    | '/admin/gandalf'
     | '/admin/inventario'
     | '/admin/kardex'
     | '/admin/laboratorios'
+    | '/admin/listas-precios'
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
+    | '/admin/portal'
     | '/admin/productos'
+    | '/admin/promos'
+    | '/admin/prospectos'
     | '/admin/representantes'
     | '/admin/sales'
     | '/admin/selfies'
+    | '/admin/tareas'
     | '/admin/uso-apis'
     | '/admin/usuarios'
     | '/admin/ventas'
@@ -634,6 +742,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsoApisRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tareas': {
+      id: '/admin/tareas'
+      path: '/tareas'
+      fullPath: '/admin/tareas'
+      preLoaderRoute: typeof AdminTareasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/selfies': {
       id: '/admin/selfies'
       path: '/selfies'
@@ -655,11 +770,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRepresentantesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/prospectos': {
+      id: '/admin/prospectos'
+      path: '/prospectos'
+      fullPath: '/admin/prospectos'
+      preLoaderRoute: typeof AdminProspectosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/promos': {
+      id: '/admin/promos'
+      path: '/promos'
+      fullPath: '/admin/promos'
+      preLoaderRoute: typeof AdminPromosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/productos': {
       id: '/admin/productos'
       path: '/productos'
       fullPath: '/admin/productos'
       preLoaderRoute: typeof AdminProductosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/portal': {
+      id: '/admin/portal'
+      path: '/portal'
+      fullPath: '/admin/portal'
+      preLoaderRoute: typeof AdminPortalRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pnl': {
@@ -704,6 +840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLogisticaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/listas-precios': {
+      id: '/admin/listas-precios'
+      path: '/listas-precios'
+      fullPath: '/admin/listas-precios'
+      preLoaderRoute: typeof AdminListasPreciosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/laboratorios': {
       id: '/admin/laboratorios'
       path: '/laboratorios'
@@ -725,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInventarioRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/gandalf': {
+      id: '/admin/gandalf'
+      path: '/gandalf'
+      fullPath: '/admin/gandalf'
+      preLoaderRoute: typeof AdminGandalfRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/facturas': {
       id: '/admin/facturas'
       path: '/facturas'
@@ -744,6 +894,13 @@ declare module '@tanstack/react-router' {
       path: '/entradas'
       fullPath: '/admin/entradas'
       preLoaderRoute: typeof AdminEntradasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/documentos': {
+      id: '/admin/documentos'
+      path: '/documentos'
+      fullPath: '/admin/documentos'
+      preLoaderRoute: typeof AdminDocumentosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/devoluciones': {
@@ -795,11 +952,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/centrales': {
+      id: '/admin/centrales'
+      path: '/centrales'
+      fullPath: '/admin/centrales'
+      preLoaderRoute: typeof AdminCentralesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalogo': {
       id: '/admin/catalogo'
       path: '/catalogo'
       fullPath: '/admin/catalogo'
       preLoaderRoute: typeof AdminCatalogoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calculadora': {
+      id: '/admin/calculadora'
+      path: '/calculadora'
+      fullPath: '/admin/calculadora'
+      preLoaderRoute: typeof AdminCalculadoraRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/almacenes': {
@@ -953,7 +1124,9 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminAlmacenRoute: typeof AdminAlmacenRoute
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
+  AdminCalculadoraRoute: typeof AdminCalculadoraRoute
   AdminCatalogoRoute: typeof AdminCatalogoRoute
+  AdminCentralesRoute: typeof AdminCentralesRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
@@ -961,22 +1134,29 @@ interface AdminRouteChildren {
   AdminCuentaRoute: typeof AdminCuentaRoute
   AdminDanadosRoute: typeof AdminDanadosRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
+  AdminDocumentosRoute: typeof AdminDocumentosRoute
   AdminEntradasRoute: typeof AdminEntradasRoute
   AdminEstadoApisRoute: typeof AdminEstadoApisRoute
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
+  AdminGandalfRoute: typeof AdminGandalfRoute
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminKardexRoute: typeof AdminKardexRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
+  AdminListasPreciosRoute: typeof AdminListasPreciosRoute
   AdminLogisticaRoute: typeof AdminLogisticaRoute
   AdminManiobraRoute: typeof AdminManiobraRoute
   AdminNecesidadesRoute: typeof AdminNecesidadesRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPnlRoute: typeof AdminPnlRoute
+  AdminPortalRoute: typeof AdminPortalRoute
   AdminProductosRoute: typeof AdminProductosRoute
+  AdminPromosRoute: typeof AdminPromosRoute
+  AdminProspectosRoute: typeof AdminProspectosRoute
   AdminRepresentantesRoute: typeof AdminRepresentantesRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminSelfiesRoute: typeof AdminSelfiesRoute
+  AdminTareasRoute: typeof AdminTareasRoute
   AdminUsoApisRoute: typeof AdminUsoApisRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVentasRoute: typeof AdminVentasRoute
@@ -986,7 +1166,9 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAlmacenRoute: AdminAlmacenRoute,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
+  AdminCalculadoraRoute: AdminCalculadoraRoute,
   AdminCatalogoRoute: AdminCatalogoRoute,
+  AdminCentralesRoute: AdminCentralesRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
@@ -994,22 +1176,29 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCuentaRoute: AdminCuentaRoute,
   AdminDanadosRoute: AdminDanadosRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
+  AdminDocumentosRoute: AdminDocumentosRoute,
   AdminEntradasRoute: AdminEntradasRoute,
   AdminEstadoApisRoute: AdminEstadoApisRoute,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
+  AdminGandalfRoute: AdminGandalfRoute,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminKardexRoute: AdminKardexRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
+  AdminListasPreciosRoute: AdminListasPreciosRoute,
   AdminLogisticaRoute: AdminLogisticaRoute,
   AdminManiobraRoute: AdminManiobraRoute,
   AdminNecesidadesRoute: AdminNecesidadesRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPnlRoute: AdminPnlRoute,
+  AdminPortalRoute: AdminPortalRoute,
   AdminProductosRoute: AdminProductosRoute,
+  AdminPromosRoute: AdminPromosRoute,
+  AdminProspectosRoute: AdminProspectosRoute,
   AdminRepresentantesRoute: AdminRepresentantesRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminSelfiesRoute: AdminSelfiesRoute,
+  AdminTareasRoute: AdminTareasRoute,
   AdminUsoApisRoute: AdminUsoApisRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVentasRoute: AdminVentasRoute,
