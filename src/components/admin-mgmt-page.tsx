@@ -114,7 +114,12 @@ const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   navDocuments: { es: "Documentos", en: "Documents" },
   // Configuración
   navPortalAdmin: { es: "Portal Clientes", en: "Client Portal" },
-  navAdmin: { es: "Admin", en: "Admin" },
+  navAdmin: { es: "Administración", en: "Administration" },
+  navPartners: { es: "Partners", en: "Partners" },
+  navReps: { es: "Representantes", en: "Sales Reps" },
+  navOnboarding: { es: "Onboarding", en: "Onboarding" },
+  navApiStatus: { es: "Estado APIs", en: "API Status" },
+  navApiUsage: { es: "Uso de APIs", en: "API Usage" },
 };
 
 const GROUP_LABELS: Record<string, { es: string; en: string }> = {
@@ -929,27 +934,19 @@ function RolePermissionsEditor({ lang }: { lang: string }) {
 
   const savePerms = async () => {
     setSaving(true);
-    const rows = perms.map((p) => ({
-      role: selectedRole,
-      route_key: p.route_key,
-      allowed: p.allowed,
-      updated_at: new Date().toISOString(),
-    }));
-
-    for (const row of rows) {
-      const { error } = await supabase
-        .from("role_permissions")
-        .update({ allowed: row.allowed, updated_at: row.updated_at })
-        .eq("role", row.role)
-        .eq("route_key", row.route_key);
-
+    for (const p of perms) {
+      const { error } = await supabase.rpc("admin_set_role_permission", {
+        p_role: selectedRole,
+        p_route_key: p.route_key,
+        p_allowed: p.allowed,
+      });
       if (error) {
         toast.error(error.message);
         setSaving(false);
         return;
       }
     }
-
+    notifyPermissionsChanged();
     toast.success(lang === "es" ? "Permisos del rol guardados" : "Role permissions saved");
     setSaving(false);
   };
