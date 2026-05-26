@@ -1,5 +1,5 @@
 import React from "react";
-import type { ManiobraOrder } from "@/pages/Maniobra";
+import type { ManiobraOrder } from "@/components/maniobra-page";
 
 interface EnrichedTruck {
   id: string;

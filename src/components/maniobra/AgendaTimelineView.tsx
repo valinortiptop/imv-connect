@@ -28,7 +28,7 @@
  */
 
 import { useMemo } from "react";
-import type { ManiobraOrder, AssignedTruck } from "@/pages/Maniobra";
+import type { ManiobraOrder, AssignedTruck } from "@/components/maniobra-page";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

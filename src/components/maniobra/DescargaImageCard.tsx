@@ -1,5 +1,5 @@
 import React from "react";
-import type { ManiobraDescarga } from "@/pages/Maniobra";
+import type { ManiobraDescarga } from "@/components/maniobra-page";
 
 type Props = {
   descarga: ManiobraDescarga;
