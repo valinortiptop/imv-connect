@@ -247,9 +247,10 @@ export async function pingProviders(): Promise<ProviderPing[]> {
         callValinor({
           provider: "anthropic",
           endpoint: "/v1/messages",
+          // claude-3-5-haiku-latest fue retirado; usamos el modelo Sonnet vigente.
           payload: {
-            model: "claude-3-5-haiku-latest",
-            max_tokens: 1,
+            model: "claude-sonnet-4-5",
+            max_tokens: 16,
             messages: [{ role: "user", content: "ping" }],
           },
         }),
@@ -260,20 +261,29 @@ export async function pingProviders(): Promise<ProviderPing[]> {
         callValinor({
           provider: "perplexity",
           endpoint: "/chat/completions",
+          // Perplexity exige max_tokens >= 16.
           payload: {
             model: "sonar",
             messages: [{ role: "user", content: "ping" }],
-            max_tokens: 1,
+            max_tokens: 16,
           },
         }),
     },
     {
       provider: "resend",
+      // La llave de Resend está restringida a sending-only, por lo que GET /domains
+      // devuelve 401. Probamos un envío "dry-run" al inbox sandbox de Resend.
       run: () =>
         callValinor({
           provider: "resend",
-          endpoint: "/domains",
-          method: "GET",
+          endpoint: "/emails",
+          method: "POST",
+          payload: {
+            from: "onboarding@resend.dev",
+            to: "delivered@resend.dev",
+            subject: "Valinor health-check",
+            text: "ping",
+          },
         }),
     },
     {
