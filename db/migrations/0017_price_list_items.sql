@@ -8,7 +8,7 @@ ALTER TABLE public.price_lists
 CREATE TABLE IF NOT EXISTS public.price_list_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   price_list_id uuid NOT NULL REFERENCES public.price_lists(id) ON DELETE CASCADE,
-  product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id uuid NOT NULL REFERENCES public.productos(id) ON DELETE CASCADE,
   price_with_iva numeric(12,2) NOT NULL CHECK (price_with_iva >= 0),
   manual_override boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
