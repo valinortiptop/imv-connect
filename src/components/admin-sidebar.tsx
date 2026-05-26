@@ -68,6 +68,7 @@ const catalogos = [
 
 const integraciones = [
   { title: "Uso de APIs", url: "/admin/uso-apis", icon: Activity },
+  { title: "Estado de APIs", url: "/admin/estado-apis", icon: ShieldCheck },
 ];
 
 export function AdminSidebar({
