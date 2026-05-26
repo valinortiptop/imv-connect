@@ -114,7 +114,12 @@ const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   navDocuments: { es: "Documentos", en: "Documents" },
   // Configuración
   navPortalAdmin: { es: "Portal Clientes", en: "Client Portal" },
-  navAdmin: { es: "Admin", en: "Admin" },
+  navAdmin: { es: "Administración", en: "Administration" },
+  navPartners: { es: "Partners", en: "Partners" },
+  navReps: { es: "Representantes", en: "Sales Reps" },
+  navOnboarding: { es: "Onboarding", en: "Onboarding" },
+  navApiStatus: { es: "Estado APIs", en: "API Status" },
+  navApiUsage: { es: "Uso de APIs", en: "API Usage" },
 };
 
 const GROUP_LABELS: Record<string, { es: string; en: string }> = {
