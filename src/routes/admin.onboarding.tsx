@@ -535,9 +535,9 @@ function AiUploader({
         })
         .eq("id", item.id);
 
-      // Aplicar pre-llenados extra a otros items
-      const extras = (suggestion?.extra_fills ?? []).filter(
-        (ef) => ef.clave && ef.clave !== item.clave && extraSelected[ef.clave],
+      // Aplicar pre-llenados extra a otros items (AI + derivados)
+      const extras = combineExtras(suggestion, items, item.clave).filter(
+        (ef) => extraSelected[ef.clave],
       );
       for (const ef of extras) {
         const target = items.find((i) => i.clave === ef.clave);
@@ -546,10 +546,7 @@ function AiUploader({
           [target.notas, ef.notas].filter(Boolean).join("\n") || null;
         const patch: Record<string, unknown> = {
           notas: newNotas,
-          estado:
-            target.estado === "pendiente" && ef.valor_texto
-              ? "en_proceso"
-              : target.estado,
+          estado: ef.valor_texto ? "entregado" : target.estado,
         };
         if (ef.valor_texto && !target.requiere_archivo) {
           patch.valor_texto = ef.valor_texto;
