@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PickingDialog } from "@/components/maniobra/PickingDialog";
@@ -30,7 +30,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { DescargaImageCard } from "@/components/maniobra/DescargaImageCard";
 import { CargaImageCard } from "@/components/maniobra/CargaImageCard";
-import ManiobraPortal from "@/pages/ManiobraPortal";
+import ManiobraPortal from "@/components/maniobra-portal-page";
 import { useAuth } from "@/hooks/use-auth";
 import { ProductThumb } from "@/components/ui/product-thumb";
 
