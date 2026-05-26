@@ -563,6 +563,55 @@ function AiUploader({
                     </ul>
                   </div>
                 )}
+
+              {(() => {
+                const validClaves = new Set(items.map((i) => i.clave));
+                const extras = (suggestion.extra_fills ?? []).filter(
+                  (ef) =>
+                    ef.clave &&
+                    validClaves.has(ef.clave) &&
+                    ef.clave !== targetClave,
+                );
+                if (extras.length === 0) return null;
+                return (
+                  <div className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="mb-2 font-semibold">
+                      Pre-llenar otros items con datos de este documento
+                    </div>
+                    <ul className="space-y-1.5">
+                      {extras.map((ef) => {
+                        const target = items.find((i) => i.clave === ef.clave);
+                        if (!target) return null;
+                        return (
+                          <li key={ef.clave} className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={!!extraSelected[ef.clave]}
+                              onChange={(e) =>
+                                setExtraSelected((p) => ({
+                                  ...p,
+                                  [ef.clave]: e.target.checked,
+                                }))
+                              }
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium">
+                                [{target.categoria}] {target.titulo}
+                              </div>
+                              {ef.valor_texto && (
+                                <div className="text-muted-foreground">
+                                  → {ef.valor_texto}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
