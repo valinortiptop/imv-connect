@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { analyzeOnboardingDocFn } from "@/lib/valinor.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/admin/onboarding")({
   component: OnboardingPage,
@@ -144,6 +153,10 @@ function OnboardingPage() {
           </div>
         </div>
       </header>
+
+      <AiUploader items={items} onCommitted={load} />
+
+
 
       <div className="flex flex-wrap gap-2">
         <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
@@ -296,3 +309,251 @@ function FilterBtn({
     </button>
   );
 }
+
+/* ───────────────────────── AI Uploader ───────────────────────── */
+
+type Suggestion = {
+  categoria?: string;
+  item_clave_sugerida?: string | null;
+  confianza?: number;
+  resumen?: string;
+  campos?: Record<string, string>;
+  texto_para_notas?: string;
+};
+
+function AiUploader({
+  items,
+  onCommitted,
+}: {
+  items: Item[];
+  onCommitted: () => Promise<void> | void;
+}) {
+  const analyze = useServerFn(analyzeOnboardingDocFn);
+  const [drag, setDrag] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [targetClave, setTargetClave] = useState<string>("");
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleFiles = async (f: File | null) => {
+    if (!f) return;
+    setError(null);
+    if (f.size > 10 * 1024 * 1024) {
+      setError("Archivo demasiado grande (máx 10 MB).");
+      return;
+    }
+    setFile(f);
+    setBusy(true);
+    try {
+      const buf = await f.arrayBuffer();
+      // base64 en chunks para evitar stack overflow
+      let bin = "";
+      const bytes = new Uint8Array(buf);
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+      }
+      const base64 = btoa(bin);
+      const res = await analyze({
+        data: {
+          filename: f.name,
+          mime: f.type || "application/octet-stream",
+          base64,
+        },
+      });
+      const s = (res.suggestion ?? null) as Suggestion | null;
+      setSuggestion(s);
+      setTargetClave(s?.item_clave_sugerida ?? "");
+      setOpen(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const commit = async () => {
+    if (!file || !targetClave) return;
+    const item = items.find((i) => i.clave === targetClave);
+    if (!item) {
+      setError("Selecciona un item válido.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const path = `${item.clave}/${Date.now()}_${file.name}`;
+      const up = await supabase.storage
+        .from("onboarding")
+        .upload(path, file, { upsert: false });
+      if (up.error) throw up.error;
+
+      const { data: u } = await supabase.auth.getUser();
+      const ins = await supabase.from("onboarding_archivos").insert({
+        item_id: item.id,
+        storage_path: path,
+        nombre_original: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+        uploaded_by: u.user?.id,
+      });
+      if (ins.error) throw ins.error;
+
+      const camposText = suggestion?.campos
+        ? Object.entries(suggestion.campos)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(" · ")
+        : "";
+      await supabase
+        .from("onboarding_items")
+        .update({
+          estado: "entregado",
+          notas:
+            [item.notas, suggestion?.texto_para_notas ?? suggestion?.resumen]
+              .filter(Boolean)
+              .join("\n") || null,
+          valor_texto: camposText || item.valor_texto,
+        })
+        .eq("id", item.id);
+
+      await onCommitted();
+      setOpen(false);
+      setFile(null);
+      setSuggestion(null);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDrag(true);
+        }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          handleFiles(e.dataTransfer.files?.[0] ?? null);
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-6 py-8 text-center text-sm transition-colors ${
+          drag
+            ? "border-primary bg-primary/5"
+            : "border-border hover:bg-accent/30"
+        }`}
+      >
+        <input
+          type="file"
+          className="hidden"
+          accept="application/pdf,image/*,text/plain"
+          onChange={(e) => {
+            handleFiles(e.target.files?.[0] ?? null);
+            e.target.value = "";
+          }}
+        />
+        <span className="font-medium">
+          {busy
+            ? `Analizando ${file?.name ?? ""}…`
+            : "Subir o arrastrar documento (IA lo clasifica)"}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          PDF, imágenes o texto · Gemini vía Valinor decide la categoría
+        </span>
+        {error && <span className="mt-1 text-xs text-destructive">{error}</span>}
+      </label>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Revisar clasificación IA</DialogTitle>
+          </DialogHeader>
+
+          {suggestion ? (
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  Categoría sugerida:{" "}
+                  <strong className="text-foreground">
+                    {suggestion.categoria ?? "—"}
+                  </strong>
+                </span>
+                <span>
+                  Confianza:{" "}
+                  <strong className="text-foreground">
+                    {((suggestion.confianza ?? 0) * 100).toFixed(0)}%
+                  </strong>
+                </span>
+              </div>
+
+              {suggestion.resumen && (
+                <p className="rounded-md bg-muted/50 p-2 text-xs">
+                  {suggestion.resumen}
+                </p>
+              )}
+
+              <label className="block text-xs font-medium">
+                Item destino
+                <select
+                  value={targetClave}
+                  onChange={(e) => setTargetClave(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                >
+                  <option value="">— Seleccionar —</option>
+                  {items.map((i) => (
+                    <option key={i.id} value={i.clave}>
+                      [{i.categoria}] {i.titulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {suggestion.campos &&
+                Object.keys(suggestion.campos).length > 0 && (
+                  <div className="rounded-md border border-border p-2 text-xs">
+                    <div className="mb-1 font-semibold">Campos extraídos</div>
+                    <ul className="space-y-0.5">
+                      {Object.entries(suggestion.campos).map(([k, v]) => (
+                        <li key={k}>
+                          <span className="text-muted-foreground">{k}:</span>{" "}
+                          {v}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No se obtuvo sugerencia. Selecciona manualmente el item.
+            </p>
+          )}
+
+          {error && <p className="text-xs text-destructive">{error}</p>}
+
+          <DialogFooter>
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={commit}
+              disabled={saving || !targetClave || !file}
+              className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
+            >
+              {saving ? "Guardando…" : "Adjuntar al item"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

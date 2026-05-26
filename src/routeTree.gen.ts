@@ -23,6 +23,7 @@ import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
+import { Route as AdminEstadoApisRouteImport } from './routes/admin.estado-apis'
 import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
 import { Route as AdminCuentaRouteImport } from './routes/admin.cuenta'
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
@@ -107,6 +108,11 @@ const AdminFacturasRoute = AdminFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEstadoApisRoute = AdminEstadoApisRouteImport.update({
+  id: '/estado-apis',
+  path: '/estado-apis',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDevolucionesRoute = AdminDevolucionesRouteImport.update({
   id: '/devoluciones',
   path: '/devoluciones',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/admin/compras'
     | '/admin/cuenta'
     | '/admin/devoluciones'
+    | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/admin/compras'
     | '/admin/cuenta'
     | '/admin/devoluciones'
+    | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/compras'
     | '/admin/cuenta'
     | '/admin/devoluciones'
+    | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/facturas'
       fullPath: '/admin/facturas'
       preLoaderRoute: typeof AdminFacturasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/estado-apis': {
+      id: '/admin/estado-apis'
+      path: '/estado-apis'
+      fullPath: '/admin/estado-apis'
+      preLoaderRoute: typeof AdminEstadoApisRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/devoluciones': {
@@ -619,6 +638,7 @@ interface AdminRouteChildren {
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
   AdminCuentaRoute: typeof AdminCuentaRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
+  AdminEstadoApisRoute: typeof AdminEstadoApisRoute
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
@@ -639,6 +659,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminComprasRoute: AdminComprasRouteWithChildren,
   AdminCuentaRoute: AdminCuentaRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
+  AdminEstadoApisRoute: AdminEstadoApisRoute,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,

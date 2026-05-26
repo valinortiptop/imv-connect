@@ -37,7 +37,6 @@ function readEnv(name: string): string {
 
 /**
  * Llama al proxy de Valinor. Devuelve el JSON crudo del proveedor.
- * Si el proveedor responde !ok, lanza con el body para que el caller decida.
  */
 export async function callValinor<T = unknown>(
   opts: ValinorCallOptions,
@@ -63,14 +62,12 @@ export async function callValinor<T = unknown>(
   try {
     return JSON.parse(text) as T;
   } catch {
-    // Algunos endpoints (Maps staticmap, etc.) devuelven binario/texto.
     return text as unknown as T;
   }
 }
 
 /* ───────────────────── Helpers tipados por servicio ───────────────────── */
 
-/** Envía un correo transaccional vía Resend (cuenta de Valinor). */
 export async function sendEmail(input: {
   from: string;
   to: string | string[];
@@ -86,7 +83,6 @@ export async function sendEmail(input: {
   });
 }
 
-/** Chat completion vía OpenAI por el gateway de Valinor. */
 export async function openaiChat(input: {
   model: string;
   messages: { role: "system" | "user" | "assistant"; content: string }[];
@@ -102,7 +98,6 @@ export async function openaiChat(input: {
   });
 }
 
-/** Generate vía Gemini por el gateway de Valinor. */
 export async function geminiGenerate(input: {
   model: string;
   contents: unknown;
@@ -115,13 +110,40 @@ export async function geminiGenerate(input: {
 }
 
 /**
+ * Gemini con archivos inline (PDF/imagen) + prompt de texto.
+ * `parts` es la mezcla de bloques { text } y { inline_data: { mime_type, data(base64) } }.
+ * Pide JSON estricto al modelo via response_mime_type.
+ */
+export async function geminiGenerateInline(input: {
+  model: string;
+  parts: Array<
+    | { text: string }
+    | { inline_data: { mime_type: string; data: string } }
+  >;
+  jsonMode?: boolean;
+}) {
+  const payload: Record<string, unknown> = {
+    contents: [{ role: "user", parts: input.parts }],
+  };
+  if (input.jsonMode) {
+    payload.generationConfig = { response_mime_type: "application/json" };
+  }
+  return callValinor<{
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+    }>;
+  }>({
+    provider: "gemini",
+    endpoint: `/v1beta/models/${input.model}:generateContent`,
+    payload,
+  });
+}
+
+/**
  * Lee el reporte de uso del proyecto desde Valinor.
- * Espera que Valinor exponga `usage-report` con el mismo `x-proxy-token`.
- * Si aún no existe, devuelve `{ items: [], available: false }` para que la UI
- * muestre estado de "pendiente de habilitar".
  */
 export async function getValinorUsage(params: {
-  from?: string; // ISO date
+  from?: string;
   to?: string;
   limit?: number;
 }): Promise<{
@@ -149,7 +171,6 @@ export async function getValinorUsage(params: {
   if (!baseUrl || !token) {
     return { available: false, items: [] };
   }
-  // Convertimos .../api-proxy → .../usage-report
   const reportUrl = baseUrl.replace(/\/api-proxy\/?$/, "/usage-report");
   const qs = new URLSearchParams();
   if (params.from) qs.set("from", params.from);
@@ -161,9 +182,7 @@ export async function getValinorUsage(params: {
       method: "GET",
       headers: { "x-proxy-token": token },
     });
-    if (!res.ok) {
-      return { available: false, items: [] };
-    }
+    if (!res.ok) return { available: false, items: [] };
     const data = (await res.json()) as {
       items?: unknown[];
       totals?: { calls: number; total_tokens: number; estimated_cost: number };
@@ -176,4 +195,112 @@ export async function getValinorUsage(params: {
   } catch {
     return { available: false, items: [] };
   }
+}
+
+/* ───────────────────── Health-checks por proveedor ───────────────────── */
+
+export type ProviderPing = {
+  provider: string;
+  ok: boolean;
+  status: number | null;
+  ms: number;
+  error?: string;
+};
+
+async function timed(fn: () => Promise<unknown>): Promise<{ ok: boolean; ms: number; error?: string }> {
+  const t0 = Date.now();
+  try {
+    await fn();
+    return { ok: true, ms: Date.now() - t0 };
+  } catch (e) {
+    return { ok: false, ms: Date.now() - t0, error: (e as Error).message };
+  }
+}
+
+export async function pingProviders(): Promise<ProviderPing[]> {
+  const checks: Array<{ provider: string; run: () => Promise<unknown> }> = [
+    {
+      provider: "gemini",
+      run: () =>
+        callValinor({
+          provider: "gemini",
+          endpoint: "/v1beta/models/gemini-2.0-flash:generateContent",
+          payload: { contents: [{ role: "user", parts: [{ text: "ping" }] }] },
+        }),
+    },
+    {
+      provider: "openai",
+      run: () =>
+        callValinor({
+          provider: "openai",
+          endpoint: "/v1/chat/completions",
+          payload: {
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 1,
+          },
+        }),
+    },
+    {
+      provider: "anthropic",
+      run: () =>
+        callValinor({
+          provider: "anthropic",
+          endpoint: "/v1/messages",
+          payload: {
+            model: "claude-3-5-haiku-latest",
+            max_tokens: 1,
+            messages: [{ role: "user", content: "ping" }],
+          },
+        }),
+    },
+    {
+      provider: "perplexity",
+      run: () =>
+        callValinor({
+          provider: "perplexity",
+          endpoint: "/chat/completions",
+          payload: {
+            model: "sonar",
+            messages: [{ role: "user", content: "ping" }],
+            max_tokens: 1,
+          },
+        }),
+    },
+    {
+      provider: "resend",
+      run: () =>
+        callValinor({
+          provider: "resend",
+          endpoint: "/domains",
+          method: "GET",
+        }),
+    },
+    {
+      provider: "google",
+      run: () =>
+        callValinor({
+          provider: "google",
+          endpoint: "/maps/api/geocode/json?address=Mexico",
+          method: "GET",
+        }),
+    },
+  ];
+
+  const results = await Promise.all(
+    checks.map(async (c) => {
+      const r = await timed(c.run);
+      // Extraemos el código HTTP del mensaje de error si existe.
+      const statusMatch = r.error?.match(/→ (\d+):/);
+      const status = statusMatch ? Number(statusMatch[1]) : r.ok ? 200 : null;
+      return {
+        provider: c.provider,
+        ok: r.ok,
+        status,
+        ms: r.ms,
+        error: r.error,
+      } satisfies ProviderPing;
+    }),
+  );
+  return results;
 }
