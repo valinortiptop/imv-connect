@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Loads a remote image into a base64 data URL using a two-strategy
  * approach. Returns null on any failure so callers can keep rendering

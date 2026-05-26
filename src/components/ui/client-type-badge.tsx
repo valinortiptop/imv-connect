@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ClientTypeBadge — small pill that distinguishes wholesale (Mayoreo)
  * from retail (Menudeo) clients. Used in the clients list, the

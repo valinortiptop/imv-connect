@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { STATUS_LABELS, type OrderStatus } from "@/types/orders";

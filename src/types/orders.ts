@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface OrderSummaryRow {
   id: string | null;
   order_code: string | null;

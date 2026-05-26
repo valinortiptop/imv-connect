@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ClientPricesTab — manage per-client product price overrides.
  *

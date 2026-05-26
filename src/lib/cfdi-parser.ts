@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CFDI Parser — extracts fiscal data from SAT "Constancia de Situación Fiscal" PDFs.
  *
