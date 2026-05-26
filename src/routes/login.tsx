@@ -16,7 +16,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/admin/productos" });
+      if (data.user) navigate({ to: "/admin" });
     });
   }, [navigate]);
 
@@ -30,7 +30,7 @@ function LoginPage() {
       setError(error.message);
       return;
     }
-    navigate({ to: "/admin/productos" });
+    navigate({ to: "/admin" });
   };
 
   return (
