@@ -30,7 +30,7 @@ function LoginPage() {
       setError(error.message);
       return;
     }
-    navigate({ to: "/admin/productos" });
+    navigate({ to: "/admin" });
   };
 
   return (
