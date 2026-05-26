@@ -1,83 +1,59 @@
-# Plan: Valinor end-to-end + IA en Onboarding
+## Diagnóstico actual
 
-## 1. Verificar conexión con Valinor
-- Invocar `getUsageReportFn` desde el preview y revisar logs del server.
-- Si el fetch a `/usage-report` falla, confirmar que `VALINOR_PROXY_URL` termina en `/api-proxy` (la función reemplaza `/api-proxy` → `/usage-report`). Si no, ajustar el reemplazo para soportar ambos formatos.
-- Hacer un ping real al gateway con un `aiChatFn` mínimo (gemini-2.0-flash) para generar al menos 1 registro en `api_usage_logs` de Valinor y validar el flujo completo.
+Hice un escaneo de todo `src/` y encontré que **las únicas importaciones rotas en el proyecto son**:
 
-## 2. Mejorar `/admin/uso-apis`
-- Filtros de rango: 24h / 7d / 30d / personalizado (envía `from`/`to` a `getUsageReportFn`).
-- Botón "Actualizar" + `useQuery` con `staleTime`.
-- Desglose por proveedor (tabla agregada: calls, tokens, costo).
-- Empty state claro cuando `available=true` pero `items=[]`.
-- Indicador de "última actualización".
+```
+src/components/ui/animated-ai-chat.tsx
+  → @/components/ui/liquid-metal-button   (no existe)
+  → @/components/ui/liquid-metal-border   (no existe)
+  → @/components/ui/grid-animation        (no existe)
 
-## 3. Panel de estado de APIs (Settings → Estado de APIs)
-- Nueva ruta `src/routes/admin.estado-apis.tsx` y entrada en sidebar bajo "integraciones".
-- Nuevo server fn `pingProvidersFn` que, para cada proveedor configurado en Valinor (openai, gemini, anthropic, perplexity, resend, google), hace una llamada *ligera* a través del proxy:
-  - openai: `GET /v1/models`
-  - gemini: `GET /v1beta/models`
-  - anthropic: `POST /v1/messages` con 1 token
-  - perplexity: `GET /models` (o chat mínimo)
-  - resend: `GET /domains`
-  - google maps: `GET /maps/api/geocode/json?address=test`
-- Devuelve `{ provider, ok, status, ms, error? }[]`.
-- UI con badges verde/rojo/gris y latencia. Auto-refresh manual.
+src/components/centrales-page.tsx
+src/components/CentralEditDrawer.tsx
+  → @/integrations/supabase/types         (no existe — solo afecta a Centrales, que no está en el sidebar)
+```
 
-## 4. Flujo concreto: IA en Onboarding (Gemini vía Valinor)
-Objetivo: el admin sube un documento (PDF/imagen/texto) o lo arrastra al onboarding, Gemini lo analiza, **propone** la categoría y campos a llenar; el admin **revisa y confirma** antes de persistir.
+**Eso explica Gandalf** (`/admin/gandalf`): la consola muestra `Failed to fetch dynamically imported module: admin.gandalf.tsx` porque `animated-ai-chat.tsx` no resuelve sus imports → toda la ruta falla.
 
-### 4.1 UI en `/admin/onboarding`
-- Dropzone global "Subir documento sin clasificar" arriba del checklist.
-- Aceptar PDF, PNG, JPG, DOCX, TXT (≤ 10 MB).
-- Mientras analiza: spinner + nombre del archivo.
-- Resultado: modal con
-  - categoría sugerida + clave de item sugerida (con confianza %),
-  - resumen del contenido,
-  - campos extraídos (RFC, razón social, dirección, correos, etc.),
-  - selector para corregir item destino,
-  - botones "Adjuntar al item" / "Guardar como nota" / "Descartar".
-- Al confirmar: sube a Storage (`onboarding/<clave>/...`), inserta en `onboarding_archivos`, actualiza `onboarding_items.valor_texto` / `notas` / `estado='entregado'`.
+**Calculadora** (`/admin/calculadora`) **no tiene imports rotos**. Si aparece en blanco probablemente es por un error de runtime, datos vacíos de Supabase, o un componente interno que falla silenciosamente — hay que abrirla y revisar consola en vivo.
 
-### 4.2 Server fn `analyzeOnboardingDocFn`
-- Input (Zod): `{ filename, mime, base64 }` (≤ ~8 MB en base64).
-- Flujo:
-  1. Cargar lista de items (`clave`, `titulo`, `categoria`) desde Supabase (admin) para que el prompt conozca el catálogo real.
-  2. Llamar `callValinor` con `provider:"gemini"`, modelo `gemini-2.0-flash`, endpoint `/v1beta/models/gemini-2.0-flash:generateContent`, enviando el archivo como `inline_data` (Gemini acepta PDFs/imágenes nativamente). DOCX/TXT se mandan como texto extraído (mammoth / texto plano) para evitar binarios no soportados.
-  3. Prompt pide JSON estricto:
-     ```json
-     {
-       "categoria": "...",
-       "item_clave_sugerida": "...",
-       "confianza": 0.0-1.0,
-       "resumen": "...",
-       "campos": { "rfc": "...", "razon_social": "...", ... },
-       "texto_para_notas": "..."
-     }
-     ```
-  4. Devuelve también el `usage` de Gemini para que quede registrado en Valinor.
-- No persiste nada: solo devuelve la sugerencia. La escritura ocurre en otra acción tras confirmación del admin para evitar errores.
+Todas las demás 30+ rutas del sidebar resuelven imports correctamente (HTTP 200 desde el dev server). Eso no garantiza que rendericen contenido útil — solo que no fallan al cargar el módulo.
 
-### 4.3 Persistencia tras confirmar
-- Reusar la lógica actual de `uploadFile` en `admin.onboarding.tsx`, pero permitiendo elegir el `item` destino dinámicamente (no atado al input por item).
-- Si el admin acepta los `campos`, hacer un `update` en `onboarding_items` con `valor_texto` (serializado JSON corto) y `notas` con el resumen.
+## Plan
 
-## 5. Detalles técnicos
-- `src/lib/valinor-proxy.server.ts`: añadir helper `geminiGenerateInline({ model, parts })` que arme el body con `contents:[{ parts:[ {text}, {inline_data:{mime_type, data}} ] }]` y `generationConfig:{ response_mime_type:"application/json" }`.
-- Tamaño máximo del archivo en cliente: 10 MB; rechazar antes de enviar.
-- DOCX: usar `mammoth` (ya pure-JS, Worker-safe) para extraer texto; PDF e imágenes van directo a Gemini.
-- Todas las llamadas a Gemini se hacen **solo** vía `callValinor` para que queden en `api_usage_logs` de Valinor (cero llamadas directas al provider).
-- Sidebar: nuevo grupo "Integraciones" con "Uso de APIs" (ya existe) + "Estado de APIs" (nueva).
+### Fase 1 — Arreglar Gandalf (root cause conocido)
+Crear los 3 componentes UI faltantes como wrappers ligeros compatibles con el API que usa `animated-ai-chat.tsx`:
+- `src/components/ui/liquid-metal-button.tsx` — botón con borde animado/gradiente.
+- `src/components/ui/liquid-metal-border.tsx` — wrapper con borde animado.
+- `src/components/ui/grid-animation.tsx` — fondo animado tipo grid (puede reusar `animated-grid-pattern` que ya existe).
 
-## 6. Cambios de archivos
-- nuevo: `src/routes/admin.estado-apis.tsx`
-- nuevo server fns en `src/lib/valinor.functions.ts`: `pingProvidersFn`, `analyzeOnboardingDocFn`
-- ampliado: `src/lib/valinor-proxy.server.ts` (`geminiGenerateInline`, `pingProviders`)
-- editado: `src/routes/admin.onboarding.tsx` (dropzone global + modal de revisión)
-- editado: `src/routes/admin.uso-apis.tsx` (filtros, refresh, desglose)
-- editado: `src/components/admin-sidebar.tsx` (link "Estado de APIs")
-- dependencia nueva: `mammoth` (extracción DOCX, server-side)
+Verificar: navegar a `/admin/gandalf`, confirmar que ya no hay error de import y que renderiza el chat.
 
-## 7. Fuera de alcance (no tocar ahora)
-- Migrar otros envíos de correo a `sendEmailFn` (se hará cuando el módulo de pedidos/facturación lo necesite).
-- Crear nuevos endpoints en Valinor: ya están listos según confirmación previa.
+### Fase 2 — Auditoría sistemática del sidebar
+Recorrer cada item del sidebar en orden, en grupos:
+
+```
+General:      Dashboard, Gandalf, Tareas, Calculadora
+Ventas:       Prospectos, Pedidos, Clientes, Vendedores, Facturación, Promociones,
+              Partners, Listas de Precios, Sales, P&L, Ventas
+Inventario:   Productos, Inventario, Almacén, Kardex, Entradas,
+              Necesidades de Compra, Devoluciones, Dañados
+Operaciones:  Logística, Maniobra, Catálogo, Documentos
+Configuración: Portal Clientes, Admin
+```
+
+Para cada uno:
+1. Navegar a la ruta en el preview.
+2. Capturar console errors y network failures.
+3. Clasificar el estado: ✅ funciona / ⚠️ renderiza pero le falta data o feature / ❌ roto.
+4. Para los rotos: arreglar import faltante, componente faltante, o señalar que requiere edge function / RPC inexistente.
+5. Para los incompletos: comparar contra lo que llama la página (RPCs, tablas, edge functions) y decir explícitamente qué falta del backend.
+
+### Fase 3 — Reportar y priorizar
+Entregar una tabla con el estado real de cada página y cuál es el siguiente paso por cada una (frontend fix vs backend / RPC / edge function pendiente).
+
+## Preguntas para confirmar antes de implementar
+
+1. **¿Quieres que arregle TODO en un solo loop**, o prefieres que vaya página por página confirmando contigo después de cada grupo (General → Ventas → Inventario → …)?
+2. **Para Calculadora y Gandalf**, ¿el comportamiento esperado del "reference repo" requiere edge functions (`ai-chat`, etc.) que aún no existen en este proyecto? Si sí, las dejo con un mensaje claro de "función no disponible" o las stubbeo con datos de ejemplo.
+3. Las páginas que dependen de **RPCs / tablas / edge functions** que no existen en este proyecto (la mayoría de la lógica del reference repo), ¿quieres que las **stubee con UI vacía + toast informativo**, o que cree las migraciones SQL para que funcionen end-to-end? (esto último es trabajo significativo por página).
