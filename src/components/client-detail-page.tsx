@@ -95,13 +95,21 @@ export default function ClientDetail() {
         .from("orders").select("id").eq("client_id", id!);
       if (!ords?.length) return [];
       const ids = ords.map((o) => o.id);
-      const { data } = await supabase
+      const { data: its } = await supabase
         .from("order_items")
-        .select("order_id, quantity, product_id, unit_price_override, products(clave, name, sale_price_with_iva, image_url)")
+        .select("order_id, quantity, product_id, unit_price_override")
         .in("order_id", ids);
-      return data ?? [];
+      if (!its?.length) return [];
+      const pids = [...new Set(its.map((i: any) => i.product_id))];
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, clave, name, sale_price_with_iva, image_url")
+        .in("id", pids);
+      const pmap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+      return its.map((i: any) => ({ ...i, products: pmap.get(i.product_id) ?? null }));
     },
   });
+
 
   // Totals — net of any per-order manual discount
   const orderTotals = useMemo(() => {
