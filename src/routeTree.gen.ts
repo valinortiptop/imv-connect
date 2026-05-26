@@ -14,12 +14,14 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
+import { Route as EntregaTokenRouteImport } from './routes/entrega.$token'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminUsoApisRouteImport } from './routes/admin.uso-apis'
 import { Route as AdminRepresentantesRouteImport } from './routes/admin.representantes'
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
+import { Route as AdminLogisticaRouteImport } from './routes/admin.logistica'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
@@ -65,6 +67,11 @@ const PortalTokenRoute = PortalTokenRouteImport.update({
   path: '/portal/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EntregaTokenRoute = EntregaTokenRouteImport.update({
+  id: '/entrega/$token',
+  path: '/entrega/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -93,6 +100,11 @@ const AdminPedidosRoute = AdminPedidosRouteImport.update({
 const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLogisticaRoute = AdminLogisticaRouteImport.update({
+  id: '/logistica',
+  path: '/logistica',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLaboratoriosRoute = AdminLaboratoriosRouteImport.update({
@@ -207,12 +219,14 @@ export interface FileRoutesByFullPath {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/entrega/$token': typeof EntregaTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
@@ -238,12 +252,14 @@ export interface FileRoutesByTo {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/entrega/$token': typeof EntregaTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
@@ -271,12 +287,14 @@ export interface FileRoutesById {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
   '/admin/uso-apis': typeof AdminUsoApisRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/entrega/$token': typeof EntregaTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
@@ -305,12 +323,14 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/logistica'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/admin/uso-apis'
     | '/admin/usuarios'
+    | '/entrega/$token'
     | '/portal/$token'
     | '/admin/'
     | '/admin/clientes/$id'
@@ -336,12 +356,14 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/logistica'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/admin/uso-apis'
     | '/admin/usuarios'
+    | '/entrega/$token'
     | '/portal/$token'
     | '/admin'
     | '/admin/clientes/$id'
@@ -368,12 +390,14 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/logistica'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
     | '/admin/uso-apis'
     | '/admin/usuarios'
+    | '/entrega/$token'
     | '/portal/$token'
     | '/admin/'
     | '/admin/clientes/$id'
@@ -389,6 +413,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
+  EntregaTokenRoute: typeof EntregaTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
 }
 
@@ -427,6 +452,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/$token'
       fullPath: '/portal/$token'
       preLoaderRoute: typeof PortalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrega/$token': {
+      id: '/entrega/$token'
+      path: '/entrega/$token'
+      fullPath: '/entrega/$token'
+      preLoaderRoute: typeof EntregaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/usuarios': {
@@ -469,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/admin/onboarding'
       preLoaderRoute: typeof AdminOnboardingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/logistica': {
+      id: '/admin/logistica'
+      path: '/logistica'
+      fullPath: '/admin/logistica'
+      preLoaderRoute: typeof AdminLogisticaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/laboratorios': {
@@ -693,6 +732,7 @@ interface AdminRouteChildren {
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
+  AdminLogisticaRoute: typeof AdminLogisticaRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminProductosRoute: typeof AdminProductosRoute
@@ -715,6 +755,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
+  AdminLogisticaRoute: AdminLogisticaRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminProductosRoute: AdminProductosRoute,
@@ -730,6 +771,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
+  EntregaTokenRoute: EntregaTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
 }
 export const routeTree = rootRouteImport
