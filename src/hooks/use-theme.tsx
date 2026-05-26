@@ -35,6 +35,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be inside ThemeProvider");
+  if (!ctx) {
+    const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+    return { theme: (isDark ? "dark" : "light") as Theme, toggleTheme: () => {} };
+  }
   return ctx;
 }
