@@ -30,6 +30,7 @@ const navGroups: NavGroup[] = [
       { key: "navAIChat",       label: "Gandalf",              url: "/admin/gandalf",        icon: Bot },
       { key: "navTareas",       label: "Tareas",               url: "/admin/tareas",         icon: CheckSquare },
       { key: "navCalculator",   label: "Calculadora",          url: "/admin/calculadora",    icon: Calculator },
+      { key: "navOnboarding",   label: "Onboarding",           url: "/admin/onboarding",     icon: Rocket },
     ],
   },
   {
