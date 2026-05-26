@@ -371,6 +371,15 @@ function AiUploader({
       const s = (res.suggestion ?? null) as Suggestion | null;
       setSuggestion(s);
       setTargetClave(s?.item_clave_sugerida ?? "");
+      // Pre-seleccionar todos los extra_fills cuyo clave existe en el catálogo
+      const validClaves = new Set(items.map((i) => i.clave));
+      const sel: Record<string, boolean> = {};
+      for (const ef of s?.extra_fills ?? []) {
+        if (ef.clave && validClaves.has(ef.clave) && ef.clave !== s?.item_clave_sugerida) {
+          sel[ef.clave] = true;
+        }
+      }
+      setExtraSelected(sel);
       setOpen(true);
     } catch (e) {
       setError((e as Error).message);
