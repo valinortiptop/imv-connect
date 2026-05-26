@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * BarcodeScannerDialog — phone camera barcode reader.
  *

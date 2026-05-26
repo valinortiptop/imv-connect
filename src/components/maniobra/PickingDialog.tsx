@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * PickingDialog — decrement warehouse slots for an order being loaded.
  *

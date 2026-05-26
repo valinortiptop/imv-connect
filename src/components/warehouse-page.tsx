@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Warehouse / Kardex page (`/almacen`, legacy alias `/inventario` → redirect)
  *

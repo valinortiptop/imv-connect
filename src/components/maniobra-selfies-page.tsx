@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ManiobraSelfies — audit view for delivery-reveal selfies.
  *

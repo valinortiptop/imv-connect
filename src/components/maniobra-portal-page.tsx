@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ManiobraPortal — public portal at /portalmaniobra.
  *

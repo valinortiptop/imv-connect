@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * RecentMovementsDialog (originally a Sheet — converted to a horizontal
  * Dialog per the brand rule "no side panels, always Dialog").

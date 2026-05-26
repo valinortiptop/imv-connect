@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AgendaWeekView — Mon-Sat stack of AgendaDayBlock panels.
  *

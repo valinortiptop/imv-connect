@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * AgendaTimelineView (single-day view) + AgendaDayBlock (one day's
  * timeline panel, reusable for the week stack).

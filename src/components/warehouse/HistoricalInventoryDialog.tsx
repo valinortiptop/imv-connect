@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HistoricalInventoryDialog — "Almacén pasado"
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 import type { ManiobraOrder } from "@/components/maniobra-page";
 

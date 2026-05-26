@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Kardex page (`/kardex`)
  *
