@@ -1,5 +1,12 @@
 -- Per-role route permissions for the "Permisos por Rol" admin tab.
 
+-- Ensure all role enum values exist (no-op if already present).
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'ventas';
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'almacen';
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'logistica';
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'contabilidad';
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'viewer';
+
 CREATE TABLE IF NOT EXISTS public.role_permissions (
   role        public.app_role NOT NULL,
   route_key   text NOT NULL REFERENCES public.permission_routes(route_key) ON DELETE CASCADE,
