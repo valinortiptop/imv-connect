@@ -148,15 +148,23 @@ export const analyzeOnboardingDocFn = createServerFn({ method: "POST" })
     const raw =
       res.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
 
-    let parsed: unknown = null;
+    type Suggestion = {
+      categoria?: string;
+      item_clave_sugerida?: string | null;
+      confianza?: number;
+      resumen?: string;
+      campos?: Record<string, string>;
+      texto_para_notas?: string;
+    };
+
+    let parsed: Suggestion | null = null;
     try {
-      parsed = JSON.parse(raw);
+      parsed = JSON.parse(raw) as Suggestion;
     } catch {
-      // intento de rescate: extraer primer {...}
       const m = raw.match(/\{[\s\S]*\}/);
       if (m) {
         try {
-          parsed = JSON.parse(m[0]);
+          parsed = JSON.parse(m[0]) as Suggestion;
         } catch {
           /* noop */
         }
