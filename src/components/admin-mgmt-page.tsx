@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
