@@ -78,8 +78,17 @@ const ANALYSIS_SCHEMA_HINT = `Devuelve EXCLUSIVAMENTE JSON con esta forma:
   "confianza": 0.0,
   "resumen": "1-3 frases",
   "campos": { "<nombre_campo>": "<valor>" },
-  "texto_para_notas": "texto breve para guardar en notas del item"
-}`;
+  "texto_para_notas": "texto breve para guardar en notas del item",
+  "extra_fills": [
+    { "clave": "clave_de_otro_item_del_catalogo", "valor_texto": "valor extraído literal", "notas": "contexto opcional" }
+  ]
+}
+
+IMPORTANTE sobre extra_fills:
+- Aprovecha al máximo el documento. Si contiene datos que pueden llenar OTROS items del catálogo (por ejemplo una Constancia de Situación Fiscal incluye razón social, RFC, régimen fiscal, dirección fiscal, código postal, representante legal), incluye un objeto por cada item adicional que puedas pre-llenar.
+- Usa SOLO claves que existan en el catálogo proporcionado.
+- "valor_texto" debe ser el dato concreto extraído del documento, listo para guardarse tal cual.
+- Si no hay datos extras útiles, devuelve "extra_fills": [].`;
 
 export const analyzeOnboardingDocFn = createServerFn({ method: "POST" })
   .inputValidator((input) =>
@@ -155,6 +164,7 @@ export const analyzeOnboardingDocFn = createServerFn({ method: "POST" })
       resumen?: string;
       campos?: Record<string, string>;
       texto_para_notas?: string;
+      extra_fills?: Array<{ clave: string; valor_texto?: string; notas?: string }>;
     };
 
     let parsed: Suggestion | null = null;

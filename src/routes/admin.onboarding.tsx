@@ -312,6 +312,8 @@ function FilterBtn({
 
 /* ───────────────────────── AI Uploader ───────────────────────── */
 
+type ExtraFill = { clave: string; valor_texto?: string; notas?: string };
+
 type Suggestion = {
   categoria?: string;
   item_clave_sugerida?: string | null;
@@ -319,6 +321,7 @@ type Suggestion = {
   resumen?: string;
   campos?: Record<string, string>;
   texto_para_notas?: string;
+  extra_fills?: ExtraFill[];
 };
 
 function AiUploader({
@@ -337,6 +340,7 @@ function AiUploader({
   const [targetClave, setTargetClave] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [extraSelected, setExtraSelected] = useState<Record<string, boolean>>({});
 
   const handleFiles = async (f: File | null) => {
     if (!f) return;
@@ -367,6 +371,15 @@ function AiUploader({
       const s = (res.suggestion ?? null) as Suggestion | null;
       setSuggestion(s);
       setTargetClave(s?.item_clave_sugerida ?? "");
+      // Pre-seleccionar todos los extra_fills cuyo clave existe en el catálogo
+      const validClaves = new Set(items.map((i) => i.clave));
+      const sel: Record<string, boolean> = {};
+      for (const ef of s?.extra_fills ?? []) {
+        if (ef.clave && validClaves.has(ef.clave) && ef.clave !== s?.item_clave_sugerida) {
+          sel[ef.clave] = true;
+        }
+      }
+      setExtraSelected(sel);
       setOpen(true);
     } catch (e) {
       setError((e as Error).message);
@@ -418,10 +431,33 @@ function AiUploader({
         })
         .eq("id", item.id);
 
+      // Aplicar pre-llenados extra a otros items
+      const extras = (suggestion?.extra_fills ?? []).filter(
+        (ef) => ef.clave && ef.clave !== item.clave && extraSelected[ef.clave],
+      );
+      for (const ef of extras) {
+        const target = items.find((i) => i.clave === ef.clave);
+        if (!target) continue;
+        const newNotas =
+          [target.notas, ef.notas].filter(Boolean).join("\n") || null;
+        const patch: Record<string, unknown> = {
+          notas: newNotas,
+          estado:
+            target.estado === "pendiente" && ef.valor_texto
+              ? "en_proceso"
+              : target.estado,
+        };
+        if (ef.valor_texto && !target.requiere_archivo) {
+          patch.valor_texto = ef.valor_texto;
+        }
+        await supabase.from("onboarding_items").update(patch).eq("id", target.id);
+      }
+
       await onCommitted();
       setOpen(false);
       setFile(null);
       setSuggestion(null);
+      setExtraSelected({});
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -527,6 +563,55 @@ function AiUploader({
                     </ul>
                   </div>
                 )}
+
+              {(() => {
+                const validClaves = new Set(items.map((i) => i.clave));
+                const extras = (suggestion.extra_fills ?? []).filter(
+                  (ef) =>
+                    ef.clave &&
+                    validClaves.has(ef.clave) &&
+                    ef.clave !== targetClave,
+                );
+                if (extras.length === 0) return null;
+                return (
+                  <div className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="mb-2 font-semibold">
+                      Pre-llenar otros items con datos de este documento
+                    </div>
+                    <ul className="space-y-1.5">
+                      {extras.map((ef) => {
+                        const target = items.find((i) => i.clave === ef.clave);
+                        if (!target) return null;
+                        return (
+                          <li key={ef.clave} className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={!!extraSelected[ef.clave]}
+                              onChange={(e) =>
+                                setExtraSelected((p) => ({
+                                  ...p,
+                                  [ef.clave]: e.target.checked,
+                                }))
+                              }
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium">
+                                [{target.categoria}] {target.titulo}
+                              </div>
+                              {ef.valor_texto && (
+                                <div className="text-muted-foreground">
+                                  → {ef.valor_texto}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
