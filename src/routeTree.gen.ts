@@ -26,6 +26,7 @@ import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPnlRouteImport } from './routes/admin.pnl'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
+import { Route as AdminNecesidadesRouteImport } from './routes/admin.necesidades'
 import { Route as AdminManiobraRouteImport } from './routes/admin.maniobra'
 import { Route as AdminLogisticaRouteImport } from './routes/admin.logistica'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
@@ -33,7 +34,9 @@ import { Route as AdminKardexRouteImport } from './routes/admin.kardex'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminEstadoApisRouteImport } from './routes/admin.estado-apis'
+import { Route as AdminEntradasRouteImport } from './routes/admin.entradas'
 import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
+import { Route as AdminDanadosRouteImport } from './routes/admin.danados'
 import { Route as AdminCuentaRouteImport } from './routes/admin.cuenta'
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
@@ -45,6 +48,7 @@ import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
+import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devoluciones.lista'
 import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
@@ -135,6 +139,11 @@ const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNecesidadesRoute = AdminNecesidadesRouteImport.update({
+  id: '/necesidades',
+  path: '/necesidades',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminManiobraRoute = AdminManiobraRouteImport.update({
   id: '/maniobra',
   path: '/maniobra',
@@ -170,9 +179,19 @@ const AdminEstadoApisRoute = AdminEstadoApisRouteImport.update({
   path: '/estado-apis',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEntradasRoute = AdminEntradasRouteImport.update({
+  id: '/entradas',
+  path: '/entradas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDevolucionesRoute = AdminDevolucionesRouteImport.update({
   id: '/devoluciones',
   path: '/devoluciones',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDanadosRoute = AdminDanadosRouteImport.update({
+  id: '/danados',
+  path: '/danados',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCuentaRoute = AdminCuentaRouteImport.update({
@@ -230,6 +249,11 @@ const AdminDevolucionesNewRoute = AdminDevolucionesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdminDevolucionesRoute,
 } as any)
+const AdminDevolucionesListaRoute = AdminDevolucionesListaRouteImport.update({
+  id: '/lista',
+  path: '/lista',
+  getParentRoute: () => AdminDevolucionesRoute,
+} as any)
 const AdminDevolucionesIdRoute = AdminDevolucionesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -263,7 +287,9 @@ export interface FileRoutesByFullPath {
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
+  '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
@@ -271,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
+  '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
@@ -288,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
@@ -304,7 +332,9 @@ export interface FileRoutesByTo {
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
+  '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
@@ -312,6 +342,7 @@ export interface FileRoutesByTo {
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
+  '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
@@ -329,6 +360,7 @@ export interface FileRoutesByTo {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
@@ -347,7 +379,9 @@ export interface FileRoutesById {
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
+  '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
+  '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
@@ -355,6 +389,7 @@ export interface FileRoutesById {
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
+  '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
@@ -372,6 +407,7 @@ export interface FileRoutesById {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
+  '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
@@ -391,7 +427,9 @@ export interface FileRouteTypes {
     | '/admin/comisiones'
     | '/admin/compras'
     | '/admin/cuenta'
+    | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
@@ -399,6 +437,7 @@ export interface FileRouteTypes {
     | '/admin/laboratorios'
     | '/admin/logistica'
     | '/admin/maniobra'
+    | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
@@ -416,6 +455,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
@@ -432,7 +472,9 @@ export interface FileRouteTypes {
     | '/admin/comisiones'
     | '/admin/compras'
     | '/admin/cuenta'
+    | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
@@ -440,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/laboratorios'
     | '/admin/logistica'
     | '/admin/maniobra'
+    | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
@@ -457,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
@@ -474,7 +518,9 @@ export interface FileRouteTypes {
     | '/admin/comisiones'
     | '/admin/compras'
     | '/admin/cuenta'
+    | '/admin/danados'
     | '/admin/devoluciones'
+    | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
     | '/admin/inventario'
@@ -482,6 +528,7 @@ export interface FileRouteTypes {
     | '/admin/laboratorios'
     | '/admin/logistica'
     | '/admin/maniobra'
+    | '/admin/necesidades'
     | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/pnl'
@@ -499,6 +546,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/devoluciones/$id'
+    | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
@@ -635,6 +683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOnboardingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/necesidades': {
+      id: '/admin/necesidades'
+      path: '/necesidades'
+      fullPath: '/admin/necesidades'
+      preLoaderRoute: typeof AdminNecesidadesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/maniobra': {
       id: '/admin/maniobra'
       path: '/maniobra'
@@ -684,11 +739,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEstadoApisRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/entradas': {
+      id: '/admin/entradas'
+      path: '/entradas'
+      fullPath: '/admin/entradas'
+      preLoaderRoute: typeof AdminEntradasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/devoluciones': {
       id: '/admin/devoluciones'
       path: '/devoluciones'
       fullPath: '/admin/devoluciones'
       preLoaderRoute: typeof AdminDevolucionesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/danados': {
+      id: '/admin/danados'
+      path: '/danados'
+      fullPath: '/admin/danados'
+      preLoaderRoute: typeof AdminDanadosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/cuenta': {
@@ -768,6 +837,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDevolucionesNewRouteImport
       parentRoute: typeof AdminDevolucionesRoute
     }
+    '/admin/devoluciones/lista': {
+      id: '/admin/devoluciones/lista'
+      path: '/lista'
+      fullPath: '/admin/devoluciones/lista'
+      preLoaderRoute: typeof AdminDevolucionesListaRouteImport
+      parentRoute: typeof AdminDevolucionesRoute
+    }
     '/admin/devoluciones/$id': {
       id: '/admin/devoluciones/$id'
       path: '/$id'
@@ -837,11 +913,13 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
 
 interface AdminDevolucionesRouteChildren {
   AdminDevolucionesIdRoute: typeof AdminDevolucionesIdRoute
+  AdminDevolucionesListaRoute: typeof AdminDevolucionesListaRoute
   AdminDevolucionesNewRoute: typeof AdminDevolucionesNewRoute
 }
 
 const AdminDevolucionesRouteChildren: AdminDevolucionesRouteChildren = {
   AdminDevolucionesIdRoute: AdminDevolucionesIdRoute,
+  AdminDevolucionesListaRoute: AdminDevolucionesListaRoute,
   AdminDevolucionesNewRoute: AdminDevolucionesNewRoute,
 }
 
@@ -881,7 +959,9 @@ interface AdminRouteChildren {
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
   AdminCuentaRoute: typeof AdminCuentaRoute
+  AdminDanadosRoute: typeof AdminDanadosRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
+  AdminEntradasRoute: typeof AdminEntradasRoute
   AdminEstadoApisRoute: typeof AdminEstadoApisRoute
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
@@ -889,6 +969,7 @@ interface AdminRouteChildren {
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
   AdminLogisticaRoute: typeof AdminLogisticaRoute
   AdminManiobraRoute: typeof AdminManiobraRoute
+  AdminNecesidadesRoute: typeof AdminNecesidadesRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPnlRoute: typeof AdminPnlRoute
@@ -911,7 +992,9 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
   AdminCuentaRoute: AdminCuentaRoute,
+  AdminDanadosRoute: AdminDanadosRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
+  AdminEntradasRoute: AdminEntradasRoute,
   AdminEstadoApisRoute: AdminEstadoApisRoute,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
@@ -919,6 +1002,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
   AdminLogisticaRoute: AdminLogisticaRoute,
   AdminManiobraRoute: AdminManiobraRoute,
+  AdminNecesidadesRoute: AdminNecesidadesRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPnlRoute: AdminPnlRoute,
