@@ -18,6 +18,7 @@ import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminRepresentantesRouteImport } from './routes/admin.representantes'
 import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
 import { Route as AdminLaboratoriosRouteImport } from './routes/admin.laboratorios'
 import { Route as AdminInventarioRouteImport } from './routes/admin.inventario'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
@@ -77,6 +78,11 @@ const AdminProductosRoute = AdminProductosRouteImport.update({
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLaboratoriosRoute = AdminLaboratoriosRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
   '/admin/inventario': typeof AdminInventarioRoute
   '/admin/laboratorios': typeof AdminLaboratoriosRoute
+  '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/productos': typeof AdminProductosRoute
   '/admin/representantes': typeof AdminRepresentantesRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/inventario'
     | '/admin/laboratorios'
+    | '/admin/onboarding'
     | '/admin/pedidos'
     | '/admin/productos'
     | '/admin/representantes'
@@ -383,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/pedidos'
       fullPath: '/admin/pedidos'
       preLoaderRoute: typeof AdminPedidosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/onboarding': {
+      id: '/admin/onboarding'
+      path: '/onboarding'
+      fullPath: '/admin/onboarding'
+      preLoaderRoute: typeof AdminOnboardingRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/laboratorios': {
@@ -564,6 +583,7 @@ interface AdminRouteChildren {
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
   AdminInventarioRoute: typeof AdminInventarioRoute
   AdminLaboratoriosRoute: typeof AdminLaboratoriosRoute
+  AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminProductosRoute: typeof AdminProductosRoute
   AdminRepresentantesRoute: typeof AdminRepresentantesRoute
@@ -581,6 +601,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
   AdminInventarioRoute: AdminInventarioRoute,
   AdminLaboratoriosRoute: AdminLaboratoriosRoute,
+  AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminProductosRoute: AdminProductosRoute,
   AdminRepresentantesRoute: AdminRepresentantesRoute,

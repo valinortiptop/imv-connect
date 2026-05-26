@@ -34,6 +34,7 @@ function AdminLayout() {
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <NavLink to="/admin">Dashboard</NavLink>
+            <NavLink to="/admin/onboarding">Onboarding</NavLink>
             <NavLink to="/admin/pedidos">Pedidos</NavLink>
             <NavLink to="/admin/facturas">Facturas</NavLink>
             <NavLink to="/admin/devoluciones">Devoluciones</NavLink>
