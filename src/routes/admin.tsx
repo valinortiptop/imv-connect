@@ -1,6 +1,8 @@
-import { createFileRoute, Link, Outlet, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin-sidebar";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
@@ -26,55 +28,21 @@ function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-lg font-bold">
-            IMV Admin
-          </Link>
-          <nav className="flex items-center gap-1 text-sm">
-            <NavLink to="/admin">Dashboard</NavLink>
-            <NavLink to="/admin/onboarding">Onboarding</NavLink>
-            <NavLink to="/admin/pedidos">Pedidos</NavLink>
-            <NavLink to="/admin/facturas">Facturas</NavLink>
-            <NavLink to="/admin/devoluciones">Devoluciones</NavLink>
-            <NavLink to="/admin/cobranza">Cobranza</NavLink>
-            <NavLink to="/admin/inventario">Inventario</NavLink>
-            <NavLink to="/admin/compras">Compras</NavLink>
-            <NavLink to="/admin/almacenes">Almacenes</NavLink>
-            <NavLink to="/admin/comisiones">Comisiones</NavLink>
-            <NavLink to="/admin/productos">Productos</NavLink>
-            <NavLink to="/admin/laboratorios">Laboratorios</NavLink>
-            <NavLink to="/admin/clientes">Clientes</NavLink>
-            <NavLink to="/admin/representantes">Representantes</NavLink>
-            <NavLink to="/admin/usuarios">Usuarios</NavLink>
-            <div className="ml-4 flex items-center gap-3 border-l border-border pl-4">
-              <span className="text-xs text-muted-foreground">{email}</span>
-              <button
-                onClick={signOut}
-                className="rounded-md border border-input px-3 py-1 text-xs hover:bg-accent"
-              >
-                Salir
-              </button>
-            </div>
-          </nav>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background text-foreground">
+        <AdminSidebar email={email} onSignOut={signOut} />
+        <div className="flex flex-1 flex-col">
+          <header className="flex h-12 items-center gap-2 border-b border-border px-4">
+            <SidebarTrigger />
+            <span className="text-sm font-medium text-muted-foreground">
+              Panel de administración
+            </span>
+          </header>
+          <main className="flex-1 px-6 py-8">
+            <Outlet />
+          </main>
         </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      activeProps={{ className: "rounded-md px-3 py-2 bg-accent text-accent-foreground" }}
-    >
-      {children}
-    </Link>
+      </div>
+    </SidebarProvider>
   );
 }
