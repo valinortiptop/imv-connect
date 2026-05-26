@@ -29,6 +29,7 @@ import { Route as AdminProductosRouteImport } from './routes/admin.productos'
 import { Route as AdminPortalRouteImport } from './routes/admin.portal'
 import { Route as AdminPnlRouteImport } from './routes/admin.pnl'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
+import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
 import { Route as AdminNecesidadesRouteImport } from './routes/admin.necesidades'
 import { Route as AdminManiobraRouteImport } from './routes/admin.maniobra'
@@ -54,6 +55,7 @@ import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
 import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
+import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
@@ -161,6 +163,11 @@ const AdminPnlRoute = AdminPnlRouteImport.update({
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPartnersRoute = AdminPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
@@ -288,6 +295,11 @@ const AdminAlmacenRoute = AdminAlmacenRouteImport.update({
   path: '/almacen',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAdministracionRoute = AdminAdministracionRouteImport.update({
+  id: '/administracion',
+  path: '/administracion',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -333,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
@@ -358,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
   '/admin/portal': typeof AdminPortalRoute
@@ -387,6 +401,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
@@ -412,6 +427,7 @@ export interface FileRoutesByTo {
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
   '/admin/portal': typeof AdminPortalRoute
@@ -443,6 +459,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
@@ -468,6 +485,7 @@ export interface FileRoutesById {
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/pedidos': typeof AdminPedidosRouteWithChildren
   '/admin/pnl': typeof AdminPnlRoute
   '/admin/portal': typeof AdminPortalRoute
@@ -500,6 +518,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
     | '/admin/calculadora'
@@ -525,6 +544,7 @@ export interface FileRouteTypes {
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
+    | '/admin/partners'
     | '/admin/pedidos'
     | '/admin/pnl'
     | '/admin/portal'
@@ -554,6 +574,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
     | '/admin/calculadora'
@@ -579,6 +600,7 @@ export interface FileRouteTypes {
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
+    | '/admin/partners'
     | '/admin/pedidos'
     | '/admin/pnl'
     | '/admin/portal'
@@ -609,6 +631,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
     | '/admin/calculadora'
@@ -634,6 +657,7 @@ export interface FileRouteTypes {
     | '/admin/maniobra'
     | '/admin/necesidades'
     | '/admin/onboarding'
+    | '/admin/partners'
     | '/admin/pedidos'
     | '/admin/pnl'
     | '/admin/portal'
@@ -812,6 +836,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/partners': {
+      id: '/admin/partners'
+      path: '/partners'
+      fullPath: '/admin/partners'
+      preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/onboarding': {
       id: '/admin/onboarding'
       path: '/onboarding'
@@ -987,6 +1018,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAlmacenRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/administracion': {
+      id: '/admin/administracion'
+      path: '/administracion'
+      fullPath: '/admin/administracion'
+      preLoaderRoute: typeof AdminAdministracionRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pedidos/$id': {
       id: '/admin/pedidos/$id'
       path: '/$id'
@@ -1122,6 +1160,7 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminAdministracionRoute: typeof AdminAdministracionRoute
   AdminAlmacenRoute: typeof AdminAlmacenRoute
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminCalculadoraRoute: typeof AdminCalculadoraRoute
@@ -1147,6 +1186,7 @@ interface AdminRouteChildren {
   AdminManiobraRoute: typeof AdminManiobraRoute
   AdminNecesidadesRoute: typeof AdminNecesidadesRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
+  AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPedidosRoute: typeof AdminPedidosRouteWithChildren
   AdminPnlRoute: typeof AdminPnlRoute
   AdminPortalRoute: typeof AdminPortalRoute
@@ -1164,6 +1204,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdministracionRoute: AdminAdministracionRoute,
   AdminAlmacenRoute: AdminAlmacenRoute,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminCalculadoraRoute: AdminCalculadoraRoute,
@@ -1189,6 +1230,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminManiobraRoute: AdminManiobraRoute,
   AdminNecesidadesRoute: AdminNecesidadesRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
+  AdminPartnersRoute: AdminPartnersRoute,
   AdminPedidosRoute: AdminPedidosRouteWithChildren,
   AdminPnlRoute: AdminPnlRoute,
   AdminPortalRoute: AdminPortalRoute,
