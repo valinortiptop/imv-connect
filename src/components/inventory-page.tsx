@@ -318,7 +318,7 @@ export default function Inventory() {
                     stock_incoming: it.stock_incoming,
                   })),
                   {
-                    fileLabel: isProjected ? projectedLabel : todayMx(),
+                    fileLabel: (isProjected ? projectedLabel : todayMx()) ?? undefined,
                     onProgress: (done, total) => setExporting({ done, total }),
                   },
                 );
