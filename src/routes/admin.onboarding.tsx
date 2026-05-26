@@ -324,6 +324,113 @@ type Suggestion = {
   extra_fills?: ExtraFill[];
 };
 
+// Map de nombres de campo (en español, sin acentos, minúsculas) → clave del item de onboarding.
+const FIELD_TO_CLAVE: Record<string, string> = {
+  rfc: "rfc",
+  razon_social: "razon_social",
+  razonsocial: "razon_social",
+  nombre: "razon_social",
+  regimen_fiscal: "regimen_fiscal",
+  regimen_capital: "regimen_fiscal",
+  regimencapital: "regimen_fiscal",
+  representante_legal: "representante_legal",
+  representantelegal: "representante_legal",
+};
+
+// Campos de domicilio que se concatenan en "direccion_fiscal".
+const DIRECCION_FIELDS = [
+  "calle",
+  "nombre_vialidad",
+  "tipo_vialidad",
+  "numero_exterior",
+  "numero_interior",
+  "colonia",
+  "localidad",
+  "municipio",
+  "entidad_federativa",
+  "estado",
+  "codigo_postal",
+  "cp",
+];
+
+function norm(k: string): string {
+  return k
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+function deriveExtrasFromCampos(
+  campos: Record<string, string> | undefined,
+  validClaves: Set<string>,
+  excludeClave: string,
+): ExtraFill[] {
+  if (!campos) return [];
+  const out: ExtraFill[] = [];
+  const seen = new Set<string>();
+
+  // Mapeos directos
+  for (const [k, v] of Object.entries(campos)) {
+    if (!v) continue;
+    const nk = norm(k);
+    const clave = FIELD_TO_CLAVE[nk];
+    if (clave && validClaves.has(clave) && clave !== excludeClave && !seen.has(clave)) {
+      seen.add(clave);
+      out.push({ clave, valor_texto: String(v).trim() });
+    }
+  }
+
+  // Dirección fiscal compuesta
+  if (validClaves.has("direccion_fiscal") && excludeClave !== "direccion_fiscal" && !seen.has("direccion_fiscal")) {
+    const parts: string[] = [];
+    const getC = (key: string) => {
+      for (const [k, v] of Object.entries(campos)) {
+        if (norm(k) === key && v) return String(v).trim();
+      }
+      return null;
+    };
+    const tipo = getC("tipo_vialidad");
+    const nombreV = getC("nombre_vialidad") ?? getC("calle");
+    if (nombreV) parts.push([tipo, nombreV].filter(Boolean).join(" "));
+    const numExt = getC("numero_exterior");
+    if (numExt) parts.push(`No. ${numExt}`);
+    const numInt = getC("numero_interior");
+    if (numInt) parts.push(`Int. ${numInt}`);
+    const colonia = getC("colonia");
+    if (colonia) parts.push(`Col. ${colonia}`);
+    const cp = getC("codigo_postal") ?? getC("cp");
+    if (cp) parts.push(`CP ${cp}`);
+    const mun = getC("municipio") ?? getC("localidad") ?? getC("delegacion");
+    if (mun) parts.push(mun);
+    const edo = getC("entidad_federativa") ?? getC("estado");
+    if (edo) parts.push(edo);
+    if (parts.length > 0) {
+      out.push({ clave: "direccion_fiscal", valor_texto: parts.join(", ") });
+    }
+  }
+
+  return out;
+}
+
+function combineExtras(
+  suggestion: Suggestion | null,
+  items: Item[],
+  excludeClave: string,
+): ExtraFill[] {
+  const validClaves = new Set(items.map((i) => i.clave));
+  const aiList = (suggestion?.extra_fills ?? []).filter(
+    (ef) => ef.clave && validClaves.has(ef.clave) && ef.clave !== excludeClave,
+  );
+  const derived = deriveExtrasFromCampos(suggestion?.campos, validClaves, excludeClave);
+  const byClave = new Map<string, ExtraFill>();
+  for (const ef of [...aiList, ...derived]) {
+    if (!byClave.has(ef.clave)) byClave.set(ef.clave, ef);
+  }
+  return Array.from(byClave.values());
+}
+
 function AiUploader({
   items,
   onCommitted,
