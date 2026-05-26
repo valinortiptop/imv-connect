@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import type { OrderSummaryRow } from "@/types/orders";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/lib/date-utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Plus, Search, ShoppingCart, DollarSign, TruckIcon, Clock, Download, AlertOctagon, Eye, Copy, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown, RotateCcw, Pin } from "lucide-react";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
 import { ChronoBar } from "@/components/ChronoBar";
