@@ -149,7 +149,7 @@ export async function downloadInventoryExcel(
 
     // Subtle alternating banding for readability.
     if (i % 2 === 1) {
-      row.eachCell({ includeEmpty: true }, (cell) => {
+      row.eachCell({ includeEmpty: true }, (cell: any) => {
         cell.fill = {
           type: "pattern",
           pattern: "solid",
