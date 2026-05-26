@@ -379,6 +379,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export function useLanguage() {
   const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLanguage must be inside LanguageProvider");
-  return ctx;
+  if (ctx) return ctx;
+  // Fallback: project is Spanish-only, no provider mounted
+  const lang: Lang = "es";
+  return {
+    lang,
+    setLang: (_l: Lang) => {},
+    t: (key: TranslationKey) => translations[key]?.[lang] ?? key,
+  };
 }
