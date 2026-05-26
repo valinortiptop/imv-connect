@@ -131,7 +131,7 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
     },
   });
 
-  // Fetch order items with product info for top products
+  // Fetch order items with product info for top products (2-step: no FK in view)
   const { data: orderItems = [] } = useQuery({
     queryKey: ["client-products", client.id],
     queryFn: async () => {
@@ -141,15 +141,22 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
         .eq("client_id", client.id);
       if (!clientOrders?.length) return [];
       const orderIds = clientOrders.map(o => o.id);
-      const { data } = await supabase
+      const { data: items } = await supabase
         .from("order_items")
-        .select("order_id, quantity, product_id, unit_price_override, products(clave, name, sale_price_with_iva, image_url)")
+        .select("order_id, quantity, product_id, unit_price_override")
         .in("order_id", orderIds);
-      return data ?? [];
+      if (!items?.length) return [];
+      const productIds = [...new Set(items.map(i => i.product_id))];
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, clave, name, sale_price_with_iva, image_url")
+        .in("id", productIds);
+      const pmap = new Map((prods ?? []).map(p => [p.id, p]));
+      return items.map(i => ({ ...i, products: pmap.get(i.product_id) ?? null }));
     },
   });
 
-  // Fetch totals from order_items per order (for order total column)
+  // Fetch totals from order_items per order (2-step)
   const { data: orderTotals = [] } = useQuery({
     queryKey: ["client-order-totals", client.id],
     queryFn: async () => {
@@ -159,13 +166,21 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
         .eq("client_id", client.id);
       if (!clientOrders?.length) return [];
       const orderIds = clientOrders.map(o => o.id);
-      const { data } = await supabase
+      const { data: items } = await supabase
         .from("order_items")
-        .select("order_id, quantity, unit_price_override, products(sale_price_with_iva)")
+        .select("order_id, quantity, unit_price_override, product_id")
         .in("order_id", orderIds);
-      return data ?? [];
+      if (!items?.length) return [];
+      const productIds = [...new Set(items.map(i => i.product_id))];
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, sale_price_with_iva")
+        .in("id", productIds);
+      const pmap = new Map((prods ?? []).map(p => [p.id, p]));
+      return items.map(i => ({ ...i, products: pmap.get(i.product_id) ?? null }));
     },
   });
+
 
   // Filter orders by date range
   const orders = useMemo(() => {
