@@ -152,40 +152,50 @@ export default function Admin() {
   /* ─── user management ─── */
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    const { data: roles, error } = await supabase
-      .from("user_roles")
-      .select("user_id, role, approved");
 
-    if (error) {
-      toast.error(error.message);
+    // 1. Pull every auth user (admin-only RPC)
+    const { data: userDetails, error: usersErr } = await supabase.rpc(
+      "get_all_users_for_admin",
+    );
+    if (usersErr) {
+      toast.error(usersErr.message);
       setLoading(false);
       return;
     }
 
-    const rows: UserRow[] = (roles ?? []).map((r: any) => ({
-      user_id: r.user_id,
-      email: "",
-      name: "",
-      avatar_url: null,
-      role: r.role as AppRole,
-      approved: r.approved ?? false,
-    }));
-
-    const { data: userDetails } = await supabase.rpc("get_all_users_for_admin");
-    if (userDetails && Array.isArray(userDetails)) {
-      const detailMap = new Map(userDetails.map((u: any) => [u.id, u]));
-      for (const row of rows) {
-        const detail = detailMap.get(row.user_id);
-        if (detail) {
-          row.email = detail.email ?? "";
-          row.name =
-            detail.raw_user_meta_data?.full_name ??
-            detail.raw_user_meta_data?.name ??
-            "";
-          row.avatar_url = detail.raw_user_meta_data?.avatar_url ?? null;
-        }
-      }
+    // 2. Pull role assignments and index them by user_id
+    const { data: roles, error: rolesErr } = await supabase
+      .from("user_roles")
+      .select("user_id, role, approved");
+    if (rolesErr) {
+      toast.error(rolesErr.message);
+      setLoading(false);
+      return;
     }
+    const roleMap = new Map<string, { role: AppRole; approved: boolean }>();
+    for (const r of (roles ?? []) as any[]) {
+      roleMap.set(r.user_id, {
+        role: r.role as AppRole,
+        approved: r.approved ?? true,
+      });
+    }
+
+    // 3. Build one row per auth user, defaulting to "viewer" / not approved
+    //    when no role has been assigned yet.
+    const rows: UserRow[] = ((userDetails ?? []) as any[]).map((u) => {
+      const r = roleMap.get(u.id);
+      return {
+        user_id: u.id,
+        email: u.email ?? "",
+        name:
+          u.raw_user_meta_data?.full_name ??
+          u.raw_user_meta_data?.name ??
+          "",
+        avatar_url: u.raw_user_meta_data?.avatar_url ?? null,
+        role: r?.role ?? ("viewer" as AppRole),
+        approved: r?.approved ?? false,
+      };
+    });
 
     setUsers(rows);
     setLoading(false);
@@ -202,15 +212,19 @@ export default function Admin() {
       return;
     }
     setSaving(userId);
+    await supabase.from("user_roles").delete().eq("user_id", userId);
     const { error } = await supabase
       .from("user_roles")
-      .update({ role: newRole, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .insert({ user_id: userId, role: newRole, approved: true });
 
     if (error) toast.error(error.message);
     else {
       toast.success(lang === "es" ? "Rol actualizado" : "Role updated");
-      setUsers((prev) => prev.map((u) => (u.user_id === userId ? { ...u, role: newRole } : u)));
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.user_id === userId ? { ...u, role: newRole, approved: true } : u,
+        ),
+      );
     }
     setSaving(null);
   };
@@ -221,10 +235,14 @@ export default function Admin() {
       return;
     }
     setSaving(userId);
+    const target = users.find((u) => u.user_id === userId);
+    const role = target?.role ?? ("viewer" as AppRole);
     const { error } = await supabase
       .from("user_roles")
-      .update({ approved: !currentApproved, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .upsert(
+        { user_id: userId, role, approved: !currentApproved, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,role" },
+      );
 
     if (error) toast.error(error.message);
     else {
