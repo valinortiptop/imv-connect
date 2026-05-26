@@ -181,7 +181,7 @@ function OnboardingPage() {
               {list.map((it) => {
                 const files = archivos.filter((a) => a.item_id === it.id);
                 return (
-                  <div key={it.id} className="p-4">
+                  <div key={it.id} className={`p-4 ${it.estado === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
