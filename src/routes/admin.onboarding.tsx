@@ -312,6 +312,8 @@ function FilterBtn({
 
 /* ───────────────────────── AI Uploader ───────────────────────── */
 
+type ExtraFill = { clave: string; valor_texto?: string; notas?: string };
+
 type Suggestion = {
   categoria?: string;
   item_clave_sugerida?: string | null;
@@ -319,6 +321,7 @@ type Suggestion = {
   resumen?: string;
   campos?: Record<string, string>;
   texto_para_notas?: string;
+  extra_fills?: ExtraFill[];
 };
 
 function AiUploader({
