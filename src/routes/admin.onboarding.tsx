@@ -154,6 +154,10 @@ function OnboardingPage() {
         </div>
       </header>
 
+      <AiUploader items={items} onCommitted={load} />
+
+
+
       <div className="flex flex-wrap gap-2">
         <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
           Todos
