@@ -1,94 +1,83 @@
+# Plan: Valinor end-to-end + IA en Onboarding
 
-## Resumen corto
+## 1. Verificar conexión con Valinor
+- Invocar `getUsageReportFn` desde el preview y revisar logs del server.
+- Si el fetch a `/usage-report` falla, confirmar que `VALINOR_PROXY_URL` termina en `/api-proxy` (la función reemplaza `/api-proxy` → `/usage-report`). Si no, ajustar el reemplazo para soportar ambos formatos.
+- Hacer un ping real al gateway con un `aiChatFn` mínimo (gemini-2.0-flash) para generar al menos 1 registro en `api_usage_logs` de Valinor y validar el flujo completo.
 
-Valinor Studio ya tiene toda la infraestructura lista para esto. Su edge function `api-proxy` actúa como **gateway central**: recibe llamadas autenticadas con un `x-proxy-token` por proyecto, las reenvía al proveedor real (OpenAI, Anthropic, Gemini, Perplexity, Resend, Google Maps, y proveedores dinámicos como Stripe/Hotelbeds), y registra cada llamada en `api_usage_logs` con tokens, costo estimado, duración y `project_id`.
+## 2. Mejorar `/admin/uso-apis`
+- Filtros de rango: 24h / 7d / 30d / personalizado (envía `from`/`to` a `getUsageReportFn`).
+- Botón "Actualizar" + `useQuery` con `staleTime`.
+- Desglose por proveedor (tabla agregada: calls, tokens, costo).
+- Empty state claro cuando `available=true` pero `items=[]`.
+- Indicador de "última actualización".
 
-**No hay que reimplementar nada en Valinor.** Solo hay que:
-1. Registrar este proyecto (IMV Portal) dentro de Valinor y emitirle un `proxy_token`.
-2. En IMV, guardar ese token como secret y llamar al proxy en vez de a las APIs directamente.
+## 3. Panel de estado de APIs (Settings → Estado de APIs)
+- Nueva ruta `src/routes/admin.estado-apis.tsx` y entrada en sidebar bajo "integraciones".
+- Nuevo server fn `pingProvidersFn` que, para cada proveedor configurado en Valinor (openai, gemini, anthropic, perplexity, resend, google), hace una llamada *ligera* a través del proxy:
+  - openai: `GET /v1/models`
+  - gemini: `GET /v1beta/models`
+  - anthropic: `POST /v1/messages` con 1 token
+  - perplexity: `GET /models` (o chat mínimo)
+  - resend: `GET /domains`
+  - google maps: `GET /maps/api/geocode/json?address=test`
+- Devuelve `{ provider, ok, status, ms, error? }[]`.
+- UI con badges verde/rojo/gris y latencia. Auto-refresh manual.
 
-Así Valinor cobra/audita el uso y IMV no tiene que mantener claves de OpenAI, Resend, Twilio (cuando se agregue), etc.
+## 4. Flujo concreto: IA en Onboarding (Gemini vía Valinor)
+Objetivo: el admin sube un documento (PDF/imagen/texto) o lo arrastra al onboarding, Gemini lo analiza, **propone** la categoría y campos a llenar; el admin **revisa y confirma** antes de persistir.
 
----
+### 4.1 UI en `/admin/onboarding`
+- Dropzone global "Subir documento sin clasificar" arriba del checklist.
+- Aceptar PDF, PNG, JPG, DOCX, TXT (≤ 10 MB).
+- Mientras analiza: spinner + nombre del archivo.
+- Resultado: modal con
+  - categoría sugerida + clave de item sugerida (con confianza %),
+  - resumen del contenido,
+  - campos extraídos (RFC, razón social, dirección, correos, etc.),
+  - selector para corregir item destino,
+  - botones "Adjuntar al item" / "Guardar como nota" / "Descartar".
+- Al confirmar: sube a Storage (`onboarding/<clave>/...`), inserta en `onboarding_archivos`, actualiza `onboarding_items.valor_texto` / `notas` / `estado='entregado'`.
 
-## Cómo funciona el proxy de Valinor (resumen técnico)
+### 4.2 Server fn `analyzeOnboardingDocFn`
+- Input (Zod): `{ filename, mime, base64 }` (≤ ~8 MB en base64).
+- Flujo:
+  1. Cargar lista de items (`clave`, `titulo`, `categoria`) desde Supabase (admin) para que el prompt conozca el catálogo real.
+  2. Llamar `callValinor` con `provider:"gemini"`, modelo `gemini-2.0-flash`, endpoint `/v1beta/models/gemini-2.0-flash:generateContent`, enviando el archivo como `inline_data` (Gemini acepta PDFs/imágenes nativamente). DOCX/TXT se mandan como texto extraído (mammoth / texto plano) para evitar binarios no soportados.
+  3. Prompt pide JSON estricto:
+     ```json
+     {
+       "categoria": "...",
+       "item_clave_sugerida": "...",
+       "confianza": 0.0-1.0,
+       "resumen": "...",
+       "campos": { "rfc": "...", "razon_social": "...", ... },
+       "texto_para_notas": "..."
+     }
+     ```
+  4. Devuelve también el `usage` de Gemini para que quede registrado en Valinor.
+- No persiste nada: solo devuelve la sugerencia. La escritura ocurre en otra acción tras confirmación del admin para evitar errores.
 
-- Endpoint: `POST https://<valinor-supabase-ref>.functions.supabase.co/api-proxy`
-- Header obligatorio: `x-proxy-token: <token emitido por Valinor>`
-- Body:
-  ```json
-  {
-    "provider": "openai" | "anthropic" | "gemini" | "perplexity" | "resend" | "google" | "<dinámico>",
-    "endpoint": "/v1/chat/completions",
-    "method": "POST",         // opcional, default POST (GET para Maps)
-    "payload": { ... }        // se reenvía al proveedor
-  }
-  ```
-- Valinor valida el token contra `project_api_keys` (`service_name='Valinor'`, `key_label='proxy_token'`), inyecta la clave real del proveedor desde sus secrets, hace la llamada, y guarda en `api_usage_logs`:
-  - `project_id` (el de IMV) → así Valinor sabe quién consumió
-  - `provider`, `model`, `input_tokens`, `output_tokens`, `estimated_cost`, `duration_ms`, `status`, `endpoint`
-- Resend: reescribe automáticamente el `from` a `noreply@valinor.studio` si el dominio no está verificado (con `reply_to` al original). Para usar tu propio dominio (`imv.mx` p.ej.) hay que verificarlo en Resend de Valinor o agregarlo a `VERIFIED_DOMAINS`.
+### 4.3 Persistencia tras confirmar
+- Reusar la lógica actual de `uploadFile` en `admin.onboarding.tsx`, pero permitiendo elegir el `item` destino dinámicamente (no atado al input por item).
+- Si el admin acepta los `campos`, hacer un `update` en `onboarding_items` con `valor_texto` (serializado JSON corto) y `notas` con el resumen.
 
----
+## 5. Detalles técnicos
+- `src/lib/valinor-proxy.server.ts`: añadir helper `geminiGenerateInline({ model, parts })` que arme el body con `contents:[{ parts:[ {text}, {inline_data:{mime_type, data}} ] }]` y `generationConfig:{ response_mime_type:"application/json" }`.
+- Tamaño máximo del archivo en cliente: 10 MB; rechazar antes de enviar.
+- DOCX: usar `mammoth` (ya pure-JS, Worker-safe) para extraer texto; PDF e imágenes van directo a Gemini.
+- Todas las llamadas a Gemini se hacen **solo** vía `callValinor` para que queden en `api_usage_logs` de Valinor (cero llamadas directas al provider).
+- Sidebar: nuevo grupo "Integraciones" con "Uso de APIs" (ya existe) + "Estado de APIs" (nueva).
 
-## Plan de implementación
+## 6. Cambios de archivos
+- nuevo: `src/routes/admin.estado-apis.tsx`
+- nuevo server fns en `src/lib/valinor.functions.ts`: `pingProvidersFn`, `analyzeOnboardingDocFn`
+- ampliado: `src/lib/valinor-proxy.server.ts` (`geminiGenerateInline`, `pingProviders`)
+- editado: `src/routes/admin.onboarding.tsx` (dropzone global + modal de revisión)
+- editado: `src/routes/admin.uso-apis.tsx` (filtros, refresh, desglose)
+- editado: `src/components/admin-sidebar.tsx` (link "Estado de APIs")
+- dependencia nueva: `mammoth` (extracción DOCX, server-side)
 
-### Paso 1 — En Valinor (lo hace el admin de Valinor, fuera de este proyecto)
-1. Abrir Valinor → admin/projects → crear/seleccionar el proyecto **"IMV Portal"**.
-2. Generar un registro en `project_api_keys`:
-   - `project_id` = id del proyecto IMV en Valinor
-   - `service_name = 'Valinor'`
-   - `key_label = 'proxy_token'`
-   - `key_value` = token aleatorio (UUID o `crypto.randomUUID()`)
-   - `is_active = true`
-3. Copiar ese token — se entrega a IMV una sola vez.
-
-(Si Valinor no tiene UI para esto todavía, se hace por SQL directo en su Supabase.)
-
-### Paso 2 — En IMV Portal (este proyecto)
-1. **Guardar secrets** (vía `secrets--add_secret`):
-   - `VALINOR_PROXY_URL` — URL completa del edge function de Valinor
-   - `VALINOR_PROXY_TOKEN` — el token emitido en el paso 1
-2. **Crear un cliente proxy** `src/lib/valinor-proxy.server.ts`:
-   ```ts
-   export async function callValinor<T>(opts: {
-     provider: string;
-     endpoint: string;
-     payload?: unknown;
-     method?: 'GET' | 'POST';
-   }): Promise<T> {
-     const res = await fetch(process.env.VALINOR_PROXY_URL!, {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-         'x-proxy-token': process.env.VALINOR_PROXY_TOKEN!,
-       },
-       body: JSON.stringify(opts),
-     });
-     if (!res.ok) throw new Error(`Valinor proxy ${res.status}: ${await res.text()}`);
-     return res.json() as Promise<T>;
-   }
-   ```
-3. **Server functions tipadas por servicio** en `src/lib/ai.functions.ts`, `src/lib/email.functions.ts`, etc., que usen `callValinor` internamente. Ej.: enviar email de confirmación de pedido vía `provider: 'resend'`, generar resumen de cobranza vía `provider: 'openai'`.
-4. **Marcar en el checklist de onboarding** (`onboarding_items`, módulo 10) los items `resend_api_key`, `twilio_credentials`, etc., como **"servido por Valinor"** en vez de pedirlos al cliente IMV — el cliente final ya no tiene que crear cuentas de Resend/Twilio si va a usar el plan de Valinor.
-
-### Paso 3 — Visibilidad de uso para el cliente IMV
-En `/admin` agregar una página **"Uso de APIs (Valinor)"** que muestre el consumo del proyecto. Dos opciones:
-- **A (rápida):** un edge function en Valinor que exponga `api_usage_logs` filtrado por `project_id` + `proxy_token` y aquí solo se renderiza la tabla/gráfica.
-- **B (más limpia):** Valinor expone un endpoint REST `GET /api/usage` autenticado con el mismo `x-proxy-token`. IMV lo consume desde un server function y muestra totales por día/proveedor/modelo y costo estimado.
-
-Recomiendo **B**: requiere agregar un edge function chico en Valinor (`usage-report`), pero deja a IMV completamente desacoplado del esquema interno de Valinor.
-
----
-
-## Lo que NO se cambia
-- No se tocan los módulos 1-9 ni la UI existente.
-- No se quita la opción de que el cliente IMV use sus propias claves de Resend/Twilio/NetSuite si así lo prefiere — el onboarding sigue pidiéndolas, solo se marca como opcional cuando Valinor las provee.
-
-## Lo que queda pendiente (fuera de este plan)
-- Verificación de dominio `imv.mx` en la cuenta Resend de Valinor (para que los correos salgan desde `@imv.mx` y no `@valinor.studio`).
-- Twilio: el proxy actual de Valinor **no** incluye Twilio en `PROVIDERS`. Hay que agregarlo en el registry dinámico (`integrations_registry`) o pedir a Valinor que lo añada al switch built-in. Esto va con los módulos diferidos.
-- NetSuite: igual, requiere registrarse como provider dinámico en Valinor con `auth_type: 'signature'` (OAuth 1.0a TBA).
-
-## Decisión que necesito de ti
-¿Procedo con el endpoint de visibilidad **opción B** (requiere coordinar con Valinor para crear un edge function `usage-report`), o prefieres **opción A** rápida leyendo directo de la tabla por ahora?
+## 7. Fuera de alcance (no tocar ahora)
+- Migrar otros envíos de correo a `sendEmailFn` (se hará cuando el módulo de pedidos/facturación lo necesite).
+- Crear nuevos endpoints en Valinor: ya están listos según confirmación previa.
