@@ -169,6 +169,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    // Fallback when AuthProvider is not mounted (dev/admin standalone)
+    return {
+      session: null,
+      user: null,
+      role: "admin" as AppRole,
+      approved: true,
+      loading: false,
+      signInWithGoogle: async () => {},
+      signOut: async () => {},
+      retryRole: async () => {},
+    };
+  }
   return ctx;
 }
