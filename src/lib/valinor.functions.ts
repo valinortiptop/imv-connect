@@ -164,6 +164,7 @@ export const analyzeOnboardingDocFn = createServerFn({ method: "POST" })
       resumen?: string;
       campos?: Record<string, string>;
       texto_para_notas?: string;
+      extra_fills?: Array<{ clave: string; valor_texto?: string; notas?: string }>;
     };
 
     let parsed: Suggestion | null = null;
