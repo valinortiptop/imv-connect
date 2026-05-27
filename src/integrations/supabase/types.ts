@@ -120,6 +120,13 @@ export type Database = {
             foreignKeyName: "client_price_overrides_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
@@ -294,6 +301,294 @@ export type Database = {
           },
         ]
       }
+      damaged_batches: {
+        Row: {
+          bonificacion_pct: number | null
+          cost_with_iva: number | null
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          original_quantity: number
+          product_id: string | null
+          reason: string | null
+          remaining_quantity: number
+          status: string
+          stock_adjustment: number | null
+          updated_at: string
+        }
+        Insert: {
+          bonificacion_pct?: number | null
+          cost_with_iva?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          original_quantity?: number
+          product_id?: string | null
+          reason?: string | null
+          remaining_quantity?: number
+          status?: string
+          stock_adjustment?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bonificacion_pct?: number | null
+          cost_with_iva?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          original_quantity?: number
+          product_id?: string | null
+          reason?: string | null
+          remaining_quantity?: number
+          status?: string
+          stock_adjustment?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      delivery_reveal_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          order_id: string | null
+          storage_path: string
+          taken_at: string
+          trip_id: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          storage_path: string
+          taken_at?: string
+          trip_id?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          storage_path?: string
+          taken_at?: string
+          trip_id?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_reveal_photos_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_trip_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string | null
+          product_id: string | null
+          quantity: number
+          trip_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          trip_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_trips: {
+        Row: {
+          created_at: string
+          id: string
+          month: string | null
+          notes: string | null
+          staff_cost: number | null
+          status: string
+          trip_date: string
+          truck_capacity_bultos: number | null
+          truck_cost: number | null
+          truck_provider: string | null
+          truck_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month?: string | null
+          notes?: string | null
+          staff_cost?: number | null
+          status?: string
+          trip_date?: string
+          truck_capacity_bultos?: number | null
+          truck_cost?: number | null
+          truck_provider?: string | null
+          truck_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string | null
+          notes?: string | null
+          staff_cost?: number | null
+          status?: string
+          trip_date?: string
+          truck_capacity_bultos?: number | null
+          truck_cost?: number | null
+          truck_provider?: string | null
+          truck_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       devolucion_items: {
         Row: {
           cantidad: number
@@ -351,6 +646,13 @@ export type Database = {
             columns: ["factura_item_id"]
             isOneToOne: false
             referencedRelation: "factura_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -641,6 +943,13 @@ export type Database = {
             columns: ["factura_id"]
             isOneToOne: false
             referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -989,6 +1298,27 @@ export type Database = {
         }
         Relationships: []
       }
+      logistics_last_seen: {
+        Row: {
+          id: string
+          last_checked_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_checked_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_checked_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movimientos_inventario: {
         Row: {
           almacen_id: string
@@ -1067,6 +1397,13 @@ export type Database = {
             columns: ["pedido_id"]
             isOneToOne: false
             referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -1216,6 +1553,13 @@ export type Database = {
             columns: ["oc_id"]
             isOneToOne: false
             referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -1584,6 +1928,13 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
@@ -1858,6 +2209,13 @@ export type Database = {
             foreignKeyName: "precios_cliente_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
@@ -1939,6 +2297,13 @@ export type Database = {
             columns: ["price_list_id"]
             isOneToOne: false
             referencedRelation: "price_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -2216,6 +2581,313 @@ export type Database = {
           },
         ]
       }
+      sku_aliases: {
+        Row: {
+          alias_clave: string
+          canonical_clave: string
+          created_at: string
+          id: string
+          product_id: string | null
+        }
+        Insert: {
+          alias_clave: string
+          canonical_clave: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+        }
+        Update: {
+          alias_clave?: string
+          canonical_clave?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      slot_contents: {
+        Row: {
+          barcode: string | null
+          created_at: string
+          description: string | null
+          expiration_date: string | null
+          id: string
+          lote: string | null
+          order_id: string | null
+          order_item_id: string | null
+          product_id: string | null
+          quantity: number
+          slot_id: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          created_at?: string
+          description?: string | null
+          expiration_date?: string | null
+          id?: string
+          lote?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          slot_id: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          created_at?: string
+          description?: string | null
+          expiration_date?: string | null
+          id?: string
+          lote?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          slot_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      slot_movements: {
+        Row: {
+          created_at: string
+          from_slot_id: string | null
+          id: string
+          product_id: string | null
+          quantity: number
+          reason: string | null
+          slot_id: string | null
+          to_slot_id: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_slot_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          slot_id?: string | null
+          to_slot_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_slot_id?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          slot_id?: string | null
+          to_slot_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slot_movements_from_slot_id_fkey"
+            columns: ["from_slot_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_movements_to_slot_id_fkey"
+            columns: ["to_slot_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock: {
         Row: {
           almacen_id: string
@@ -2249,6 +2921,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "stock_producto_id_fkey"
@@ -2301,6 +2980,354 @@ export type Database = {
           },
         ]
       }
+      stock_adjustments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          original_quantity: number
+          product_id: string | null
+          reason: string | null
+          remaining_quantity: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          original_quantity?: number
+          product_id?: string | null
+          reason?: string | null
+          remaining_quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          original_quantity?: number
+          product_id?: string | null
+          reason?: string | null
+          remaining_quantity?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      stock_deliveries: {
+        Row: {
+          created_at: string
+          delivery_code: string | null
+          delivery_date: string
+          delivery_status: string
+          id: string
+          notes: string | null
+          reference: string | null
+          supplier: string | null
+          updated_at: string
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_code?: string | null
+          delivery_date?: string
+          delivery_status?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          supplier?: string | null
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_code?: string | null
+          delivery_date?: string
+          delivery_status?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          supplier?: string | null
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
+      stock_delivery_documents: {
+        Row: {
+          category: string | null
+          delivery_id: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          delivery_id: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          delivery_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_delivery_documents_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "stock_deliveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_entries: {
+        Row: {
+          cost_with_iva: number | null
+          cost_without_iva: number | null
+          created_at: string
+          delivery_id: string | null
+          effective_weight_kg: number | null
+          entry_date: string
+          entry_status: string | null
+          factory_rate_per_bulto: number | null
+          factory_reimbursement: number | null
+          id: string
+          is_gifted: boolean | null
+          is_torton: boolean | null
+          maniobra_cost: number | null
+          maniobra_crew_size: number | null
+          maniobra_rate_per_person: number | null
+          maniobra_vendor: string | null
+          notes: string | null
+          order_id: string | null
+          product_id: string | null
+          promo_id: string | null
+          quantity: number
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          delivery_id?: string | null
+          effective_weight_kg?: number | null
+          entry_date?: string
+          entry_status?: string | null
+          factory_rate_per_bulto?: number | null
+          factory_reimbursement?: number | null
+          id?: string
+          is_gifted?: boolean | null
+          is_torton?: boolean | null
+          maniobra_cost?: number | null
+          maniobra_crew_size?: number | null
+          maniobra_rate_per_person?: number | null
+          maniobra_vendor?: string | null
+          notes?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          promo_id?: string | null
+          quantity?: number
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          delivery_id?: string | null
+          effective_weight_kg?: number | null
+          entry_date?: string
+          entry_status?: string | null
+          factory_rate_per_bulto?: number | null
+          factory_reimbursement?: number | null
+          id?: string
+          is_gifted?: boolean | null
+          is_torton?: boolean | null
+          maniobra_cost?: number | null
+          maniobra_crew_size?: number | null
+          maniobra_rate_per_person?: number | null
+          maniobra_vendor?: string | null
+          notes?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          promo_id?: string | null
+          quantity?: number
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_entries_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "stock_deliveries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      transport_types: {
+        Row: {
+          active: boolean
+          capacity_bultos: number
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          capacity_bultos?: number
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          capacity_bultos?: number
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           approved: boolean
@@ -2332,6 +3359,48 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      warehouse_slots: {
+        Row: {
+          access_type: string | null
+          active: boolean
+          block: string | null
+          blocked: boolean
+          code: string
+          created_at: string
+          id: string
+          position: number | null
+          row_letter: string | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          access_type?: string | null
+          active?: boolean
+          block?: string | null
+          blocked?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          position?: number | null
+          row_letter?: string | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          access_type?: string | null
+          active?: boolean
+          block?: string | null
+          blocked?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          position?: number | null
+          row_letter?: string | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -2439,6 +3508,42 @@ export type Database = {
           },
         ]
       }
+      delivery_summary: {
+        Row: {
+          active: boolean | null
+          clave: string | null
+          delivery_code: string | null
+          id: string | null
+          image_url: string | null
+          last_delivery_date: string | null
+          name: string | null
+          supplier: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          clave?: string | null
+          delivery_code?: never
+          id?: string | null
+          image_url?: string | null
+          last_delivery_date?: never
+          name?: string | null
+          supplier?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          clave?: string | null
+          delivery_code?: never
+          id?: string | null
+          image_url?: string | null
+          last_delivery_date?: never
+          name?: string | null
+          supplier?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           amount: number | null
@@ -2493,6 +3598,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
             referencedColumns: ["id"]
           },
           {
@@ -3067,6 +4179,7 @@ export type Database = {
       }
       dev_recalc: { Args: { _dev: string }; Returns: undefined }
       facturas_recalc: { Args: { _factura: string }; Returns: undefined }
+      fmt_month: { Args: { d: string }; Returns: string }
       get_all_users_for_admin: {
         Args: never
         Returns: {
