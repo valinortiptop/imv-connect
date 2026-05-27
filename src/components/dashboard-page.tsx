@@ -393,7 +393,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="h-4 w-4 text-green-500" />
@@ -410,7 +410,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -435,7 +435,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-cyan-500" />
@@ -460,7 +460,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <Warehouse className="h-4 w-4 text-violet-500" />
@@ -506,7 +506,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/clients")}
+              onClick={() => navigate("/admin/clientes")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -546,7 +546,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -646,7 +646,7 @@ export default function Dashboard() {
           <GlowCard className="h-full">
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg h-full flex flex-col"
-              onClick={() => navigate("/purchase-needs")}
+              onClick={() => navigate("/admin/necesidades")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -717,7 +717,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-foreground">{t("openOrders")}</h2>
               <div className="h-0.5 w-12 bg-blue-500 rounded mt-1" />
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/orders")} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/pedidos")} className="text-muted-foreground hover:text-foreground">
               Ver todos <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -776,7 +776,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-foreground">{t("purchaseNeeds")}</h2>
               <div className="h-0.5 w-12 bg-amber-500 rounded mt-1" />
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/products")} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/productos")} className="text-muted-foreground hover:text-foreground">
               Ver productos <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
