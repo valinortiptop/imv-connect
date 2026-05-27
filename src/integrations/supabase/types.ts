@@ -182,8 +182,8 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          price_with_iva: number
           product_id: string
-          unit_price: number
           updated_at: string
         }
         Insert: {
@@ -191,8 +191,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          price_with_iva: number
           product_id: string
-          unit_price: number
           updated_at?: string
         }
         Update: {
@@ -200,8 +200,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          price_with_iva?: number
           product_id?: string
-          unit_price?: number
           updated_at?: string
         }
         Relationships: [
