@@ -635,6 +635,48 @@ function AiUploader({
         }
       }
 
+      // Si el documento es un catálogo de productos o una lista de precios
+      // (XLSX/CSV) intentamos parsearlo e importarlo a las tablas de negocio.
+      const isCatalogo =
+        item.categoria === "catalogos" || item.clave === "catalogo_productos";
+      const isPrecios =
+        item.categoria === "precios" ||
+        item.clave?.startsWith("lista_precios") ||
+        item.clave === "precios_cliente";
+      const looksLikeSheet =
+        /\.(xlsx|xls|csv)$/i.test(file.name) ||
+        file.type.includes("spreadsheet") ||
+        file.type.includes("excel") ||
+        file.type === "text/csv";
+
+      if ((isCatalogo || isPrecios) && looksLikeSheet) {
+        try {
+          const rows = await parseSheet(file);
+          let result: ImportResult | null = null;
+          if (isCatalogo) {
+            result = await importProductos(rows);
+          } else if (isPrecios) {
+            const listName = file.name.replace(/\.(xlsx|xls|csv)$/i, "");
+            result = await importPriceList(listName, rows);
+          }
+          if (result) {
+            setImportSummary(
+              `Importadas ${result.inserted} nuevas, ${result.updated} actualizadas` +
+                (result.skipped ? `, ${result.skipped} omitidas (SKU no existe)` : "") +
+                (result.errors.length
+                  ? `. Errores: ${result.errors.slice(0, 3).join("; ")}${
+                      result.errors.length > 3 ? "…" : ""
+                    }`
+                  : ""),
+            );
+          }
+        } catch (e) {
+          setImportSummary(`No se pudo importar el archivo: ${(e as Error).message}`);
+        }
+      }
+
+
+
       await onCommitted();
       setOpen(false);
       setFile(null);
