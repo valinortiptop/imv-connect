@@ -59,6 +59,123 @@ export type Database = {
         }
         Relationships: []
       }
+      bonifications_received: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          month: string
+          notes: string | null
+          product_id: string | null
+          received_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month: string
+          notes?: string | null
+          product_id?: string | null
+          received_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month?: string
+          notes?: string | null
+          product_id?: string | null
+          received_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      centrales: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          petfood_potential_tier: string | null
+          phone: string | null
+          state: string | null
+          status: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          notes?: string | null
+          petfood_potential_tier?: string | null
+          phone?: string | null
+          state?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          petfood_potential_tier?: string | null
+          phone?: string | null
+          state?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          is_pinned: boolean
+          messages: Json
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          messages?: Json
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          messages?: Json
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_price_overrides: {
         Row: {
           client_id: string
@@ -845,6 +962,51 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          base_amount: number
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          payment_frequency: string | null
+          payment_method: string | null
+          role: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_amount?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          payment_frequency?: string | null
+          payment_method?: string | null
+          role?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_amount?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          payment_frequency?: string | null
+          payment_method?: string | null
+          role?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empresa_datos: {
         Row: {
           cp_fiscal: string | null
@@ -1173,6 +1335,57 @@ export type Database = {
           },
         ]
       }
+      fixed_expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          expense_date: string | null
+          frequency: string | null
+          id: string
+          is_recurring: boolean | null
+          month: string | null
+          name: string
+          notes: string | null
+          payment_method: string | null
+          subcategory: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          expense_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          month?: string | null
+          name: string
+          notes?: string | null
+          payment_method?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          expense_date?: string | null
+          frequency?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          month?: string | null
+          name?: string
+          notes?: string | null
+          payment_method?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       kanban_boards: {
         Row: {
           created_at: string
@@ -1365,6 +1578,165 @@ export type Database = {
           last_checked_at?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      maniobra_count_events: {
+        Row: {
+          action: string | null
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          delta: number
+          id: string
+          line_key: string | null
+          plan_date: string
+        }
+        Insert: {
+          action?: string | null
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          delta?: number
+          id?: string
+          line_key?: string | null
+          plan_date: string
+        }
+        Update: {
+          action?: string | null
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          delta?: number
+          id?: string
+          line_key?: string | null
+          plan_date?: string
+        }
+        Relationships: []
+      }
+      maniobra_pins: {
+        Row: {
+          display_name: string | null
+          pin_hash: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          display_name?: string | null
+          pin_hash?: string | null
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          display_name?: string | null
+          pin_hash?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maniobra_plans: {
+        Row: {
+          created_at: string
+          id: string
+          pickup_order_ids: Json
+          plan_date: string
+          trucks: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pickup_order_ids?: Json
+          plan_date: string
+          trucks?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pickup_order_ids?: Json
+          plan_date?: string
+          trucks?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      margins: {
+        Row: {
+          bonificacion_pct: number | null
+          cost_with_iva: number | null
+          cost_without_iva: number | null
+          created_at: string
+          id: string
+          margin_pct: number | null
+          notes: string | null
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          bonificacion_pct?: number | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          id?: string
+          margin_pct?: number | null
+          notes?: string | null
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bonificacion_pct?: number | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          id?: string
+          margin_pct?: number | null
+          notes?: string | null
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monthly_bonificaciones: {
+        Row: {
+          created_at: string
+          gdl_amount: number | null
+          gdl_settled_at: string | null
+          id: string
+          naucalpan_amount: number | null
+          notes: string | null
+          period_month: string
+          proof_path: string | null
+          tamemes_amount: number | null
+          tamemes_settled_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gdl_amount?: number | null
+          gdl_settled_at?: string | null
+          id?: string
+          naucalpan_amount?: number | null
+          notes?: string | null
+          period_month: string
+          proof_path?: string | null
+          tamemes_amount?: number | null
+          tamemes_settled_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gdl_amount?: number | null
+          gdl_settled_at?: string | null
+          id?: string
+          naucalpan_amount?: number | null
+          notes?: string | null
+          period_month?: string
+          proof_path?: string | null
+          tamemes_amount?: number | null
+          tamemes_settled_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1581,6 +1953,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: string | null
+          read_at: string | null
+          route: string | null
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          read_at?: string | null
+          route?: string | null
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          read_at?: string | null
+          route?: string | null
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       oc_items: {
         Row: {
@@ -2197,6 +2608,248 @@ export type Database = {
           },
         ]
       }
+      partner_monthly_settlements: {
+        Row: {
+          cost_basis: number | null
+          created_at: string
+          gross_profit: number | null
+          id: string
+          notes: string | null
+          our_share: number | null
+          partner_id: string
+          partner_share: number | null
+          period_month: string
+          proof_path: string | null
+          reported_revenue: number | null
+          settled_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_basis?: number | null
+          created_at?: string
+          gross_profit?: number | null
+          id?: string
+          notes?: string | null
+          our_share?: number | null
+          partner_id: string
+          partner_share?: number | null
+          period_month: string
+          proof_path?: string | null
+          reported_revenue?: number | null
+          settled_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_basis?: number | null
+          created_at?: string
+          gross_profit?: number | null
+          id?: string
+          notes?: string | null
+          our_share?: number | null
+          partner_id?: string
+          partner_share?: number | null
+          period_month?: string
+          proof_path?: string | null
+          reported_revenue?: number | null
+          settled_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_monthly_settlements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_shipment_items: {
+        Row: {
+          clave: string | null
+          cost_with_iva: number | null
+          cost_without_iva: number | null
+          created_at: string
+          description: string | null
+          id: string
+          importe: number | null
+          kilos: number | null
+          product_id: string | null
+          quantity: number
+          shipment_id: string
+        }
+        Insert: {
+          clave?: string | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          importe?: number | null
+          kilos?: number | null
+          product_id?: string | null
+          quantity?: number
+          shipment_id: string
+        }
+        Update: {
+          clave?: string | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          importe?: number | null
+          kilos?: number | null
+          product_id?: string | null
+          quantity?: number
+          shipment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_shipment_items_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "partner_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_shipments: {
+        Row: {
+          adm_proof_path: string | null
+          adm_total_cost: number | null
+          charged_to_partner: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          partner_id: string
+          partner_paid_at: string | null
+          payment_bank: string | null
+          payment_method: string | null
+          payment_proof_path: string | null
+          payment_reference: string | null
+          shipment_code: string | null
+          shipment_date: string
+          updated_at: string
+        }
+        Insert: {
+          adm_proof_path?: string | null
+          adm_total_cost?: number | null
+          charged_to_partner?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          partner_paid_at?: string | null
+          payment_bank?: string | null
+          payment_method?: string | null
+          payment_proof_path?: string | null
+          payment_reference?: string | null
+          shipment_code?: string | null
+          shipment_date?: string
+          updated_at?: string
+        }
+        Update: {
+          adm_proof_path?: string | null
+          adm_total_cost?: number | null
+          charged_to_partner?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          partner_paid_at?: string | null
+          payment_bank?: string | null
+          payment_method?: string | null
+          payment_proof_path?: string | null
+          payment_reference?: string | null
+          shipment_code?: string | null
+          shipment_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_shipments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payroll_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          days_worked: number | null
+          employee_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          payment_type: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          days_worked?: number | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          payment_type?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          days_worked?: number | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          payment_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_payments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_items: {
         Row: {
           cantidad: number
@@ -2751,6 +3404,102 @@ export type Database = {
         }
         Relationships: []
       }
+      product_prices: {
+        Row: {
+          bonificacion_pct: number | null
+          clave: string | null
+          cost_with_iva: number | null
+          cost_without_iva: number | null
+          created_at: string
+          id: string
+          image_url: string | null
+          price: number | null
+          product_id: string | null
+          product_name: string | null
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          bonificacion_pct?: number | null
+          clave?: string | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          price?: number | null
+          product_id?: string | null
+          product_name?: string | null
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bonificacion_pct?: number | null
+          clave?: string | null
+          cost_with_iva?: number | null
+          cost_without_iva?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          price?: number | null
+          product_id?: string | null
+          product_name?: string | null
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_promotions: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          notes: string | null
+          product_id: string | null
+          promo_clave: string | null
+          promo_cost_with_iva: number | null
+          promo_cost_without_iva: number | null
+          promo_name: string | null
+          promo_weight_kg: number | null
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          promo_clave?: string | null
+          promo_cost_with_iva?: number | null
+          promo_cost_without_iva?: number | null
+          promo_name?: string | null
+          promo_weight_kg?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          promo_clave?: string | null
+          promo_cost_with_iva?: number | null
+          promo_cost_without_iva?: number | null
+          promo_name?: string | null
+          promo_weight_kg?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       productos: {
         Row: {
           activo: boolean
@@ -2871,6 +3620,244 @@ export type Database = {
             referencedColumns: ["laboratorio_id"]
           },
         ]
+      }
+      prospect_calls: {
+        Row: {
+          called_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          next_action_at: string | null
+          notes: string | null
+          outcome: string | null
+          prospect_id: string
+        }
+        Insert: {
+          called_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_action_at?: string | null
+          notes?: string | null
+          outcome?: string | null
+          prospect_id: string
+        }
+        Update: {
+          called_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_action_at?: string | null
+          notes?: string | null
+          outcome?: string | null
+          prospect_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_calls_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          assigned_to: string | null
+          business_status: string | null
+          colonia: string | null
+          contact_person: string | null
+          converted_client_id: string | null
+          created_at: string
+          description: string | null
+          direccion: string | null
+          enriched_at: string | null
+          enrichment_status: string | null
+          google_maps_url: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          manual_maps_url: string | null
+          municipio: string | null
+          name: string | null
+          notes: string | null
+          opening_hours: Json | null
+          phone: string | null
+          photo_url: string | null
+          place_id: string | null
+          price_level: string | null
+          primary_type: string | null
+          rating: number | null
+          review_count: number | null
+          source: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_status?: string | null
+          colonia?: string | null
+          contact_person?: string | null
+          converted_client_id?: string | null
+          created_at?: string
+          description?: string | null
+          direccion?: string | null
+          enriched_at?: string | null
+          enrichment_status?: string | null
+          google_maps_url?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          manual_maps_url?: string | null
+          municipio?: string | null
+          name?: string | null
+          notes?: string | null
+          opening_hours?: Json | null
+          phone?: string | null
+          photo_url?: string | null
+          place_id?: string | null
+          price_level?: string | null
+          primary_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          business_status?: string | null
+          colonia?: string | null
+          contact_person?: string | null
+          converted_client_id?: string | null
+          created_at?: string
+          description?: string | null
+          direccion?: string | null
+          enriched_at?: string | null
+          enrichment_status?: string | null
+          google_maps_url?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          manual_maps_url?: string | null
+          municipio?: string | null
+          name?: string | null
+          notes?: string | null
+          opening_hours?: Json | null
+          phone?: string | null
+          photo_url?: string | null
+          place_id?: string | null
+          price_level?: string | null
+          primary_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      quote_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string | null
+          quantity: number
+          quote_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string | null
+          quantity?: number
+          quote_id: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string | null
+          quantity?: number
+          quote_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          client_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          converted_to_order_id: string | null
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          payment_method: string | null
+          price_list_id: string | null
+          shipping_address: string | null
+          source: string | null
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          price_list_id?: string | null
+          shipping_address?: string | null
+          source?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_to_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          price_list_id?: string | null
+          shipping_address?: string | null
+          source?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       representantes: {
         Row: {
@@ -3713,6 +4700,27 @@ export type Database = {
           },
         ]
       }
+      system_config: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       transport_types: {
         Row: {
           active: boolean
@@ -3734,6 +4742,30 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      user_permission_overrides: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          id: string
+          route_key: string
+          user_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          route_key: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          route_key?: string
+          user_id?: string
         }
         Relationships: []
       }
