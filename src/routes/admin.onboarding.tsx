@@ -616,6 +616,19 @@ function AiUploader({
         await supabase.from("onboarding_items").update(patch).eq("id", target.id);
       }
 
+      // Si el documento es de categoría "empresa" (p. ej. Constancia de
+      // Situación Fiscal), sincronizar también la tabla `empresa_datos` para
+      // que RFC, razón social, régimen y dirección queden disponibles para
+      // facturación, PDFs, etc.
+      const isEmpresaDoc =
+        item.categoria === "empresa" || suggestion?.categoria === "empresa";
+      if (isEmpresaDoc) {
+        const empresaPatch = buildEmpresaPatch(suggestion?.campos);
+        if (empresaPatch) {
+          await supabase.from("empresa_datos").update(empresaPatch).eq("id", 1);
+        }
+      }
+
       await onCommitted();
       setOpen(false);
       setFile(null);
