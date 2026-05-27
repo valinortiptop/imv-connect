@@ -747,7 +747,7 @@ export default function Dashboard() {
                       <TableRow
                         key={o.id}
                         className="border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/orders?openOrderId=${o.id}`)}
+                        onClick={() => navigate(`/admin/pedidos?openOrderId=${o.id}`)}
                       >
                         <TableCell className="font-mono font-medium text-blue-400">{o.order_code ?? "—"}</TableCell>
                         <TableCell className="text-foreground">{o.client_name ?? "—"}</TableCell>
