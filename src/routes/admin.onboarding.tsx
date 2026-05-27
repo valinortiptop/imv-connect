@@ -560,7 +560,19 @@ function AiUploader({
     if (!item) {
       setError("Selecciona un item válido.");
       return;
-    }
+      }
+
+      // Si el documento es de la categoría empresa (p.ej. constancia fiscal),
+      // sincronizar también la tabla `empresa_datos` para que el resto del sistema
+      // tenga RFC, razón social, régimen y dirección lista para usar.
+      const isEmpresaDoc =
+        item.categoria === "empresa" || suggestion?.categoria === "empresa";
+      if (isEmpresaDoc) {
+        const empresaPatch = buildEmpresaPatch(suggestion?.campos);
+        if (empresaPatch) {
+          await supabase.from("empresa_datos").update(empresaPatch).eq("id", 1);
+        }
+      }
     setSaving(true);
     try {
       const path = `${item.clave}/${Date.now()}_${file.name}`;
