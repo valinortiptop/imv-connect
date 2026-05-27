@@ -428,53 +428,74 @@ export type Database = {
       damaged_batches: {
         Row: {
           bonificacion_pct: number | null
+          condition: string | null
+          cost_at_time: number | null
           cost_with_iva: number | null
           created_at: string
           created_by: string | null
           delivery_date: string | null
           id: string
+          margin_pct: number | null
           notes: string | null
           order_id: string | null
           original_quantity: number
+          photos: string[] | null
           product_id: string | null
           reason: string | null
           remaining_quantity: number
+          source: string | null
+          source_order_id: string | null
           status: string
           stock_adjustment: number | null
+          unit_price: number | null
           updated_at: string
         }
         Insert: {
           bonificacion_pct?: number | null
+          condition?: string | null
+          cost_at_time?: number | null
           cost_with_iva?: number | null
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
           id?: string
+          margin_pct?: number | null
           notes?: string | null
           order_id?: string | null
           original_quantity?: number
+          photos?: string[] | null
           product_id?: string | null
           reason?: string | null
           remaining_quantity?: number
+          source?: string | null
+          source_order_id?: string | null
           status?: string
           stock_adjustment?: number | null
+          unit_price?: number | null
           updated_at?: string
         }
         Update: {
           bonificacion_pct?: number | null
+          condition?: string | null
+          cost_at_time?: number | null
           cost_with_iva?: number | null
           created_at?: string
           created_by?: string | null
           delivery_date?: string | null
           id?: string
+          margin_pct?: number | null
           notes?: string | null
           order_id?: string | null
           original_quantity?: number
+          photos?: string[] | null
           product_id?: string | null
           reason?: string | null
           remaining_quantity?: number
+          source?: string | null
+          source_order_id?: string | null
           status?: string
           stock_adjustment?: number | null
+          unit_price?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -2853,8 +2874,10 @@ export type Database = {
       pedido_items: {
         Row: {
           cantidad: number
+          damaged_batch_id: string | null
           id: string
           importe: number | null
+          is_damaged: boolean
           iva_pct: number
           nombre_snapshot: string
           pedido_id: string
@@ -2865,8 +2888,10 @@ export type Database = {
         }
         Insert: {
           cantidad: number
+          damaged_batch_id?: string | null
           id?: string
           importe?: number | null
+          is_damaged?: boolean
           iva_pct?: number
           nombre_snapshot: string
           pedido_id: string
@@ -2877,8 +2902,10 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          damaged_batch_id?: string | null
           id?: string
           importe?: number | null
+          is_damaged?: boolean
           iva_pct?: number
           nombre_snapshot?: string
           pedido_id?: string
@@ -2888,6 +2915,13 @@ export type Database = {
           unidad_snapshot?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pedido_items_damaged_batch_id_fkey"
+            columns: ["damaged_batch_id"]
+            isOneToOne: false
+            referencedRelation: "damaged_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pedido_items_pedido_id_fkey"
             columns: ["pedido_id"]
@@ -4989,7 +5023,9 @@ export type Database = {
         Row: {
           amount: number | null
           clave_snapshot: string | null
+          damaged_batch_id: string | null
           id: string | null
+          is_damaged: boolean | null
           iva_pct: number | null
           name_snapshot: string | null
           order_id: string | null
@@ -5000,7 +5036,9 @@ export type Database = {
         Insert: {
           amount?: number | null
           clave_snapshot?: string | null
+          damaged_batch_id?: string | null
           id?: string | null
+          is_damaged?: boolean | null
           iva_pct?: number | null
           name_snapshot?: string | null
           order_id?: string | null
@@ -5011,7 +5049,9 @@ export type Database = {
         Update: {
           amount?: number | null
           clave_snapshot?: string | null
+          damaged_batch_id?: string | null
           id?: string | null
+          is_damaged?: boolean | null
           iva_pct?: number | null
           name_snapshot?: string | null
           order_id?: string | null
@@ -5020,6 +5060,13 @@ export type Database = {
           unit_price_override?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pedido_items_damaged_batch_id_fkey"
+            columns: ["damaged_batch_id"]
+            isOneToOne: false
+            referencedRelation: "damaged_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pedido_items_pedido_id_fkey"
             columns: ["order_id"]
@@ -5890,6 +5937,10 @@ export type Database = {
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      dashboard_kpis_for_range: {
+        Args: { p_end: string; p_start: string }
+        Returns: Json
       }
       delete_user_as_admin: {
         Args: { target_user_id: string }
