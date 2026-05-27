@@ -428,6 +428,54 @@ function deriveExtrasFromCampos(
   return out;
 }
 
+/**
+ * Build a patch for `empresa_datos` from AI-extracted campos.
+ * Returns null if there's nothing relevant.
+ */
+function buildEmpresaPatch(
+  campos: Record<string, string> | undefined,
+): Record<string, string> | null {
+  if (!campos) return null;
+  const get = (...keys: string[]) => {
+    for (const [k, v] of Object.entries(campos)) {
+      const nk = norm(k);
+      if (keys.includes(nk) && v) return String(v).trim();
+    }
+    return null;
+  };
+  const patch: Record<string, string> = {};
+  const rfc = get("rfc");
+  if (rfc) patch.rfc = rfc;
+  const razon = get("razon_social", "razonsocial", "nombre", "denominacion");
+  if (razon) patch.razon_social = razon;
+  const reg = get("regimen_fiscal", "regimencapital", "regimen_capital");
+  if (reg) patch.regimen_fiscal = reg;
+  const rep = get("representante_legal", "representantelegal");
+  if (rep) patch.representante_legal = rep;
+  const cp = get("codigo_postal", "cp");
+  if (cp) patch.cp_fiscal = cp;
+
+  // Compose direccion_fiscal
+  const tipo = get("tipo_vialidad");
+  const nombreV = get("nombre_vialidad", "calle");
+  const numExt = get("numero_exterior");
+  const numInt = get("numero_interior");
+  const colonia = get("colonia");
+  const mun = get("municipio", "localidad", "delegacion");
+  const edo = get("entidad_federativa", "estado");
+  const parts: string[] = [];
+  if (nombreV) parts.push([tipo, nombreV].filter(Boolean).join(" "));
+  if (numExt) parts.push(`No. ${numExt}`);
+  if (numInt) parts.push(`Int. ${numInt}`);
+  if (colonia) parts.push(`Col. ${colonia}`);
+  if (cp) parts.push(`CP ${cp}`);
+  if (mun) parts.push(mun);
+  if (edo) parts.push(edo);
+  if (parts.length > 0) patch.direccion_fiscal = parts.join(", ");
+
+  return Object.keys(patch).length > 0 ? patch : null;
+}
+
 function combineExtras(
   suggestion: Suggestion | null,
   items: Item[],
@@ -566,6 +614,19 @@ function AiUploader({
           patch.valor_texto = ef.valor_texto;
         }
         await supabase.from("onboarding_items").update(patch).eq("id", target.id);
+      }
+
+      // Si el documento es de categoría "empresa" (p. ej. Constancia de
+      // Situación Fiscal), sincronizar también la tabla `empresa_datos` para
+      // que RFC, razón social, régimen y dirección queden disponibles para
+      // facturación, PDFs, etc.
+      const isEmpresaDoc =
+        item.categoria === "empresa" || suggestion?.categoria === "empresa";
+      if (isEmpresaDoc) {
+        const empresaPatch = buildEmpresaPatch(suggestion?.campos);
+        if (empresaPatch) {
+          await supabase.from("empresa_datos").update(empresaPatch).eq("id", 1);
+        }
       }
 
       await onCommitted();
