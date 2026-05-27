@@ -477,11 +477,11 @@ export default function Dashboard() {
         {/* ── Row 2: Operational pulse (5 compact cards) ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
-            { key: "open_orders", label: "Pedidos abiertos", icon: Package, color: "text-blue-500", border: "border-blue-500", to: "/orders" },
-            { key: "due_today", label: "Entrega hoy", icon: Truck, color: "text-amber-500", border: "border-amber-500", to: "/orders" },
-            { key: "due_tomorrow", label: "Entrega mañana", icon: TruckIcon, color: "text-orange-500", border: "border-orange-500", to: "/orders" },
-            { key: "orders_at_risk", label: "Riesgo de stock", icon: AlertCircle, color: "text-red-500", border: "border-red-500", to: "/products" },
-            { key: "bultos_incoming_7d", label: "Stock entrante 7d", icon: BoxesIcon, color: "text-purple-500", border: "border-purple-500", to: "/stock-entries" },
+            { key: "open_orders", label: "Pedidos abiertos", icon: Package, color: "text-blue-500", border: "border-blue-500", to: "/admin/pedidos" },
+            { key: "due_today", label: "Entrega hoy", icon: Truck, color: "text-amber-500", border: "border-amber-500", to: "/admin/pedidos" },
+            { key: "due_tomorrow", label: "Entrega mañana", icon: TruckIcon, color: "text-orange-500", border: "border-orange-500", to: "/admin/pedidos" },
+            { key: "orders_at_risk", label: "Riesgo de stock", icon: AlertCircle, color: "text-red-500", border: "border-red-500", to: "/admin/productos" },
+            { key: "bultos_incoming_7d", label: "Stock entrante 7d", icon: BoxesIcon, color: "text-purple-500", border: "border-purple-500", to: "/admin/entradas" },
           ].map((kpi) => (
             <GlowCard key={kpi.key}>
               <div
