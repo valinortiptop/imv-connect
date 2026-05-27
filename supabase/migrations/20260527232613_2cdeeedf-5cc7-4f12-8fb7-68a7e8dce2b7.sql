@@ -1,0 +1,1 @@
+ALTER TABLE public.client_price_overrides RENAME COLUMN unit_price TO price_with_iva;
