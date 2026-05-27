@@ -1,0 +1,240 @@
+// @ts-nocheck
+/**
+ * Helpers para importar catálogos y listas de precios desde XLSX/CSV
+ * que el usuario sube en la pantalla de onboarding.
+ *
+ * - parseSheet(file): convierte cualquier XLSX/CSV en filas crudas.
+ * - mapProductRow(row): mapea cabeceras en español a campos de `productos`.
+ * - mapPriceRow(row): mapea cabeceras a { sku, price_with_iva }.
+ */
+
+import * as XLSX from "xlsx";
+import { supabase } from "@/integrations/supabase/client";
+
+export type RawRow = Record<string, unknown>;
+
+function norm(k: string): string {
+  return String(k ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+function pick(row: RawRow, keys: string[]): string | undefined {
+  const map: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) map[norm(k)] = v;
+  for (const k of keys) {
+    const v = map[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") {
+      return String(v).trim();
+    }
+  }
+  return undefined;
+}
+
+function num(v: string | undefined): number | null {
+  if (v === undefined) return null;
+  const n = Number(String(v).replace(/[$,\s]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+export async function parseSheet(file: File): Promise<RawRow[]> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const all: RawRow[] = [];
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<RawRow>(ws, { defval: "" });
+    for (const r of rows) all.push(r);
+  }
+  return all;
+}
+
+export type ProductMapped = {
+  sku: string;
+  nombre: string;
+  marca?: string;
+  presentacion?: string;
+  descripcion?: string;
+  precio_lista?: number | null;
+  costo?: number | null;
+  costo_civa?: number | null;
+  iva_pct?: number | null;
+  peso_kg?: number | null;
+  proveedor?: string;
+  unidad?: string;
+};
+
+export function mapProductRow(row: RawRow): ProductMapped | null {
+  const sku = pick(row, ["sku", "clave", "codigo", "code"]);
+  const nombre = pick(row, ["nombre", "producto", "descripcion_corta", "name"]);
+  if (!sku || !nombre) return null;
+  return {
+    sku,
+    nombre,
+    marca: pick(row, ["marca", "brand"]),
+    presentacion: pick(row, ["presentacion", "presentation"]),
+    descripcion: pick(row, ["descripcion", "description", "detalle"]),
+    precio_lista: num(pick(row, ["precio_lista", "precio", "precio_publico", "pvp", "price"])),
+    costo: num(pick(row, ["costo", "costo_sin_iva", "costo_siva", "cost"])),
+    costo_civa: num(pick(row, ["costo_con_iva", "costo_civa"])),
+    iva_pct: num(pick(row, ["iva", "iva_pct"])),
+    peso_kg: num(pick(row, ["peso", "peso_kg", "weight_kg"])),
+    proveedor: pick(row, ["proveedor", "laboratorio", "lab", "supplier"]),
+    unidad: pick(row, ["unidad", "unit"]),
+  };
+}
+
+export type PriceMapped = { sku: string; price_with_iva: number };
+
+export function mapPriceRow(row: RawRow): PriceMapped | null {
+  const sku = pick(row, ["sku", "clave", "codigo"]);
+  const price = num(
+    pick(row, ["precio_con_iva", "price_with_iva", "precio", "precio_lista", "pvp"]),
+  );
+  if (!sku || price === null) return null;
+  return { sku, price_with_iva: price };
+}
+
+/* ───────────────────────── Imports ───────────────────────── */
+
+export type ImportResult = {
+  inserted: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+};
+
+/** Upsert masivo de productos por SKU. */
+export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  const mapped = rows.map(mapProductRow).filter(Boolean) as ProductMapped[];
+  if (mapped.length === 0) {
+    out.errors.push("No se encontraron filas con SKU y nombre.");
+    return out;
+  }
+
+  // Cargar SKUs existentes para distinguir insert vs update.
+  const skus = mapped.map((m) => m.sku);
+  const { data: existing } = await supabase
+    .from("productos")
+    .select("id,sku")
+    .in("sku", skus);
+  const existingBySku = new Map((existing ?? []).map((r) => [r.sku, r.id]));
+
+  for (const p of mapped) {
+    const payload: Record<string, unknown> = {
+      sku: p.sku,
+      nombre: p.nombre,
+      marca: p.marca ?? null,
+      presentacion: p.presentacion ?? null,
+      descripcion: p.descripcion ?? null,
+      precio_lista: p.precio_lista ?? null,
+      costo: p.costo ?? null,
+      costo_siva: p.costo ?? null,
+      costo_civa: p.costo_civa ?? null,
+      iva_pct: p.iva_pct ?? 16,
+      peso_kg: p.peso_kg ?? null,
+      proveedor: p.proveedor ?? null,
+      unidad: p.unidad ?? "pieza",
+      activo: true,
+    };
+    const id = existingBySku.get(p.sku);
+    if (id) {
+      const { error } = await supabase.from("productos").update(payload).eq("id", id);
+      if (error) out.errors.push(`${p.sku}: ${error.message}`);
+      else out.updated += 1;
+    } else {
+      const { error } = await supabase.from("productos").insert(payload);
+      if (error) out.errors.push(`${p.sku}: ${error.message}`);
+      else out.inserted += 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * Upsert de items de una lista de precios. Si `listName` no existe se crea.
+ * Solo importa filas cuyo SKU exista en `productos`.
+ */
+export async function importPriceList(
+  listName: string,
+  rows: RawRow[],
+): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  const mapped = rows.map(mapPriceRow).filter(Boolean) as PriceMapped[];
+  if (mapped.length === 0) {
+    out.errors.push("No se encontraron filas con SKU y precio.");
+    return out;
+  }
+
+  // Buscar o crear lista
+  const { data: existingList } = await supabase
+    .from("price_lists")
+    .select("id")
+    .eq("name", listName)
+    .maybeSingle();
+  let listId = existingList?.id as string | undefined;
+  if (!listId) {
+    const { data, error } = await supabase
+      .from("price_lists")
+      .insert({ name: listName, active: true, markup_pct: 0 })
+      .select("id")
+      .single();
+    if (error || !data) {
+      out.errors.push(`No se pudo crear lista: ${error?.message ?? "desconocido"}`);
+      return out;
+    }
+    listId = data.id;
+  }
+
+  // Resolver SKUs → product_id
+  const skus = mapped.map((m) => m.sku);
+  const { data: prods } = await supabase
+    .from("productos")
+    .select("id,sku")
+    .in("sku", skus);
+  const idBySku = new Map((prods ?? []).map((p) => [p.sku, p.id]));
+
+  // Items existentes en esta lista para distinguir insert/update
+  const productIds = mapped
+    .map((m) => idBySku.get(m.sku))
+    .filter(Boolean) as string[];
+  const { data: existingItems } = await supabase
+    .from("price_list_items")
+    .select("id,product_id")
+    .eq("price_list_id", listId)
+    .in("product_id", productIds);
+  const itemByProduct = new Map(
+    (existingItems ?? []).map((r) => [r.product_id, r.id]),
+  );
+
+  for (const p of mapped) {
+    const productId = idBySku.get(p.sku);
+    if (!productId) {
+      out.skipped += 1;
+      continue;
+    }
+    const itemId = itemByProduct.get(productId);
+    if (itemId) {
+      const { error } = await supabase
+        .from("price_list_items")
+        .update({ price_with_iva: p.price_with_iva, manual_override: true })
+        .eq("id", itemId);
+      if (error) out.errors.push(`${p.sku}: ${error.message}`);
+      else out.updated += 1;
+    } else {
+      const { error } = await supabase.from("price_list_items").insert({
+        price_list_id: listId,
+        product_id: productId,
+        price_with_iva: p.price_with_iva,
+        manual_override: true,
+      });
+      if (error) out.errors.push(`${p.sku}: ${error.message}`);
+      else out.inserted += 1;
+    }
+  }
+  return out;
+}
