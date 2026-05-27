@@ -155,6 +155,13 @@ export type Database = {
             foreignKeyName: "client_price_overrides_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -393,6 +400,13 @@ export type Database = {
             foreignKeyName: "damaged_batches_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -513,6 +527,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "delivery_trip_items_product_id_fkey"
@@ -682,6 +703,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "devolucion_items_producto_id_fkey"
@@ -984,6 +1012,13 @@ export type Database = {
             foreignKeyName: "factura_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -1107,6 +1142,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pedidos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "facturas_representante_id_fkey"
@@ -1400,6 +1449,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimientos_inventario_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -1433,6 +1496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
@@ -1589,6 +1659,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "oc_items_producto_id_fkey"
@@ -1814,6 +1891,261 @@ export type Database = {
           },
         ]
       }
+      order_adjustments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          order_item_id: string | null
+          product_id: string | null
+          quantity: number
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          order_item_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      order_changes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          operation: string | null
+          order_id: string | null
+          summary: string | null
+          table_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          operation?: string | null
+          order_id?: string | null
+          summary?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          operation?: string | null
+          order_id?: string | null
+          summary?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
+      order_documents: {
+        Row: {
+          category: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          order_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          order_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          order_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      order_stop_items: {
+        Row: {
+          id: string
+          order_item_id: string
+          quantity: number
+          stop_id: string
+        }
+        Insert: {
+          id?: string
+          order_item_id: string
+          quantity?: number
+          stop_id: string
+        }
+        Update: {
+          id?: string
+          order_item_id?: string
+          quantity?: number
+          stop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_stop_items_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "order_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_stops: {
+        Row: {
+          address: string | null
+          client_label: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          manual_maps_url: string | null
+          notes: string | null
+          order_id: string
+          signature_path: string | null
+          signed_at: string | null
+          signed_by_name: string | null
+          stop_index: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          client_label?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          manual_maps_url?: string | null
+          notes?: string | null
+          order_id: string
+          signature_path?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          stop_index?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          client_label?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          manual_maps_url?: string | null
+          notes?: string | null
+          order_id?: string
+          signature_path?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          stop_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pagos: {
         Row: {
           created_at: string
@@ -1925,6 +2257,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -1958,6 +2304,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "pedido_items_producto_id_fkey"
@@ -2244,6 +2597,13 @@ export type Database = {
             foreignKeyName: "precios_cliente_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2333,6 +2693,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "price_list_items_product_id_fkey"
@@ -2643,6 +3010,13 @@ export type Database = {
             foreignKeyName: "sku_aliases_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2740,6 +3114,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "slot_contents_product_id_fkey"
@@ -2855,6 +3236,13 @@ export type Database = {
             foreignKeyName: "slot_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2961,6 +3349,13 @@ export type Database = {
             foreignKeyName: "stock_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -3055,6 +3450,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "stock_adjustments_product_id_fkey"
@@ -3280,6 +3682,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "stock_entries_product_id_fkey"
@@ -3601,6 +4010,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -3634,6 +4057,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_products_with_stock"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "pedido_items_producto_id_fkey"
@@ -3955,6 +4385,63 @@ export type Database = {
         }
         Relationships: []
       }
+      v_open_orders: {
+        Row: {
+          central: string | null
+          client_id: string | null
+          client_name: string | null
+          client_phone: string | null
+          client_type: string | null
+          delivery_date: string | null
+          delivery_notes: string | null
+          delivery_window_from: string | null
+          delivery_window_until: string | null
+          discount_amount: number | null
+          discount_reason: string | null
+          fulfillment_method: string | null
+          id: string | null
+          line_items: number | null
+          manual_price_count: number | null
+          needs_approval: boolean | null
+          notes: string | null
+          order_code: string | null
+          order_date: string | null
+          status: string | null
+          subtotal: number | null
+          total_with_iva: number | null
+          urgency: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
       v_ordenes_compra: {
         Row: {
           almacen: string | null
@@ -3974,6 +4461,151 @@ export type Database = {
           total: number | null
         }
         Relationships: []
+      }
+      v_order_item_breakdown: {
+        Row: {
+          amount: number | null
+          clave_snapshot: string | null
+          client_id: string | null
+          delivery_date: string | null
+          id: string | null
+          iva_pct: number | null
+          name_snapshot: string | null
+          order_date: string | null
+          order_id: string | null
+          product_id: string | null
+          quantity: number | null
+          status: string | null
+          unit_price: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+        ]
       }
       v_pedidos_por_mes: {
         Row: {
@@ -4002,6 +4634,60 @@ export type Database = {
           stock_incoming: number | null
           supplier: string | null
           weight_kg: number | null
+        }
+        Relationships: []
+      }
+      v_purchase_by_order: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          delivery_date: string | null
+          order_id: string | null
+          status: string | null
+          total_amount: number | null
+          total_qty: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
+      v_purchase_needs: {
+        Row: {
+          clave: string | null
+          name: string | null
+          pending_qty: number | null
+          product_id: string | null
+          shortage: number | null
+          stock_disponible: number | null
+          stock_en_camino: number | null
+          stock_minimo: number | null
         }
         Relationships: []
       }
