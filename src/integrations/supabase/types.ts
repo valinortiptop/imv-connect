@@ -170,11 +170,15 @@ export type Database = {
       clientes: {
         Row: {
           active: boolean
+          central: string | null
           cfdi_pdf_path: string | null
           client_type: string
+          codigo_postal: string | null
+          company: string | null
           contact: string | null
           created_at: string
           credit_limit: number | null
+          curp: string | null
           delivery_notes: string | null
           delivery_window_from: string | null
           delivery_window_until: string | null
@@ -183,6 +187,7 @@ export type Database = {
           email_extra: string | null
           id: string
           nickname: string | null
+          nombre_cfdi: string | null
           nombre_comercial: string | null
           notas: string | null
           payment_method: string | null
@@ -199,11 +204,15 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          central?: string | null
           cfdi_pdf_path?: string | null
           client_type?: string
+          codigo_postal?: string | null
+          company?: string | null
           contact?: string | null
           created_at?: string
           credit_limit?: number | null
+          curp?: string | null
           delivery_notes?: string | null
           delivery_window_from?: string | null
           delivery_window_until?: string | null
@@ -212,6 +221,7 @@ export type Database = {
           email_extra?: string | null
           id?: string
           nickname?: string | null
+          nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
           payment_method?: string | null
@@ -228,11 +238,15 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          central?: string | null
           cfdi_pdf_path?: string | null
           client_type?: string
+          codigo_postal?: string | null
+          company?: string | null
           contact?: string | null
           created_at?: string
           credit_limit?: number | null
+          curp?: string | null
           delivery_notes?: string | null
           delivery_window_from?: string | null
           delivery_window_until?: string | null
@@ -241,6 +255,7 @@ export type Database = {
           email_extra?: string | null
           id?: string
           nickname?: string | null
+          nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
           payment_method?: string | null
@@ -2324,11 +2339,15 @@ export type Database = {
         Row: {
           active: boolean | null
           address: string | null
+          central: string | null
           cfdi_pdf_path: string | null
           client_type: string | null
+          codigo_postal: string | null
+          company: string | null
           contact: string | null
           created_at: string | null
           credit_limit: number | null
+          curp: string | null
           delivery_notes: string | null
           delivery_window_from: string | null
           delivery_window_until: string | null
@@ -2336,12 +2355,14 @@ export type Database = {
           id: string | null
           name: string | null
           nickname: string | null
+          nombre_cfdi: string | null
           notes: string | null
           payment_method: string | null
           payment_terms: number | null
           phone: string | null
           portal_activo: boolean | null
           price_list_id: string | null
+          razon_social: string | null
           rfc: string | null
           token_portal: string | null
           updated_at: string | null
@@ -2349,11 +2370,15 @@ export type Database = {
         Insert: {
           active?: boolean | null
           address?: string | null
+          central?: string | null
           cfdi_pdf_path?: string | null
           client_type?: string | null
+          codigo_postal?: string | null
+          company?: string | null
           contact?: string | null
           created_at?: string | null
           credit_limit?: number | null
+          curp?: string | null
           delivery_notes?: string | null
           delivery_window_from?: string | null
           delivery_window_until?: string | null
@@ -2361,12 +2386,14 @@ export type Database = {
           id?: string | null
           name?: string | null
           nickname?: string | null
+          nombre_cfdi?: string | null
           notes?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: never
           portal_activo?: boolean | null
           price_list_id?: string | null
+          razon_social?: string | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
@@ -2374,11 +2401,15 @@ export type Database = {
         Update: {
           active?: boolean | null
           address?: string | null
+          central?: string | null
           cfdi_pdf_path?: string | null
           client_type?: string | null
+          codigo_postal?: string | null
+          company?: string | null
           contact?: string | null
           created_at?: string | null
           credit_limit?: number | null
+          curp?: string | null
           delivery_notes?: string | null
           delivery_window_from?: string | null
           delivery_window_until?: string | null
@@ -2386,12 +2417,14 @@ export type Database = {
           id?: string | null
           name?: string | null
           nickname?: string | null
+          nombre_cfdi?: string | null
           notes?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: never
           portal_activo?: boolean | null
           price_list_id?: string | null
+          razon_social?: string | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
