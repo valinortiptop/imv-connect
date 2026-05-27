@@ -393,7 +393,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="h-4 w-4 text-green-500" />
@@ -410,7 +410,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -435,7 +435,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-cyan-500" />
@@ -460,7 +460,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <Warehouse className="h-4 w-4 text-violet-500" />
@@ -477,11 +477,11 @@ export default function Dashboard() {
         {/* ── Row 2: Operational pulse (5 compact cards) ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
-            { key: "open_orders", label: "Pedidos abiertos", icon: Package, color: "text-blue-500", border: "border-blue-500", to: "/orders" },
-            { key: "due_today", label: "Entrega hoy", icon: Truck, color: "text-amber-500", border: "border-amber-500", to: "/orders" },
-            { key: "due_tomorrow", label: "Entrega mañana", icon: TruckIcon, color: "text-orange-500", border: "border-orange-500", to: "/orders" },
-            { key: "orders_at_risk", label: "Riesgo de stock", icon: AlertCircle, color: "text-red-500", border: "border-red-500", to: "/products" },
-            { key: "bultos_incoming_7d", label: "Stock entrante 7d", icon: BoxesIcon, color: "text-purple-500", border: "border-purple-500", to: "/stock-entries" },
+            { key: "open_orders", label: "Pedidos abiertos", icon: Package, color: "text-blue-500", border: "border-blue-500", to: "/admin/pedidos" },
+            { key: "due_today", label: "Entrega hoy", icon: Truck, color: "text-amber-500", border: "border-amber-500", to: "/admin/pedidos" },
+            { key: "due_tomorrow", label: "Entrega mañana", icon: TruckIcon, color: "text-orange-500", border: "border-orange-500", to: "/admin/pedidos" },
+            { key: "orders_at_risk", label: "Riesgo de stock", icon: AlertCircle, color: "text-red-500", border: "border-red-500", to: "/admin/productos" },
+            { key: "bultos_incoming_7d", label: "Stock entrante 7d", icon: BoxesIcon, color: "text-purple-500", border: "border-purple-500", to: "/admin/entradas" },
           ].map((kpi) => (
             <GlowCard key={kpi.key}>
               <div
@@ -506,7 +506,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/clients")}
+              onClick={() => navigate("/admin/clientes")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -546,7 +546,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export default function Dashboard() {
           <GlowCard>
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
-              onClick={() => navigate("/orders")}
+              onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -646,7 +646,7 @@ export default function Dashboard() {
           <GlowCard className="h-full">
             <div
               className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg h-full flex flex-col"
-              onClick={() => navigate("/purchase-needs")}
+              onClick={() => navigate("/admin/necesidades")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -717,7 +717,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-foreground">{t("openOrders")}</h2>
               <div className="h-0.5 w-12 bg-blue-500 rounded mt-1" />
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/orders")} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/pedidos")} className="text-muted-foreground hover:text-foreground">
               Ver todos <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -747,7 +747,7 @@ export default function Dashboard() {
                       <TableRow
                         key={o.id}
                         className="border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/orders?openOrderId=${o.id}`)}
+                        onClick={() => navigate(`/admin/pedidos?openOrderId=${o.id}`)}
                       >
                         <TableCell className="font-mono font-medium text-blue-400">{o.order_code ?? "—"}</TableCell>
                         <TableCell className="text-foreground">{o.client_name ?? "—"}</TableCell>
@@ -776,7 +776,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-foreground">{t("purchaseNeeds")}</h2>
               <div className="h-0.5 w-12 bg-amber-500 rounded mt-1" />
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/products")} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/productos")} className="text-muted-foreground hover:text-foreground">
               Ver productos <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
