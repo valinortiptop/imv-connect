@@ -5934,6 +5934,18 @@ export type Database = {
           id: string
         }[]
       }
+      create_order_with_client: {
+        Args: {
+          p_address?: string
+          p_client_name: string
+          p_delivery_date?: string
+          p_notes?: string
+          p_payment_method?: string
+          p_phone?: string
+          p_rfc?: string
+        }
+        Returns: string
+      }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
