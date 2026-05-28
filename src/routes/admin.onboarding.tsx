@@ -4,9 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeOnboardingDocFn } from "@/lib/valinor.functions";
 import {
-  parseSheet,
-  importProductos,
-  importPriceList,
+ parseSheet,
+ importProductos,
+ importPriceList,
+ importClientes,
+ importLaboratorios,
+ importRepresentantes,
   type ImportResult,
 } from "@/lib/onboarding-import";
 import {
