@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { useBuildVersionCheck } from "../hooks/use-build-version-check";
 
 function NotFoundComponent() {
   return (
