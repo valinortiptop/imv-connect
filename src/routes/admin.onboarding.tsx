@@ -4,6 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeOnboardingDocFn } from "@/lib/valinor.functions";
 import {
+  parseSheet,
+  importProductos,
+  importPriceList,
+  type ImportResult,
+} from "@/lib/onboarding-import";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -510,6 +516,7 @@ function AiUploader({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [extraSelected, setExtraSelected] = useState<Record<string, boolean>>({});
+  const [importSummary, setImportSummary] = useState<string | null>(null);
 
   const handleFiles = async (f: File | null) => {
     if (!f) return;
@@ -629,11 +636,57 @@ function AiUploader({
         }
       }
 
+      // Si el documento es un catálogo de productos o una lista de precios
+      // (XLSX/CSV) intentamos parsearlo e importarlo a las tablas de negocio.
+      const isCatalogo =
+        item.categoria === "catalogos" || item.clave === "catalogo_productos";
+      const isPrecios =
+        item.categoria === "precios" ||
+        item.clave?.startsWith("lista_precios") ||
+        item.clave === "precios_cliente";
+      const looksLikeSheet =
+        /\.(xlsx|xls|csv)$/i.test(file.name) ||
+        file.type.includes("spreadsheet") ||
+        file.type.includes("excel") ||
+        file.type === "text/csv";
+
+      if ((isCatalogo || isPrecios) && looksLikeSheet) {
+        try {
+          const rows = await parseSheet(file);
+          let result: ImportResult | null = null;
+          if (isCatalogo) {
+            result = await importProductos(rows);
+          } else if (isPrecios) {
+            const listName = file.name.replace(/\.(xlsx|xls|csv)$/i, "");
+            result = await importPriceList(listName, rows);
+          }
+          if (result) {
+            setImportSummary(
+              `Importadas ${result.inserted} nuevas, ${result.updated} actualizadas` +
+                (result.skipped ? `, ${result.skipped} omitidas (SKU no existe)` : "") +
+                (result.errors.length
+                  ? `. Errores: ${result.errors.slice(0, 3).join("; ")}${
+                      result.errors.length > 3 ? "…" : ""
+                    }`
+                  : ""),
+            );
+          }
+        } catch (e) {
+          setImportSummary(`No se pudo importar el archivo: ${(e as Error).message}`);
+        }
+      }
+
+
+
       await onCommitted();
       setOpen(false);
       setFile(null);
       setSuggestion(null);
       setExtraSelected({});
+      if (importSummary) {
+        alert(importSummary);
+        setImportSummary(null);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
