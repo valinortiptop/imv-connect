@@ -683,6 +683,10 @@ function AiUploader({
       setFile(null);
       setSuggestion(null);
       setExtraSelected({});
+      if (importSummary) {
+        alert(importSummary);
+        setImportSummary(null);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
