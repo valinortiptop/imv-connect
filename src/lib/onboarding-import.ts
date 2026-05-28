@@ -238,3 +238,178 @@ export async function importPriceList(
   }
   return out;
 }
+
+/* ───────────────────────── Clientes ───────────────────────── */
+
+export type ClienteMapped = {
+  razon_social: string;
+  nombre_comercial?: string;
+  rfc?: string;
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  codigo_postal?: string;
+  nombre_cfdi?: string;
+  curp?: string;
+  contact?: string;
+  client_type?: string;
+  payment_method?: string;
+  payment_terms?: number | null;
+  credit_limit?: number | null;
+  central?: string;
+  company?: string;
+};
+
+export function mapClienteRow(row: RawRow): ClienteMapped | null {
+  const razon = pick(row, ["razon_social", "razon", "nombre", "cliente", "name"]);
+  if (!razon) return null;
+  return {
+    razon_social: razon,
+    nombre_comercial: pick(row, ["nombre_comercial", "comercial", "alias"]),
+    rfc: pick(row, ["rfc"]),
+    email: pick(row, ["email", "correo", "mail"]),
+    telefono: pick(row, ["telefono", "tel", "phone", "celular"]),
+    direccion: pick(row, ["direccion", "domicilio", "address"]),
+    codigo_postal: pick(row, ["cp", "codigo_postal", "zip"]),
+    nombre_cfdi: pick(row, ["nombre_cfdi", "razon_cfdi"]),
+    curp: pick(row, ["curp"]),
+    contact: pick(row, ["contacto", "contact"]),
+    client_type: pick(row, ["tipo", "client_type", "tipo_cliente"]),
+    payment_method: pick(row, ["forma_pago", "payment_method", "metodo_pago"]),
+    payment_terms: num(pick(row, ["dias_credito", "credito", "payment_terms"])),
+    credit_limit: num(pick(row, ["limite_credito", "credit_limit"])),
+    central: pick(row, ["central"]),
+    company: pick(row, ["empresa", "company"]),
+  };
+}
+
+export async function importClientes(rows: RawRow[]): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  const mapped = rows.map(mapClienteRow).filter(Boolean) as ClienteMapped[];
+  if (mapped.length === 0) {
+    out.errors.push("No se encontraron filas con razón social.");
+    return out;
+  }
+
+  const rfcs = mapped.map((m) => m.rfc).filter(Boolean) as string[];
+  const { data: existingByRfc } = rfcs.length
+    ? await supabase.from("clientes").select("id,rfc").in("rfc", rfcs)
+    : { data: [] as { id: string; rfc: string }[] };
+  const idByRfc = new Map((existingByRfc ?? []).map((r) => [r.rfc, r.id]));
+
+  for (const c of mapped) {
+    const payload: Record<string, unknown> = {
+      razon_social: c.razon_social,
+      nombre_comercial: c.nombre_comercial ?? null,
+      rfc: c.rfc ?? null,
+      email: c.email ?? null,
+      telefono: c.telefono ?? null,
+      direccion: c.direccion ?? null,
+      codigo_postal: c.codigo_postal ?? null,
+      nombre_cfdi: c.nombre_cfdi ?? null,
+      curp: c.curp ?? null,
+      contact: c.contact ?? null,
+      client_type: c.client_type ?? "menudeo",
+      payment_method: c.payment_method ?? null,
+      payment_terms: c.payment_terms ?? null,
+      credit_limit: c.credit_limit ?? null,
+      central: c.central ?? null,
+      company: c.company ?? null,
+      active: true,
+    };
+    const id = c.rfc ? idByRfc.get(c.rfc) : undefined;
+    if (id) {
+      const { error } = await supabase.from("clientes").update(payload).eq("id", id);
+      if (error) out.errors.push(`${c.razon_social}: ${error.message}`);
+      else out.updated += 1;
+    } else {
+      const { error } = await supabase.from("clientes").insert(payload);
+      if (error) out.errors.push(`${c.razon_social}: ${error.message}`);
+      else out.inserted += 1;
+    }
+  }
+  return out;
+}
+
+/* ───────────────────────── Laboratorios ───────────────────────── */
+
+export async function importLaboratorios(rows: RawRow[]): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  const names: string[] = [];
+  for (const r of rows) {
+    const n = pick(r, ["nombre", "laboratorio", "lab", "proveedor", "name"]);
+    if (n) names.push(n);
+  }
+  if (names.length === 0) {
+    out.errors.push("No se encontraron filas con nombre de laboratorio.");
+    return out;
+  }
+  const { data: existing } = await supabase
+    .from("laboratorios")
+    .select("id,nombre")
+    .in("nombre", names);
+  const have = new Set((existing ?? []).map((r) => r.nombre));
+  let orden = (existing?.length ?? 0) * 10;
+  for (const nombre of names) {
+    if (have.has(nombre)) {
+      out.updated += 0; // ya existe; lo contamos como omitido
+      out.skipped += 1;
+      continue;
+    }
+    orden += 10;
+    const { error } = await supabase
+      .from("laboratorios")
+      .insert({ nombre, activo: true, orden });
+    if (error) out.errors.push(`${nombre}: ${error.message}`);
+    else out.inserted += 1;
+    have.add(nombre);
+  }
+  return out;
+}
+
+/* ───────────────────────── Representantes ───────────────────────── */
+
+export async function importRepresentantes(rows: RawRow[]): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  type Rep = { nombre: string; email?: string; telefono?: string; comision?: number | null };
+  const mapped: Rep[] = [];
+  for (const r of rows) {
+    const nombre = pick(r, ["nombre", "name", "representante"]);
+    if (!nombre) continue;
+    mapped.push({
+      nombre,
+      email: pick(r, ["email", "correo"]),
+      telefono: pick(r, ["telefono", "tel", "phone"]),
+      comision: num(pick(r, ["comision", "comision_pct", "comision_default_pct"])),
+    });
+  }
+  if (mapped.length === 0) {
+    out.errors.push("No se encontraron filas con nombre de representante.");
+    return out;
+  }
+  const emails = mapped.map((m) => m.email).filter(Boolean) as string[];
+  const { data: existing } = emails.length
+    ? await supabase.from("representantes").select("id,email").in("email", emails)
+    : { data: [] as { id: string; email: string }[] };
+  const idByEmail = new Map((existing ?? []).map((r) => [r.email, r.id]));
+  for (const rep of mapped) {
+    const payload: Record<string, unknown> = {
+      nombre: rep.nombre,
+      email: rep.email ?? null,
+      telefono: rep.telefono ?? null,
+      comision_default_pct: rep.comision ?? 0,
+      activo: true,
+    };
+    const id = rep.email ? idByEmail.get(rep.email) : undefined;
+    if (id) {
+      const { error } = await supabase.from("representantes").update(payload).eq("id", id);
+      if (error) out.errors.push(`${rep.nombre}: ${error.message}`);
+      else out.updated += 1;
+    } else {
+      const { error } = await supabase.from("representantes").insert(payload);
+      if (error) out.errors.push(`${rep.nombre}: ${error.message}`);
+      else out.inserted += 1;
+    }
+  }
+  return out;
+}
