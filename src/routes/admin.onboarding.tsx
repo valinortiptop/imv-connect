@@ -647,26 +647,38 @@ function AiUploader({
         item.categoria === "precios" ||
         item.clave?.startsWith("lista_precios") ||
         item.clave === "precios_cliente";
+      const isClientes = item.clave === "catalogo_clientes";
+      const isLaboratorios = item.clave === "catalogo_laboratorios";
+      const isRepresentantes = item.clave === "catalogo_representantes";
       const looksLikeSheet =
         /\.(xlsx|xls|csv)$/i.test(file.name) ||
         file.type.includes("spreadsheet") ||
         file.type.includes("excel") ||
         file.type === "text/csv";
 
-      if ((isCatalogo || isPrecios) && looksLikeSheet) {
+      if (
+        (isCatalogo || isPrecios || isClientes || isLaboratorios || isRepresentantes) &&
+        looksLikeSheet
+      ) {
         try {
           const rows = await parseSheet(file);
           let result: ImportResult | null = null;
-          if (isCatalogo) {
-            result = await importProductos(rows);
+          if (isClientes) {
+            result = await importClientes(rows);
+          } else if (isLaboratorios) {
+            result = await importLaboratorios(rows);
+          } else if (isRepresentantes) {
+            result = await importRepresentantes(rows);
           } else if (isPrecios) {
             const listName = file.name.replace(/\.(xlsx|xls|csv)$/i, "");
             result = await importPriceList(listName, rows);
+          } else if (isCatalogo) {
+            result = await importProductos(rows);
           }
           if (result) {
             setImportSummary(
               `Importadas ${result.inserted} nuevas, ${result.updated} actualizadas` +
-                (result.skipped ? `, ${result.skipped} omitidas (SKU no existe)` : "") +
+                (result.skipped ? `, ${result.skipped} omitidas` : "") +
                 (result.errors.length
                   ? `. Errores: ${result.errors.slice(0, 3).join("; ")}${
                       result.errors.length > 3 ? "…" : ""
