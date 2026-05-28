@@ -516,6 +516,7 @@ function AiUploader({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [extraSelected, setExtraSelected] = useState<Record<string, boolean>>({});
+  const [importSummary, setImportSummary] = useState<string | null>(null);
 
   const handleFiles = async (f: File | null) => {
     if (!f) return;
