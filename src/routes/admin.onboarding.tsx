@@ -241,10 +241,18 @@ function OnboardingPage() {
                         type="text"
                         placeholder="Valor / dato"
                         defaultValue={it.valor_texto ?? ""}
-                        onBlur={(e) =>
-                          e.target.value !== (it.valor_texto ?? "") &&
-                          updateItem(it.id, { valor_texto: e.target.value })
-                        }
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          if (v !== (it.valor_texto ?? "")) {
+                            const patch: Partial<Item> = { valor_texto: v };
+                            if (v.trim() && it.estado !== "entregado" && it.estado !== "no_aplica") {
+                              patch.estado = "entregado";
+                            } else if (!v.trim() && it.estado === "entregado") {
+                              patch.estado = "pendiente";
+                            }
+                            updateItem(it.id, patch);
+                          }
+                        }}
                         className="mt-3 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                       />
                     )}
