@@ -104,7 +104,18 @@ function OnboardingPage() {
 
   const updateItem = async (id: string, patch: Partial<Item>) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-    await supabase.from("onboarding_items").update(patch).eq("id", id);
+    const { error, data } = await supabase
+      .from("onboarding_items")
+      .update(patch)
+      .eq("id", id)
+      .select("id");
+    if (error) {
+      alert("No se pudo guardar: " + error.message);
+      await load();
+    } else if (!data || data.length === 0) {
+      alert("No se pudo guardar (sin permisos). Pide a un admin que te asigne permisos de edición.");
+      await load();
+    }
   };
 
   const uploadFile = async (item: Item, file: File) => {
