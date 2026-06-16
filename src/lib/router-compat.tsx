@@ -7,7 +7,7 @@ import {
   Link as TSLink,
   type LinkProps,
 } from "@tanstack/react-router";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useMemo } from "react";
 
 // useNavigate: support navigate("/path") and navigate(-1)
 export function useNavigate() {
@@ -26,21 +26,37 @@ export function useParams<T extends Record<string, string> = Record<string, stri
   return (tsParams as any)({ strict: false }) as T;
 }
 
+type SearchParamsValue = URLSearchParams | Record<string, string | number | boolean | null | undefined>;
+type SearchParamsSetter = (
+  next: SearchParamsValue | ((prev: URLSearchParams) => SearchParamsValue),
+  opts?: { replace?: boolean },
+) => void;
+
 // useSearchParams: minimal URLSearchParams-compatible API
-export function useSearchParams(): [URLSearchParams, (next: URLSearchParams | Record<string, string>) => void] {
+export function useSearchParams(): [URLSearchParams, SearchParamsSetter] {
   const search = tsSearch({ strict: false }) as Record<string, unknown>;
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(search)) {
-    if (v != null) params.set(k, String(v));
-  }
+  const searchKey = JSON.stringify(search ?? {});
+  const params = useMemo(() => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(search ?? {})) {
+      if (v != null) p.set(k, String(v));
+    }
+    return p;
+  }, [searchKey]);
   const nav = tsNavigate();
-  const set = (next: URLSearchParams | Record<string, string>) => {
+  const set = useCallback<SearchParamsSetter>((next, opts) => {
+    const current = new URLSearchParams(params);
+    const resolved = typeof next === "function" ? next(current) : next;
     const obj: Record<string, string> = {};
-    if (next instanceof URLSearchParams) {
-      next.forEach((v, k) => (obj[k] = v));
-    } else Object.assign(obj, next);
-    nav({ search: obj as any, replace: true } as any);
-  };
+    if (resolved instanceof URLSearchParams) {
+      resolved.forEach((v, k) => (obj[k] = v));
+    } else {
+      for (const [k, v] of Object.entries(resolved)) {
+        if (v != null) obj[k] = String(v);
+      }
+    }
+    nav({ search: obj as any, replace: opts?.replace ?? true } as any);
+  }, [nav, params]);
   return [params, set];
 }
 
