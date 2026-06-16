@@ -26,6 +26,7 @@ import { EditClientPriceDialog, type EditableProduct } from "@/components/client
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { AvailabilityDownloadDialog } from "@/components/AvailabilityDownloadDialog";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 
 /* ── types ─────────────────────────────────────── */
 type Product = {
@@ -432,6 +433,7 @@ export default function Catalogo() {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [drawerProductId, setDrawerProductId] = useState<string | null>(null);
   const [promoFilter, setPromoFilter] = useState<"all" | "promo">("all");
   const [mode, setMode] = useState<"catalog" | "pricelist">("catalog");
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
@@ -1066,11 +1068,12 @@ export default function Catalogo() {
                   </button>
                 )}
 
-                {/* Image — click to preview */}
+                {/* Image — click to open Product 360 drawer */}
                 <div
                   className="cursor-zoom-in"
-                  onClick={() => setPreviewProduct(p)}
+                  onClick={() => setDrawerProductId(p.id)}
                 >
+
                   {p.image_url ? (
                     <div className="flex justify-center mb-2">
                       <img
@@ -1279,6 +1282,14 @@ export default function Catalogo() {
         priceListId={priceListId === "mayoreo" ? null : priceListId}
         priceListLabel={activeListName}
       />
+
+      {/* Product 360 drawer */}
+      <Product360Drawer
+        productId={drawerProductId}
+        open={!!drawerProductId}
+        onOpenChange={(o) => !o && setDrawerProductId(null)}
+      />
+
 
       {/* Sticky bottom bar */}
       {selected.size > 0 && (

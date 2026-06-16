@@ -65,6 +65,10 @@ export type ProductMapped = {
   peso_kg?: number | null;
   proveedor?: string;
   unidad?: string;
+  linea?: string;
+  grupo?: string;
+  tipo_producto?: string;
+  sat_clave?: string;
 };
 
 export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: string }) | null {
@@ -120,6 +124,10 @@ export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: strin
     peso_kg: num(pick(row, ["peso", "peso_kg", "weight_kg"])),
     proveedor: pick(row, ["proveedor", "supplier"]),
     unidad: pick(row, ["unidad", "unit"]),
+    linea: pick(row, ["linea", "line"]),
+    grupo,
+    tipo_producto: categoria,
+    sat_clave: pick(row, ["sat_clave_producto_servicio", "sat_clave", "clave_sat", "sat"]),
   };
 }
 
