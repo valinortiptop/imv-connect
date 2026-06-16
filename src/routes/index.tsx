@@ -26,12 +26,12 @@ function IndexPage() {
       />
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-20">
-        {/* Logo glass badge */}
-        <div className="rounded-3xl border border-border/60 bg-white/60 p-5 shadow-xl shadow-slate-900/5 backdrop-blur-xl">
+        {/* Logo — full lockup on brand navy, presented as a finished badge */}
+        <div className="overflow-hidden rounded-3xl shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
           <img
-            src={imvLogo}
-            alt="IMV logo"
-            className="h-20 w-auto"
+            src={logoFullDark}
+            alt="IMV — Integradora de Medicamentos Veterinarios"
+            className="block h-28 w-auto"
           />
         </div>
 
