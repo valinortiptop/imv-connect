@@ -1273,26 +1273,28 @@ export default function Clients() {
               >
                 <div
                   className="p-4 cursor-pointer active:bg-muted/50"
-                  onClick={() => toggleExpand(c.id)}
+                  onClick={() => setClient360Id(c.id)}
                 >
                   {/* Row 1: Name + Active badge */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      {expandedIds.has(c.id)
-                        ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                        : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                      {/* Pill on the LEFT so all client cards line up. */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}
+                        className="shrink-0"
+                        aria-label="Expandir"
+                      >
+                        {expandedIds.has(c.id)
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </button>
                       <ClientTypeBadge
                         type={c.client_type}
                         invisible={typeFilter !== "todos"}
                       />
-                      <Link
-                        to={`/clients/${c.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-foreground truncate hover:underline hover:text-primary"
-                      >
+                      <span className="font-semibold text-foreground truncate">
                         {c.name}
-                      </Link>
+                      </span>
                     </div>
                     <Badge className={cn("text-xs shrink-0", c.active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border")}>
                       {c.active ? "Activo" : "Inactivo"}
