@@ -37,11 +37,15 @@ function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <Link to="/" className="text-2xl font-bold">
-            IMV Portal
+        <div className="mb-6 flex flex-col items-center">
+          <Link to="/" aria-label="IMV — inicio" className="block overflow-hidden rounded-2xl shadow-md shadow-slate-900/10 ring-1 ring-black/5">
+            <img
+              src={logoFullDark}
+              alt="IMV — Integradora de Medicamentos Veterinarios"
+              className="block h-20 w-auto"
+            />
           </Link>
-          <p className="mt-1 text-sm text-muted-foreground">Acceso administrativo</p>
+          <p className="mt-3 text-sm text-muted-foreground">Acceso administrativo</p>
         </div>
 
         {!isSupabaseConfigured && (
