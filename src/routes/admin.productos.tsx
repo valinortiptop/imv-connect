@@ -663,7 +663,7 @@ function ProductosPage() {
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={17}
                     className="text-center text-sm text-muted-foreground py-8"
                   >
                     Sin resultados.
