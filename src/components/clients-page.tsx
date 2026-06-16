@@ -515,6 +515,7 @@ export default function Clients() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
+  const [client360Id, setClient360Id] = useState<string | null>(null);
   const [cfdiUploading, setCfdiUploading] = useState(false);
   const [pendingCfdiFile, setPendingCfdiFile] = useState<File | null>(null);
   const [cfdiAutofill, setCfdiAutofill] = useState(true);
