@@ -160,14 +160,56 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
     .in("sku", skus);
   const existingBySku = new Map((existing ?? []).map((r) => [r.sku, r.id]));
 
+/** Upsert masivo de productos por SKU. Crea laboratorios faltantes a partir de `marca`. */
+export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
+  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
+  const mapped = rows.map(mapProductRow).filter(Boolean) as Array<
+    ProductMapped & { categoria?: string }
+  >;
+  if (mapped.length === 0) {
+    out.errors.push("No se encontraron filas con SKU y nombre.");
+    return out;
+  }
+
+  // 1) Asegurar laboratorios para cada `marca` única.
+  const marcas = Array.from(
+    new Set(mapped.map((m) => m.marca).filter(Boolean) as string[]),
+  );
+  if (marcas.length > 0) {
+    const { data: existingLabs } = await supabase
+      .from("laboratorios")
+      .select("id,nombre")
+      .in("nombre", marcas);
+    const have = new Set((existingLabs ?? []).map((l) => l.nombre));
+    const toInsert = marcas
+      .filter((n) => !have.has(n))
+      .map((nombre, i) => ({ nombre, activo: true, orden: (i + 1) * 10 }));
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from("laboratorios").insert(toInsert);
+      if (error) out.errors.push(`Laboratorios: ${error.message}`);
+    }
+  }
+  const { data: allLabs } = await supabase.from("laboratorios").select("id,nombre");
+  const labIdByNombre = new Map((allLabs ?? []).map((l) => [l.nombre, l.id]));
+
+  // 2) Productos existentes para distinguir insert vs update.
+  const skus = mapped.map((m) => m.sku);
+  const { data: existing } = await supabase
+    .from("productos")
+    .select("id,sku")
+    .in("sku", skus);
+  const existingBySku = new Map((existing ?? []).map((r) => [r.sku, r.id]));
+
   for (const p of mapped) {
     const payload: Record<string, unknown> = {
       sku: p.sku,
       nombre: p.nombre,
       marca: p.marca ?? null,
+      categoria: p.categoria ?? null,
+      laboratorio_id: p.marca ? labIdByNombre.get(p.marca) ?? null : null,
       presentacion: p.presentacion ?? null,
       descripcion: p.descripcion ?? null,
-      precio_lista: p.precio_lista ?? null,
+      precio_lista: p.precio_lista ?? 0,
       costo: p.costo ?? null,
       costo_siva: p.costo ?? null,
       costo_civa: p.costo_civa ?? null,
