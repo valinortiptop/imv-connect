@@ -52,12 +52,6 @@ function IndexPage() {
         <div className="mt-14 grid w-full gap-5 sm:grid-cols-2">
           <Link
             to="/admin"
-            className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white/60 p-6 text-left shadow-sm backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-        <div className="mt-14 grid w-full gap-5 sm:grid-cols-2">
-          <Link
-            to="/admin"
             className="group relative overflow-hidden rounded-2xl border bg-white/70 p-6 text-left shadow-sm backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-lg"
             style={{ borderColor: "rgba(0,29,119,0.18)" }}
           >
