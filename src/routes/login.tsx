@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
+import { logoFullDark } from "@/assets/logos";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — IMV" }] }),
