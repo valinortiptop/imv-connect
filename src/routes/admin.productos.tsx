@@ -119,11 +119,15 @@ function ProductosPage() {
   const [search, setSearch] = useState("");
   const [proveedorFilter, setProveedorFilter] = useState("all");
   const [marcaFilter, setMarcaFilter] = useState("all");
+  const [lineaFilter, setLineaFilter] = useState("all");
+  const [grupoFilter, setGrupoFilter] = useState("all");
+  const [tipoFilter, setTipoFilter] = useState("all");
   const [estadoFilter, setEstadoFilter] = useState<
     "todos" | "activos" | "inactivos" | "comprometidos" | "promo"
   >("todos");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Producto | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
