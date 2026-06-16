@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sortProducts } from "@/lib/sort-products";
 import { ProductImageUpload } from "@/components/ProductImageUpload";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +75,10 @@ type Producto = {
   stock_disponible: number;
   stock_en_camino: number;
   stock_comprometido: number;
+  linea: string | null;
+  grupo: string | null;
+  tipo_producto: string | null;
+  sat_clave: string | null;
   laboratorios?: { nombre: string } | null;
 };
 
@@ -114,11 +119,15 @@ function ProductosPage() {
   const [search, setSearch] = useState("");
   const [proveedorFilter, setProveedorFilter] = useState("all");
   const [marcaFilter, setMarcaFilter] = useState("all");
+  const [lineaFilter, setLineaFilter] = useState("all");
+  const [grupoFilter, setGrupoFilter] = useState("all");
+  const [tipoFilter, setTipoFilter] = useState("all");
   const [estadoFilter, setEstadoFilter] = useState<
     "todos" | "activos" | "inactivos" | "comprometidos" | "promo"
   >("todos");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Producto | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
@@ -148,17 +157,26 @@ function ProductosPage() {
 
   const productos = productosQ.data ?? [];
 
-  // Derived: marcas y proveedores únicos
-  const { marcas, proveedores } = useMemo(() => {
+  // Derived: marcas, proveedores, taxonomía únicos
+  const { marcas, proveedores, lineas, grupos, tipos } = useMemo(() => {
     const m = new Set<string>();
     const p = new Set<string>();
+    const li = new Set<string>();
+    const gr = new Set<string>();
+    const ti = new Set<string>();
     for (const x of productos) {
       if (x.marca) m.add(x.marca);
       if (x.proveedor) p.add(x.proveedor);
+      if (x.linea) li.add(x.linea);
+      if (x.grupo) gr.add(x.grupo);
+      if (x.tipo_producto) ti.add(x.tipo_producto);
     }
     return {
       marcas: Array.from(m).sort(),
       proveedores: Array.from(p).sort(),
+      lineas: Array.from(li).sort(),
+      grupos: Array.from(gr).sort(),
+      tipos: Array.from(ti).sort(),
     };
   }, [productos]);
 
@@ -175,6 +193,9 @@ function ProductosPage() {
       if (proveedorFilter !== "all" && p.proveedor !== proveedorFilter)
         return false;
       if (marcaFilter !== "all" && p.marca !== marcaFilter) return false;
+      if (lineaFilter !== "all" && p.linea !== lineaFilter) return false;
+      if (grupoFilter !== "all" && p.grupo !== grupoFilter) return false;
+      if (tipoFilter !== "all" && p.tipo_producto !== tipoFilter) return false;
       if (estadoFilter === "activos" && !p.activo) return false;
       if (estadoFilter === "inactivos" && p.activo) return false;
       if (estadoFilter === "comprometidos" && (p.stock_comprometido ?? 0) <= 0)
@@ -182,7 +203,7 @@ function ProductosPage() {
       if (estadoFilter === "promo" && !p.promo) return false;
       return true;
     });
-  }, [productos, search, proveedorFilter, marcaFilter, estadoFilter]);
+  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, estadoFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -417,6 +438,27 @@ function ProductosPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={lineaFilter} onValueChange={setLineaFilter}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Línea" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las líneas</SelectItem>
+            {lineas.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={grupoFilter} onValueChange={setGrupoFilter}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los grupos</SelectItem>
+            {grupos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={tipoFilter} onValueChange={setTipoFilter}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            {tipos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="flex rounded-md border border-border bg-muted/30 p-0.5">
           {(["todos", "activos", "inactivos", "comprometidos", "promo"] as const).map(
             (k) => (
@@ -512,6 +554,9 @@ function ProductosPage() {
                 <TableHead>Producto</TableHead>
                 <TableHead>Marca</TableHead>
                 <TableHead>Proveedor</TableHead>
+                <TableHead>Línea</TableHead>
+                <TableHead>Grupo</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Peso (KG)</TableHead>
                 <TableHead className="text-right">Precio c/IVA</TableHead>
                 <TableHead className="text-right">Margen</TableHead>
@@ -534,10 +579,13 @@ function ProductosPage() {
                       onCheckedChange={() => toggleSelect(p.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-primary">
+                  <TableCell
+                    className="font-mono text-xs text-primary cursor-pointer hover:underline"
+                    onClick={() => setDrawerId(p.id)}
+                  >
                     {p.sku ?? "—"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => setDrawerId(p.id)} className="cursor-pointer">
                     {p.imagen_url ? (
                       <img
                         src={p.imagen_url}
@@ -566,6 +614,15 @@ function ProductosPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {p.proveedor ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {p.linea ? <Badge variant="outline" className="text-[10px]">{p.linea}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {p.grupo ? <Badge variant="secondary" className="text-[10px]">{p.grupo}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {p.tipo_producto ? <Badge className="text-[10px]">{p.tipo_producto}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {p.peso_kg ?? "—"}
@@ -606,7 +663,7 @@ function ProductosPage() {
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={14}
+                    colSpan={17}
                     className="text-center text-sm text-muted-foreground py-8"
                   >
                     Sin resultados.
@@ -646,6 +703,11 @@ function ProductosPage() {
           }}
         />
       )}
+      <Product360Drawer
+        productId={drawerId}
+        open={!!drawerId}
+        onOpenChange={(o) => !o && setDrawerId(null)}
+      />
     </section>
   );
 }
@@ -701,6 +763,10 @@ function EditProductDialog({
   const [margenBono, setMargenBono] = useState(
     String(product.margen_bonif_pct ?? ""),
   );
+  const [linea, setLinea] = useState(product.linea ?? "");
+  const [grupo, setGrupo] = useState(product.grupo ?? "");
+  const [tipoProducto, setTipoProducto] = useState(product.tipo_producto ?? "");
+  const [satClave, setSatClave] = useState(product.sat_clave ?? "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageRemove, setImageRemove] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -795,6 +861,10 @@ function EditProductDialog({
         bonificacion_pct: Number(bono) || 0,
         margen_normal_pct: margenNormal ? Number(margenNormal) : null,
         margen_bonif_pct: margenBono ? Number(margenBono) : null,
+        linea: linea.trim() || null,
+        grupo: grupo.trim() || null,
+        tipo_producto: tipoProducto.trim() || null,
+        sat_clave: satClave.trim() || null,
       };
       if (imagen_url !== undefined) patch.imagen_url = imagen_url;
       const { error } = await supabase
@@ -853,6 +923,24 @@ function EditProductDialog({
                   <div>
                     <Label className="text-xs text-muted-foreground">MARCA</Label>
                     <div className="mt-1 text-sm">{product.marca ?? "—"}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">LÍNEA</Label>
+                    <Input value={linea} onChange={(e) => setLinea(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">GRUPO</Label>
+                    <Input value={grupo} onChange={(e) => setGrupo(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">TIPO DE PRODUCTO</Label>
+                    <Input value={tipoProducto} onChange={(e) => setTipoProducto(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">CLAVE SAT</Label>
+                    <Input value={satClave} onChange={(e) => setSatClave(e.target.value)} className="mt-1" />
                   </div>
                 </div>
               </div>
