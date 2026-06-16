@@ -116,14 +116,16 @@ export function AdminSidebar({
       {/* Brand header — full IMV lockup on its native navy background */}
       <Link
         to="/admin"
-        className="block border-b border-sidebar-border bg-[#0b1f5c] px-4 py-4"
+        className="block border-b border-sidebar-border bg-[#0b1f5c] px-4 py-3"
         aria-label="IMV — ir al inicio"
       >
-        <img
-          src={logoFullWhite}
-          alt="IMV Integradora de Medicamentos Veterinarios"
-          className="block h-16 w-auto"
-        />
+        <div className="overflow-hidden h-12 flex items-center justify-center">
+          <img
+            src={logoFullWhite}
+            alt="IMV Integradora de Medicamentos Veterinarios"
+            className="block h-16 w-auto -my-2"
+          />
+        </div>
       </Link>
       <SidebarContent>
         <SidebarGroup>
