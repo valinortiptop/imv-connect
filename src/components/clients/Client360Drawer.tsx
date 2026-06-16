@@ -152,7 +152,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
 
             <div className="mt-3 flex gap-2">
               <Button asChild size="sm" variant="outline" className="gap-1.5">
-                <Link to="/clients/$id" params={{ id: c.id }}>
+                <Link to="/admin/clientes/$id" params={{ id: c.id }}>
                   <ExternalLink className="size-3.5" /> Ver ficha completa
                 </Link>
               </Button>
