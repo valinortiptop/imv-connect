@@ -65,6 +65,10 @@ export type ProductMapped = {
   peso_kg?: number | null;
   proveedor?: string;
   unidad?: string;
+  linea?: string;
+  grupo?: string;
+  tipo_producto?: string;
+  sat_clave?: string;
 };
 
 export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: string }) | null {
@@ -120,6 +124,10 @@ export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: strin
     peso_kg: num(pick(row, ["peso", "peso_kg", "weight_kg"])),
     proveedor: pick(row, ["proveedor", "supplier"]),
     unidad: pick(row, ["unidad", "unit"]),
+    linea: pick(row, ["linea", "line"]),
+    grupo,
+    tipo_producto: categoria,
+    sat_clave: pick(row, ["sat_clave_producto_servicio", "sat_clave", "clave_sat", "sat"]),
   };
 }
 
@@ -201,6 +209,10 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
       peso_kg: p.peso_kg ?? null,
       proveedor: p.proveedor ?? null,
       unidad: p.unidad ?? "pieza",
+      linea: p.linea ?? null,
+      grupo: p.grupo ?? null,
+      tipo_producto: p.tipo_producto ?? null,
+      sat_clave: p.sat_clave ?? null,
       activo: true,
     };
     const id = existingBySku.get(p.sku);
