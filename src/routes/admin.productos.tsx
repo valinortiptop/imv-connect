@@ -438,6 +438,27 @@ function ProductosPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={lineaFilter} onValueChange={setLineaFilter}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Línea" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las líneas</SelectItem>
+            {lineas.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={grupoFilter} onValueChange={setGrupoFilter}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los grupos</SelectItem>
+            {grupos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={tipoFilter} onValueChange={setTipoFilter}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            {tipos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="flex rounded-md border border-border bg-muted/30 p-0.5">
           {(["todos", "activos", "inactivos", "comprometidos", "promo"] as const).map(
             (k) => (
