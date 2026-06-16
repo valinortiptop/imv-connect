@@ -615,6 +615,15 @@ function ProductosPage() {
                   <TableCell className="text-muted-foreground">
                     {p.proveedor ?? "—"}
                   </TableCell>
+                  <TableCell>
+                    {p.linea ? <Badge variant="outline" className="text-[10px]">{p.linea}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {p.grupo ? <Badge variant="secondary" className="text-[10px]">{p.grupo}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {p.tipo_producto ? <Badge className="text-[10px]">{p.tipo_producto}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {p.peso_kg ?? "—"}
                   </TableCell>
