@@ -31,6 +31,7 @@ import { parseLocalDate } from "@/lib/date-utils";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
+import { Client360Drawer } from "@/components/clients/Client360Drawer";
 
 type ClientType = "mayoreo" | "menudeo";
 
