@@ -143,22 +143,6 @@ export type ImportResult = {
   errors: string[];
 };
 
-/** Upsert masivo de productos por SKU. */
-export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
-  const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
-  const mapped = rows.map(mapProductRow).filter(Boolean) as ProductMapped[];
-  if (mapped.length === 0) {
-    out.errors.push("No se encontraron filas con SKU y nombre.");
-    return out;
-  }
-
-  // Cargar SKUs existentes para distinguir insert vs update.
-  const skus = mapped.map((m) => m.sku);
-  const { data: existing } = await supabase
-    .from("productos")
-    .select("id,sku")
-    .in("sku", skus);
-  const existingBySku = new Map((existing ?? []).map((r) => [r.sku, r.id]));
 
 /** Upsert masivo de productos por SKU. Crea laboratorios faltantes a partir de `marca`. */
 export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
