@@ -157,17 +157,26 @@ function ProductosPage() {
 
   const productos = productosQ.data ?? [];
 
-  // Derived: marcas y proveedores únicos
-  const { marcas, proveedores } = useMemo(() => {
+  // Derived: marcas, proveedores, taxonomía únicos
+  const { marcas, proveedores, lineas, grupos, tipos } = useMemo(() => {
     const m = new Set<string>();
     const p = new Set<string>();
+    const li = new Set<string>();
+    const gr = new Set<string>();
+    const ti = new Set<string>();
     for (const x of productos) {
       if (x.marca) m.add(x.marca);
       if (x.proveedor) p.add(x.proveedor);
+      if (x.linea) li.add(x.linea);
+      if (x.grupo) gr.add(x.grupo);
+      if (x.tipo_producto) ti.add(x.tipo_producto);
     }
     return {
       marcas: Array.from(m).sort(),
       proveedores: Array.from(p).sort(),
+      lineas: Array.from(li).sort(),
+      grupos: Array.from(gr).sort(),
+      tipos: Array.from(ti).sort(),
     };
   }, [productos]);
 
@@ -184,6 +193,9 @@ function ProductosPage() {
       if (proveedorFilter !== "all" && p.proveedor !== proveedorFilter)
         return false;
       if (marcaFilter !== "all" && p.marca !== marcaFilter) return false;
+      if (lineaFilter !== "all" && p.linea !== lineaFilter) return false;
+      if (grupoFilter !== "all" && p.grupo !== grupoFilter) return false;
+      if (tipoFilter !== "all" && p.tipo_producto !== tipoFilter) return false;
       if (estadoFilter === "activos" && !p.activo) return false;
       if (estadoFilter === "inactivos" && p.activo) return false;
       if (estadoFilter === "comprometidos" && (p.stock_comprometido ?? 0) <= 0)
@@ -191,7 +203,7 @@ function ProductosPage() {
       if (estadoFilter === "promo" && !p.promo) return false;
       return true;
     });
-  }, [productos, search, proveedorFilter, marcaFilter, estadoFilter]);
+  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, estadoFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
