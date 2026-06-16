@@ -66,12 +66,12 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
           .limit(10),
         supabase
           .from("client_price_overrides")
-          .select("unit_price, notes, productos(sku, nombre)")
+          .select("price_with_iva, notes, product_id")
           .eq("client_id", clientId)
           .limit(20),
         supabase
           .from("facturas")
-          .select("id, folio, total, saldo, estado, fecha_emision")
+          .select("id, folio, total, pagado, estado, fecha_emision")
           .eq("cliente_id", clientId)
           .order("fecha_emision", { ascending: false })
           .limit(10),
