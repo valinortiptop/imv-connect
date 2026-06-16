@@ -262,7 +262,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                           <span className="tabular-nums font-medium">{fmt(f.total)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground flex justify-between mt-0.5">
-                          <span className="capitalize">{f.estado ?? "—"} · saldo {fmt(f.saldo)}</span>
+                          <span className="capitalize">{f.estado ?? "—"} · saldo {fmt(Number(f.total ?? 0) - Number(f.pagado ?? 0))}</span>
                           <span>{fmtDate(f.fecha_emision)}</span>
                         </div>
                       </li>
