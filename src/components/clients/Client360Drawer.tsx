@@ -168,7 +168,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
-                <TabsTrigger value="pagos">Pagos</TabsTrigger>
+                <TabsTrigger value="pagos">Facturas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-3 pt-4">
