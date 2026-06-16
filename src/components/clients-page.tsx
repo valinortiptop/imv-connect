@@ -1906,6 +1906,13 @@ export default function Clients() {
         onOpenChange={(open) => { if (!open) setViewOrderId(null); }}
       />
 
+      {/* Client 360 Drawer */}
+      <Client360Drawer
+        clientId={client360Id}
+        open={!!client360Id}
+        onOpenChange={(open) => { if (!open) setClient360Id(null); }}
+      />
+
       {/* Deactivate Confirmation Dialog */}
       <Dialog open={!!deactivateClient} onOpenChange={open => !open && setDeactivateClient(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
