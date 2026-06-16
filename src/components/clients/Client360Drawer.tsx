@@ -66,12 +66,12 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
           .limit(10),
         supabase
           .from("client_price_overrides")
-          .select("unit_price, notes, productos(sku, nombre)")
+          .select("price_with_iva, notes, product_id")
           .eq("client_id", clientId)
           .limit(20),
         supabase
           .from("facturas")
-          .select("id, folio, total, saldo, estado, fecha_emision")
+          .select("id, folio, total, pagado, estado, fecha_emision")
           .eq("cliente_id", clientId)
           .order("fecha_emision", { ascending: false })
           .limit(10),
@@ -239,13 +239,10 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                     <ul className="divide-y rounded-md border">
                       {q.data!.overrides.map((o: any, i: number) => (
                         <li key={i} className="flex justify-between px-3 py-2 text-sm">
-                          <span className="truncate">
-                            <span className="font-mono text-xs text-muted-foreground mr-1.5">
-                              {o.productos?.sku ?? "—"}
-                            </span>
-                            {o.productos?.nombre ?? "—"}
+                          <span className="truncate text-muted-foreground">
+                            {o.notes || o.product_id?.slice(0, 8) || "—"}
                           </span>
-                          <span className="font-medium tabular-nums">{fmt(o.unit_price)}</span>
+                          <span className="font-medium tabular-nums">{fmt(o.price_with_iva)}</span>
                         </li>
                       ))}
                     </ul>
@@ -265,7 +262,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                           <span className="tabular-nums font-medium">{fmt(f.total)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground flex justify-between mt-0.5">
-                          <span className="capitalize">{f.estado ?? "—"} · saldo {fmt(f.saldo)}</span>
+                          <span className="capitalize">{f.estado ?? "—"} · saldo {fmt(Number(f.total ?? 0) - Number(f.pagado ?? 0))}</span>
                           <span>{fmtDate(f.fecha_emision)}</span>
                         </div>
                       </li>
