@@ -93,7 +93,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
         client: cli.data as any,
         orders: (orders.data ?? []) as any[],
         overrides: (overrides.data ?? []) as any[],
-        payments: (payments.data ?? []) as any[],
+        facturas: (payments.data ?? []) as any[],
         representante,
       };
     },
