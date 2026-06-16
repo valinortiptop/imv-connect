@@ -703,6 +703,11 @@ function ProductosPage() {
           }}
         />
       )}
+      <Product360Drawer
+        productId={drawerId}
+        open={!!drawerId}
+        onOpenChange={(o) => !o && setDrawerId(null)}
+      />
     </section>
   );
 }
