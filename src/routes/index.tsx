@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
-import imvLogo from "@/assets/imv-logo.png";
+import { logoFullDark } from "@/assets/logos";
 
 export const Route = createFileRoute("/")({
   head: () => ({
