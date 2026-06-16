@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sortProducts } from "@/lib/sort-products";
 import { ProductImageUpload } from "@/components/ProductImageUpload";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
