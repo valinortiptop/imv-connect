@@ -70,10 +70,10 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
           .eq("client_id", clientId)
           .limit(20),
         supabase
-          .from("pagos")
-          .select("id, monto, metodo, fecha, referencia")
+          .from("facturas")
+          .select("id, folio, total, saldo, estado, fecha_emision")
           .eq("cliente_id", clientId)
-          .order("fecha", { ascending: false })
+          .order("fecha_emision", { ascending: false })
           .limit(10),
         Promise.resolve({ data: null }),
       ]);
