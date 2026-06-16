@@ -554,6 +554,9 @@ function ProductosPage() {
                 <TableHead>Producto</TableHead>
                 <TableHead>Marca</TableHead>
                 <TableHead>Proveedor</TableHead>
+                <TableHead>Línea</TableHead>
+                <TableHead>Grupo</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Peso (KG)</TableHead>
                 <TableHead className="text-right">Precio c/IVA</TableHead>
                 <TableHead className="text-right">Margen</TableHead>
