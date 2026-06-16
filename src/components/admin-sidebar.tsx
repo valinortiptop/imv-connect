@@ -112,6 +112,18 @@ export function AdminSidebar({
 
   return (
     <Sidebar collapsible="offcanvas">
+      {/* Brand header — full IMV lockup on its native navy background */}
+      <Link
+        to="/admin"
+        className="block border-b border-sidebar-border bg-[#0b1f5c] px-4 py-3"
+        aria-label="IMV — ir al inicio"
+      >
+        <img
+          src={logoFullWhite}
+          alt="IMV Integradora de Medicamentos Veterinarios"
+          className="block h-10 w-auto"
+        />
+      </Link>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
