@@ -24,6 +24,7 @@ import { parseLocalDate, todayMx } from "@/lib/date-utils";
 import { MoreVertical, AlertOctagon } from "lucide-react";
 import { downloadInventoryExcel } from "@/lib/inventory-excel-export";
 import { toast } from "sonner";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const fmtMXN = (v: number | null) => v == null ? "$0" : mxnFmt.format(v);
@@ -59,6 +60,7 @@ export default function Inventory() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
   const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<{
     id: string; clave: string; name: string; image_url: string | null;
     stock_actual: number; stock_disponible: number;
@@ -682,10 +684,10 @@ export default function Inventory() {
                         )}
                       >
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setDrawerId(item.id)}>
                             <ProductThumb src={item.image_url} size="sm" />
                             <div className="flex flex-col">
-                              <span className="font-mono text-sm font-medium text-primary">{item.clave}</span>
+                              <span className="font-mono text-sm font-medium text-primary hover:underline">{item.clave}</span>
                               {damagedCount > 0 && (
                                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-orange-500" title={`${damagedCount} bultos dañados disponibles`}>
                                   <AlertOctagon className="h-2.5 w-2.5" />
