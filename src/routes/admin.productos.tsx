@@ -75,6 +75,10 @@ type Producto = {
   stock_disponible: number;
   stock_en_camino: number;
   stock_comprometido: number;
+  linea: string | null;
+  grupo: string | null;
+  tipo_producto: string | null;
+  sat_clave: string | null;
   laboratorios?: { nombre: string } | null;
 };
 
