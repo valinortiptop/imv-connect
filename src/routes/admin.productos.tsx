@@ -763,6 +763,10 @@ function EditProductDialog({
   const [margenBono, setMargenBono] = useState(
     String(product.margen_bonif_pct ?? ""),
   );
+  const [linea, setLinea] = useState(product.linea ?? "");
+  const [grupo, setGrupo] = useState(product.grupo ?? "");
+  const [tipoProducto, setTipoProducto] = useState(product.tipo_producto ?? "");
+  const [satClave, setSatClave] = useState(product.sat_clave ?? "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageRemove, setImageRemove] = useState(false);
   const [saving, setSaving] = useState(false);
