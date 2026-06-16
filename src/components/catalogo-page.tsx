@@ -642,20 +642,36 @@ export default function Catalogo() {
     },
   });
 
-  // Fetch products with images
+  // Fetch products with images. Supabase caps a single response at 1,000 rows,
+  // so page through the full catalog before filtering/rendering.
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["catalogo-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, clave, name, brand, weight_kg, sale_price_with_iva, image_url, active, supplier")
-        .eq("active", true)
-        .order("brand")
-        .order("name");
-      if (error) throw error;
+      const pageSize = 1000;
+      let from = 0;
+      const all: (Product & { supplier: string | null })[] = [];
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, clave, name, brand, weight_kg, sale_price_with_iva, image_url, active, supplier")
+          .eq("active", true)
+          .order("brand")
+          .order("name")
+          .order("id")
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+
+        const batch = (data ?? []) as (Product & { supplier: string | null })[];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+
       // Sort: Ganador first, Minino second, then alphabetical
       const priority = ["ganador", "minino"];
-      const sorted = (data as (Product & { supplier: string | null })[]).sort((a, b) => {
+      const sorted = all.sort((a, b) => {
         const aIdx = priority.indexOf((a.brand ?? "").toLowerCase());
         const bIdx = priority.indexOf((b.brand ?? "").toLowerCase());
         const aPri = aIdx >= 0 ? aIdx : 999;
