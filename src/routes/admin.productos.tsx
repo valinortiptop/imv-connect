@@ -579,10 +579,13 @@ function ProductosPage() {
                       onCheckedChange={() => toggleSelect(p.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-primary">
+                  <TableCell
+                    className="font-mono text-xs text-primary cursor-pointer hover:underline"
+                    onClick={() => setDrawerId(p.id)}
+                  >
                     {p.sku ?? "—"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => setDrawerId(p.id)} className="cursor-pointer">
                     {p.imagen_url ? (
                       <img
                         src={p.imagen_url}
