@@ -3545,10 +3545,12 @@ export type Database = {
           created_at: string
           descripcion: string | null
           especie: string[] | null
+          grupo: string | null
           id: string
           imagen_url: string | null
           iva_pct: number
           laboratorio_id: string | null
+          linea: string | null
           marca: string | null
           margen_bonif_pct: number | null
           margen_normal_pct: number | null
@@ -3558,12 +3560,14 @@ export type Database = {
           presentacion: string | null
           promo: boolean
           proveedor: string | null
+          sat_clave: string | null
           search_tsv: unknown
           sku: string | null
           stock_comprometido: number
           stock_disponible: number
           stock_en_camino: number
           stock_minimo: number
+          tipo_producto: string | null
           unidad: string
           updated_at: string
         }
@@ -3577,10 +3581,12 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           especie?: string[] | null
+          grupo?: string | null
           id?: string
           imagen_url?: string | null
           iva_pct?: number
           laboratorio_id?: string | null
+          linea?: string | null
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
@@ -3590,12 +3596,14 @@ export type Database = {
           presentacion?: string | null
           promo?: boolean
           proveedor?: string | null
+          sat_clave?: string | null
           search_tsv?: unknown
           sku?: string | null
           stock_comprometido?: number
           stock_disponible?: number
           stock_en_camino?: number
           stock_minimo?: number
+          tipo_producto?: string | null
           unidad?: string
           updated_at?: string
         }
@@ -3609,10 +3617,12 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           especie?: string[] | null
+          grupo?: string | null
           id?: string
           imagen_url?: string | null
           iva_pct?: number
           laboratorio_id?: string | null
+          linea?: string | null
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
@@ -3622,12 +3632,14 @@ export type Database = {
           presentacion?: string | null
           promo?: boolean
           proveedor?: string | null
+          sat_clave?: string | null
           search_tsv?: unknown
           sku?: string | null
           stock_comprometido?: number
           stock_disponible?: number
           stock_en_camino?: number
           stock_minimo?: number
+          tipo_producto?: string | null
           unidad?: string
           updated_at?: string
         }
@@ -5330,21 +5342,54 @@ export type Database = {
           active: boolean | null
           bonificacion_pct: number | null
           brand: string | null
+          categoria: string | null
           clave: string | null
           cost_with_iva: number | null
           cost_without_iva: number | null
+          descripcion: string | null
+          especie: string[] | null
+          grupo: string | null
           id: string | null
           image_url: string | null
+          iva_pct: number | null
+          laboratorio_id: string | null
+          linea: string | null
           name: string | null
+          presentacion: string | null
           sale_price_with_iva: number | null
+          sat_clave: string | null
           stock_actual: number | null
           stock_committed: number | null
           stock_disponible: number | null
           stock_incoming: number | null
           supplier: string | null
+          tipo_producto: string | null
+          unidad: string | null
           weight_kg: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+        ]
       }
       v_comisiones_representante: {
         Row: {
@@ -5700,21 +5745,54 @@ export type Database = {
           active: boolean | null
           bonificacion_pct: number | null
           brand: string | null
+          categoria: string | null
           clave: string | null
           cost_with_iva: number | null
           cost_without_iva: number | null
+          descripcion: string | null
+          especie: string[] | null
+          grupo: string | null
           id: string | null
           image_url: string | null
+          iva_pct: number | null
+          laboratorio_id: string | null
+          linea: string | null
           name: string | null
+          presentacion: string | null
           sale_price_with_iva: number | null
+          sat_clave: string | null
           stock_actual: number | null
           stock_committed: number | null
           stock_disponible: number | null
           stock_incoming: number | null
           supplier: string | null
+          tipo_producto: string | null
+          unidad: string | null
           weight_kg: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+        ]
       }
       v_purchase_by_order: {
         Row: {
