@@ -31,6 +31,7 @@ import { parseLocalDate } from "@/lib/date-utils";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
+import { Client360Drawer } from "@/components/clients/Client360Drawer";
 
 type ClientType = "mayoreo" | "menudeo";
 
@@ -514,6 +515,7 @@ export default function Clients() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
+  const [client360Id, setClient360Id] = useState<string | null>(null);
   const [cfdiUploading, setCfdiUploading] = useState(false);
   const [pendingCfdiFile, setPendingCfdiFile] = useState<File | null>(null);
   const [cfdiAutofill, setCfdiAutofill] = useState(true);
@@ -1271,26 +1273,28 @@ export default function Clients() {
               >
                 <div
                   className="p-4 cursor-pointer active:bg-muted/50"
-                  onClick={() => toggleExpand(c.id)}
+                  onClick={() => setClient360Id(c.id)}
                 >
                   {/* Row 1: Name + Active badge */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      {expandedIds.has(c.id)
-                        ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                        : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                      {/* Pill on the LEFT so all client cards line up. */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}
+                        className="shrink-0"
+                        aria-label="Expandir"
+                      >
+                        {expandedIds.has(c.id)
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </button>
                       <ClientTypeBadge
                         type={c.client_type}
                         invisible={typeFilter !== "todos"}
                       />
-                      <Link
-                        to={`/clients/${c.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-foreground truncate hover:underline hover:text-primary"
-                      >
+                      <span className="font-semibold text-foreground truncate">
                         {c.name}
-                      </Link>
+                      </span>
                     </div>
                     <Badge className={cn("text-xs shrink-0", c.active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border")}>
                       {c.active ? "Activo" : "Inactivo"}
@@ -1427,7 +1431,7 @@ export default function Clients() {
                       <TableRow
                         id={`client-row-${c.id}`}
                         className={cn("border-border hover:bg-muted/50 cursor-pointer", !c.active && "opacity-50", selectedIds.has(c.id) && "bg-muted/30")}
-                        onClick={() => toggleExpand(c.id)}
+                        onClick={() => setClient360Id(c.id)}
                       >
                         <TableCell className="hidden md:table-cell" onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} /></TableCell>
                         <TableCell className="px-1">
@@ -1438,30 +1442,17 @@ export default function Clients() {
                           </Button>
                         </TableCell>
                         <TableCell className="text-foreground font-medium">
-                          {/* Pill on the LEFT of the name so all pills line
-                              up vertically. In filtered views the slot is
-                              kept reserved (invisible) so names don't slide
-                              left when toggling tabs.
-
-                              The NAME itself is a Link to the full client
-                              detail page — opens /clients/:id with all the
-                              tabs (Resumen, Pedidos, Productos, Precios,
-                              CFDI, Datos). Clicking elsewhere on the row
-                              keeps the existing "toggle inline expand"
-                              behavior, so the quick preview still works. */}
                           <div className="flex items-center gap-2">
                             <ClientTypeBadge
                               type={c.client_type}
                               invisible={typeFilter !== "todos"}
                             />
-                            <Link
-                              to={`/clients/${c.id}`}
-                              onClick={(e) => e.stopPropagation()}
+                            <span
                               className="truncate hover:underline hover:text-primary transition-colors"
-                              title="Ver detalles del cliente"
+                              title="Abrir vista 360"
                             >
                               {c.name}
-                            </Link>
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
@@ -1913,6 +1904,13 @@ export default function Clients() {
         orderId={viewOrderId}
         open={!!viewOrderId}
         onOpenChange={(open) => { if (!open) setViewOrderId(null); }}
+      />
+
+      {/* Client 360 Drawer */}
+      <Client360Drawer
+        clientId={client360Id}
+        open={!!client360Id}
+        onOpenChange={(open) => { if (!open) setClient360Id(null); }}
       />
 
       {/* Deactivate Confirmation Dialog */}
