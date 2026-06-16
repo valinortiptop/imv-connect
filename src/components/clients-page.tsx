@@ -1363,11 +1363,13 @@ export default function Clients() {
                   style={{ maxHeight: expandedIds.has(c.id) ? "800px" : "0px", opacity: expandedIds.has(c.id) ? 1 : 0 }}
                 >
                   <div className="px-4 pb-4 border-t border-border">
-                    <ClientExpandedRow
-                      client={c}
-                      onViewOrder={(orderId) => setViewOrderId(orderId)}
-                      onNavigateProduct={(clave) => navigate(`/products?search=${encodeURIComponent(clave)}`)}
-                    />
+                    {expandedIds.has(c.id) && (
+                      <ClientExpandedRow
+                        client={c}
+                        onViewOrder={(orderId) => setViewOrderId(orderId)}
+                        onNavigateProduct={(clave) => navigate(`/products?search=${encodeURIComponent(clave)}`)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -1493,11 +1495,13 @@ export default function Clients() {
                             style={{ maxHeight: expandedIds.has(c.id) ? "800px" : "0px", opacity: expandedIds.has(c.id) ? 1 : 0 }}
                           >
                             <div className="p-4">
-                              <ClientExpandedRow
-                                client={c}
-                                onViewOrder={(orderId) => setViewOrderId(orderId)}
-                                onNavigateProduct={(clave) => navigate(`/products?search=${encodeURIComponent(clave)}`)}
-                              />
+                              {expandedIds.has(c.id) && (
+                                <ClientExpandedRow
+                                  client={c}
+                                  onViewOrder={(orderId) => setViewOrderId(orderId)}
+                                  onNavigateProduct={(clave) => navigate(`/products?search=${encodeURIComponent(clave)}`)}
+                                />
+                              )}
                             </div>
                           </div>
                         </TableCell>
