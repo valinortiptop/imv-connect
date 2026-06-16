@@ -925,6 +925,24 @@ function EditProductDialog({
                     <div className="mt-1 text-sm">{product.marca ?? "—"}</div>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">LÍNEA</Label>
+                    <Input value={linea} onChange={(e) => setLinea(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">GRUPO</Label>
+                    <Input value={grupo} onChange={(e) => setGrupo(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">TIPO DE PRODUCTO</Label>
+                    <Input value={tipoProducto} onChange={(e) => setTipoProducto(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">CLAVE SAT</Label>
+                    <Input value={satClave} onChange={(e) => setSatClave(e.target.value)} className="mt-1" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
