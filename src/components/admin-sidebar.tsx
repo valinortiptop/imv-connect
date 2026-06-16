@@ -8,6 +8,7 @@ import {
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
+import { logoFullWhite } from "@/assets/logos";
 import {
   Sidebar,
   SidebarContent,
