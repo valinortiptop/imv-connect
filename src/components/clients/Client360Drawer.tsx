@@ -254,19 +254,19 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
               </TabsContent>
 
               <TabsContent value="pagos" className="pt-4">
-                {q.data!.payments.length === 0 ? (
-                  <Empty>Sin pagos registrados.</Empty>
+                {q.data!.facturas.length === 0 ? (
+                  <Empty>Sin facturas registradas.</Empty>
                 ) : (
                   <ul className="divide-y rounded-md border">
-                    {q.data!.payments.map((p: any) => (
-                      <li key={p.id} className="px-3 py-2 text-sm">
+                    {q.data!.facturas.map((f: any) => (
+                      <li key={f.id} className="px-3 py-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="font-medium">{p.metodo ?? "Pago"}</span>
-                          <span className="tabular-nums font-medium">{fmt(p.monto)}</span>
+                          <span className="font-medium">{f.folio ?? f.id.slice(0, 8)}</span>
+                          <span className="tabular-nums font-medium">{fmt(f.total)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground flex justify-between mt-0.5">
-                          <span>{p.referencia ?? "—"}</span>
-                          <span>{fmtDate(p.fecha)}</span>
+                          <span className="capitalize">{f.estado ?? "—"} · saldo {fmt(f.saldo)}</span>
+                          <span>{fmtDate(f.fecha_emision)}</span>
                         </div>
                       </li>
                     ))}
