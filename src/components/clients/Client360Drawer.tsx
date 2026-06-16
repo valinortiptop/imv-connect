@@ -239,13 +239,10 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                     <ul className="divide-y rounded-md border">
                       {q.data!.overrides.map((o: any, i: number) => (
                         <li key={i} className="flex justify-between px-3 py-2 text-sm">
-                          <span className="truncate">
-                            <span className="font-mono text-xs text-muted-foreground mr-1.5">
-                              {o.productos?.sku ?? "—"}
-                            </span>
-                            {o.productos?.nombre ?? "—"}
+                          <span className="truncate text-muted-foreground">
+                            {o.notes || o.product_id?.slice(0, 8) || "—"}
                           </span>
-                          <span className="font-medium tabular-nums">{fmt(o.unit_price)}</span>
+                          <span className="font-medium tabular-nums">{fmt(o.price_with_iva)}</span>
                         </li>
                       ))}
                     </ul>
