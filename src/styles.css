@@ -154,3 +154,31 @@
     @apply rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent;
   }
 }
+
+/* IMV brand fonts */
+@font-face {
+  font-family: "Exo 2";
+  src: url("/__l5e/assets-v1/2e94c2a1-ba1d-493c-a01c-0fa9f7ac5f8f/Exo2-Variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Montserrat";
+  src: url("/__l5e/assets-v1/c342a588-67a0-4a1a-be22-91f438c51bfa/Montserrat-SemiBoldItalic.otf") format("opentype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham";
+  src: url("/__l5e/assets-v1/f979d640-bd1d-496b-b3e2-ce93bce0a9a4/Gotham-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --imv-navy: #001D77;
+  --imv-aqua: #2DE2C5;
+}

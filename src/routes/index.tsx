@@ -35,12 +35,17 @@ function IndexPage() {
           />
         </div>
 
-        <h1 className="mt-10 text-center text-5xl font-semibold tracking-tight sm:text-6xl">
-          <span className="bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500 bg-clip-text text-transparent">
-            IMV Portal
-          </span>
+        <h1
+          className="mt-10 text-center text-6xl italic tracking-tight sm:text-7xl"
+          style={{ fontFamily: '"Exo 2", system-ui, sans-serif', fontWeight: 700, color: "#001D77" }}
+        >
+          imv<span style={{ color: "#2DE2C5" }}>.</span>{" "}
+          <span style={{ fontWeight: 500, color: "#001D77" }}>Portal</span>
         </h1>
-        <p className="mt-4 max-w-xl text-center text-base text-muted-foreground sm:text-lg">
+        <p
+          className="mt-4 max-w-xl text-center text-base sm:text-lg"
+          style={{ fontFamily: '"Montserrat", system-ui, sans-serif', fontStyle: "italic", color: "#001D77", opacity: 0.75 }}
+        >
           Plataforma integral de medicina veterinaria — catálogo, pedidos, almacén y operaciones.
         </p>
 
