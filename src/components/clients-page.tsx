@@ -1431,7 +1431,7 @@ export default function Clients() {
                       <TableRow
                         id={`client-row-${c.id}`}
                         className={cn("border-border hover:bg-muted/50 cursor-pointer", !c.active && "opacity-50", selectedIds.has(c.id) && "bg-muted/30")}
-                        onClick={() => toggleExpand(c.id)}
+                        onClick={() => setClient360Id(c.id)}
                       >
                         <TableCell className="hidden md:table-cell" onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} /></TableCell>
                         <TableCell className="px-1">
@@ -1442,30 +1442,17 @@ export default function Clients() {
                           </Button>
                         </TableCell>
                         <TableCell className="text-foreground font-medium">
-                          {/* Pill on the LEFT of the name so all pills line
-                              up vertically. In filtered views the slot is
-                              kept reserved (invisible) so names don't slide
-                              left when toggling tabs.
-
-                              The NAME itself is a Link to the full client
-                              detail page — opens /clients/:id with all the
-                              tabs (Resumen, Pedidos, Productos, Precios,
-                              CFDI, Datos). Clicking elsewhere on the row
-                              keeps the existing "toggle inline expand"
-                              behavior, so the quick preview still works. */}
                           <div className="flex items-center gap-2">
                             <ClientTypeBadge
                               type={c.client_type}
                               invisible={typeFilter !== "todos"}
                             />
-                            <Link
-                              to={`/clients/${c.id}`}
-                              onClick={(e) => e.stopPropagation()}
+                            <span
                               className="truncate hover:underline hover:text-primary transition-colors"
-                              title="Ver detalles del cliente"
+                              title="Abrir vista 360"
                             >
                               {c.name}
-                            </Link>
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
