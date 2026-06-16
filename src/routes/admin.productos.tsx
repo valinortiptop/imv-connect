@@ -861,6 +861,10 @@ function EditProductDialog({
         bonificacion_pct: Number(bono) || 0,
         margen_normal_pct: margenNormal ? Number(margenNormal) : null,
         margen_bonif_pct: margenBono ? Number(margenBono) : null,
+        linea: linea.trim() || null,
+        grupo: grupo.trim() || null,
+        tipo_producto: tipoProducto.trim() || null,
+        sat_clave: satClave.trim() || null,
       };
       if (imagen_url !== undefined) patch.imagen_url = imagen_url;
       const { error } = await supabase
