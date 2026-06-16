@@ -125,12 +125,24 @@ function ProductosPage() {
   const productosQ = useQuery({
     queryKey: ["productos-catalogo"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("productos")
-        .select("*, laboratorios(nombre)")
-        .order("nombre");
-      if (error) throw error;
-      return sortProducts(data as unknown as Producto[]);
+      // Supabase caps responses at 1000 rows by default — paginate via range
+      const pageSize = 1000;
+      let from = 0;
+      const all: unknown[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("productos")
+          .select("*, laboratorios(nombre)")
+          .order("nombre")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = data ?? [];
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
+      return sortProducts(all as unknown as Producto[]);
     },
   });
 
