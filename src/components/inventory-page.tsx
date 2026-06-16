@@ -797,6 +797,12 @@ export default function Inventory() {
           onOpenChange={(open) => { if (!open) setDamagedProduct(null); }}
           product={damagedProduct}
         />
+
+        <Product360Drawer
+          productId={drawerId}
+          open={!!drawerId}
+          onOpenChange={(o) => !o && setDrawerId(null)}
+        />
       </div>
     </div>
   );
