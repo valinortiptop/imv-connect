@@ -67,22 +67,58 @@ export type ProductMapped = {
   unidad?: string;
 };
 
-export function mapProductRow(row: RawRow): ProductMapped | null {
-  const sku = pick(row, ["sku", "clave", "codigo", "code"]);
-  const nombre = pick(row, ["nombre", "producto", "descripcion_corta", "name"]);
+export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: string }) | null {
+  // Heurística para el formato "BG Cat productos":
+  //   columna "Nombre"              → SKU
+  //   columna "Nombre para mostrar" → nombre comercial
+  //   columna "Clase"               → laboratorio/marca
+  //   columna "Tipo de producto"    → categoría
+  //   columna "Grupo"               → se anexa a descripción
+  // Si la fila tiene "nombre_para_mostrar", asumimos ese formato.
+  const hasDisplay = pick(row, ["nombre_para_mostrar", "display_name"]);
+  let sku: string | undefined;
+  let nombre: string | undefined;
+  if (hasDisplay) {
+    sku = pick(row, ["nombre", "sku", "clave", "codigo", "code"]);
+    nombre = hasDisplay;
+  } else {
+    sku = pick(row, ["sku", "clave", "codigo", "code"]);
+    nombre = pick(row, ["nombre", "producto", "descripcion_corta", "name"]);
+  }
   if (!sku || !nombre) return null;
+
+  const marca = pick(row, ["marca", "brand", "clase", "laboratorio", "lab"]);
+  const categoria = pick(row, ["categoria", "tipo_de_producto", "tipo"]);
+  const grupo = pick(row, ["grupo", "group"]);
+  const descripcionBase = pick(row, ["descripcion", "description", "detalle"]);
+  const descripcion =
+    [descripcionBase, grupo].filter(Boolean).join(" — ") || undefined;
+
+  // Derivar IVA desde el código SuiteTax si está disponible.
+  const sat = pick(row, [
+    "codigo_de_articulo_de_suitetax_latam_engine",
+    "suitetax",
+    "iva_label",
+  ]);
+  let ivaPct = num(pick(row, ["iva", "iva_pct"]));
+  if (ivaPct === null && sat) {
+    if (/iva\s*0/i.test(sat)) ivaPct = 0;
+    else if (/iva\s*16/i.test(sat)) ivaPct = 16;
+  }
+
   return {
     sku,
     nombre,
-    marca: pick(row, ["marca", "brand"]),
+    marca,
     presentacion: pick(row, ["presentacion", "presentation"]),
-    descripcion: pick(row, ["descripcion", "description", "detalle"]),
+    descripcion,
+    categoria,
     precio_lista: num(pick(row, ["precio_lista", "precio", "precio_publico", "pvp", "price"])),
     costo: num(pick(row, ["costo", "costo_sin_iva", "costo_siva", "cost"])),
     costo_civa: num(pick(row, ["costo_con_iva", "costo_civa"])),
-    iva_pct: num(pick(row, ["iva", "iva_pct"])),
+    iva_pct: ivaPct,
     peso_kg: num(pick(row, ["peso", "peso_kg", "weight_kg"])),
-    proveedor: pick(row, ["proveedor", "laboratorio", "lab", "supplier"]),
+    proveedor: pick(row, ["proveedor", "supplier"]),
     unidad: pick(row, ["unidad", "unit"]),
   };
 }
@@ -107,16 +143,40 @@ export type ImportResult = {
   errors: string[];
 };
 
-/** Upsert masivo de productos por SKU. */
+
+/** Upsert masivo de productos por SKU. Crea laboratorios faltantes a partir de `marca`. */
 export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
   const out: ImportResult = { inserted: 0, updated: 0, skipped: 0, errors: [] };
-  const mapped = rows.map(mapProductRow).filter(Boolean) as ProductMapped[];
+  const mapped = rows.map(mapProductRow).filter(Boolean) as Array<
+    ProductMapped & { categoria?: string }
+  >;
   if (mapped.length === 0) {
     out.errors.push("No se encontraron filas con SKU y nombre.");
     return out;
   }
 
-  // Cargar SKUs existentes para distinguir insert vs update.
+  // 1) Asegurar laboratorios para cada `marca` única.
+  const marcas = Array.from(
+    new Set(mapped.map((m) => m.marca).filter(Boolean) as string[]),
+  );
+  if (marcas.length > 0) {
+    const { data: existingLabs } = await supabase
+      .from("laboratorios")
+      .select("id,nombre")
+      .in("nombre", marcas);
+    const have = new Set((existingLabs ?? []).map((l) => l.nombre));
+    const toInsert = marcas
+      .filter((n) => !have.has(n))
+      .map((nombre, i) => ({ nombre, activo: true, orden: (i + 1) * 10 }));
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from("laboratorios").insert(toInsert);
+      if (error) out.errors.push(`Laboratorios: ${error.message}`);
+    }
+  }
+  const { data: allLabs } = await supabase.from("laboratorios").select("id,nombre");
+  const labIdByNombre = new Map((allLabs ?? []).map((l) => [l.nombre, l.id]));
+
+  // 2) Productos existentes para distinguir insert vs update.
   const skus = mapped.map((m) => m.sku);
   const { data: existing } = await supabase
     .from("productos")
@@ -129,9 +189,11 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
       sku: p.sku,
       nombre: p.nombre,
       marca: p.marca ?? null,
+      categoria: p.categoria ?? null,
+      laboratorio_id: p.marca ? labIdByNombre.get(p.marca) ?? null : null,
       presentacion: p.presentacion ?? null,
       descripcion: p.descripcion ?? null,
-      precio_lista: p.precio_lista ?? null,
+      precio_lista: p.precio_lista ?? 0,
       costo: p.costo ?? null,
       costo_siva: p.costo ?? null,
       costo_civa: p.costo_civa ?? null,
