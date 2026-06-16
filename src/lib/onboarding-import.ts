@@ -209,6 +209,10 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
       peso_kg: p.peso_kg ?? null,
       proveedor: p.proveedor ?? null,
       unidad: p.unidad ?? "pieza",
+      linea: p.linea ?? null,
+      grupo: p.grupo ?? null,
+      tipo_producto: p.tipo_producto ?? null,
+      sat_clave: p.sat_clave ?? null,
       activo: true,
     };
     const id = existingBySku.get(p.sku);
