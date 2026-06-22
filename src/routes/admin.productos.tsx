@@ -1500,6 +1500,41 @@ function ImportExcelDialog({
             </Button>
           </div>
 
+          {creatingLab && (
+            <div className="flex items-end gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground">
+                  Nombre del nuevo laboratorio
+                </Label>
+                <Input
+                  className="mt-1"
+                  value={newLabName}
+                  onChange={(e) => setNewLabName(e.target.value)}
+                  placeholder="Ej. Zoetis"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      createLab();
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+              <Button onClick={createLab} disabled={savingLab}>
+                {savingLab ? "Guardando…" : "Crear"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setCreatingLab(false);
+                  setNewLabName("");
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
+
           {rows.length > 0 && (
             <>
               <div className="flex gap-2 text-xs">
