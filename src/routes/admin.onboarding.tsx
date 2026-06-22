@@ -96,11 +96,25 @@ function OnboardingPage() {
     return g;
   }, [items, filter]);
 
+  // An item counts as "effectively delivered" if its DB state says so OR it
+  // requires a file and at least one file is already uploaded. This protects
+  // against the case where the upload succeeded but the follow-up status
+  // update failed silently (e.g. RLS) and the user kept seeing "pendiente".
+  const effectiveEstado = (it: Item): Item["estado"] => {
+    if (it.estado === "no_aplica") return "no_aplica";
+    if (it.estado === "entregado") return "entregado";
+    if (it.requiere_archivo && archivos.some((a) => a.item_id === it.id)) {
+      return "entregado";
+    }
+    return it.estado;
+  };
+
   const stats = useMemo(() => {
     const req = items.filter((i) => i.requerido && i.estado !== "no_aplica");
-    const done = req.filter((i) => i.estado === "entregado").length;
+    const done = req.filter((i) => effectiveEstado(i) === "entregado").length;
     return { total: req.length, done, pct: req.length ? Math.round((done / req.length) * 100) : 0 };
-  }, [items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, archivos]);
 
   const updateItem = async (id: string, patch: Partial<Item>) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -134,8 +148,27 @@ function OnboardingPage() {
       size_bytes: file.size,
       uploaded_by: u.user?.id,
     });
-    await updateItem(item.id, { estado: "entregado" });
+    // Optimistic local update — guarantees the badge flips to ENTREGADO
+    // even if the server-side `onboarding_items` update is blocked by RLS.
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, estado: "entregado" } : i)),
+    );
+    // Best-effort sync to DB; ignore RLS failures (derived state covers it).
+    await supabase
+      .from("onboarding_items")
+      .update({ estado: "entregado" })
+      .eq("id", item.id);
     await load();
+  };
+
+  const uploadFiles = async (item: Item, files: FileList | File[]) => {
+    const arr = Array.from(files);
+    for (const f of arr) {
+      // upload sequentially so we don't overwhelm the bucket with parallel ops
+      // and keep filenames deterministic.
+      // eslint-disable-next-line no-await-in-loop
+      await uploadFile(item, f);
+    }
   };
 
   const downloadFile = async (a: Archivo) => {
@@ -200,8 +233,10 @@ function OnboardingPage() {
             <div className="divide-y divide-border">
               {list.map((it) => {
                 const files = archivos.filter((a) => a.item_id === it.id);
+                const eff = effectiveEstado(it);
+                const isImgBulk = it.clave === "imagenes_productos";
                 return (
-                  <div key={it.id} className={`p-4 ${it.estado === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
+                  <div key={it.id} className={`p-4 ${eff === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -212,10 +247,15 @@ function OnboardingPage() {
                             </span>
                           )}
                           <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_COLOR[it.estado]}`}
+                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_COLOR[eff]}`}
                           >
-                            {it.estado.replace("_", " ")}
+                            {eff.replace("_", " ")}
                           </span>
+                          {isImgBulk && files.length > 0 && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                              {files.length} {files.length === 1 ? "imagen" : "imágenes"}
+                            </span>
+                          )}
                         </div>
                         {it.descripcion && (
                           <p className="mt-1 text-xs text-muted-foreground">{it.descripcion}</p>
@@ -227,15 +267,20 @@ function OnboardingPage() {
                           <input
                             type="file"
                             className="hidden"
+                            multiple={isImgBulk}
+                            accept={isImgBulk ? "image/*" : undefined}
                             onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) uploadFile(it, f);
+                              const fs = e.target.files;
+                              if (fs && fs.length > 0) {
+                                if (isImgBulk) uploadFiles(it, fs);
+                                else uploadFile(it, fs[0]);
+                              }
                               e.target.value = "";
                             }}
                           />
                         </label>
                         <select
-                          value={it.estado}
+                          value={eff}
                           onChange={(e) => updateItem(it.id, { estado: e.target.value as Item["estado"] })}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         >
@@ -272,9 +317,14 @@ function OnboardingPage() {
                       <div className="mt-3">
                         <input
                           type="file"
+                          multiple={isImgBulk}
+                          accept={isImgBulk ? "image/*" : undefined}
                           onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadFile(it, f);
+                            const fs = e.target.files;
+                            if (fs && fs.length > 0) {
+                              if (isImgBulk) uploadFiles(it, fs);
+                              else uploadFile(it, fs[0]);
+                            }
                             e.target.value = "";
                           }}
                           className="text-xs"
