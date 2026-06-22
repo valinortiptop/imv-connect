@@ -1658,10 +1658,18 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             <Button
               variant="outline"
               onClick={() => inputRef.current?.click()}
-              disabled={parsing}
+              disabled={parsing || analyzing}
             >
-              <Upload className="mr-1.5 h-4 w-4" />
-              {parsing ? "Analizando…" : "Seleccionar archivo"}
+              {analyzing ? (
+                <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
+              ) : (
+                <Upload className="mr-1.5 h-4 w-4" />
+              )}
+              {analyzing
+                ? "Analizando con IA…"
+                : parsing
+                  ? "Leyendo…"
+                  : "Seleccionar archivo"}
             </Button>
           </div>
 
