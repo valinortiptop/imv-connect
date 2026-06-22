@@ -317,9 +317,14 @@ function OnboardingPage() {
                       <div className="mt-3">
                         <input
                           type="file"
+                          multiple={isImgBulk}
+                          accept={isImgBulk ? "image/*" : undefined}
                           onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadFile(it, f);
+                            const fs = e.target.files;
+                            if (fs && fs.length > 0) {
+                              if (isImgBulk) uploadFiles(it, fs);
+                              else uploadFile(it, fs[0]);
+                            }
                             e.target.value = "";
                           }}
                           className="text-xs"
