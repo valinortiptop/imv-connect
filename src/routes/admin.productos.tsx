@@ -1609,9 +1609,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             <FileSpreadsheet className="h-5 w-5" /> Importar productos desde Excel
           </DialogTitle>
           <DialogDescription>
-            Columnas reconocidas: <code>clave</code>, <code>nombre</code>,{" "}
-            <code>marca</code>, <code>proveedor</code>, <code>peso</code>,{" "}
-            <code>precio</code>.
+            <Sparkles className="inline h-3.5 w-3.5 text-primary" /> La IA analiza
+            tu Excel, detecta columnas automáticamente y asigna el laboratorio por
+            fila. Los laboratorios nuevos se crearán al importar.
           </DialogDescription>
         </DialogHeader>
 
@@ -1619,7 +1619,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">
-                Laboratorio destino
+                Laboratorio por defecto (opcional, para filas sin laboratorio)
               </Label>
               <div className="mt-1 flex gap-2">
                 <Select value={labId} onValueChange={setLabId}>
