@@ -44,7 +44,9 @@ import {
   Pencil,
   Trash2,
   Check,
+  Sparkles,
 } from "lucide-react";
+import { aiChatFn } from "@/lib/valinor.functions";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
