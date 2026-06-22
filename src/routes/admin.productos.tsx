@@ -1730,6 +1730,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                       <TableHead>Clave</TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Marca</TableHead>
+                      <TableHead>Laboratorio</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1754,6 +1755,20 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                         <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
                         <TableCell>{r.nombre || "—"}</TableCell>
                         <TableCell>{r.marca || "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.laboratorio_nombre ? (
+                            r.laboratorio_id ? (
+                              <span>{r.laboratorio_nombre}</span>
+                            ) : (
+                              <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">
+                                <Plus className="mr-1 h-3 w-3" />
+                                {r.laboratorio_nombre}
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
                         </TableCell>
