@@ -1296,6 +1296,9 @@ function ImportExcelDialog({
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [labId, setLabId] = useState("");
+  const [creatingLab, setCreatingLab] = useState(false);
+  const [newLabName, setNewLabName] = useState("");
+  const [savingLab, setSavingLab] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const labsQ = useQuery({
