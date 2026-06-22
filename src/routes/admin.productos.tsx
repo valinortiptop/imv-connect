@@ -1456,18 +1456,29 @@ function ImportExcelDialog({
               <Label className="text-xs text-muted-foreground">
                 Laboratorio destino
               </Label>
-              <Select value={labId} onValueChange={setLabId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecciona…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(labsQ.data ?? []).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="mt-1 flex gap-2">
+                <Select value={labId} onValueChange={setLabId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(labsQ.data ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Nuevo laboratorio"
+                  onClick={() => setCreatingLab((v) => !v)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <input
               ref={inputRef}
