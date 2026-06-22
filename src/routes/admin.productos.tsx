@@ -1296,6 +1296,9 @@ function ImportExcelDialog({
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [labId, setLabId] = useState("");
+  const [creatingLab, setCreatingLab] = useState(false);
+  const [newLabName, setNewLabName] = useState("");
+  const [savingLab, setSavingLab] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const labsQ = useQuery({
@@ -1309,6 +1312,29 @@ function ImportExcelDialog({
       return data as { id: string; nombre: string }[];
     },
   });
+
+  const createLab = async () => {
+    const nombre = newLabName.trim();
+    if (!nombre) return toast.error("Escribe un nombre");
+    setSavingLab(true);
+    try {
+      const { data, error } = await supabase
+        .from("laboratorios")
+        .insert({ nombre })
+        .select("id, nombre")
+        .single();
+      if (error) throw error;
+      toast.success("Laboratorio creado");
+      await labsQ.refetch();
+      setLabId(data.id);
+      setNewLabName("");
+      setCreatingLab(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingLab(false);
+    }
+  };
 
   const handleFile = async (file: File) => {
     setParsing(true);
@@ -1430,18 +1456,29 @@ function ImportExcelDialog({
               <Label className="text-xs text-muted-foreground">
                 Laboratorio destino
               </Label>
-              <Select value={labId} onValueChange={setLabId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecciona…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(labsQ.data ?? []).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="mt-1 flex gap-2">
+                <Select value={labId} onValueChange={setLabId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(labsQ.data ?? []).map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Nuevo laboratorio"
+                  onClick={() => setCreatingLab((v) => !v)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <input
               ref={inputRef}
@@ -1462,6 +1499,41 @@ function ImportExcelDialog({
               {parsing ? "Analizando…" : "Seleccionar archivo"}
             </Button>
           </div>
+
+          {creatingLab && (
+            <div className="flex items-end gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground">
+                  Nombre del nuevo laboratorio
+                </Label>
+                <Input
+                  className="mt-1"
+                  value={newLabName}
+                  onChange={(e) => setNewLabName(e.target.value)}
+                  placeholder="Ej. Zoetis"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      createLab();
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+              <Button onClick={createLab} disabled={savingLab}>
+                {savingLab ? "Guardando…" : "Crear"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setCreatingLab(false);
+                  setNewLabName("");
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
 
           {rows.length > 0 && (
             <>
