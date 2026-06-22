@@ -1283,6 +1283,8 @@ type ImportRow = {
   proveedor: string;
   peso_kg: number | null;
   precio_lista: number | null;
+  laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
+  laboratorio_id: string | null; // matched existing id (if any)
   status: "new" | "exists" | "error";
   errorMsg?: string;
 };
