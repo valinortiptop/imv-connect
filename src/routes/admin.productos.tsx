@@ -1313,6 +1313,29 @@ function ImportExcelDialog({
     },
   });
 
+  const createLab = async () => {
+    const nombre = newLabName.trim();
+    if (!nombre) return toast.error("Escribe un nombre");
+    setSavingLab(true);
+    try {
+      const { data, error } = await supabase
+        .from("laboratorios")
+        .insert({ nombre })
+        .select("id, nombre")
+        .single();
+      if (error) throw error;
+      toast.success("Laboratorio creado");
+      await labsQ.refetch();
+      setLabId(data.id);
+      setNewLabName("");
+      setCreatingLab(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingLab(false);
+    }
+  };
+
   const handleFile = async (file: File) => {
     setParsing(true);
     try {
