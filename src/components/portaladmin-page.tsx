@@ -2,7 +2,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,77 +9,58 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-  Search,
-  Link2,
-  ExternalLink,
-  Copy,
-  Check,
-  Eye,
-  Loader2,
-} from "lucide-react";
+import { Search, Link2, Copy, Check, Eye, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface ClientWithPortal {
+interface ClientRow {
   id: string;
-  name: string;
+  name: string | null;
   company: string | null;
   phone: string | null;
-  active: boolean;
-  portal_token?: {
-    id: string;
-    token: string;
-    is_active: boolean;
-    created_at: string;
-  } | null;
+  portal_activo: boolean | null;
+  token_portal: string | null;
 }
 
 const PORTAL_BASE = typeof window !== "undefined" ? window.location.origin : "";
 
+function makeToken(name: string | null) {
+  const slug = (name || "cliente")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "cliente";
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${slug}-${suffix}`;
+}
+
 export default function PortalAdmin() {
-  const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Fetch all clients with their portal tokens
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ["portal-admin-clients"],
     queryFn: async () => {
-      const { data: clientData, error: cErr } = await supabase
+      const { data, error } = await supabase
         .from("clients")
-        .select("id, name, company, phone, active")
+        .select("id, name, company, phone, portal_activo, token_portal")
         .order("name");
-
-      if (cErr) throw cErr;
-
-      const { data: tokens, error: tErr } = await supabase
-        .from("client_portal_tokens" as any)
-        .select("id, client_id, token, is_active, created_at");
-
-      if (tErr) throw tErr;
-
-      const tokenMap = new Map<string, any>();
-      for (const t of (tokens as any[]) || []) {
-        tokenMap.set(t.client_id, t);
-      }
-
-      return (clientData || []).map((c: any) => ({
-        ...c,
-        portal_token: tokenMap.get(c.id) || null,
-      })) as ClientWithPortal[];
+      if (error) throw error;
+      return (data || []) as ClientRow[];
     },
   });
 
-  // Generate portal link via the SQL helper — produces a readable
-  // <slug>-<4ch> token (e.g. "alexis-villalon-x7k2") instead of the
-  // old 32-char hex blob.
   const generateToken = useMutation({
-    mutationFn: async (clientId: string) => {
-      const { data, error } = await (supabase as any).rpc("mint_portal_token", { p_client_id: clientId });
+    mutationFn: async (client: ClientRow) => {
+      const token = makeToken(client.name);
+      const { error } = await supabase
+        .from("clients")
+        .update({ token_portal: token, portal_activo: true } as any)
+        .eq("id", client.id);
       if (error) throw error;
-      return { token: data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal-admin-clients"] });
@@ -91,20 +71,19 @@ export default function PortalAdmin() {
     },
   });
 
-  // Toggle portal active state
   const toggleActive = useMutation({
-    mutationFn: async ({ tokenId, isActive }: { tokenId: string; isActive: boolean }) => {
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
-        .from("client_portal_tokens" as any)
-        .update({
-          is_active: isActive,
-          deactivated_at: isActive ? null : new Date().toISOString(),
-        } as any)
-        .eq("id", tokenId);
+        .from("clients")
+        .update({ portal_activo: isActive } as any)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal-admin-clients"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
@@ -113,26 +92,18 @@ export default function PortalAdmin() {
     const q = search.toLowerCase();
     return clients.filter(
       (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.company?.toLowerCase().includes(q) ||
-        c.phone?.includes(q)
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.company || "").toLowerCase().includes(q) ||
+        (c.phone || "").includes(q)
     );
   }, [clients, search]);
 
-  /**
-   * iOS-reliable copy: write into a temporary off-screen <input>,
-   * select it, then document.execCommand("copy"). All sync inside the
-   * click event — the only path iOS Safari accepts in every context.
-   * Falls back to navigator.clipboard.writeText for environments where
-   * execCommand is disabled.
-   */
   const copyLink = (token: string, clientId: string) => {
     const url = `${PORTAL_BASE}/portal/${token}`;
     let copied = false;
     try {
       const ta = document.createElement("textarea");
       ta.value = url;
-      // Off-screen but still rendered (iOS won't copy from display:none).
       ta.style.position = "fixed";
       ta.style.top = "0";
       ta.style.left = "0";
@@ -141,7 +112,7 @@ export default function PortalAdmin() {
       document.body.appendChild(ta);
       ta.focus({ preventScroll: true });
       ta.select();
-      ta.setSelectionRange(0, ta.value.length); // iOS-required after select()
+      ta.setSelectionRange(0, ta.value.length);
       copied = document.execCommand("copy");
       document.body.removeChild(ta);
     } catch {
@@ -167,12 +138,10 @@ export default function PortalAdmin() {
     toast({ title: "No se pudo copiar el enlace" });
   };
 
-
-  const activeCount = clients.filter((c) => c.portal_token?.is_active).length;
+  const activeCount = clients.filter((c) => c.portal_activo && c.token_portal).length;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Portal de Clientes</h1>
@@ -183,7 +152,6 @@ export default function PortalAdmin() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -194,8 +162,11 @@ export default function PortalAdmin() {
         />
       </div>
 
-      {/* Table */}
-      {isLoading ? (
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {(error as Error).message}
+        </div>
+      ) : isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
@@ -214,15 +185,14 @@ export default function PortalAdmin() {
             </TableHeader>
             <TableBody>
               {filtered.map((client) => {
-                const token = client.portal_token;
-                const hasPortal = !!token;
-                const isActive = token?.is_active ?? false;
+                const hasToken = !!client.token_portal;
+                const isActive = !!client.portal_activo && hasToken;
 
                 return (
                   <TableRow key={client.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{client.name}</p>
+                        <p className="font-medium">{client.name || "—"}</p>
                         {client.company && (
                           <p className="text-xs text-muted-foreground">{client.company}</p>
                         )}
@@ -234,12 +204,12 @@ export default function PortalAdmin() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {hasPortal ? (
+                      {hasToken ? (
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={isActive}
                             onCheckedChange={(checked) =>
-                              toggleActive.mutate({ tokenId: token!.id, isActive: checked })
+                              toggleActive.mutate({ id: client.id, isActive: checked })
                             }
                           />
                           <Badge
@@ -258,7 +228,7 @@ export default function PortalAdmin() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => generateToken.mutate(client.id)}
+                          onClick={() => generateToken.mutate(client)}
                           disabled={generateToken.isPending}
                           className="text-xs"
                         >
@@ -272,14 +242,13 @@ export default function PortalAdmin() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {hasPortal && isActive && (
+                      {isActive && client.token_portal && (
                         <div className="flex items-center gap-1">
-                          {/* Copy link */}
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8"
-                            onClick={() => copyLink(token!.token, client.id)}
+                            onClick={() => copyLink(client.token_portal!, client.id)}
                             title="Copiar enlace"
                           >
                             {copiedId === client.id ? (
@@ -288,13 +257,9 @@ export default function PortalAdmin() {
                               <Copy className="h-3.5 w-3.5" />
                             )}
                           </Button>
-
-                          {/* Preview as client — real <a> so iOS Safari
-                              treats it as a navigation, not a programmatic
-                              popup (which it blocks). */}
                           <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="Ver como cliente">
                             <a
-                              href={`${PORTAL_BASE}/portal/${token!.token}`}
+                              href={`${PORTAL_BASE}/portal/${client.token_portal}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Ver como cliente"
