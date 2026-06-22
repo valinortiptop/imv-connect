@@ -96,11 +96,25 @@ function OnboardingPage() {
     return g;
   }, [items, filter]);
 
+  // An item counts as "effectively delivered" if its DB state says so OR it
+  // requires a file and at least one file is already uploaded. This protects
+  // against the case where the upload succeeded but the follow-up status
+  // update failed silently (e.g. RLS) and the user kept seeing "pendiente".
+  const effectiveEstado = (it: Item): Item["estado"] => {
+    if (it.estado === "no_aplica") return "no_aplica";
+    if (it.estado === "entregado") return "entregado";
+    if (it.requiere_archivo && archivos.some((a) => a.item_id === it.id)) {
+      return "entregado";
+    }
+    return it.estado;
+  };
+
   const stats = useMemo(() => {
     const req = items.filter((i) => i.requerido && i.estado !== "no_aplica");
-    const done = req.filter((i) => i.estado === "entregado").length;
+    const done = req.filter((i) => effectiveEstado(i) === "entregado").length;
     return { total: req.length, done, pct: req.length ? Math.round((done / req.length) * 100) : 0 };
-  }, [items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, archivos]);
 
   const updateItem = async (id: string, patch: Partial<Item>) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
