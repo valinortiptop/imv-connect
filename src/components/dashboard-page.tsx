@@ -333,13 +333,13 @@ export default function Dashboard() {
           compact
         />
 
-        {/* Business-unit filter — [ ALL · Naucalpan · Tamemes · GDL ] */}
+        {/* Business-unit filter — [ ALL · Almacén 1 · Almacén 2 · Almacén 3 ] */}
         <div className="flex gap-1.5 flex-wrap">
           {([
-            { key: "all" as const,       label: "Todo",       sub: "Naucalpan + Partners" },
-            { key: "naucalpan" as const, label: "Naucalpan",  sub: "Ventas directas" },
-            { key: "tamemes" as const,   label: "Tamemes",    sub: "Iztapalapa · liquidación mensual" },
-            { key: "gdl" as const,       label: "Guadalajara", sub: "GDL · markup por embarque" },
+            { key: "all" as const,       label: "Todo",       sub: "Almacén 1 + Partners" },
+            { key: "naucalpan" as const, label: "Almacén 1",  sub: "Ventas directas" },
+            { key: "tamemes" as const,   label: "Almacén 2",  sub: "Iztapalapa · liquidación mensual" },
+            { key: "gdl" as const,       label: "Almacén 3",  sub: "Almacén 3 · markup por embarque" },
           ]).map(v => {
             const isActive = businessView === v.key;
             return (
