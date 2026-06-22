@@ -184,7 +184,7 @@ export function ChannelsSummaryStrip({ dateFrom, dateTo, pStart, pEnd, onPickCha
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-blue-500" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Naucalpan</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Almacén 1</span>
             </div>
             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
@@ -213,7 +213,7 @@ export function ChannelsSummaryStrip({ dateFrom, dateTo, pStart, pEnd, onPickCha
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-purple-500" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tamemes</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Almacén 2</span>
             </div>
             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
@@ -233,7 +233,7 @@ export function ChannelsSummaryStrip({ dateFrom, dateTo, pStart, pEnd, onPickCha
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-orange-500" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guadalajara</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Almacén 3</span>
             </div>
             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
