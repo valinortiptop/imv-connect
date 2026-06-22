@@ -233,8 +233,10 @@ function OnboardingPage() {
             <div className="divide-y divide-border">
               {list.map((it) => {
                 const files = archivos.filter((a) => a.item_id === it.id);
+                const eff = effectiveEstado(it);
+                const isImgBulk = it.clave === "imagenes_productos";
                 return (
-                  <div key={it.id} className={`p-4 ${it.estado === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
+                  <div key={it.id} className={`p-4 ${eff === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -245,10 +247,15 @@ function OnboardingPage() {
                             </span>
                           )}
                           <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_COLOR[it.estado]}`}
+                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_COLOR[eff]}`}
                           >
-                            {it.estado.replace("_", " ")}
+                            {eff.replace("_", " ")}
                           </span>
+                          {isImgBulk && files.length > 0 && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                              {files.length} {files.length === 1 ? "imagen" : "imágenes"}
+                            </span>
+                          )}
                         </div>
                         {it.descripcion && (
                           <p className="mt-1 text-xs text-muted-foreground">{it.descripcion}</p>
@@ -260,15 +267,20 @@ function OnboardingPage() {
                           <input
                             type="file"
                             className="hidden"
+                            multiple={isImgBulk}
+                            accept={isImgBulk ? "image/*" : undefined}
                             onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) uploadFile(it, f);
+                              const fs = e.target.files;
+                              if (fs && fs.length > 0) {
+                                if (isImgBulk) uploadFiles(it, fs);
+                                else uploadFile(it, fs[0]);
+                              }
                               e.target.value = "";
                             }}
                           />
                         </label>
                         <select
-                          value={it.estado}
+                          value={eff}
                           onChange={(e) => updateItem(it.id, { estado: e.target.value as Item["estado"] })}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         >
