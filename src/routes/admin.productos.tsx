@@ -1473,9 +1473,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           const labNombre = String(r.laboratorio ?? "").trim();
           const matchedLab = labNombre ? labByNameLower.get(labNombre.toLowerCase()) : undefined;
           const peso_kg =
-            r.peso_kg == null || r.peso_kg === "" ? null : Number(r.peso_kg) || null;
+            r.peso_kg == null || String(r.peso_kg) === "" ? null : Number(r.peso_kg) || null;
           const precio_lista =
-            r.precio_lista == null || r.precio_lista === ""
+            r.precio_lista == null || String(r.precio_lista) === ""
               ? null
               : Number(r.precio_lista) || null;
           if (!nombre) {
