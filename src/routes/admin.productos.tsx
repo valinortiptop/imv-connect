@@ -44,7 +44,9 @@ import {
   Pencil,
   Trash2,
   Check,
+  Sparkles,
 } from "lucide-react";
+import { aiChatFn } from "@/lib/valinor.functions";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
@@ -1281,6 +1283,8 @@ type ImportRow = {
   proveedor: string;
   peso_kg: number | null;
   precio_lista: number | null;
+  laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
+  laboratorio_id: string | null; // matched existing id (if any)
   status: "new" | "exists" | "error";
   errorMsg?: string;
 };
@@ -1336,6 +1340,8 @@ function ImportExcelDialog({
     }
   };
 
+  const [analyzing, setAnalyzing] = useState(false);
+
   const handleFile = async (file: File) => {
     setParsing(true);
     try {
@@ -1343,7 +1349,9 @@ function ImportExcelDialog({
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet);
+      const json: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, {
+        defval: "",
+      });
 
       const { data: existing } = await supabase
         .from("productos")
@@ -1353,73 +1361,230 @@ function ImportExcelDialog({
         (existing ?? []).map((p) => (p.sku as string).toLowerCase()),
       );
 
-      const parsed: ImportRow[] = json.map((r) => {
-        const get = (...keys: string[]) => {
-          for (const k of keys) {
-            for (const real of Object.keys(r)) {
-              if (real.toLowerCase().trim() === k.toLowerCase())
-                return String(r[real] ?? "").trim();
+      // Heuristic mapping as a fallback / starting point.
+      const heuristicParse = (): ImportRow[] =>
+        json.map((r) => {
+          const get = (...keys: string[]) => {
+            for (const k of keys) {
+              for (const real of Object.keys(r)) {
+                if (real.toLowerCase().trim() === k.toLowerCase())
+                  return String(r[real] ?? "").trim();
+              }
             }
+            return "";
+          };
+          const sku = get("clave", "sku", "codigo", "código");
+          const nombre = get("nombre", "producto", "descripcion", "descripción", "name");
+          const marca = get("marca", "brand");
+          const proveedor = get("proveedor", "supplier");
+          const peso = get("peso", "peso_kg", "weight_kg", "kg");
+          const precio = get("precio", "precio_civa", "precio c/iva", "price", "precio lista");
+          const labNombre = get("laboratorio", "lab", "laboratory");
+          const base = { sku, nombre, marca, proveedor, laboratorio_nombre: labNombre, laboratorio_id: null as string | null };
+          if (!nombre) {
+            return {
+              ...base,
+              peso_kg: null,
+              precio_lista: null,
+              status: "error" as const,
+              errorMsg: "Falta nombre",
+            };
           }
-          return "";
-        };
-        const sku = get("clave", "sku");
-        const nombre = get("nombre", "producto", "name");
-        const marca = get("marca", "brand");
-        const proveedor = get("proveedor", "supplier");
-        const peso = get("peso", "peso_kg", "weight_kg");
-        const precio = get("precio", "precio_civa", "precio c/iva", "price");
+          const lower = sku.toLowerCase();
+          return {
+            ...base,
+            peso_kg: peso ? Number(peso) || null : null,
+            precio_lista: precio ? Number(precio) || null : null,
+            status: (lower && existingSkus.has(lower) ? "exists" : "new") as "new" | "exists",
+          };
+        });
 
-        if (!nombre) {
+      // Ask the AI to map columns and infer laboratorio per row.
+      setAnalyzing(true);
+      const labs = labsQ.data ?? [];
+      const sampleRows = json.slice(0, 800); // cap tokens
+      const headers = Object.keys(json[0] ?? {});
+      const system = `Eres un asistente que normaliza datos de productos farmacéuticos veterinarios desde Excel.
+Devuelves SOLO JSON válido, sin markdown ni texto extra.
+Tarea: para cada fila del Excel, identifica los campos canónicos y el laboratorio.
+Campos canónicos:
+- sku (clave/código del producto, string corto o vacío)
+- nombre (descripción del producto)
+- marca
+- proveedor
+- peso_kg (número en kg; convierte gramos a kg si aplica; null si no se sabe)
+- precio_lista (número, precio de lista en MXN; null si no se sabe)
+- laboratorio (nombre del laboratorio; intenta hacer match con la lista existente, si no, sugiere el nombre limpio tal como aparece)
+Las columnas del Excel pueden tener cualquier nombre o idioma. Detecta por contenido.
+Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"laboratorio":""}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
+      const userMsg = JSON.stringify({
+        laboratorios_existentes: labs.map((l) => l.nombre),
+        headers,
+        rows: sampleRows,
+      });
+
+      let aiRows: Array<{
+        sku?: string;
+        nombre?: string;
+        marca?: string;
+        proveedor?: string;
+        peso_kg?: number | null;
+        precio_lista?: number | null;
+        laboratorio?: string;
+      }> | null = null;
+
+      try {
+        const resp = await aiChatFn({
+          data: {
+            model: "gpt-4o-mini",
+            temperature: 0,
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: userMsg },
+            ],
+          },
+        });
+        const content =
+          (resp as { content?: string; choices?: Array<{ message?: { content?: string } }> })
+            ?.content ??
+          (resp as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]
+            ?.message?.content ??
+          "";
+        const cleaned = String(content)
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```$/i, "")
+          .trim();
+        const parsedJson = JSON.parse(cleaned);
+        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+      } catch (e) {
+        console.warn("AI mapping failed, using heuristic", e);
+      }
+
+      const labByNameLower = new Map(labs.map((l) => [l.nombre.toLowerCase(), l]));
+
+      let parsed: ImportRow[];
+      if (aiRows && aiRows.length > 0) {
+        parsed = aiRows.map((r, i) => {
+          const sku = String(r.sku ?? "").trim();
+          const nombre = String(r.nombre ?? "").trim();
+          const marca = String(r.marca ?? "").trim();
+          const proveedor = String(r.proveedor ?? "").trim();
+          const labNombre = String(r.laboratorio ?? "").trim();
+          const matchedLab = labNombre ? labByNameLower.get(labNombre.toLowerCase()) : undefined;
+          const peso_kg =
+            r.peso_kg == null || String(r.peso_kg) === "" ? null : Number(r.peso_kg) || null;
+          const precio_lista =
+            r.precio_lista == null || String(r.precio_lista) === ""
+              ? null
+              : Number(r.precio_lista) || null;
+          if (!nombre) {
+            return {
+              sku,
+              nombre,
+              marca,
+              proveedor,
+              peso_kg: null,
+              precio_lista: null,
+              laboratorio_nombre: labNombre,
+              laboratorio_id: matchedLab?.id ?? null,
+              status: "error",
+              errorMsg: `Fila ${i + 2}: falta nombre`,
+            };
+          }
+          const lower = sku.toLowerCase();
           return {
             sku,
             nombre,
             marca,
             proveedor,
-            peso_kg: null,
-            precio_lista: null,
-            status: "error",
-            errorMsg: "Falta nombre",
+            peso_kg,
+            precio_lista,
+            laboratorio_nombre: labNombre,
+            laboratorio_id: matchedLab?.id ?? null,
+            status: lower && existingSkus.has(lower) ? "exists" : "new",
           };
-        }
-        const lower = sku.toLowerCase();
-        return {
-          sku,
-          nombre,
-          marca,
-          proveedor,
-          peso_kg: peso ? Number(peso) : null,
-          precio_lista: precio ? Number(precio) : null,
-          status: lower && existingSkus.has(lower) ? "exists" : "new",
-        };
-      });
+        });
+      } else {
+        parsed = heuristicParse().map((r) => {
+          const matched = r.laboratorio_nombre
+            ? labByNameLower.get(r.laboratorio_nombre.toLowerCase())
+            : undefined;
+          return { ...r, laboratorio_id: matched?.id ?? null };
+        });
+      }
+
       setRows(parsed);
+      if (aiRows) toast.success("Excel analizado con IA");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setParsing(false);
+      setAnalyzing(false);
     }
   };
 
   const save = async () => {
-    if (!labId) return toast.error("Selecciona laboratorio destino");
     const toInsert = rows.filter((r) => r.status === "new");
     if (toInsert.length === 0) return toast.info("Nada nuevo por importar");
+
+    // Determine lab per row: prefer per-row resolved id; else use new-lab name; else override dropdown.
+    const overrideLab = labId || null;
+    const missingLab = toInsert.filter(
+      (r) => !r.laboratorio_id && !r.laboratorio_nombre.trim() && !overrideLab,
+    );
+    if (missingLab.length > 0) {
+      return toast.error(
+        `Hay ${missingLab.length} producto(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
+      );
+    }
+
     setSaving(true);
     try {
-      const payload = toInsert.map((r) => ({
-        sku: r.sku || null,
-        nombre: r.nombre,
-        marca: r.marca || null,
-        proveedor: r.proveedor || null,
-        peso_kg: r.peso_kg,
-        precio_lista: r.precio_lista ?? 0,
-        laboratorio_id: labId,
-        activo: true,
-      }));
+      // Create any new labs found by AI (distinct, not matching existing).
+      const newLabNames = Array.from(
+        new Set(
+          toInsert
+            .filter((r) => !r.laboratorio_id && r.laboratorio_nombre.trim())
+            .map((r) => r.laboratorio_nombre.trim()),
+        ),
+      );
+      const newLabMap = new Map<string, string>(); // nombre lower -> id
+      if (newLabNames.length > 0) {
+        const { data: created, error: labErr } = await supabase
+          .from("laboratorios")
+          .insert(newLabNames.map((nombre) => ({ nombre })))
+          .select("id, nombre");
+        if (labErr) throw labErr;
+        for (const l of created ?? []) {
+          newLabMap.set((l.nombre as string).toLowerCase(), l.id as string);
+        }
+        await labsQ.refetch();
+      }
+
+      const payload = toInsert.map((r) => {
+        const labFromName =
+          r.laboratorio_nombre &&
+          newLabMap.get(r.laboratorio_nombre.toLowerCase());
+        const resolvedLab = r.laboratorio_id ?? labFromName ?? overrideLab;
+        return {
+          sku: r.sku || null,
+          nombre: r.nombre,
+          marca: r.marca || null,
+          proveedor: r.proveedor || null,
+          peso_kg: r.peso_kg,
+          precio_lista: r.precio_lista ?? 0,
+          laboratorio_id: resolvedLab,
+          activo: true,
+        };
+      });
       const { error } = await supabase.from("productos").insert(payload);
       if (error) throw error;
-      toast.success(`${payload.length} productos importados`);
+      toast.success(
+        `${payload.length} productos importados${
+          newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
+        }`,
+      );
       onSaved();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1444,9 +1609,9 @@ function ImportExcelDialog({
             <FileSpreadsheet className="h-5 w-5" /> Importar productos desde Excel
           </DialogTitle>
           <DialogDescription>
-            Columnas reconocidas: <code>clave</code>, <code>nombre</code>,{" "}
-            <code>marca</code>, <code>proveedor</code>, <code>peso</code>,{" "}
-            <code>precio</code>.
+            <Sparkles className="inline h-3.5 w-3.5 text-primary" /> La IA analiza
+            tu Excel, detecta columnas automáticamente y asigna el laboratorio por
+            fila. Los laboratorios nuevos se crearán al importar.
           </DialogDescription>
         </DialogHeader>
 
@@ -1454,7 +1619,7 @@ function ImportExcelDialog({
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">
-                Laboratorio destino
+                Laboratorio por defecto (opcional, para filas sin laboratorio)
               </Label>
               <div className="mt-1 flex gap-2">
                 <Select value={labId} onValueChange={setLabId}>
@@ -1493,10 +1658,18 @@ function ImportExcelDialog({
             <Button
               variant="outline"
               onClick={() => inputRef.current?.click()}
-              disabled={parsing}
+              disabled={parsing || analyzing}
             >
-              <Upload className="mr-1.5 h-4 w-4" />
-              {parsing ? "Analizando…" : "Seleccionar archivo"}
+              {analyzing ? (
+                <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
+              ) : (
+                <Upload className="mr-1.5 h-4 w-4" />
+              )}
+              {analyzing
+                ? "Analizando con IA…"
+                : parsing
+                  ? "Leyendo…"
+                  : "Seleccionar archivo"}
             </Button>
           </div>
 
@@ -1557,6 +1730,7 @@ function ImportExcelDialog({
                       <TableHead>Clave</TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Marca</TableHead>
+                      <TableHead>Laboratorio</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1581,6 +1755,20 @@ function ImportExcelDialog({
                         <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
                         <TableCell>{r.nombre || "—"}</TableCell>
                         <TableCell>{r.marca || "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.laboratorio_nombre ? (
+                            r.laboratorio_id ? (
+                              <span>{r.laboratorio_nombre}</span>
+                            ) : (
+                              <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">
+                                <Plus className="mr-1 h-3 w-3" />
+                                {r.laboratorio_nombre}
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
                         </TableCell>
