@@ -144,6 +144,9 @@ function ProductosPage() {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState<
+    "valor" | "comprometidos" | "distribucion" | null
+  >(null);
 
   const productosQ = useQuery({
     queryKey: ["productos-catalogo"],
