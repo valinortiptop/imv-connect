@@ -48,6 +48,17 @@ import {
 } from "lucide-react";
 import { aiChatFn } from "@/lib/valinor.functions";
 import { cn } from "@/lib/utils";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
