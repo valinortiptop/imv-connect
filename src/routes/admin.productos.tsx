@@ -47,6 +47,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { aiChatFn } from "@/lib/valinor.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
