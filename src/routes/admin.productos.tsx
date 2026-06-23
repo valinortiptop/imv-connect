@@ -1701,6 +1701,56 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         </DialogHeader>
 
         <div className="space-y-4">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) handleFile(f);
+            }}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              "cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors",
+              dragOver
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/60 hover:bg-muted/40",
+              (parsing || analyzing) && "pointer-events-none opacity-70",
+            )}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            <div className="flex flex-col items-center gap-2">
+              {analyzing ? (
+                <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <div className="text-sm font-medium">
+                {analyzing
+                  ? "Analizando catálogo con IA…"
+                  : parsing
+                    ? "Leyendo archivo…"
+                    : "Arrastra tu Excel del catálogo completo o haz clic para seleccionar"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                La IA detectará columnas, agregará nuevos productos y actualizará los existentes sin duplicar (.xlsx, .xls)
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">
@@ -1730,32 +1780,6 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 </Button>
               </div>
             </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-            />
-            <Button
-              variant="outline"
-              onClick={() => inputRef.current?.click()}
-              disabled={parsing || analyzing}
-            >
-              {analyzing ? (
-                <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
-              ) : (
-                <Upload className="mr-1.5 h-4 w-4" />
-              )}
-              {analyzing
-                ? "Analizando con IA…"
-                : parsing
-                  ? "Leyendo…"
-                  : "Seleccionar archivo"}
-            </Button>
           </div>
 
           {creatingLab && (
