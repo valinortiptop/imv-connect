@@ -48,6 +48,17 @@ import {
 } from "lucide-react";
 import { aiChatFn } from "@/lib/valinor.functions";
 import { cn } from "@/lib/utils";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
@@ -133,6 +144,9 @@ function ProductosPage() {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState<
+    "valor" | "comprometidos" | "distribucion" | null
+  >(null);
 
   const productosQ = useQuery({
     queryKey: ["productos-catalogo"],
@@ -310,6 +324,7 @@ function ProductosPage() {
           icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
           label="VALOR TOTAL EN BODEGA"
           accentBg="bg-emerald-500/10"
+          onClick={() => setDetailOpen("valor")}
         >
           <div className="text-3xl font-bold">{mxnFmt.format(kpis.valorBodega)}</div>
         </KpiCard>
@@ -317,6 +332,7 @@ function ProductosPage() {
           icon={<AlertCircle className="h-4 w-4 text-amber-600" />}
           label="COMPROMETIDOS"
           accentBg="bg-amber-500/10"
+          onClick={() => setDetailOpen("comprometidos")}
         >
           <div className="flex gap-6">
             <div>
@@ -336,6 +352,7 @@ function ProductosPage() {
           icon={<BarChart3 className="h-4 w-4 text-violet-600" />}
           label="DISTRIBUCIÓN POR PRODUCTO"
           accentBg="bg-violet-500/10"
+          onClick={() => setDetailOpen("distribucion")}
         >
           <div className="space-y-2">
             <div className="flex h-2 overflow-hidden rounded-full bg-muted">
@@ -711,6 +728,16 @@ function ProductosPage() {
         open={!!drawerId}
         onOpenChange={(o) => !o && setDrawerId(null)}
       />
+      <KpiDetailDialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(null)}
+        productos={productos}
+        kpis={kpis}
+        onApplyFilter={(f) => {
+          setEstadoFilter(f);
+          setDetailOpen(null);
+        }}
+      />
     </section>
   );
 }
@@ -720,14 +747,36 @@ function KpiCard({
   label,
   accentBg,
   children,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   accentBg: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
+  const clickable = !!onClick;
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        "group relative rounded-lg border border-border bg-card p-4 transition-all",
+        clickable &&
+          "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      )}
+    >
       <div className="mb-3 flex items-center gap-2">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded ${accentBg}`}
@@ -737,11 +786,476 @@ function KpiCard({
         <span className="text-xs font-semibold tracking-wider text-muted-foreground">
           {label}
         </span>
+        {clickable && (
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            Ver detalle →
+          </span>
+        )}
       </div>
       {children}
     </div>
   );
 }
+
+// =============================================================
+// KPI Detail dialog — drill-down with dynamic charts
+// =============================================================
+type EstadoFilter =
+  | "todos"
+  | "activos"
+  | "inactivos"
+  | "comprometidos"
+  | "promo";
+
+function KpiDetailDialog({
+  open,
+  onClose,
+  productos,
+  kpis,
+  onApplyFilter,
+}: {
+  open: "valor" | "comprometidos" | "distribucion" | null;
+  onClose: () => void;
+  productos: Producto[];
+  kpis: {
+    valorBodega: number;
+    comprometidos: number;
+    bultos: number;
+    distribucion: [string, number][];
+  };
+  onApplyFilter: (f: EstadoFilter) => void;
+}) {
+  const analytics = useMemo(() => {
+    const withVal = productos.map((p) => ({
+      ...p,
+      _valor: (p.costo_civa ?? p.costo_siva ?? 0) * (p.stock_disponible ?? 0),
+    }));
+    const conStock = withVal.filter((p) => (p.stock_disponible ?? 0) > 0);
+    const valorPorMarca = new Map<string, number>();
+    const valorPorLinea = new Map<string, number>();
+    for (const p of withVal) {
+      const m = p.marca || "Sin marca";
+      valorPorMarca.set(m, (valorPorMarca.get(m) ?? 0) + p._valor);
+      const l = p.linea || "Sin línea";
+      valorPorLinea.set(l, (valorPorLinea.get(l) ?? 0) + p._valor);
+    }
+    const topValor = [...withVal]
+      .filter((p) => p._valor > 0)
+      .sort((a, b) => b._valor - a._valor)
+      .slice(0, 10);
+    const topComprometidos = [...productos]
+      .filter((p) => (p.stock_comprometido ?? 0) > 0)
+      .sort(
+        (a, b) => (b.stock_comprometido ?? 0) - (a.stock_comprometido ?? 0)
+      )
+      .slice(0, 10);
+    const totDisp = productos.reduce(
+      (s, p) => s + (p.stock_disponible ?? 0),
+      0
+    );
+    const totComp = productos.reduce(
+      (s, p) => s + (p.stock_comprometido ?? 0),
+      0
+    );
+    const activos = productos.filter((p) => p.activo).length;
+    const promos = productos.filter((p) => p.promo).length;
+    const porLinea = new Map<string, number>();
+    const porTipo = new Map<string, number>();
+    for (const p of productos) {
+      const l = p.linea || "Sin línea";
+      porLinea.set(l, (porLinea.get(l) ?? 0) + 1);
+      const t = p.tipo_producto || "Sin tipo";
+      porTipo.set(t, (porTipo.get(t) ?? 0) + 1);
+    }
+    return {
+      withVal,
+      conStock,
+      valorPorMarca: [...valorPorMarca.entries()].sort((a, b) => b[1] - a[1]),
+      valorPorLinea: [...valorPorLinea.entries()].sort((a, b) => b[1] - a[1]),
+      topValor,
+      topComprometidos,
+      totDisp,
+      totComp,
+      activos,
+      promos,
+      porLinea: [...porLinea.entries()].sort((a, b) => b[1] - a[1]),
+      porTipo: [...porTipo.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [productos]);
+
+  const title =
+    open === "valor"
+      ? "Valor total en bodega"
+      : open === "comprometidos"
+        ? "Inventario y compromiso"
+        : open === "distribucion"
+          ? "Distribución del catálogo"
+          : "";
+
+  return (
+    <Dialog open={!!open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Análisis en vivo basado en tu catálogo actual.
+          </DialogDescription>
+        </DialogHeader>
+
+        {open === "valor" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <StatBox
+                label="Valor total"
+                value={mxnFmt.format(kpis.valorBodega)}
+              />
+              <StatBox
+                label="Productos con stock"
+                value={numFmt.format(analytics.conStock.length)}
+              />
+              <StatBox
+                label="Valor promedio"
+                value={mxnFmt.format(
+                  analytics.conStock.length
+                    ? kpis.valorBodega / analytics.conStock.length
+                    : 0
+                )}
+              />
+              <StatBox
+                label="Bultos totales"
+                value={numFmt.format(analytics.totDisp)}
+              />
+            </div>
+
+            <ChartCard title="Valor por marca (Top 10)">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={analytics.valorPorMarca
+                    .slice(0, 10)
+                    .map(([name, value]) => ({ name, value }))}
+                  margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                >
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11 }}
+                    interval={0}
+                    angle={-25}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(v: number) => mxnFmt.format(v)}
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    {analytics.valorPorMarca.slice(0, 10).map(([name]) => (
+                      <Cell key={name} fill={colorFor(name)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Top 10 productos por valor">
+              <div className="space-y-2">
+                {analytics.topValor.map((p, i) => {
+                  const max = analytics.topValor[0]?._valor || 1;
+                  return (
+                    <div key={p.id} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="truncate">
+                          {i + 1}. {p.nombre}
+                        </span>
+                        <span className="font-semibold">
+                          {mxnFmt.format(p._valor)}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(p._valor / max) * 100}%`,
+                            background: colorFor(p.marca || p.nombre),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ChartCard>
+          </div>
+        )}
+
+        {open === "comprometidos" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <StatBox
+                label="Bultos disponibles"
+                value={numFmt.format(analytics.totDisp)}
+              />
+              <StatBox
+                label="Bultos comprometidos"
+                value={numFmt.format(analytics.totComp)}
+              />
+              <StatBox
+                label="Productos con compromiso"
+                value={numFmt.format(analytics.topComprometidos.length)}
+              />
+              <StatBox
+                label="% comprometido"
+                value={`${
+                  analytics.totDisp + analytics.totComp > 0
+                    ? Math.round(
+                        (analytics.totComp /
+                          (analytics.totDisp + analytics.totComp)) *
+                          100
+                      )
+                    : 0
+                }%`}
+              />
+            </div>
+
+            <ChartCard title="Disponible vs Comprometido">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Disponible", value: analytics.totDisp },
+                      { name: "Comprometido", value: analytics.totComp },
+                    ]}
+                    dataKey="value"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#f59e0b" />
+                  </Pie>
+                  <Tooltip
+                    formatter={(v: number) => numFmt.format(v)}
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Top productos comprometidos">
+              {analytics.topComprometidos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay productos comprometidos actualmente.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {analytics.topComprometidos.map((p) => {
+                    const max =
+                      analytics.topComprometidos[0]?.stock_comprometido ?? 1;
+                    return (
+                      <div key={p.id} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="truncate">{p.nombre}</span>
+                          <span className="font-semibold">
+                            {numFmt.format(p.stock_comprometido ?? 0)} /{" "}
+                            {numFmt.format(p.stock_disponible ?? 0)}
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-amber-500"
+                            style={{
+                              width: `${
+                                ((p.stock_comprometido ?? 0) / (max || 1)) * 100
+                              }%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </ChartCard>
+
+            <div className="flex justify-end">
+              <Button onClick={() => onApplyFilter("comprometidos")}>
+                Ver solo comprometidos
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {open === "distribucion" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <StatBox
+                label="Total productos"
+                value={numFmt.format(productos.length)}
+              />
+              <StatBox
+                label="Activos"
+                value={`${analytics.activos} (${
+                  productos.length
+                    ? Math.round((analytics.activos / productos.length) * 100)
+                    : 0
+                }%)`}
+              />
+              <StatBox
+                label="En promoción"
+                value={numFmt.format(analytics.promos)}
+              />
+              <StatBox
+                label="Marcas"
+                value={numFmt.format(kpis.distribucion.length)}
+              />
+            </div>
+
+            <ChartCard title="Distribución por marca">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={kpis.distribucion
+                      .slice(0, 12)
+                      .map(([name, value]) => ({ name, value }))}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={100}
+                    paddingAngle={1}
+                  >
+                    {kpis.distribucion.slice(0, 12).map(([name]) => (
+                      <Cell key={name} fill={colorFor(name)} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                {kpis.distribucion.slice(0, 16).map(([m, n]) => (
+                  <span key={m} className="inline-flex items-center gap-1">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ background: colorFor(m) }}
+                    />
+                    {m} <span className="font-semibold">{n}</span>
+                  </span>
+                ))}
+              </div>
+            </ChartCard>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <ChartCard title="Productos por línea (Top 8)">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={analytics.porLinea
+                      .slice(0, 8)
+                      .map(([name, value]) => ({ name, value }))}
+                    layout="vertical"
+                    margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                  >
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tick={{ fontSize: 11 }}
+                      width={100}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                      }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="#8b5cf6"
+                      radius={[0, 6, 6, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="Productos por tipo">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={analytics.porTipo
+                      .slice(0, 8)
+                      .map(([name, value]) => ({ name, value }))}
+                    layout="vertical"
+                    margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                  >
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tick={{ fontSize: 11 }}
+                      width={100}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                      }}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="#3b82f6"
+                      radius={[0, 6, 6, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StatBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function ChartCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3 text-sm font-semibold">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+
 
 // =============================================================
 // Edit product dialog — stock / precios / márgenes con recalc
