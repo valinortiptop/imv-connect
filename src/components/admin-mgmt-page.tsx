@@ -320,12 +320,15 @@ export default function Admin() {
 
         {/* ─── Users tab ─── */}
         <TabsContent value="users" className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {ROLES.map((r) => (
-              <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>
-                {r}
-              </Badge>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => (
+                <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>
+                  {r}
+                </Badge>
+              ))}
+            </div>
+            <CreateUserDialog lang={lang} onCreated={fetchUsers} />
           </div>
 
           {loading ? (
