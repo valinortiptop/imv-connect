@@ -324,6 +324,7 @@ function ProductosPage() {
           icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
           label="VALOR TOTAL EN BODEGA"
           accentBg="bg-emerald-500/10"
+          onClick={() => setDetailOpen("valor")}
         >
           <div className="text-3xl font-bold">{mxnFmt.format(kpis.valorBodega)}</div>
         </KpiCard>
@@ -331,6 +332,7 @@ function ProductosPage() {
           icon={<AlertCircle className="h-4 w-4 text-amber-600" />}
           label="COMPROMETIDOS"
           accentBg="bg-amber-500/10"
+          onClick={() => setDetailOpen("comprometidos")}
         >
           <div className="flex gap-6">
             <div>
@@ -350,6 +352,7 @@ function ProductosPage() {
           icon={<BarChart3 className="h-4 w-4 text-violet-600" />}
           label="DISTRIBUCIÓN POR PRODUCTO"
           accentBg="bg-violet-500/10"
+          onClick={() => setDetailOpen("distribucion")}
         >
           <div className="space-y-2">
             <div className="flex h-2 overflow-hidden rounded-full bg-muted">
