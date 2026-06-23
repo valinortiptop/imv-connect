@@ -41,13 +41,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Loader2, Shield, CheckCircle2, XCircle, SlidersHorizontal, Users2,
   LayoutDashboard, Bot, Calculator, ShoppingCart, Tag, TrendingUp,
   BarChart3, Package, Warehouse, Truck, ClipboardList, Route,
-  BookOpen, FileText, Link2, Settings, Eye, EyeOff,
+  BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus,
 } from "lucide-react";
+import { createUserFn } from "@/lib/admin-users.functions";
 
 /* ─── types ─── */
 interface UserRow {
@@ -316,12 +320,15 @@ export default function Admin() {
 
         {/* ─── Users tab ─── */}
         <TabsContent value="users" className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {ROLES.map((r) => (
-              <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>
-                {r}
-              </Badge>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => (
+                <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>
+                  {r}
+                </Badge>
+              ))}
+            </div>
+            <CreateUserDialog lang={lang} onCreated={fetchUsers} />
           </div>
 
           {loading ? (
@@ -1244,4 +1251,156 @@ function groupByLabel(perms: RoutePerm[]): Record<string, RoutePerm[]> {
     groups[p.group_label].push(p);
   }
   return groups;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Create user dialog (admin only)
+   ═══════════════════════════════════════════════════════════ */
+function CreateUserDialog({
+  lang,
+  onCreated,
+}: {
+  lang: string;
+  onCreated: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<AppRole>("viewer");
+  const [submitting, setSubmitting] = useState(false);
+
+  const reset = () => {
+    setEmail("");
+    setPassword("");
+    setFullName("");
+    setRole("viewer");
+  };
+
+  const generatePassword = () => {
+    const chars =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let out = "";
+    for (let i = 0; i < 14; i++) {
+      out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    setPassword(out);
+  };
+
+  const submit = async () => {
+    if (!email || !password) {
+      toast.error(
+        lang === "es"
+          ? "Email y contraseña son requeridos"
+          : "Email and password are required",
+      );
+      return;
+    }
+    if (password.length < 6) {
+      toast.error(
+        lang === "es"
+          ? "La contraseña debe tener al menos 6 caracteres"
+          : "Password must be at least 6 characters",
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await createUserFn({
+        data: {
+          email: email.trim(),
+          password,
+          full_name: fullName.trim() || undefined,
+          role,
+          approved: true,
+        },
+      });
+      toast.success(
+        lang === "es" ? "Usuario creado" : "User created",
+      );
+      reset();
+      setOpen(false);
+      onCreated();
+    } catch (e: any) {
+      toast.error(e?.message ?? String(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+      <Button onClick={() => setOpen(true)} size="sm" className="gap-2">
+        <UserPlus className="h-4 w-4" />
+        {lang === "es" ? "Crear usuario" : "Create user"}
+      </Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {lang === "es" ? "Crear nuevo usuario" : "Create new user"}
+          </DialogTitle>
+          <DialogDescription>
+            {lang === "es"
+              ? "Crea una cuenta con email y contraseña. El usuario quedará aprobado automáticamente."
+              : "Create an account with email and password. The user will be auto-approved."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>{lang === "es" ? "Nombre" : "Full name"}</Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder={lang === "es" ? "Opcional" : "Optional"}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Email *</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario@empresa.com"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>{lang === "es" ? "Contraseña" : "Password"} *</Label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={lang === "es" ? "Mínimo 6 caracteres" : "Min 6 chars"}
+              />
+              <Button type="button" variant="outline" onClick={generatePassword}>
+                {lang === "es" ? "Generar" : "Generate"}
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>{lang === "es" ? "Rol" : "Role"}</Label>
+            <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            {lang === "es" ? "Cancelar" : "Cancel"}
+          </Button>
+          <Button onClick={submit} disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {lang === "es" ? "Crear" : "Create"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
