@@ -1545,8 +1545,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               errorMsg: `Fila ${i + 2}: falta nombre`,
             };
           }
-          const lower = sku.toLowerCase();
-          return {
+          const baseRow = {
             sku,
             nombre,
             marca,
@@ -1555,15 +1554,17 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             precio_lista,
             laboratorio_nombre: labNombre,
             laboratorio_id: matchedLab?.id ?? null,
-            status: lower && existingSkus.has(lower) ? "exists" : "new",
           };
+          return { ...baseRow, ...diffRow(baseRow) } as ImportRow;
         });
       } else {
         parsed = heuristicParse().map((r) => {
+          if (r.status === "error") return r;
           const matched = r.laboratorio_nombre
             ? labByNameLower.get(r.laboratorio_nombre.toLowerCase())
             : undefined;
-          return { ...r, laboratorio_id: matched?.id ?? null };
+          const withLab = { ...r, laboratorio_id: matched?.id ?? null };
+          return { ...withLab, ...diffRow(withLab) } as ImportRow;
         });
       }
 
