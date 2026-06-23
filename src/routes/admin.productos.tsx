@@ -47,6 +47,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { aiChatFn } from "@/lib/valinor.functions";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/productos")({
   component: ProductosPage,
@@ -1285,7 +1286,9 @@ type ImportRow = {
   precio_lista: number | null;
   laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
   laboratorio_id: string | null; // matched existing id (if any)
-  status: "new" | "exists" | "error";
+  status: "new" | "update" | "unchanged" | "error";
+  existing_id?: string | null; // id of matched existing product (for updates)
+  diff_fields?: string[]; // list of changed field labels
   errorMsg?: string;
 };
 
@@ -1355,11 +1358,63 @@ function ImportExcelDialog({
 
       const { data: existing } = await supabase
         .from("productos")
-        .select("sku")
-        .not("sku", "is", null);
-      const existingSkus = new Set(
-        (existing ?? []).map((p) => (p.sku as string).toLowerCase()),
-      );
+        .select(
+          "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id",
+        );
+      type ExistingProd = {
+        id: string;
+        sku: string | null;
+        nombre: string | null;
+        marca: string | null;
+        proveedor: string | null;
+        peso_kg: number | null;
+        precio_lista: number | null;
+        laboratorio_id: string | null;
+      };
+      const existingList = (existing ?? []) as ExistingProd[];
+      const existingBySku = new Map<string, ExistingProd>();
+      const existingByName = new Map<string, ExistingProd>();
+      for (const p of existingList) {
+        if (p.sku) existingBySku.set(p.sku.toLowerCase().trim(), p);
+        if (p.nombre) existingByName.set(p.nombre.toLowerCase().trim(), p);
+      }
+
+      const diffRow = (
+        row: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg">,
+      ): { status: ImportRow["status"]; existing_id?: string; diff_fields?: string[] } => {
+        const key = row.sku.toLowerCase().trim();
+        const nameKey = row.nombre.toLowerCase().trim();
+        const match =
+          (key && existingBySku.get(key)) ||
+          (nameKey && existingByName.get(nameKey)) ||
+          null;
+        if (!match) return { status: "new" };
+        const diff: string[] = [];
+        const norm = (v: unknown) =>
+          v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
+        if (row.nombre && norm(row.nombre) !== norm(match.nombre)) diff.push("nombre");
+        if (row.marca && norm(row.marca) !== norm(match.marca)) diff.push("marca");
+        if (row.proveedor && norm(row.proveedor) !== norm(match.proveedor))
+          diff.push("proveedor");
+        if (
+          row.peso_kg != null &&
+          Number(row.peso_kg) !== Number(match.peso_kg ?? NaN)
+        )
+          diff.push("peso");
+        if (
+          row.precio_lista != null &&
+          Number(row.precio_lista) !== Number(match.precio_lista ?? NaN)
+        )
+          diff.push("precio");
+        if (
+          row.laboratorio_id &&
+          row.laboratorio_id !== (match.laboratorio_id ?? null)
+        )
+          diff.push("laboratorio");
+        return diff.length > 0
+          ? { status: "update", existing_id: match.id, diff_fields: diff }
+          : { status: "unchanged", existing_id: match.id };
+      };
 
       // Heuristic mapping as a fallback / starting point.
       const heuristicParse = (): ImportRow[] =>
@@ -1390,13 +1445,12 @@ function ImportExcelDialog({
               errorMsg: "Falta nombre",
             };
           }
-          const lower = sku.toLowerCase();
-          return {
+          const row = {
             ...base,
             peso_kg: peso ? Number(peso) || null : null,
             precio_lista: precio ? Number(precio) || null : null,
-            status: (lower && existingSkus.has(lower) ? "exists" : "new") as "new" | "exists",
           };
+          return { ...row, ...diffRow(row) } as ImportRow;
         });
 
       // Ask the AI to map columns and infer laboratorio per row.
@@ -1492,8 +1546,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               errorMsg: `Fila ${i + 2}: falta nombre`,
             };
           }
-          const lower = sku.toLowerCase();
-          return {
+          const baseRow = {
             sku,
             nombre,
             marca,
@@ -1502,15 +1555,17 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             precio_lista,
             laboratorio_nombre: labNombre,
             laboratorio_id: matchedLab?.id ?? null,
-            status: lower && existingSkus.has(lower) ? "exists" : "new",
           };
+          return { ...baseRow, ...diffRow(baseRow) } as ImportRow;
         });
       } else {
         parsed = heuristicParse().map((r) => {
+          if (r.status === "error") return r;
           const matched = r.laboratorio_nombre
             ? labByNameLower.get(r.laboratorio_nombre.toLowerCase())
             : undefined;
-          return { ...r, laboratorio_id: matched?.id ?? null };
+          const withLab = { ...r, laboratorio_id: matched?.id ?? null };
+          return { ...withLab, ...diffRow(withLab) } as ImportRow;
         });
       }
 
@@ -1526,7 +1581,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
 
   const save = async () => {
     const toInsert = rows.filter((r) => r.status === "new");
-    if (toInsert.length === 0) return toast.info("Nada nuevo por importar");
+    const toUpdate = rows.filter((r) => r.status === "update");
+    if (toInsert.length === 0 && toUpdate.length === 0)
+      return toast.info("No hay cambios por aplicar");
 
     // Determine lab per row: prefer per-row resolved id; else use new-lab name; else override dropdown.
     const overrideLab = labId || null;
@@ -1535,16 +1592,16 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
     );
     if (missingLab.length > 0) {
       return toast.error(
-        `Hay ${missingLab.length} producto(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
+        `Hay ${missingLab.length} producto(s) nuevo(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
       );
     }
 
     setSaving(true);
     try {
-      // Create any new labs found by AI (distinct, not matching existing).
+      // Create any new labs found by AI (distinct, not matching existing) across both insert+update.
       const newLabNames = Array.from(
         new Set(
-          toInsert
+          [...toInsert, ...toUpdate]
             .filter((r) => !r.laboratorio_id && r.laboratorio_nombre.trim())
             .map((r) => r.laboratorio_nombre.trim()),
         ),
@@ -1562,26 +1619,52 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         await labsQ.refetch();
       }
 
-      const payload = toInsert.map((r) => {
+      const resolveLab = (r: ImportRow) => {
         const labFromName =
           r.laboratorio_nombre &&
           newLabMap.get(r.laboratorio_nombre.toLowerCase());
-        const resolvedLab = r.laboratorio_id ?? labFromName ?? overrideLab;
-        return {
+        return r.laboratorio_id ?? labFromName ?? overrideLab;
+      };
+
+      // INSERT new
+      if (toInsert.length > 0) {
+        const payload = toInsert.map((r) => ({
           sku: r.sku || null,
           nombre: r.nombre,
           marca: r.marca || null,
           proveedor: r.proveedor || null,
           peso_kg: r.peso_kg,
           precio_lista: r.precio_lista ?? 0,
-          laboratorio_id: resolvedLab,
+          laboratorio_id: resolveLab(r),
           activo: true,
-        };
-      });
-      const { error } = await supabase.from("productos").insert(payload);
-      if (error) throw error;
+        }));
+        const { error } = await supabase.from("productos").insert(payload);
+        if (error) throw error;
+      }
+
+      // UPDATE changed (one row per update to scope to diff fields only)
+      let updated = 0;
+      for (const r of toUpdate) {
+        if (!r.existing_id) continue;
+        const fields = new Set(r.diff_fields ?? []);
+        const patch: Record<string, unknown> = {};
+        if (fields.has("nombre")) patch.nombre = r.nombre;
+        if (fields.has("marca")) patch.marca = r.marca || null;
+        if (fields.has("proveedor")) patch.proveedor = r.proveedor || null;
+        if (fields.has("peso")) patch.peso_kg = r.peso_kg;
+        if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
+        if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
+        if (Object.keys(patch).length === 0) continue;
+        const { error } = await supabase
+          .from("productos")
+          .update(patch)
+          .eq("id", r.existing_id);
+        if (error) throw error;
+        updated++;
+      }
+
       toast.success(
-        `${payload.length} productos importados${
+        `${toInsert.length} nuevo(s) · ${updated} actualizado(s)${
           newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
         }`,
       );
@@ -1596,10 +1679,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
   const counts = useMemo(() => {
     return {
       new: rows.filter((r) => r.status === "new").length,
-      exists: rows.filter((r) => r.status === "exists").length,
+      update: rows.filter((r) => r.status === "update").length,
+      unchanged: rows.filter((r) => r.status === "unchanged").length,
       err: rows.filter((r) => r.status === "error").length,
     };
   }, [rows]);
+
+  const [dragOver, setDragOver] = useState(false);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -1616,6 +1702,56 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         </DialogHeader>
 
         <div className="space-y-4">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) handleFile(f);
+            }}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              "cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors",
+              dragOver
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/60 hover:bg-muted/40",
+              (parsing || analyzing) && "pointer-events-none opacity-70",
+            )}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            <div className="flex flex-col items-center gap-2">
+              {analyzing ? (
+                <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <div className="text-sm font-medium">
+                {analyzing
+                  ? "Analizando catálogo con IA…"
+                  : parsing
+                    ? "Leyendo archivo…"
+                    : "Arrastra tu Excel del catálogo completo o haz clic para seleccionar"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                La IA detectará columnas, agregará nuevos productos y actualizará los existentes sin duplicar (.xlsx, .xls)
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">
@@ -1645,32 +1781,6 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 </Button>
               </div>
             </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-            />
-            <Button
-              variant="outline"
-              onClick={() => inputRef.current?.click()}
-              disabled={parsing || analyzing}
-            >
-              {analyzing ? (
-                <Sparkles className="mr-1.5 h-4 w-4 animate-pulse" />
-              ) : (
-                <Upload className="mr-1.5 h-4 w-4" />
-              )}
-              {analyzing
-                ? "Analizando con IA…"
-                : parsing
-                  ? "Leyendo…"
-                  : "Seleccionar archivo"}
-            </Button>
           </div>
 
           {creatingLab && (
@@ -1710,12 +1820,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
 
           {rows.length > 0 && (
             <>
-              <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600">
                   Nuevos: {counts.new}
                 </Badge>
-                <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600">
-                  Ya existen: {counts.exists}
+                <Badge variant="outline" className="border-blue-500/40 bg-blue-500/10 text-blue-600">
+                  A actualizar: {counts.update}
+                </Badge>
+                <Badge variant="outline" className="border-muted-foreground/30 bg-muted/30 text-muted-foreground">
+                  Sin cambios: {counts.unchanged}
                 </Badge>
                 <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
                   Errores: {counts.err}
@@ -1726,11 +1839,12 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-20">Estado</TableHead>
+                      <TableHead className="w-28">Estado</TableHead>
                       <TableHead>Clave</TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Marca</TableHead>
                       <TableHead>Laboratorio</TableHead>
+                      <TableHead>Cambios</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1743,9 +1857,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                               <Check className="mr-1 h-3 w-3" /> Nuevo
                             </Badge>
                           )}
-                          {r.status === "exists" && (
+                          {r.status === "update" && (
+                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/40">
+                              Actualizar
+                            </Badge>
+                          )}
+                          {r.status === "unchanged" && (
                             <Badge variant="outline" className="text-muted-foreground">
-                              Existe
+                              Sin cambios
                             </Badge>
                           )}
                           {r.status === "error" && (
@@ -1769,6 +1888,11 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {r.diff_fields && r.diff_fields.length > 0
+                            ? r.diff_fields.join(", ")
+                            : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
                         </TableCell>
@@ -1784,8 +1908,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button onClick={save} disabled={saving || counts.new === 0}>
-              {saving ? "Importando…" : `Importar ${counts.new} productos`}
+            <Button
+              onClick={save}
+              disabled={saving || (counts.new === 0 && counts.update === 0)}
+            >
+              {saving
+                ? "Aplicando…"
+                : `Aplicar (${counts.new} nuevos · ${counts.update} actualizar)`}
             </Button>
           </div>
         </div>
