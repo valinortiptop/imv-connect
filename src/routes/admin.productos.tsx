@@ -1580,7 +1580,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
 
   const save = async () => {
     const toInsert = rows.filter((r) => r.status === "new");
-    if (toInsert.length === 0) return toast.info("Nada nuevo por importar");
+    const toUpdate = rows.filter((r) => r.status === "update");
+    if (toInsert.length === 0 && toUpdate.length === 0)
+      return toast.info("No hay cambios por aplicar");
 
     // Determine lab per row: prefer per-row resolved id; else use new-lab name; else override dropdown.
     const overrideLab = labId || null;
@@ -1589,16 +1591,16 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
     );
     if (missingLab.length > 0) {
       return toast.error(
-        `Hay ${missingLab.length} producto(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
+        `Hay ${missingLab.length} producto(s) nuevo(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
       );
     }
 
     setSaving(true);
     try {
-      // Create any new labs found by AI (distinct, not matching existing).
+      // Create any new labs found by AI (distinct, not matching existing) across both insert+update.
       const newLabNames = Array.from(
         new Set(
-          toInsert
+          [...toInsert, ...toUpdate]
             .filter((r) => !r.laboratorio_id && r.laboratorio_nombre.trim())
             .map((r) => r.laboratorio_nombre.trim()),
         ),
@@ -1616,26 +1618,52 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         await labsQ.refetch();
       }
 
-      const payload = toInsert.map((r) => {
+      const resolveLab = (r: ImportRow) => {
         const labFromName =
           r.laboratorio_nombre &&
           newLabMap.get(r.laboratorio_nombre.toLowerCase());
-        const resolvedLab = r.laboratorio_id ?? labFromName ?? overrideLab;
-        return {
+        return r.laboratorio_id ?? labFromName ?? overrideLab;
+      };
+
+      // INSERT new
+      if (toInsert.length > 0) {
+        const payload = toInsert.map((r) => ({
           sku: r.sku || null,
           nombre: r.nombre,
           marca: r.marca || null,
           proveedor: r.proveedor || null,
           peso_kg: r.peso_kg,
           precio_lista: r.precio_lista ?? 0,
-          laboratorio_id: resolvedLab,
+          laboratorio_id: resolveLab(r),
           activo: true,
-        };
-      });
-      const { error } = await supabase.from("productos").insert(payload);
-      if (error) throw error;
+        }));
+        const { error } = await supabase.from("productos").insert(payload);
+        if (error) throw error;
+      }
+
+      // UPDATE changed (one row per update to scope to diff fields only)
+      let updated = 0;
+      for (const r of toUpdate) {
+        if (!r.existing_id) continue;
+        const fields = new Set(r.diff_fields ?? []);
+        const patch: Record<string, unknown> = {};
+        if (fields.has("nombre")) patch.nombre = r.nombre;
+        if (fields.has("marca")) patch.marca = r.marca || null;
+        if (fields.has("proveedor")) patch.proveedor = r.proveedor || null;
+        if (fields.has("peso")) patch.peso_kg = r.peso_kg;
+        if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
+        if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
+        if (Object.keys(patch).length === 0) continue;
+        const { error } = await supabase
+          .from("productos")
+          .update(patch)
+          .eq("id", r.existing_id);
+        if (error) throw error;
+        updated++;
+      }
+
       toast.success(
-        `${payload.length} productos importados${
+        `${toInsert.length} nuevo(s) · ${updated} actualizado(s)${
           newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
         }`,
       );
@@ -1650,10 +1678,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
   const counts = useMemo(() => {
     return {
       new: rows.filter((r) => r.status === "new").length,
-      exists: rows.filter((r) => r.status === "exists").length,
+      update: rows.filter((r) => r.status === "update").length,
+      unchanged: rows.filter((r) => r.status === "unchanged").length,
       err: rows.filter((r) => r.status === "error").length,
     };
   }, [rows]);
+
+  const [dragOver, setDragOver] = useState(false);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
