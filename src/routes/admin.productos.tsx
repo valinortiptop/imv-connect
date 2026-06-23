@@ -1357,11 +1357,63 @@ function ImportExcelDialog({
 
       const { data: existing } = await supabase
         .from("productos")
-        .select("sku")
-        .not("sku", "is", null);
-      const existingSkus = new Set(
-        (existing ?? []).map((p) => (p.sku as string).toLowerCase()),
-      );
+        .select(
+          "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id",
+        );
+      type ExistingProd = {
+        id: string;
+        sku: string | null;
+        nombre: string | null;
+        marca: string | null;
+        proveedor: string | null;
+        peso_kg: number | null;
+        precio_lista: number | null;
+        laboratorio_id: string | null;
+      };
+      const existingList = (existing ?? []) as ExistingProd[];
+      const existingBySku = new Map<string, ExistingProd>();
+      const existingByName = new Map<string, ExistingProd>();
+      for (const p of existingList) {
+        if (p.sku) existingBySku.set(p.sku.toLowerCase().trim(), p);
+        if (p.nombre) existingByName.set(p.nombre.toLowerCase().trim(), p);
+      }
+
+      const diffRow = (
+        row: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg">,
+      ): { status: ImportRow["status"]; existing_id?: string; diff_fields?: string[] } => {
+        const key = row.sku.toLowerCase().trim();
+        const nameKey = row.nombre.toLowerCase().trim();
+        const match =
+          (key && existingBySku.get(key)) ||
+          (nameKey && existingByName.get(nameKey)) ||
+          null;
+        if (!match) return { status: "new" };
+        const diff: string[] = [];
+        const norm = (v: unknown) =>
+          v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
+        if (row.nombre && norm(row.nombre) !== norm(match.nombre)) diff.push("nombre");
+        if (row.marca && norm(row.marca) !== norm(match.marca)) diff.push("marca");
+        if (row.proveedor && norm(row.proveedor) !== norm(match.proveedor))
+          diff.push("proveedor");
+        if (
+          row.peso_kg != null &&
+          Number(row.peso_kg) !== Number(match.peso_kg ?? NaN)
+        )
+          diff.push("peso");
+        if (
+          row.precio_lista != null &&
+          Number(row.precio_lista) !== Number(match.precio_lista ?? NaN)
+        )
+          diff.push("precio");
+        if (
+          row.laboratorio_id &&
+          row.laboratorio_id !== (match.laboratorio_id ?? null)
+        )
+          diff.push("laboratorio");
+        return diff.length > 0
+          ? { status: "update", existing_id: match.id, diff_fields: diff }
+          : { status: "unchanged", existing_id: match.id };
+      };
 
       // Heuristic mapping as a fallback / starting point.
       const heuristicParse = (): ImportRow[] =>
@@ -1392,13 +1444,12 @@ function ImportExcelDialog({
               errorMsg: "Falta nombre",
             };
           }
-          const lower = sku.toLowerCase();
-          return {
+          const row = {
             ...base,
             peso_kg: peso ? Number(peso) || null : null,
             precio_lista: precio ? Number(precio) || null : null,
-            status: (lower && existingSkus.has(lower) ? "exists" : "new") as "new" | "exists",
           };
+          return { ...row, ...diffRow(row) } as ImportRow;
         });
 
       // Ask the AI to map columns and infer laboratorio per row.
