@@ -728,6 +728,16 @@ function ProductosPage() {
         open={!!drawerId}
         onOpenChange={(o) => !o && setDrawerId(null)}
       />
+      <KpiDetailDialog
+        open={detailOpen}
+        onClose={() => setDetailOpen(null)}
+        productos={productos}
+        kpis={kpis}
+        onApplyFilter={(f) => {
+          setEstadoFilter(f);
+          setDetailOpen(null);
+        }}
+      />
     </section>
   );
 }
