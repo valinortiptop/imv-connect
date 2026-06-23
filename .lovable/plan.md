@@ -1,39 +1,31 @@
-# Por qué no lo ves
+## Goal
 
-El drawer 360 y los nuevos campos de taxonomía (`linea`, `grupo`, `tipo_producto`, `sat_clave`) se conectaron en dos páginas:
+Turn the three KPI cards on `/admin/productos` (Valor Total en Bodega, Comprometidos, Distribución por Producto) into clickable, "live" cards. Clicking any card opens a rich detail dialog with deeper breakdowns and dynamic charts (using `recharts`, already used elsewhere in the project).
 
-- `/admin/catalogo` (`src/components/catalogo-page.tsx`) — vista tipo tarjetas del catálogo público.
-- `/admin/inventario` (`src/components/inventory-page.tsx`) — vista de inventario con stock.
+## Changes — `src/routes/admin.productos.tsx` only
 
-Pero la página que estás viendo, **`/admin/productos`** (`src/routes/admin.productos.tsx`), nunca se tocó. Por eso no aparece el 360 ni las nuevas columnas ahí.
+### 1. Make KpiCard clickable
+- Add `onClick` + hover affordance (cursor-pointer, hover:shadow, subtle ring, "Ver detalle →" hint in corner).
+- Keep current visual style intact.
 
-# Plan
+### 2. New state
+- `detailOpen: "valor" | "comprometidos" | "distribucion" | null`.
 
-Agregar todo lo nuevo a `/admin/productos` para que sea consistente.
+### 3. Derived data (memoized from existing `productos`)
+- **Valor card**: top 10 products by `_valor`, value by marca (bar), value by linea (donut), totals (# productos con stock, valor promedio, stock total).
+- **Comprometidos card**: top productos con mayor `stock_comprometido`, distribución comprometido vs disponible (stacked bar), totals (productos con compromiso, ratio comprometido/disponible).
+- **Distribución card**: full marca ranking (not just top 10), donut chart of all marcas, bar chart productos por línea, productos por tipo, % activos vs inactivos.
 
-## 1. Drawer 360
-- Importar `Product360Drawer` desde `@/components/catalog/Product360Drawer`.
-- Estado `const [drawerId, setDrawerId] = useState<string | null>(null)`.
-- En la tabla, hacer clickeable el SKU (o nombre/thumb) para `setDrawerId(p.id)`.
-- Renderizar `<Product360Drawer productId={drawerId} open={!!drawerId} onOpenChange={(o) => !o && setDrawerId(null)} />` al final del componente.
+### 4. Detail dialog component
+- One `<Dialog>` rendered conditionally based on `detailOpen`.
+- `max-w-5xl`, scrollable, header with icon + title matching the card.
+- Sections: summary stat row + 2–3 charts from `recharts` (`BarChart`, `PieChart`, horizontal bar list for top items) using existing semantic tokens / `colorFor(marca)`.
+- "Ver todos los productos" button that closes dialog and applies relevant filter (e.g. comprometidos → `setEstadoFilter("comprometidos")`).
 
-## 2. Columnas de taxonomía en la tabla
-- Extender el tipo `Producto` con `linea`, `grupo`, `tipo_producto`, `sat_clave` (todos `string | null`).
-- Añadir columnas (toggleables vía un dropdown "Columnas" o siempre visibles, lo más simple primero): **Línea**, **Grupo**, **Tipo**, **SAT**.
-- Mostrar como `<Badge variant="outline">` para que sean compactos.
+### 5. Live behavior
+- Data is already reactive via `useQuery(["productos-catalogo"])`; the dialog reads from the same memoized derivations, so values update on refetch automatically. No new server calls.
 
-## 3. Filtros adicionales
-Junto a los selects existentes (Proveedor, Marca), agregar tres más:
-- **Línea** (`lineaFilter`)
-- **Grupo** (`grupoFilter`)
-- **Tipo de producto** (`tipoFilter`)
-
-Calcular las opciones únicas en el `useMemo` de `marcas/proveedores`.
-
-## 4. Edit drawer / Nuevo producto
-En el formulario de edición y creación (más abajo en el archivo, lo reviso al implementar), añadir inputs para los 4 nuevos campos para que el admin pueda editarlos a mano (especialmente `linea` que quedó nulo).
-
-# Archivos a editar
-- `src/routes/admin.productos.tsx` — único archivo.
-
-No requiere migraciones ni cambios de backend; los datos ya están en `productos`.
+## Technical notes
+- Reuse already-imported icons (`DollarSign`, `AlertCircle`, `BarChart3`) and `colorFor`, `mxnFmt`, `numFmt`.
+- Import `recharts` primitives at top of file (project already depends on it).
+- No schema / server / routing changes. Frontend-only.
