@@ -1285,7 +1285,9 @@ type ImportRow = {
   precio_lista: number | null;
   laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
   laboratorio_id: string | null; // matched existing id (if any)
-  status: "new" | "exists" | "error";
+  status: "new" | "update" | "unchanged" | "error";
+  existing_id?: string | null; // id of matched existing product (for updates)
+  diff_fields?: string[]; // list of changed field labels
   errorMsg?: string;
 };
 
