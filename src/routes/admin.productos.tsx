@@ -720,14 +720,36 @@ function KpiCard({
   label,
   accentBg,
   children,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   accentBg: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
+  const clickable = !!onClick;
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        "group relative rounded-lg border border-border bg-card p-4 transition-all",
+        clickable &&
+          "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      )}
+    >
       <div className="mb-3 flex items-center gap-2">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded ${accentBg}`}
@@ -737,6 +759,11 @@ function KpiCard({
         <span className="text-xs font-semibold tracking-wider text-muted-foreground">
           {label}
         </span>
+        {clickable && (
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            Ver detalle →
+          </span>
+        )}
       </div>
       {children}
     </div>
