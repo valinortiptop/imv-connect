@@ -41,13 +41,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Loader2, Shield, CheckCircle2, XCircle, SlidersHorizontal, Users2,
   LayoutDashboard, Bot, Calculator, ShoppingCart, Tag, TrendingUp,
   BarChart3, Package, Warehouse, Truck, ClipboardList, Route,
-  BookOpen, FileText, Link2, Settings, Eye, EyeOff,
+  BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus,
 } from "lucide-react";
+import { createUserFn } from "@/lib/admin-users.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 /* ─── types ─── */
 interface UserRow {
