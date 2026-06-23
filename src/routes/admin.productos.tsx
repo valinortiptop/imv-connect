@@ -1820,12 +1820,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
 
           {rows.length > 0 && (
             <>
-              <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600">
                   Nuevos: {counts.new}
                 </Badge>
-                <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-600">
-                  Ya existen: {counts.exists}
+                <Badge variant="outline" className="border-blue-500/40 bg-blue-500/10 text-blue-600">
+                  A actualizar: {counts.update}
+                </Badge>
+                <Badge variant="outline" className="border-muted-foreground/30 bg-muted/30 text-muted-foreground">
+                  Sin cambios: {counts.unchanged}
                 </Badge>
                 <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
                   Errores: {counts.err}
@@ -1836,11 +1839,12 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-20">Estado</TableHead>
+                      <TableHead className="w-28">Estado</TableHead>
                       <TableHead>Clave</TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Marca</TableHead>
                       <TableHead>Laboratorio</TableHead>
+                      <TableHead>Cambios</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1853,9 +1857,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                               <Check className="mr-1 h-3 w-3" /> Nuevo
                             </Badge>
                           )}
-                          {r.status === "exists" && (
+                          {r.status === "update" && (
+                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/40">
+                              Actualizar
+                            </Badge>
+                          )}
+                          {r.status === "unchanged" && (
                             <Badge variant="outline" className="text-muted-foreground">
-                              Existe
+                              Sin cambios
                             </Badge>
                           )}
                           {r.status === "error" && (
@@ -1879,6 +1888,11 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {r.diff_fields && r.diff_fields.length > 0
+                            ? r.diff_fields.join(", ")
+                            : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
                         </TableCell>
@@ -1894,8 +1908,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             <Button variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button onClick={save} disabled={saving || counts.new === 0}>
-              {saving ? "Importando…" : `Importar ${counts.new} productos`}
+            <Button
+              onClick={save}
+              disabled={saving || (counts.new === 0 && counts.update === 0)}
+            >
+              {saving
+                ? "Aplicando…"
+                : `Aplicar (${counts.new} nuevos · ${counts.update} actualizar)`}
             </Button>
           </div>
         </div>
