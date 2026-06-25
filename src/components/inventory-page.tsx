@@ -25,6 +25,9 @@ import { MoreVertical, AlertOctagon } from "lucide-react";
 import { downloadInventoryExcel } from "@/lib/inventory-excel-export";
 import { toast } from "sonner";
 import { Product360Drawer } from "@/components/catalog/Product360Drawer";
+import { InventoryImportDialog } from "@/components/inventory/InventoryImportDialog";
+import { Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const fmtMXN = (v: number | null) => v == null ? "$0" : mxnFmt.format(v);
