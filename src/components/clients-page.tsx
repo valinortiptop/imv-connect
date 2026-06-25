@@ -33,7 +33,10 @@ import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
 import { Client360Drawer } from "@/components/clients/Client360Drawer";
 import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
+import { ClientsMapView } from "@/components/clients/ClientsMapView";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { useRoles } from "@/lib/use-roles";
+
 
 type ClientType = "mayoreo" | "menudeo";
 
