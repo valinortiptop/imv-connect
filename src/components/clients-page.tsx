@@ -1477,8 +1477,17 @@ export default function Clients() {
                             >
                               {c.name}
                             </span>
+                            {(c.rfc === "XAXX010101000" || /\bVM\b/i.test(c.name ?? "") || /\bVM\b/i.test(c.company ?? "")) && (
+                              <Badge
+                                className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide"
+                                title="Venta Mostrador — no requiere factura oficial, solo nota o recibo (RFC genérico)"
+                              >
+                                VM
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
+
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
                         <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{c.central ?? "---"}</TableCell>
