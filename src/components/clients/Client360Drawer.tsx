@@ -22,6 +22,7 @@ import {
   MapPin,
   CreditCard,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
