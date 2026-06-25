@@ -426,16 +426,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
 
     setSaving(true);
     try {
+      let inserted = 0;
       if (toInsert.length > 0) {
+        // Write directly to the base table `clientes` using its native column
+        // names — the public `clients` view has computed columns (COALESCE)
+        // and aliases that make it non-insertable.
         const payload = toInsert.map((r) => ({
-          name: r.name,
-          company: r.company || null,
+          razon_social: r.razon_social || r.name,
+          nombre_comercial: r.company || r.nickname || null,
           nickname: r.nickname || null,
+          company: r.company || null,
           phone: r.phone || null,
+          telefono: r.phone || null,
           email: r.email || null,
           rfc: r.rfc || null,
-          razon_social: r.razon_social || r.name,
-          address: r.address || null,
+          direccion: r.address || null,
           codigo_postal: r.codigo_postal || null,
           payment_method: r.payment_method || null,
           payment_terms: r.payment_terms,
@@ -445,11 +450,14 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           google_place_id: r.google_place_id,
           active: true,
         }));
-        // Insert in chunks of 100 to keep payload small.
         for (let i = 0; i < payload.length; i += 100) {
           const chunk = payload.slice(i, i + 100);
-          const { error } = await supabase.from("clients").insert(chunk as any);
+          const { data, error } = await supabase
+            .from("clientes")
+            .insert(chunk as any)
+            .select("id");
           if (error) throw error;
+          inserted += data?.length ?? 0;
         }
       }
 
@@ -458,16 +466,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         if (!r.existing_id) continue;
         const fields = new Set(r.diff_fields ?? []);
         const patch: Record<string, unknown> = {};
-        if (fields.has("nombre")) patch.name = r.name;
-        if (fields.has("empresa")) patch.company = r.company || null;
-        if (fields.has("teléfono")) patch.phone = r.phone || null;
+        if (fields.has("nombre")) patch.razon_social = r.name;
+        if (fields.has("empresa")) {
+          patch.company = r.company || null;
+          patch.nombre_comercial = r.company || null;
+        }
+        if (fields.has("teléfono")) {
+          patch.phone = r.phone || null;
+          patch.telefono = r.phone || null;
+        }
         if (fields.has("rfc")) patch.rfc = r.rfc || null;
         if (fields.has("razón social")) patch.razon_social = r.razon_social || null;
-        if (fields.has("dirección")) patch.address = r.address || null;
+        if (fields.has("dirección")) patch.direccion = r.address || null;
         if (fields.has("CP")) patch.codigo_postal = r.codigo_postal || null;
         if (fields.has("método pago")) patch.payment_method = r.payment_method || null;
         if (fields.has("tipo")) patch.client_type = r.client_type;
-        // Always persist freshly resolved coordinates if we got them.
         if (r.lat != null && r.lng != null) {
           patch.lat = r.lat;
           patch.lng = r.lng;
@@ -476,21 +489,23 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         if (r.payment_terms != null) patch.payment_terms = r.payment_terms;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
-          .from("clients")
+          .from("clientes")
           .update(patch as any)
           .eq("id", r.existing_id);
         if (error) throw error;
         updated++;
       }
 
-      toast.success(`${toInsert.length} nuevo(s) · ${updated} actualizado(s)`);
+      toast.success(`${inserted} nuevo(s) · ${updated} actualizado(s)`);
       onSaved();
     } catch (e) {
-      toast.error((e as Error).message);
+      console.error("[ClientsImport] save failed", e);
+      toast.error(`No se pudo guardar: ${(e as Error).message ?? "error desconocido"}`);
     } finally {
       setSaving(false);
     }
   };
+
 
   const counts = useMemo(
     () => ({
