@@ -219,7 +219,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                           <span className="truncate">
                             {o.clientes?.nombre_comercial?.trim() || o.clientes?.razon_social || "—"}
                           </span>
-                          <span className="font-medium">{fmt(o.unit_price)}</span>
+                          <span className="font-medium">{fmt(o.price_with_iva)}</span>
                         </li>
                       ))}
                     </ul>
