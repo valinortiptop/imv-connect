@@ -261,7 +261,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         email: get(r, "email", "correo"),
         rfc: get(r, "rfc"),
         razon_social: get(r, "razon social", "razón social", "razon_social"),
-        address: get(r, "direccion", "dirección", "address", "domicilio"),
+        address: get(r, "direccion de envio", "dirección de envío", "direccion envio", "dirección envío", "direccion", "dirección", "address", "domicilio", "direccion de facturacion", "dirección de facturación"),
         codigo_postal: get(r, "cp", "codigo postal", "código postal", "codigo_postal", "zip"),
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
         payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
@@ -280,7 +280,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const email = pick(ai?.email, h.email);
         const rfc = pick(ai?.rfc, h.rfc).toUpperCase();
         const razon_social = pick(ai?.razon_social, h.razon_social);
-        const address = pick(ai?.address, h.address);
+        const rawAddress = pick(ai?.address, h.address);
+        const address = stripNamePrefix(rawAddress, name, company, razon_social, nickname);
         const codigo_postal = pick(ai?.codigo_postal, h.codigo_postal);
         const pm = pick(ai?.payment_method, h.payment_method);
         const termsRaw = ai?.payment_terms ?? Number(h.payment_terms_str) ?? null;
