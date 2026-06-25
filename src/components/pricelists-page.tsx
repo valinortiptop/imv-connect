@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Plus, Upload, FileSpreadsheet, Check, X, AlertTriangle, Download, RotateCw, Lock } from "lucide-react";
 import { OverridesMatrixView } from "@/components/clients/OverridesMatrixView";
+import { PriceListsImportDialog } from "@/components/pricelists/PriceListsImportDialog";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 
