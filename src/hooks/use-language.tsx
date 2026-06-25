@@ -215,6 +215,7 @@ const translations = {
   clientPhone: { es: "Teléfono", en: "Phone" },
   clientAddress: { es: "Dirección", en: "Address" },
   clientCentral: { es: "Central", en: "Central" },
+  clientRep: { es: "Representante de ventas", en: "Sales rep" },
   clientRfc: { es: "RFC", en: "RFC" },
   clientRazonSocial: { es: "Razón Social", en: "Legal Name" },
   clientCurp: { es: "CURP", en: "CURP" },

@@ -64,6 +64,9 @@ type Client = {
   lat: number | null;
   lng: number | null;
   google_place_id: string | null;
+  contact: string | null;
+  representante_id: string | null;
+  representante_nombre: string | null;
 };
 
 type ClientForm = {
@@ -569,12 +572,16 @@ export default function Clients() {
   const { data: clients, isLoading, error } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("name");
+      const [{ data, error }, { data: reps }] = await Promise.all([
+        supabase.from("clients").select("*").order("name"),
+        supabase.from("representantes").select("id, nombre"),
+      ]);
       if (error) throw error;
-      return data as Client[];
+      const repMap = new Map((reps ?? []).map((r) => [r.id, r.nombre]));
+      return (data ?? []).map((c) => ({
+        ...c,
+        representante_nombre: (repMap.get((c as any).representante_id) as string | null) || c.contact || null,
+      })) as Client[];
     },
   });
 
@@ -1400,10 +1407,10 @@ export default function Clients() {
                         {c.payment_method ?? "Transferencia"}
                       </Badge>
                     </div>
-                    {c.central && (
+                    {c.representante_nombre && (
                       <div>
-                        <span className="text-muted-foreground">Central: </span>
-                        <span className="text-foreground">{c.central}</span>
+                        <span className="text-muted-foreground">Rep: </span>
+                        <span className="text-foreground">{c.representante_nombre}</span>
                       </div>
                     )}
                     {c.rfc && (
@@ -1475,7 +1482,7 @@ export default function Clients() {
                   <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientPhone")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">{t("clientCentral")}</TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">{t("clientRep")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">Método de pago</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">{t("thActive")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap w-20">{t("thActions")}</TableHead>
@@ -1551,7 +1558,7 @@ export default function Clients() {
 
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{c.central ?? "---"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{c.representante_nombre ?? "---"}</TableCell>
                         <TableCell className="text-sm hidden lg:table-cell">
                           <Badge className={cn("text-xs",
                             c.payment_method === "Efectivo" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
