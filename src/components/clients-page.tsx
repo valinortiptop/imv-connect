@@ -1358,8 +1358,18 @@ export default function Clients() {
                         invisible={typeFilter !== "todos"}
                       />
                       <span className="font-semibold text-foreground truncate">
-                        {c.name}
+                        {stripVmPrefix(c.name) || c.name}
                       </span>
+                      {isVmClient(c) && (
+                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide shrink-0" title="Venta Mostrador">
+                          VM
+                        </Badge>
+                      )}
+                      {isGenericRfc(c.rfc) && (
+                        <Badge className="bg-purple-500/15 text-purple-700 border-purple-500/40 text-[10px] font-semibold tracking-wide shrink-0" title={`RFC genérico (${GENERIC_RFC})`}>
+                          RFC genérico
+                        </Badge>
+                      )}
                     </div>
                     <Badge className={cn("text-xs shrink-0", c.active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border")}>
                       {c.active ? "Activo" : "Inactivo"}
