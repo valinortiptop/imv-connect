@@ -73,6 +73,47 @@ export const pingProvidersFn = createServerFn({ method: "POST" }).handler(
   },
 );
 
+/* ───────────────────── Google Maps (Places + Geocoding) ───────────────── */
+
+export const googlePlacesAutocompleteFn = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        query: z.string().min(1).max(300),
+        sessiontoken: z.string().min(1).max(120).optional(),
+        country: z.string().min(2).max(8).optional(),
+        language: z.string().min(2).max(8).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => googlePlacesAutocomplete(data));
+
+export const googlePlaceDetailsFn = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        place_id: z.string().min(1).max(300),
+        sessiontoken: z.string().min(1).max(120).optional(),
+        language: z.string().min(2).max(8).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => googlePlaceDetails(data));
+
+export const googleGeocodeFn = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        address: z.string().min(1).max(500),
+        region: z.string().min(2).max(8).optional(),
+        language: z.string().min(2).max(8).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => googleGeocode(data));
+
+
+
 /* ──────────────────── Análisis IA de docs de onboarding ──────────────────── */
 
 const ANALYSIS_SCHEMA_HINT = `Devuelve EXCLUSIVAMENTE JSON con esta forma:
