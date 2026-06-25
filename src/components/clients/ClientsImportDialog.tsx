@@ -426,12 +426,58 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
 
     setSaving(true);
     try {
+      // In-batch dedupe — a single Excel often contains the same client on
+      // multiple lines (different shipping addresses, etc.). Without this
+      // collapse, `insert` would create N copies in one call.
+      const GENERIC_RFCS = new Set(["XAXX010101000", "XEXX010101000"]);
+      const normKey = (s: string | null | undefined) =>
+        (s ?? "").toString().toLowerCase().normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+      const normPhone = (s: string | null | undefined) =>
+        (s ?? "").toString().replace(/\D+/g, "").slice(-10);
+      const rowKey = (r: ImportRow) => {
+        const rfcUp = (r.rfc || "").toUpperCase().trim();
+        if (rfcUp && !GENERIC_RFCS.has(rfcUp)) return "rfc:" + rfcUp;
+        const nk = normKey(r.name) || normKey(r.company) || normKey(r.razon_social);
+        const pk = normPhone(r.phone);
+        if (nk && pk.length === 10) return "np:" + nk + "|" + pk;
+        if (nk) return "n:" + nk;
+        return "rand:" + Math.random();
+      };
+
+      // Re-check existing rows right before saving (someone else may have
+      // imported in the meantime) so we never insert a duplicate.
+      const existingKeys = new Set<string>();
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("clientes")
+          .select("id, razon_social, nombre_comercial, company, phone, telefono, rfc")
+          .range(from, from + 999);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const c of data) {
+          const rfcUp = (c.rfc || "").toUpperCase().trim();
+          if (rfcUp && !GENERIC_RFCS.has(rfcUp)) existingKeys.add("rfc:" + rfcUp);
+          const nk = normKey(c.razon_social) || normKey(c.nombre_comercial) || normKey(c.company);
+          const pk = normPhone(c.phone) || normPhone(c.telefono);
+          if (nk && pk.length === 10) existingKeys.add("np:" + nk + "|" + pk);
+          if (nk) existingKeys.add("n:" + nk);
+        }
+        if (data.length < 1000) break;
+      }
+
+      const seen = new Set<string>();
+      const dedupedInsert: ImportRow[] = [];
+      for (const r of toInsert) {
+        const k = rowKey(r);
+        if (seen.has(k) || existingKeys.has(k)) continue;
+        seen.add(k);
+        dedupedInsert.push(r);
+      }
+
       let inserted = 0;
-      if (toInsert.length > 0) {
-        // Write directly to the base table `clientes` using its native column
-        // names — the public `clients` view has computed columns (COALESCE)
-        // and aliases that make it non-insertable.
-        const payload = toInsert.map((r) => ({
+      if (dedupedInsert.length > 0) {
+        const payload = dedupedInsert.map((r) => ({
           razon_social: r.razon_social || r.name,
           nombre_comercial: r.company || r.nickname || null,
           nickname: r.nickname || null,
@@ -460,6 +506,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           inserted += data?.length ?? 0;
         }
       }
+
 
       let updated = 0;
       for (const r of toUpdate) {
