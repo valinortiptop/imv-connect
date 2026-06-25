@@ -6,8 +6,12 @@ import {
   getValinorUsage,
   pingProviders,
   geminiGenerateInline,
+  googlePlacesAutocomplete,
+  googlePlaceDetails,
+  googleGeocode,
 } from "./valinor-proxy.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 
 /** Enviar email transaccional vía Resend (cuenta de Valinor). */
 export const sendEmailFn = createServerFn({ method: "POST" })
