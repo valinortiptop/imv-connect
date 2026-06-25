@@ -40,6 +40,7 @@ const navGroups: NavGroup[] = [
       { key: "navProspects",    label: "Prospectos",           url: "/admin/prospectos",     icon: UserPlus },
       { key: "navOrders",       label: "Pedidos",              url: "/admin/pedidos",        icon: ShoppingCart },
       { key: "navClients",      label: "Clientes",             url: "/admin/clientes",       icon: Users },
+      { key: "navPortalAdmin",  label: "Portal Clientes",      url: "/admin/portal",          icon: Link2 },
       { key: "navReps",         label: "Vendedores",           url: "/admin/representantes", icon: UserSquare2 },
       { key: "navDirectory",    label: "Facturación",          url: "/admin/facturas",       icon: FileText },
       { key: "navPromos",       label: "Promociones",          url: "/admin/promos",         icon: Tag },
@@ -75,7 +76,6 @@ const navGroups: NavGroup[] = [
   {
     label: "Configuración",
     items: [
-      { key: "navPortalAdmin", label: "Portal Clientes",     url: "/admin/portal",          icon: Link2 },
       { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: Activity },
       { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: Gauge },
       { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: Settings },
