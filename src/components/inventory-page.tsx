@@ -63,6 +63,8 @@ export default function Inventory() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
   const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const qc = useQueryClient();
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<{
     id: string; clave: string; name: string; image_url: string | null;
