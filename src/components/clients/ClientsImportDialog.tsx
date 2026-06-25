@@ -200,7 +200,14 @@ Para cada fila identifica los campos canónicos:
 - email (string)
 - rfc (string en mayúsculas, sin espacios)
 - razon_social (razón social completa)
-- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado; concatena si vienen separadas)
+- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado).
+  IMPORTANTE: en este Excel la columna "Dirección de envío" suele venir como
+  "<NOMBRE_CLIENTE> <NOMBRE_CLIENTE_REPETIDO> <DIRECCIÓN_REAL>". Debes
+  ELIMINAR cualquier prefijo que sea el nombre del cliente, la razón social,
+  el nombre comercial o palabras tipo "VETERINARIA X", "HOSPITAL Y",
+  "FARMACIA Z", "PET'S HOME", etc., y devolver SOLO la dirección real
+  (calle, número, colonia, municipio, estado). Prefiere "Dirección de envío"
+  sobre "Dirección de facturación" si ambas existen.
 - codigo_postal (5 dígitos)
 - payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
 - payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
