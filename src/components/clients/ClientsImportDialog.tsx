@@ -555,6 +555,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lat: r.lat,
           lng: r.lng,
           google_place_id: r.google_place_id,
+          representante_id: r.representante_id ?? null,
           active: true,
         }));
         for (let i = 0; i < payload.length; i += 100) {
