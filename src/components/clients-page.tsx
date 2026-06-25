@@ -1296,8 +1296,23 @@ export default function Clients() {
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Deseleccionar</Button>
         </div>
 
+        {viewMode === "map" ? (
+          <ClientsMapView
+            clients={filtered.map((c) => ({
+              id: c.id,
+              name: c.name,
+              address: c.address,
+              phone: c.phone,
+              client_type: c.client_type,
+              lat: c.lat,
+              lng: c.lng,
+            }))}
+            onSelect={(id) => setClient360Id(id)}
+          />
+        ) : (<>
         {/* Mobile Card View */}
         <div className="space-y-3 md:hidden">
+
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2">
