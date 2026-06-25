@@ -1958,6 +1958,18 @@ export default function Clients() {
         onOpenChange={(open) => { if (!open) setClient360Id(null); }}
       />
 
+      {/* Import Excel Dialog */}
+      {importOpen && (
+        <ClientsImportDialog
+          onClose={() => setImportOpen(false)}
+          onSaved={() => {
+            setImportOpen(false);
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
+      )}
+
+
       {/* Deactivate Confirmation Dialog */}
       <Dialog open={!!deactivateClient} onOpenChange={open => !open && setDeactivateClient(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
