@@ -509,6 +509,7 @@ export default function Clients() {
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deactivateClient, setDeactivateClient] = useState<Client | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // B2: filter to clients missing their delivery window (either side
   // null OR same value, both flagged as broken/incomplete). Drives the
