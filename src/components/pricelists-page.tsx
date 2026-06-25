@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Plus, Upload, FileSpreadsheet, Check, X, AlertTriangle, Download, RotateCw, Lock } from "lucide-react";
 import { OverridesMatrixView } from "@/components/clients/OverridesMatrixView";
+import { PriceListsImportDialog } from "@/components/pricelists/PriceListsImportDialog";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 
@@ -154,6 +155,7 @@ export default function PriceLists() {
   const [activePL, setActivePL] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showNewList, setShowNewList] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -475,12 +477,33 @@ export default function PriceLists() {
           variant="outline"
           size="sm"
           className="h-9 px-3 gap-1.5 shrink-0"
+          onClick={() => setShowImport(true)}
+        >
+          <Upload className="h-4 w-4" />
+          {lang === "es" ? "Importar Excel" : "Import Excel"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 px-3 gap-1.5 shrink-0"
           onClick={() => setShowNewList(true)}
         >
           <Plus className="h-4 w-4" />
           {lang === "es" ? "Nueva lista" : "New list"}
         </Button>
       </div>
+
+      {showImport && (
+        <PriceListsImportDialog
+          onClose={() => setShowImport(false)}
+          onSaved={async () => {
+            setShowImport(false);
+            await queryClient.invalidateQueries({ queryKey: ["price-lists"] });
+            await queryClient.invalidateQueries({ queryKey: ["price-list-items"] });
+            await queryClient.invalidateQueries({ queryKey: ["price-list-all-items"] });
+          }}
+        />
+      )}
 
       {/* Cross-client overrides matrix replaces the per-tier content when
           active. Returns to the tier view by clicking any tier button. */}

@@ -74,9 +74,9 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
           .limit(10),
         supabase
           .from("client_price_overrides")
-          .select("unit_price, notes, clientes(razon_social, nombre_comercial)")
+          .select("price_with_iva, notes, clientes(id, razon_social, nombre_comercial)")
           .eq("product_id", productId)
-          .limit(20),
+          .limit(50),
         supabase
           .from("product_promotions")
           .select("id, name, discount_pct, valid_from, valid_to, active")
@@ -167,7 +167,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
 
               <TabsContent value="general" className="space-y-3 pt-4">
                 <Row label="SKU" value={p.sku} />
-                <Row label="Marca" value={p.laboratorios?.nombre ?? p.marca} />
+                <Row label="Clase" value={p.laboratorios?.nombre ?? p.marca} />
                 <Row label="Proveedor" value={p.proveedor} />
                 <Row label="Línea" value={p.linea} />
                 <Row label="Grupo" value={p.grupo} />
@@ -219,7 +219,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                           <span className="truncate">
                             {o.clientes?.nombre_comercial?.trim() || o.clientes?.razon_social || "—"}
                           </span>
-                          <span className="font-medium">{fmt(o.unit_price)}</span>
+                          <span className="font-medium">{fmt(o.price_with_iva)}</span>
                         </li>
                       ))}
                     </ul>
