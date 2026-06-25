@@ -1235,6 +1235,27 @@ export default function Clients() {
               {t("clean")}
             </Button>
           )}
+
+          {/* View mode toggle — Lista vs Mapa */}
+          <div className="ml-auto flex items-center rounded-md border border-border bg-card p-0.5">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 px-2.5"
+              onClick={() => setViewMode("list")}
+            >
+              Lista
+            </Button>
+            <Button
+              variant={viewMode === "map" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 px-2.5"
+              onClick={() => setViewMode("map")}
+            >
+              <MapPin className="size-3.5 mr-1" /> Mapa
+            </Button>
+          </div>
+
         </div>
 
         {/* Count */}
