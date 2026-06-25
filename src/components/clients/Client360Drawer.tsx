@@ -29,7 +29,10 @@ type Props = {
   clientId: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  onEdit?: (clientId: string) => void;
+  canEdit?: boolean;
 };
+
 
 const fmt = (n: number | null | undefined) =>
   n == null
