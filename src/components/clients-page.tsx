@@ -21,7 +21,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ChronoBar } from "@/components/ChronoBar";
-import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2 } from "lucide-react";
+import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin } from "lucide-react";
 import { parseCfdiPdf, type CfdiData } from "@/lib/cfdi-parser";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
