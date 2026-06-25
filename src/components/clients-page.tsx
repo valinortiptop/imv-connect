@@ -805,6 +805,9 @@ export default function Clients() {
         delivery_window_from:  form.delivery_window_from.trim()  || null,
         delivery_window_until: form.delivery_window_until.trim() || null,
         delivery_notes:        form.delivery_notes.trim()        || null,
+        lat: form.lat,
+        lng: form.lng,
+        google_place_id: form.google_place_id,
       };
 
       if (isNew) {
@@ -1552,7 +1555,26 @@ export default function Clients() {
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label className="text-xs">{t("clientAddress")}</Label>
-                <Input value={form.address} onChange={e => updateField("address", e.target.value)} placeholder="Calle, Colonia, Ciudad" />
+                <AddressAutocomplete
+                  value={form.address}
+                  onChange={(v) => updateField("address", v)}
+                  onSelect={(r) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      address: r.address,
+                      lat: r.lat,
+                      lng: r.lng,
+                      google_place_id: r.place_id,
+                      codigo_postal: prev.codigo_postal || r.codigo_postal || "",
+                    }));
+                  }}
+                  placeholder="Empieza a escribir la dirección…"
+                />
+                {form.lat != null && form.lng != null && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    📍 {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{t("clientCentral")}</Label>
