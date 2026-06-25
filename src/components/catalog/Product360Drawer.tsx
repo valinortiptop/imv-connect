@@ -167,7 +167,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
 
               <TabsContent value="general" className="space-y-3 pt-4">
                 <Row label="SKU" value={p.sku} />
-                <Row label="Marca" value={p.laboratorios?.nombre ?? p.marca} />
+                <Row label="Clase" value={p.laboratorios?.nombre ?? p.marca} />
                 <Row label="Proveedor" value={p.proveedor} />
                 <Row label="Línea" value={p.linea} />
                 <Row label="Grupo" value={p.grupo} />
