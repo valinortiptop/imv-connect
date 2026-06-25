@@ -255,7 +255,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                   }
                 />
                 <Row label="Notas de entrega" value={c.delivery_notes} />
-                <Row label="Representante" value={q.data?.representante?.nombre} />
+                <RepresentanteCard rep={q.data?.representante} />
                 <Row label="Alta" value={fmtDate(c.created_at)} />
                 {c.notas && (
                   <div className="pt-2">
