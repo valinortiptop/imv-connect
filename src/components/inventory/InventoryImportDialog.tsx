@@ -91,14 +91,16 @@ export function InventoryImportDialog({
       }
       // Find the header row: first row that has at least 2 non-empty cells
       // and contains a likely SKU header.
+      const stripAcc = (s: string) =>
+        String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
       let headerIdx = 0;
       for (let i = 0; i < Math.min(matrix.length, 10); i++) {
-        const cells = matrix[i].map((c) => String(c ?? "").toLowerCase().trim());
+        const cells = matrix[i].map(stripAcc);
         const hasSku = cells.some((c) =>
-          /\b(art[ií]culo|sku|clave|c[oó]digo|cb)\b/.test(c),
+          /\b(articulo|sku|clave|codigo|cb)\b/.test(c),
         );
         const hasQty = cells.some((c) =>
-          /(f[ií]sico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(c),
+          /(fisico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(c),
         );
         if (hasSku && hasQty) {
           headerIdx = i;
