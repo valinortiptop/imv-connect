@@ -91,14 +91,16 @@ export function InventoryImportDialog({
       }
       // Find the header row: first row that has at least 2 non-empty cells
       // and contains a likely SKU header.
+      const stripAcc = (s: string) =>
+        String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
       let headerIdx = 0;
       for (let i = 0; i < Math.min(matrix.length, 10); i++) {
-        const cells = matrix[i].map((c) => String(c ?? "").toLowerCase().trim());
+        const cells = matrix[i].map(stripAcc);
         const hasSku = cells.some((c) =>
-          /\b(art[ií]culo|sku|clave|c[oó]digo|cb)\b/.test(c),
+          /\b(articulo|sku|clave|codigo|cb)\b/.test(c),
         );
         const hasQty = cells.some((c) =>
-          /(f[ií]sico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(c),
+          /(fisico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(c),
         );
         if (hasSku && hasQty) {
           headerIdx = i;
@@ -163,73 +165,88 @@ export function InventoryImportDialog({
         return;
       }
 
-      // Ask the AI to normalize each row.
-      setAnalyzing(true);
-      const sampleRows = json.slice(0, 1500);
-      const system = `Normalizas una hoja de inventario para un distribuidor farmacéutico veterinario en México. Devuelves SOLO JSON válido, sin markdown.
+      // The heuristic now handles accent-insensitive matching, so we only call
+      // the AI as a fallback if it can't map the first row's SKU/qty columns
+      // from the headers we got (e.g. an exotic report layout).
+      const stripAccPreview = (s: string) =>
+        String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      const headersNorm = headers.map(stripAccPreview);
+      const headersHaveSku = headersNorm.some((h) =>
+        /\b(articulo|sku|clave|codigo|cb)\b/.test(h),
+      );
+      const headersHaveQty = headersNorm.some((h) =>
+        /(fisico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(h),
+      );
+
+      let aiRows: any[] | null = null;
+      if (!(headersHaveSku && headersHaveQty)) {
+        setAnalyzing(true);
+        const sampleRows = json.slice(0, 800);
+        const system = `Normalizas una hoja de inventario para un distribuidor farmacéutico veterinario en México. Devuelves SOLO JSON válido, sin markdown.
 Cada fila tiene:
 - sku (clave del producto — obligatorio; columnas típicas: "Artículo", "SKU", "Clave", "Código", "CB")
 - name (nombre del producto, opcional; columnas tipo "Artículo: Nombre para mostrar", "Nombre", "Descripción")
 - target_stock (existencia física actual como número entero; columnas tipo "Físico", "Existencia", "Stock", "Cantidad", "Inventario", "Piezas", "Bultos"). Si no aparece, null.
 - lotes (cadena con lotes y cantidades, opcional; columnas tipo "Números de serie/lote", "Lote", "Lotes"). Pasa el texto tal cual.
 Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
-      const userMsg = JSON.stringify({ headers, rows: sampleRows });
-
-      let aiRows: any[] | null = null;
-      try {
-        const resp = await aiChatFn({
-          data: {
-            model: "gpt-4o-mini",
-            temperature: 0,
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ],
-          },
-        });
-        const content =
-          (resp as any)?.content ??
-          (resp as any)?.choices?.[0]?.message?.content ??
-          "";
-        const cleaned = String(content)
-          .replace(/^```json\s*/i, "")
-          .replace(/^```\s*/i, "")
-          .replace(/```$/i, "")
-          .trim();
-        const parsedJson = JSON.parse(cleaned);
-        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
-      } catch (e) {
-        console.warn("AI mapping failed, falling back to heuristics", e);
+        const userMsg = JSON.stringify({ headers, rows: sampleRows });
+        try {
+          const resp = await aiChatFn({
+            data: {
+              model: "gpt-4o-mini",
+              temperature: 0,
+              messages: [
+                { role: "system", content: system },
+                { role: "user", content: userMsg },
+              ],
+            },
+          });
+          const content =
+            (resp as any)?.content ??
+            (resp as any)?.choices?.[0]?.message?.content ??
+            "";
+          const cleaned = String(content)
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/```$/i, "")
+            .trim();
+          const parsedJson = JSON.parse(cleaned);
+          aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+        } catch (e) {
+          console.warn("AI mapping failed, falling back to heuristics", e);
+        }
       }
 
+      const stripAccents = (s: string) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const norm = (s: string) => stripAccents(String(s ?? "")).toLowerCase().trim();
+
       const get = (r: Record<string, unknown>, ...keys: string[]) => {
-        for (const k of keys) {
-          for (const real of Object.keys(r)) {
-            const norm = real.toLowerCase().trim();
-            if (norm === k.toLowerCase()) return String(r[real] ?? "").trim();
-            if (norm.startsWith(k.toLowerCase() + ":"))
+        const nkeys = keys.map(norm);
+        for (const real of Object.keys(r)) {
+          const nreal = norm(real);
+          for (const k of nkeys) {
+            if (nreal === k || nreal.startsWith(k + ":") || nreal.startsWith(k + " ")) {
               return String(r[real] ?? "").trim();
+            }
           }
         }
         return "";
       };
 
       const heuristicRow = (r: Record<string, unknown>) => ({
-        sku: get(r, "articulo", "artículo", "sku", "clave", "codigo", "código", "cb", "cod"),
+        sku: get(r, "articulo", "sku", "clave", "codigo", "cb", "cod"),
         name: get(
           r,
-          "artículo: nombre para mostrar",
           "articulo: nombre para mostrar",
           "nombre",
           "name",
           "producto",
           "descripcion",
-          "descripción",
         ),
         target_stock_str: get(
           r,
           "fisico",
-          "físico",
           "existencia",
           "stock",
           "cantidad",
@@ -241,7 +258,6 @@ Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} 
         ),
         lotes: get(
           r,
-          "números de serie/lote",
           "numeros de serie/lote",
           "lote",
           "lotes",
