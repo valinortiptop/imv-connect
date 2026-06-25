@@ -74,9 +74,9 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
           .limit(10),
         supabase
           .from("client_price_overrides")
-          .select("unit_price, notes, clientes(razon_social, nombre_comercial)")
+          .select("price_with_iva, notes, clientes(id, razon_social, nombre_comercial)")
           .eq("product_id", productId)
-          .limit(20),
+          .limit(50),
         supabase
           .from("product_promotions")
           .select("id, name, discount_pct, valid_from, valid_to, active")
