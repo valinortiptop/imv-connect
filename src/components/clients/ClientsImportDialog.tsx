@@ -53,11 +53,28 @@ type ImportRow = {
   lat: number | null;
   lng: number | null;
   google_place_id: string | null;
+  representante_nombre: string;
+  representante_id?: string | null;
   status: Status;
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
 };
+
+// "Amaya, Marisol" -> "Marisol Amaya"; "Marisol Amaya" stays as is.
+const normalizeRepName = (raw: string) => {
+  const s = (raw || "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  if (s.includes(",")) {
+    const [last, first] = s.split(",", 2).map((t) => t.trim());
+    if (first && last) return `${first} ${last}`;
+  }
+  return s;
+};
+const repKey = (s: string) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ").trim();
+
 
 const norm = (v: unknown) =>
   v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
@@ -238,6 +255,7 @@ Para cada fila identifica los campos canónicos:
 - payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
 - payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
 - client_type ("mayoreo" si tiene crédito o RFC empresarial, "menudeo" si es contado/persona física)
+- representante_nombre (vendedor / representante de ventas asignado al cliente; si viene como "Apellido, Nombre" devuelve "Nombre Apellido"; si no aparece devuelve "")
 Si un campo no aparece, devuelve "" o null.
 Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
       const userMsg = JSON.stringify({ headers, rows: sampleRows });
@@ -292,6 +310,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
         payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
         client_type: get(r, "tipo", "client_type", "tipo cliente").toLowerCase(),
+        representante_nombre: get(r, "representante de ventas", "representante", "vendedor", "asesor", "ejecutivo"),
       });
 
       const built: ImportRow[] = json.map((raw, i) => {
@@ -331,6 +350,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
               ? "mayoreo"
               : "menudeo";
 
+        const representante_nombre = normalizeRepName(pick(ai?.representante_nombre, h.representante_nombre));
+
         const baseRow = {
           name,
           company,
@@ -347,6 +368,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lat: null as number | null,
           lng: null as number | null,
           google_place_id: null as string | null,
+          representante_nombre,
+          representante_id: null as string | null,
         };
         if (!name) {
           return {
@@ -357,6 +380,35 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         }
         return { ...baseRow, ...diffRow(baseRow) } as ImportRow;
       });
+
+      // Ensure representantes exist for every distinct name found and stamp ids onto rows.
+      const uniqueRepNames = Array.from(
+        new Set(built.map((r) => r.representante_nombre).filter(Boolean)),
+      );
+      if (uniqueRepNames.length > 0) {
+        const { data: existingReps } = await supabase
+          .from("representantes")
+          .select("id, nombre");
+        const repIdByKey = new Map<string, string>();
+        for (const r of existingReps ?? []) {
+          repIdByKey.set(repKey(r.nombre), r.id);
+        }
+        const missing = uniqueRepNames.filter((n) => !repIdByKey.has(repKey(n)));
+        if (missing.length > 0) {
+          const { data: newReps, error: repErr } = await supabase
+            .from("representantes")
+            .insert(missing.map((nombre) => ({ nombre, activo: true })))
+            .select("id, nombre");
+          if (repErr) console.warn("repr insert failed", repErr);
+          for (const r of newReps ?? []) repIdByKey.set(repKey(r.nombre), r.id);
+        }
+        for (const row of built) {
+          if (row.representante_nombre) {
+            row.representante_id = repIdByKey.get(repKey(row.representante_nombre)) ?? null;
+          }
+        }
+      }
+
 
       setRows(built);
       if (aiRows) toast.success(`Excel analizado con IA — ${built.length} filas`);
@@ -503,6 +555,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lat: r.lat,
           lng: r.lng,
           google_place_id: r.google_place_id,
+          representante_id: r.representante_id ?? null,
           active: true,
         }));
         for (let i = 0; i < payload.length; i += 100) {
@@ -543,6 +596,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           patch.google_place_id = r.google_place_id;
         }
         if (r.payment_terms != null) patch.payment_terms = r.payment_terms;
+        if (r.representante_id) patch.representante_id = r.representante_id;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
           .from("clientes")
@@ -689,6 +743,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                       <TableHead>CP</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Pago</TableHead>
+                      <TableHead>Representante</TableHead>
                       <TableHead>Geo</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -725,6 +780,16 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                         <TableCell className="text-xs">
                           {r.payment_method}
                           {r.payment_terms ? ` · ${r.payment_terms}d` : ""}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {r.representante_nombre ? (
+                            <span className={r.representante_id ? "" : "text-amber-600"}>
+                              {r.representante_nombre}
+                              {!r.representante_id && " (nuevo)"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {r.lat != null && r.lng != null ? (

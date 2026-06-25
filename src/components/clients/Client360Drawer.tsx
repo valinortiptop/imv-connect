@@ -23,6 +23,8 @@ import {
   CreditCard,
   ExternalLink,
   Pencil,
+  UserRound,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -253,7 +255,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                   }
                 />
                 <Row label="Notas de entrega" value={c.delivery_notes} />
-                <Row label="Representante" value={q.data?.representante?.nombre} />
+                <RepresentanteCard rep={q.data?.representante} />
                 <Row label="Alta" value={fmtDate(c.created_at)} />
                 {c.notas && (
                   <div className="pt-2">
@@ -365,3 +367,75 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-muted-foreground italic px-1">{children}</p>;
 }
+
+function RepresentanteCard({
+  rep,
+}: {
+  rep: { nombre?: string | null; telefono?: string | null; email?: string | null } | null | undefined;
+}) {
+  if (!rep || !rep.nombre) {
+    return (
+      <div className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground flex items-center gap-2">
+        <UserRound className="size-3.5" /> Sin representante asignado
+      </div>
+    );
+  }
+  const phoneDigits = (rep.telefono || "").replace(/\D+/g, "");
+  const waNumber =
+    phoneDigits.length === 10 ? `52${phoneDigits}` : phoneDigits; // default MX country code
+  return (
+    <div className="rounded-md border bg-card px-3 py-2.5">
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <UserRound className="size-3.5" /> Representante de ventas
+      </div>
+      <div className="mt-0.5 text-sm font-semibold">{rep.nombre}</div>
+      {(rep.telefono || rep.email) && (
+        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          {rep.telefono && (
+            <div className="flex items-center gap-1.5">
+              <Phone className="size-3" /> {rep.telefono}
+            </div>
+          )}
+          {rep.email && (
+            <div className="flex items-center gap-1.5">
+              <Mail className="size-3" /> {rep.email}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {phoneDigits.length >= 10 && (
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1.5 bg-emerald-500/10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/20"
+          >
+            <a
+              href={`https://wa.me/${waNumber}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MessageCircle className="size-3.5" /> WhatsApp
+            </a>
+          </Button>
+        )}
+        {rep.telefono && (
+          <Button asChild size="sm" variant="outline" className="h-7 gap-1.5">
+            <a href={`tel:${rep.telefono}`}>
+              <Phone className="size-3.5" /> Llamar
+            </a>
+          </Button>
+        )}
+        {rep.email && (
+          <Button asChild size="sm" variant="outline" className="h-7 gap-1.5">
+            <a href={`mailto:${rep.email}`}>
+              <Mail className="size-3.5" /> Email
+            </a>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
