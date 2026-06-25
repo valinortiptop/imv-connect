@@ -139,6 +139,93 @@ export async function geminiGenerateInline(input: {
   });
 }
 
+/* ───────────────────── Google Maps (Places + Geocoding) ───────────────── */
+
+function buildMapsEndpoint(path: string, params: Record<string, string | undefined>) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v != null && v !== "") qs.set(k, String(v));
+  }
+  return `${path}?${qs.toString()}`;
+}
+
+export async function googlePlacesAutocomplete(input: {
+  query: string;
+  sessiontoken?: string;
+  country?: string;
+  language?: string;
+}) {
+  const endpoint = buildMapsEndpoint("/maps/api/place/autocomplete/json", {
+    input: input.query,
+    sessiontoken: input.sessiontoken,
+    components: input.country ? `country:${input.country}` : undefined,
+    language: input.language ?? "es",
+  });
+  return callValinor<{
+    status: string;
+    predictions?: Array<{
+      description: string;
+      place_id: string;
+      structured_formatting?: { main_text?: string; secondary_text?: string };
+    }>;
+    error_message?: string;
+  }>({ provider: "google", endpoint, method: "GET" });
+}
+
+export async function googlePlaceDetails(input: {
+  place_id: string;
+  sessiontoken?: string;
+  language?: string;
+}) {
+  const endpoint = buildMapsEndpoint("/maps/api/place/details/json", {
+    place_id: input.place_id,
+    sessiontoken: input.sessiontoken,
+    language: input.language ?? "es",
+    fields: "formatted_address,address_components,geometry,name,place_id",
+  });
+  return callValinor<{
+    status: string;
+    result?: {
+      formatted_address?: string;
+      place_id?: string;
+      geometry?: { location?: { lat: number; lng: number } };
+      address_components?: Array<{
+        long_name: string;
+        short_name: string;
+        types: string[];
+      }>;
+    };
+    error_message?: string;
+  }>({ provider: "google", endpoint, method: "GET" });
+}
+
+export async function googleGeocode(input: {
+  address: string;
+  region?: string;
+  language?: string;
+}) {
+  const endpoint = buildMapsEndpoint("/maps/api/geocode/json", {
+    address: input.address,
+    region: input.region ?? "mx",
+    language: input.language ?? "es",
+  });
+  return callValinor<{
+    status: string;
+    results?: Array<{
+      formatted_address: string;
+      place_id: string;
+      geometry?: { location?: { lat: number; lng: number } };
+      address_components?: Array<{
+        long_name: string;
+        short_name: string;
+        types: string[];
+      }>;
+    }>;
+    error_message?: string;
+  }>({ provider: "google", endpoint, method: "GET" });
+}
+
+
 /**
  * Lee el reporte de uso del proyecto desde Valinor.
  */
