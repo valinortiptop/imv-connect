@@ -819,6 +819,16 @@ export default function Inventory() {
           open={!!drawerId}
           onOpenChange={(o) => !o && setDrawerId(null)}
         />
+
+        {importOpen && (
+          <InventoryImportDialog
+            onClose={() => setImportOpen(false)}
+            onSaved={() => {
+              setImportOpen(false);
+              qc.invalidateQueries({ queryKey: ["inventory-stock"] });
+            }}
+          />
+        )}
       </div>
     </div>
   );
