@@ -350,6 +350,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
               ? "mayoreo"
               : "menudeo";
 
+        const representante_nombre = normalizeRepName(pick(ai?.representante_nombre, h.representante_nombre));
+
         const baseRow = {
           name,
           company,
@@ -366,6 +368,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lat: null as number | null,
           lng: null as number | null,
           google_place_id: null as string | null,
+          representante_nombre,
+          representante_id: null as string | null,
         };
         if (!name) {
           return {
@@ -376,6 +380,35 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         }
         return { ...baseRow, ...diffRow(baseRow) } as ImportRow;
       });
+
+      // Ensure representantes exist for every distinct name found and stamp ids onto rows.
+      const uniqueRepNames = Array.from(
+        new Set(built.map((r) => r.representante_nombre).filter(Boolean)),
+      );
+      if (uniqueRepNames.length > 0) {
+        const { data: existingReps } = await supabase
+          .from("representantes")
+          .select("id, nombre");
+        const repIdByKey = new Map<string, string>();
+        for (const r of existingReps ?? []) {
+          repIdByKey.set(repKey(r.nombre), r.id);
+        }
+        const missing = uniqueRepNames.filter((n) => !repIdByKey.has(repKey(n)));
+        if (missing.length > 0) {
+          const { data: newReps, error: repErr } = await supabase
+            .from("representantes")
+            .insert(missing.map((nombre) => ({ nombre, activo: true })))
+            .select("id, nombre");
+          if (repErr) console.warn("repr insert failed", repErr);
+          for (const r of newReps ?? []) repIdByKey.set(repKey(r.nombre), r.id);
+        }
+        for (const row of built) {
+          if (row.representante_nombre) {
+            row.representante_id = repIdByKey.get(repKey(row.representante_nombre)) ?? null;
+          }
+        }
+      }
+
 
       setRows(built);
       if (aiRows) toast.success(`Excel analizado con IA — ${built.length} filas`);
