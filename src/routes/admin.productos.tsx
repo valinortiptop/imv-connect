@@ -1438,7 +1438,7 @@ function EditProductDialog({
                     <div className="mt-1 text-sm">{product.proveedor ?? "—"}</div>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">MARCA</Label>
+                    <Label className="text-xs text-muted-foreground">CLASE</Label>
                     <div className="mt-1 text-sm">{product.marca ?? "—"}</div>
                   </div>
                 </div>
@@ -1712,7 +1712,7 @@ function NewProductDialog({
                 onChange={(e) => setV({ ...v, nombre: e.target.value })}
               />
             </Field>
-            <Field label="Marca">
+            <Field label="Clase">
               <Input
                 value={v.marca}
                 onChange={(e) => setV({ ...v, marca: e.target.value })}
