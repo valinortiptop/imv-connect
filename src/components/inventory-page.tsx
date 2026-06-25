@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,6 +25,9 @@ import { MoreVertical, AlertOctagon } from "lucide-react";
 import { downloadInventoryExcel } from "@/lib/inventory-excel-export";
 import { toast } from "sonner";
 import { Product360Drawer } from "@/components/catalog/Product360Drawer";
+import { InventoryImportDialog } from "@/components/inventory/InventoryImportDialog";
+import { Upload } from "lucide-react";
+
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const fmtMXN = (v: number | null) => v == null ? "$0" : mxnFmt.format(v);
@@ -60,6 +63,8 @@ export default function Inventory() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
   const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const qc = useQueryClient();
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [adjustProduct, setAdjustProduct] = useState<{
     id: string; clave: string; name: string; image_url: string | null;
@@ -298,6 +303,16 @@ export default function Inventory() {
                 : "Stock actual en bodega"}
             </p>
           </div>
+          <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importar Excel
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -346,6 +361,7 @@ export default function Inventory() {
               </>
             )}
           </Button>
+          </div>
         </div>
 
         {/* Day filter chips */}
@@ -803,6 +819,16 @@ export default function Inventory() {
           open={!!drawerId}
           onOpenChange={(o) => !o && setDrawerId(null)}
         />
+
+        {importOpen && (
+          <InventoryImportDialog
+            onClose={() => setImportOpen(false)}
+            onSaved={() => {
+              setImportOpen(false);
+              qc.invalidateQueries({ queryKey: ["inventory-stock"] });
+            }}
+          />
+        )}
       </div>
     </div>
   );
