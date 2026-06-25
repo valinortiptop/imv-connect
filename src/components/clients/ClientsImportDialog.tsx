@@ -61,6 +61,47 @@ type ImportRow = {
 const norm = (v: unknown) =>
   v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
 
+/**
+ * In this Excel the "Dirección de envío" column is dumped as
+ * "<NOMBRE CLIENTE> <NOMBRE CLIENTE REPETIDO> <DIRECCIÓN REAL>".
+ * Strip any leading repetition of the client name / company / razón social
+ * so we keep only the actual street address before geocoding.
+ */
+const stripNamePrefix = (address: string, ...names: string[]) => {
+  let out = (address || "").replace(/\s+/g, " ").trim();
+  if (!out) return out;
+  const candidates = names
+    .map((n) => (n || "").replace(/\s+/g, " ").trim())
+    .filter((n) => n.length >= 3)
+    .sort((a, b) => b.length - a.length);
+
+  // Repeatedly peel off any leading occurrence of a name token.
+  for (let pass = 0; pass < 6; pass++) {
+    let changed = false;
+    for (const n of candidates) {
+      const re = new RegExp(
+        "^(?:" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")[\\s,:-]*",
+        "i",
+      );
+      if (re.test(out)) {
+        out = out.replace(re, "").trim();
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  // Drop a leading street-type keyword that lost its name (e.g. "VETERINARIA …").
+  // Only strip the very first word when it's a known business prefix AND
+  // the next token looks like another name (all caps) — keeps real
+  // street-type words like CALLE / AVENIDA intact.
+  const businessLead = /^(VETERINARIA|VETERINARIO|HOSPITAL|CLINICA|CLÍNICA|CONSULTORIO|FARMACIA|PET'?S?\s+HOME|PETSHOP|PET\s+SHOP|SERVICIO\s+MEDICO|SERVICIO\s+MÉDICO|ANIMAL\s+ZOO|CANNYS|LATIDO\s+ANIMAL|AGROPECUARIA|HAPPY\s+PETSAVE|CONSULTOR)\s+/i;
+  if (businessLead.test(out) && /^[A-ZÁÉÍÓÚÑ\s]{6,}/.test(out)) {
+    out = out.replace(businessLead, "").trim();
+  }
+  return out;
+};
+
 export function ClientsImportDialog({
   onClose,
   onSaved,
@@ -159,7 +200,14 @@ Para cada fila identifica los campos canónicos:
 - email (string)
 - rfc (string en mayúsculas, sin espacios)
 - razon_social (razón social completa)
-- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado; concatena si vienen separadas)
+- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado).
+  IMPORTANTE: en este Excel la columna "Dirección de envío" suele venir como
+  "<NOMBRE_CLIENTE> <NOMBRE_CLIENTE_REPETIDO> <DIRECCIÓN_REAL>". Debes
+  ELIMINAR cualquier prefijo que sea el nombre del cliente, la razón social,
+  el nombre comercial o palabras tipo "VETERINARIA X", "HOSPITAL Y",
+  "FARMACIA Z", "PET'S HOME", etc., y devolver SOLO la dirección real
+  (calle, número, colonia, municipio, estado). Prefiere "Dirección de envío"
+  sobre "Dirección de facturación" si ambas existen.
 - codigo_postal (5 dígitos)
 - payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
 - payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
@@ -213,7 +261,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         email: get(r, "email", "correo"),
         rfc: get(r, "rfc"),
         razon_social: get(r, "razon social", "razón social", "razon_social"),
-        address: get(r, "direccion", "dirección", "address", "domicilio"),
+        address: get(r, "direccion de envio", "dirección de envío", "direccion envio", "dirección envío", "direccion", "dirección", "address", "domicilio", "direccion de facturacion", "dirección de facturación"),
         codigo_postal: get(r, "cp", "codigo postal", "código postal", "codigo_postal", "zip"),
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
         payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
@@ -232,7 +280,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const email = pick(ai?.email, h.email);
         const rfc = pick(ai?.rfc, h.rfc).toUpperCase();
         const razon_social = pick(ai?.razon_social, h.razon_social);
-        const address = pick(ai?.address, h.address);
+        const rawAddress = pick(ai?.address, h.address);
+        const address = stripNamePrefix(rawAddress, name, company, razon_social, nickname);
         const codigo_postal = pick(ai?.codigo_postal, h.codigo_postal);
         const pm = pick(ai?.payment_method, h.payment_method);
         const termsRaw = ai?.payment_terms ?? Number(h.payment_terms_str) ?? null;
