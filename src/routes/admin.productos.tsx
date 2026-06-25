@@ -426,7 +426,7 @@ function ProductosPage() {
         <div className="relative min-w-[260px] flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por clave, nombre o marca…"
+            placeholder="Buscar por clave, nombre o clase…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -447,7 +447,7 @@ function ProductosPage() {
         </Select>
         <Select value={marcaFilter} onValueChange={setMarcaFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Marca" />
+            <SelectValue placeholder="Clase" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas las marcas</SelectItem>
@@ -572,7 +572,7 @@ function ProductosPage() {
                 <TableHead className="w-24">Clave</TableHead>
                 <TableHead className="w-14"></TableHead>
                 <TableHead>Producto</TableHead>
-                <TableHead>Marca</TableHead>
+                <TableHead>Clase</TableHead>
                 <TableHead>Proveedor</TableHead>
                 <TableHead>Línea</TableHead>
                 <TableHead>Grupo</TableHead>
@@ -927,7 +927,7 @@ function KpiDetailDialog({
               />
             </div>
 
-            <ChartCard title="Valor por marca (Top 10)">
+            <ChartCard title="Valor por clase (Top 10)">
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart
                   data={analytics.valorPorMarca
@@ -1113,12 +1113,12 @@ function KpiDetailDialog({
                 value={numFmt.format(analytics.promos)}
               />
               <StatBox
-                label="Marcas"
+                label="Clases"
                 value={numFmt.format(kpis.distribucion.length)}
               />
             </div>
 
-            <ChartCard title="Distribución por marca">
+            <ChartCard title="Distribución por clase">
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
@@ -2356,7 +2356,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                       <TableHead className="w-28">Estado</TableHead>
                       <TableHead>Clave</TableHead>
                       <TableHead>Nombre</TableHead>
-                      <TableHead>Marca</TableHead>
+                      <TableHead>Clase</TableHead>
                       <TableHead>Laboratorio</TableHead>
                       <TableHead>Cambios</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
