@@ -2009,7 +2009,13 @@ export default function Clients() {
         clientId={client360Id}
         open={!!client360Id}
         onOpenChange={(open) => { if (!open) setClient360Id(null); }}
+        canEdit={isAdmin}
+        onEdit={(id) => {
+          const c = clients?.find((x) => x.id === id);
+          if (c) openEdit(c);
+        }}
       />
+
 
       {/* Import Excel Dialog */}
       {importOpen && (
