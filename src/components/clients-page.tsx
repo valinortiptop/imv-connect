@@ -36,6 +36,7 @@ import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
 import { ClientsMapView } from "@/components/clients/ClientsMapView";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { useRoles } from "@/lib/use-roles";
+import { stripVmPrefix, isVmClient, isGenericRfc, GENERIC_RFC } from "@/lib/vm-client";
 
 
 type ClientType = "mayoreo" | "menudeo";
@@ -1357,8 +1358,18 @@ export default function Clients() {
                         invisible={typeFilter !== "todos"}
                       />
                       <span className="font-semibold text-foreground truncate">
-                        {c.name}
+                        {stripVmPrefix(c.name) || c.name}
                       </span>
+                      {isVmClient(c) && (
+                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide shrink-0" title="Venta Mostrador">
+                          VM
+                        </Badge>
+                      )}
+                      {isGenericRfc(c.rfc) && (
+                        <Badge className="bg-purple-500/15 text-purple-700 border-purple-500/40 text-[10px] font-semibold tracking-wide shrink-0" title={`RFC genérico (${GENERIC_RFC})`}>
+                          RFC genérico
+                        </Badge>
+                      )}
                     </div>
                     <Badge className={cn("text-xs shrink-0", c.active ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-muted text-muted-foreground border-border")}>
                       {c.active ? "Activo" : "Inactivo"}
@@ -1517,14 +1528,22 @@ export default function Clients() {
                               className="truncate hover:underline hover:text-primary transition-colors"
                               title="Abrir vista 360"
                             >
-                              {c.name}
+                              {stripVmPrefix(c.name) || c.name}
                             </span>
-                            {(c.rfc === "XAXX010101000" || /\bVM\b/i.test(c.name ?? "") || /\bVM\b/i.test(c.company ?? "")) && (
+                            {isVmClient(c) && (
                               <Badge
                                 className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide"
-                                title="Venta Mostrador — no requiere factura oficial, solo nota o recibo (RFC genérico)"
+                                title="Venta Mostrador — no requiere factura oficial, solo nota o recibo"
                               >
                                 VM
+                              </Badge>
+                            )}
+                            {isGenericRfc(c.rfc) && (
+                              <Badge
+                                className="bg-purple-500/15 text-purple-700 border-purple-500/40 text-[10px] font-semibold tracking-wide"
+                                title={`RFC genérico (${GENERIC_RFC}) — público en general, sin factura nominativa`}
+                              >
+                                RFC genérico
                               </Badge>
                             )}
                           </div>
