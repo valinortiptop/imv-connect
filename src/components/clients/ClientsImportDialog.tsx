@@ -310,6 +310,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
         payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
         client_type: get(r, "tipo", "client_type", "tipo cliente").toLowerCase(),
+        representante_nombre: get(r, "representante de ventas", "representante", "vendedor", "asesor", "ejecutivo"),
       });
 
       const built: ImportRow[] = json.map((raw, i) => {
