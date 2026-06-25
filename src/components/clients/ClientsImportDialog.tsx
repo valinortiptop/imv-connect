@@ -781,6 +781,16 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                           {r.payment_method}
                           {r.payment_terms ? ` · ${r.payment_terms}d` : ""}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {r.representante_nombre ? (
+                            <span className={r.representante_id ? "" : "text-amber-600"}>
+                              {r.representante_nombre}
+                              {!r.representante_id && " (nuevo)"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {r.lat != null && r.lng != null ? (
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
