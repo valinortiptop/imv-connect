@@ -743,6 +743,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                       <TableHead>CP</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Pago</TableHead>
+                      <TableHead>Representante</TableHead>
                       <TableHead>Geo</TableHead>
                     </TableRow>
                   </TableHeader>
