@@ -739,6 +739,9 @@ export default function Clients() {
       delivery_window_from: trimSecs(c.delivery_window_from),
       delivery_window_until: trimSecs(c.delivery_window_until),
       delivery_notes: c.delivery_notes ?? "",
+      lat: c.lat ?? null,
+      lng: c.lng ?? null,
+      google_place_id: c.google_place_id ?? null,
     });
   };
 
