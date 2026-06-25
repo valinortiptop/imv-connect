@@ -36,6 +36,7 @@ import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
 import { ClientsMapView } from "@/components/clients/ClientsMapView";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { useRoles } from "@/lib/use-roles";
+import { stripVmPrefix, isVmClient, isGenericRfc, GENERIC_RFC } from "@/lib/vm-client";
 
 
 type ClientType = "mayoreo" | "menudeo";
