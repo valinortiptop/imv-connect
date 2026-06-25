@@ -23,6 +23,8 @@ import {
   CreditCard,
   ExternalLink,
   Pencil,
+  UserRound,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
