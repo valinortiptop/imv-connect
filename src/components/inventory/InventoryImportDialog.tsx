@@ -165,43 +165,56 @@ export function InventoryImportDialog({
         return;
       }
 
-      // Ask the AI to normalize each row.
-      setAnalyzing(true);
-      const sampleRows = json.slice(0, 1500);
-      const system = `Normalizas una hoja de inventario para un distribuidor farmacéutico veterinario en México. Devuelves SOLO JSON válido, sin markdown.
+      // The heuristic now handles accent-insensitive matching, so we only call
+      // the AI as a fallback if it can't map the first row's SKU/qty columns
+      // from the headers we got (e.g. an exotic report layout).
+      const stripAccPreview = (s: string) =>
+        String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      const headersNorm = headers.map(stripAccPreview);
+      const headersHaveSku = headersNorm.some((h) =>
+        /\b(articulo|sku|clave|codigo|cb)\b/.test(h),
+      );
+      const headersHaveQty = headersNorm.some((h) =>
+        /(fisico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(h),
+      );
+
+      let aiRows: any[] | null = null;
+      if (!(headersHaveSku && headersHaveQty)) {
+        setAnalyzing(true);
+        const sampleRows = json.slice(0, 800);
+        const system = `Normalizas una hoja de inventario para un distribuidor farmacéutico veterinario en México. Devuelves SOLO JSON válido, sin markdown.
 Cada fila tiene:
 - sku (clave del producto — obligatorio; columnas típicas: "Artículo", "SKU", "Clave", "Código", "CB")
 - name (nombre del producto, opcional; columnas tipo "Artículo: Nombre para mostrar", "Nombre", "Descripción")
 - target_stock (existencia física actual como número entero; columnas tipo "Físico", "Existencia", "Stock", "Cantidad", "Inventario", "Piezas", "Bultos"). Si no aparece, null.
 - lotes (cadena con lotes y cantidades, opcional; columnas tipo "Números de serie/lote", "Lote", "Lotes"). Pasa el texto tal cual.
 Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
-      const userMsg = JSON.stringify({ headers, rows: sampleRows });
-
-      let aiRows: any[] | null = null;
-      try {
-        const resp = await aiChatFn({
-          data: {
-            model: "gpt-4o-mini",
-            temperature: 0,
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ],
-          },
-        });
-        const content =
-          (resp as any)?.content ??
-          (resp as any)?.choices?.[0]?.message?.content ??
-          "";
-        const cleaned = String(content)
-          .replace(/^```json\s*/i, "")
-          .replace(/^```\s*/i, "")
-          .replace(/```$/i, "")
-          .trim();
-        const parsedJson = JSON.parse(cleaned);
-        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
-      } catch (e) {
-        console.warn("AI mapping failed, falling back to heuristics", e);
+        const userMsg = JSON.stringify({ headers, rows: sampleRows });
+        try {
+          const resp = await aiChatFn({
+            data: {
+              model: "gpt-4o-mini",
+              temperature: 0,
+              messages: [
+                { role: "system", content: system },
+                { role: "user", content: userMsg },
+              ],
+            },
+          });
+          const content =
+            (resp as any)?.content ??
+            (resp as any)?.choices?.[0]?.message?.content ??
+            "";
+          const cleaned = String(content)
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/```$/i, "")
+            .trim();
+          const parsedJson = JSON.parse(cleaned);
+          aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+        } catch (e) {
+          console.warn("AI mapping failed, falling back to heuristics", e);
+        }
       }
 
       const stripAccents = (s: string) =>
