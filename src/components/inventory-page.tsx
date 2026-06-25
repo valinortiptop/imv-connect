@@ -361,6 +361,7 @@ export default function Inventory() {
               </>
             )}
           </Button>
+          </div>
         </div>
 
         {/* Day filter chips */}
