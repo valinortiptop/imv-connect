@@ -4931,6 +4931,7 @@ export type Database = {
           portal_activo: boolean | null
           price_list_id: string | null
           razon_social: string | null
+          representante_id: string | null
           rfc: string | null
           token_portal: string | null
           updated_at: string | null
@@ -4965,6 +4966,7 @@ export type Database = {
           portal_activo?: boolean | null
           price_list_id?: string | null
           razon_social?: string | null
+          representante_id?: string | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
@@ -4999,6 +5001,7 @@ export type Database = {
           portal_activo?: boolean | null
           price_list_id?: string | null
           razon_social?: string | null
+          representante_id?: string | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
@@ -5010,6 +5013,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "price_lists"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
           },
         ]
       }
