@@ -22,6 +22,7 @@ import {
   MapPin,
   CreditCard,
   ExternalLink,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,10 @@ type Props = {
   clientId: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  onEdit?: (clientId: string) => void;
+  canEdit?: boolean;
 };
+
 
 const fmt = (n: number | null | undefined) =>
   n == null
@@ -43,7 +47,7 @@ const fmt = (n: number | null | undefined) =>
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
-export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
+export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit }: Props) {
   const q = useQuery({
     queryKey: ["client-360", clientId],
     enabled: !!clientId && open,
@@ -54,7 +58,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
         supabase
           .from("clientes")
           .select(
-            "id, razon_social, nombre_comercial, company, nickname, rfc, curp, email, email_extra, telefono, phone, contact, direccion, codigo_postal, central, client_type, payment_method, payment_terms, credit_limit, delivery_window_from, delivery_window_until, delivery_notes, active, portal_activo, token_portal, notas, created_at, representante_id, price_list_id, price_lists(name)",
+            "id, razon_social, nombre_comercial, company, nickname, rfc, curp, email, email_extra, telefono, phone, contact, direccion, codigo_postal, central, client_type, payment_method, payment_terms, credit_limit, delivery_window_from, delivery_window_until, delivery_notes, active, portal_activo, token_portal, notas, created_at, representante_id, price_list_id, lat, lng, google_place_id, price_lists(name)",
           )
           .eq("id", clientId)
           .maybeSingle(),
@@ -150,7 +154,7 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
               <Kpi label="Crédito" value={c.credit_limit != null ? fmt(c.credit_limit) : "—"} />
             </div>
 
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Button asChild size="sm" variant="outline" className="gap-1.5">
                 <Link to="/admin/clientes/$id" params={{ id: c.id }}>
                   <ExternalLink className="size-3.5" /> Ver ficha completa
@@ -161,7 +165,21 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                   <Tag className="size-3.5" /> Precios
                 </Link>
               </Button>
+              {canEdit && onEdit && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="gap-1.5"
+                  onClick={() => {
+                    onEdit(c.id);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Pencil className="size-3.5" /> Editar
+                </Button>
+              )}
             </div>
+
 
             <Tabs defaultValue="general" className="mt-6">
               <TabsList className="grid w-full grid-cols-4">
@@ -175,9 +193,47 @@ export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
                 <Row icon={<Phone className="size-3.5" />} label="Teléfono" value={c.telefono || c.phone} />
                 <Row icon={<Mail className="size-3.5" />} label="Email" value={c.email || c.email_extra} />
                 <Row label="Contacto" value={c.contact} />
-                <Row icon={<MapPin className="size-3.5" />} label="Dirección" value={c.direccion} />
+                
+                <div className="flex items-start justify-between gap-3 py-1.5 border-b border-border/40">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground shrink-0">
+                    <MapPin className="size-3.5" /> Dirección
+                  </div>
+                  <div className="text-sm text-right">
+                    {c.direccion ? (
+                      <a
+                        href={
+                          c.lat && c.lng
+                            ? `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.direccion)}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline inline-flex items-start gap-1"
+                        title="Abrir en Google Maps"
+                      >
+                        <span>{c.direccion}</span>
+                        <ExternalLink className="size-3 mt-0.5 shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+                {(c.lat && c.lng) && (
+                  <div className="rounded-md overflow-hidden border border-border">
+                    <iframe
+                      title="Ubicación del cliente"
+                      width="100%"
+                      height="180"
+                      style={{ border: 0, display: "block" }}
+                      loading="lazy"
+                      src={`https://www.google.com/maps?q=${c.lat},${c.lng}&z=15&output=embed`}
+                    />
+                  </div>
+                )}
                 <Row label="Código postal" value={c.codigo_postal} />
                 <Row label="Central" value={c.central} />
+
                 <Row label="RFC" value={c.rfc} />
                 <Row label="CURP" value={c.curp} />
                 <Row label="CFDI" value={(c as any).nombre_cfdi} />

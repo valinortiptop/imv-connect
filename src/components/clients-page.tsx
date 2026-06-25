@@ -21,7 +21,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ChronoBar } from "@/components/ChronoBar";
-import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2 } from "lucide-react";
+import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin } from "lucide-react";
 import { parseCfdiPdf, type CfdiData } from "@/lib/cfdi-parser";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
@@ -33,7 +33,10 @@ import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
 import { Client360Drawer } from "@/components/clients/Client360Drawer";
 import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
+import { ClientsMapView } from "@/components/clients/ClientsMapView";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { useRoles } from "@/lib/use-roles";
+
 
 type ClientType = "mayoreo" | "menudeo";
 
@@ -526,6 +529,9 @@ export default function Clients() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
   const [client360Id, setClient360Id] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const { isAdmin } = useRoles();
+
   const [cfdiUploading, setCfdiUploading] = useState(false);
   const [pendingCfdiFile, setPendingCfdiFile] = useState<File | null>(null);
   const [cfdiAutofill, setCfdiAutofill] = useState(true);
@@ -1229,6 +1235,27 @@ export default function Clients() {
               {t("clean")}
             </Button>
           )}
+
+          {/* View mode toggle — Lista vs Mapa */}
+          <div className="ml-auto flex items-center rounded-md border border-border bg-card p-0.5">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 px-2.5"
+              onClick={() => setViewMode("list")}
+            >
+              Lista
+            </Button>
+            <Button
+              variant={viewMode === "map" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 px-2.5"
+              onClick={() => setViewMode("map")}
+            >
+              <MapPin className="size-3.5 mr-1" /> Mapa
+            </Button>
+          </div>
+
         </div>
 
         {/* Count */}
@@ -1269,8 +1296,23 @@ export default function Clients() {
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Deseleccionar</Button>
         </div>
 
+        {viewMode === "map" ? (
+          <ClientsMapView
+            clients={filtered.map((c) => ({
+              id: c.id,
+              name: c.name,
+              address: c.address,
+              phone: c.phone,
+              client_type: c.client_type,
+              lat: c.lat,
+              lng: c.lng,
+            }))}
+            onSelect={(id) => setClient360Id(id)}
+          />
+        ) : (<>
         {/* Mobile Card View */}
         <div className="space-y-3 md:hidden">
+
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2">
@@ -1545,7 +1587,9 @@ export default function Clients() {
           </div>
         </GlowCard>
         </div>
+        </>)}
       </div>
+
 
       {/* Edit / New Dialog */}
       <Dialog open={!!editClient} onOpenChange={open => !open && closeDialog()}>
@@ -1965,7 +2009,13 @@ export default function Clients() {
         clientId={client360Id}
         open={!!client360Id}
         onOpenChange={(open) => { if (!open) setClient360Id(null); }}
+        canEdit={isAdmin}
+        onEdit={(id) => {
+          const c = clients?.find((x) => x.id === id);
+          if (c) openEdit(c);
+        }}
       />
+
 
       {/* Import Excel Dialog */}
       {importOpen && (
