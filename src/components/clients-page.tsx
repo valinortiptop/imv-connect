@@ -1042,10 +1042,16 @@ export default function Clients() {
               ))}
             </div>
           </div>
-          <Button size="sm" onClick={openNew} className="gap-1.5 self-start sm:self-auto">
-            <Plus className="h-4 w-4" />
-            {t("newClient")}
-          </Button>
+          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
+            <Button size="sm" onClick={openNew} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("newClient")}
+            </Button>
+          </div>
         </div>
 
         {/* Date filter */}
