@@ -1,7 +1,17 @@
 // @ts-nocheck
-// Excel importer for inventory stock — AI maps columns (SKU + cantidad),
-// matches against existing products and applies the delta via the
-// products.stock_adjustment column (same path used by StockAdjustmentDialog).
+// Excel importer for inventory stock.
+// Designed for the IMV "Valor de inventario con lote" report which has the columns:
+//   - Artículo                       → SKU / clave (productos.sku)
+//   - Artículo: Nombre para mostrar  → nombre del producto
+//   - Valor de factura               → valor total (informativo)
+//   - % de Valor de factura          → informativo
+//   - Físico                         → existencia física actual (cantidad)
+//   - Números de serie/lote          → lotes en formato "ABC123(qty),DEF456(qty)"
+//
+// The importer uses AI to map columns (so other layouts also work), matches
+// rows against productos.sku, and applies the target stock through the
+// `public.ajustar_stock` RPC, which writes the proper inventory movement
+// and updates the stock table via trigger.
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dialog,
@@ -41,8 +51,8 @@ type ImportRow = {
   target_stock: number | null;
   current_stock: number | null;
   delta: number | null;
+  lotes?: string | null;
   product_id?: string | null;
-  current_adjustment?: number | null;
   status: Status;
   errorMsg?: string;
 };
@@ -59,6 +69,7 @@ export function InventoryImportDialog({
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [almacenId, setAlmacenId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -68,43 +79,100 @@ export function InventoryImportDialog({
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, {
+      // Read raw matrix so we can detect a banner row before headers.
+      const matrix: any[][] = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
         defval: "",
+        blankrows: false,
       });
-      if (json.length === 0) {
+      if (matrix.length < 2) {
         toast.error("El Excel está vacío");
         return;
       }
-
-      // Pull product catalog (clave + current adj + current actual via view).
-      const { data: prods } = await supabase
-        .from("productos")
-        .select("id, clave, name, stock_adjustment");
-      const { data: vstock } = await supabase
-        .from("v_products_with_stock")
-        .select("id, clave, stock_actual");
-
-      type Prod = { id: string; clave: string | null; name: string | null; stock_adjustment: number | null };
-      const byClave = new Map<string, Prod>();
-      for (const p of (prods ?? []) as Prod[]) {
-        if (p.clave) byClave.set(String(p.clave).toLowerCase().trim(), p);
+      // Find the header row: first row that has at least 2 non-empty cells
+      // and contains a likely SKU header.
+      let headerIdx = 0;
+      for (let i = 0; i < Math.min(matrix.length, 10); i++) {
+        const cells = matrix[i].map((c) => String(c ?? "").toLowerCase().trim());
+        const hasSku = cells.some((c) =>
+          /\b(art[ií]culo|sku|clave|c[oó]digo|cb)\b/.test(c),
+        );
+        const hasQty = cells.some((c) =>
+          /(f[ií]sico|existencia|stock|cantidad|inventario|piezas|bultos|qty)/.test(c),
+        );
+        if (hasSku && hasQty) {
+          headerIdx = i;
+          break;
+        }
       }
-      const stockByClave = new Map<string, number>();
-      for (const r of (vstock ?? []) as any[]) {
-        if (r.clave) stockByClave.set(String(r.clave).toLowerCase().trim(), Number(r.stock_actual ?? 0));
+      const headers = matrix[headerIdx].map((h) => String(h ?? "").trim());
+      const dataRows = matrix.slice(headerIdx + 1).filter((r) => r.some((c) => String(c ?? "").trim() !== ""));
+      const json: Record<string, unknown>[] = dataRows.map((r) => {
+        const o: Record<string, unknown> = {};
+        headers.forEach((h, i) => {
+          o[h || `col_${i}`] = r[i];
+        });
+        return o;
+      });
+      if (json.length === 0) {
+        toast.error("No se encontraron filas con datos");
+        return;
+      }
+
+      // Pull product catalog (paginated to avoid the 1000 row default).
+      type Prod = { id: string; sku: string | null; nombre: string | null };
+      const allProds: Prod[] = [];
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("productos")
+          .select("id, sku, nombre")
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allProds.push(...(data as Prod[]));
+        if (data.length < PAGE) break;
+      }
+      const byClave = new Map<string, Prod>();
+      for (const p of allProds) {
+        if (p.sku) byClave.set(String(p.sku).toLowerCase().trim(), p);
+      }
+
+      // Current stock per producto (sum from stock table).
+      const { data: stockRows } = await supabase
+        .from("stock")
+        .select("producto_id, cantidad");
+      const stockById = new Map<string, number>();
+      for (const s of (stockRows ?? []) as any[]) {
+        stockById.set(
+          s.producto_id,
+          (stockById.get(s.producto_id) ?? 0) + Number(s.cantidad ?? 0),
+        );
+      }
+
+      // Primary warehouse for adjustments.
+      const { data: alm } = await supabase
+        .from("almacenes")
+        .select("id, principal")
+        .order("principal", { ascending: false })
+        .limit(1);
+      const primaryAlm = (alm?.[0] as any)?.id ?? null;
+      setAlmacenId(primaryAlm);
+      if (!primaryAlm) {
+        toast.error("No hay un almacén principal configurado");
+        return;
       }
 
       // Ask the AI to normalize each row.
       setAnalyzing(true);
-      const headers = Object.keys(json[0] ?? {});
       const sampleRows = json.slice(0, 1500);
-      const system = `Eres un asistente que normaliza una hoja de inventario para un distribuidor farmacéutico veterinario en México.
-Devuelves SOLO JSON válido, sin markdown.
-Para cada fila identifica:
-- sku (clave / código del producto — obligatorio; suele venir como "SKU", "Clave", "Código", "CB")
-- name (nombre / descripción del producto, opcional)
-- target_stock (cantidad objetivo en bodega como número entero. Acepta columnas tipo "Existencia", "Stock", "Cantidad", "Inventario", "Bultos", "Piezas"). Si no aparece, null.
-Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
+      const system = `Normalizas una hoja de inventario para un distribuidor farmacéutico veterinario en México. Devuelves SOLO JSON válido, sin markdown.
+Cada fila tiene:
+- sku (clave del producto — obligatorio; columnas típicas: "Artículo", "SKU", "Clave", "Código", "CB")
+- name (nombre del producto, opcional; columnas tipo "Artículo: Nombre para mostrar", "Nombre", "Descripción")
+- target_stock (existencia física actual como número entero; columnas tipo "Físico", "Existencia", "Stock", "Cantidad", "Inventario", "Piezas", "Bultos"). Si no aparece, null.
+- lotes (cadena con lotes y cantidades, opcional; columnas tipo "Números de serie/lote", "Lote", "Lotes"). Pasa el texto tal cual.
+Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
       const userMsg = JSON.stringify({ headers, rows: sampleRows });
 
       let aiRows: any[] | null = null;
@@ -137,7 +205,9 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
       const get = (r: Record<string, unknown>, ...keys: string[]) => {
         for (const k of keys) {
           for (const real of Object.keys(r)) {
-            if (real.toLowerCase().trim() === k.toLowerCase())
+            const norm = real.toLowerCase().trim();
+            if (norm === k.toLowerCase()) return String(r[real] ?? "").trim();
+            if (norm.startsWith(k.toLowerCase() + ":"))
               return String(r[real] ?? "").trim();
           }
         }
@@ -145,10 +215,21 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
       };
 
       const heuristicRow = (r: Record<string, unknown>) => ({
-        sku: get(r, "sku", "clave", "codigo", "código", "cb", "cod"),
-        name: get(r, "nombre", "name", "producto", "descripcion", "descripción"),
+        sku: get(r, "articulo", "artículo", "sku", "clave", "codigo", "código", "cb", "cod"),
+        name: get(
+          r,
+          "artículo: nombre para mostrar",
+          "articulo: nombre para mostrar",
+          "nombre",
+          "name",
+          "producto",
+          "descripcion",
+          "descripción",
+        ),
         target_stock_str: get(
           r,
+          "fisico",
+          "físico",
           "existencia",
           "stock",
           "cantidad",
@@ -157,6 +238,14 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
           "piezas",
           "qty",
           "stock_actual",
+        ),
+        lotes: get(
+          r,
+          "números de serie/lote",
+          "numeros de serie/lote",
+          "lote",
+          "lotes",
+          "serie",
         ),
       });
 
@@ -167,6 +256,7 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
           a != null && String(a).trim() !== "" ? String(a).trim() : String(b ?? "").trim();
         const sku = pick(ai?.sku, h.sku);
         const name = pick(ai?.name, h.name);
+        const lotes = pick(ai?.lotes, h.lotes) || null;
         const targetRaw = ai?.target_stock ?? h.target_stock_str;
         const target_stock =
           targetRaw == null || targetRaw === "" || Number.isNaN(Number(targetRaw))
@@ -180,8 +270,9 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
             target_stock,
             current_stock: null,
             delta: null,
+            lotes,
             status: "error",
-            errorMsg: `Fila ${i + 2}: falta SKU/clave`,
+            errorMsg: `Fila ${i + headerIdx + 2}: falta SKU/clave`,
           };
         }
         if (target_stock == null) {
@@ -191,8 +282,9 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
             target_stock: null,
             current_stock: null,
             delta: null,
+            lotes,
             status: "error",
-            errorMsg: `Fila ${i + 2}: falta cantidad`,
+            errorMsg: `Fila ${i + headerIdx + 2}: falta cantidad`,
           };
         }
         const key = sku.toLowerCase().trim();
@@ -204,19 +296,20 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
             target_stock,
             current_stock: null,
             delta: null,
+            lotes,
             status: "not_found",
           };
         }
-        const current_stock = stockByClave.get(key) ?? 0;
+        const current_stock = stockById.get(match.id) ?? 0;
         const delta = target_stock - current_stock;
         return {
           sku,
-          name: name || match.name || "",
+          name: name || match.nombre || "",
           target_stock,
           current_stock,
           delta,
+          lotes,
           product_id: match.id,
-          current_adjustment: match.stock_adjustment ?? 0,
           status: delta === 0 ? "unchanged" : "update",
         };
       });
@@ -235,29 +328,20 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
   const save = async () => {
     const toUpdate = rows.filter((r) => r.status === "update" && r.product_id);
     if (toUpdate.length === 0) return toast.info("No hay cambios por aplicar");
+    if (!almacenId) return toast.error("Almacén principal no disponible");
 
     setSaving(true);
     let updated = 0;
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      const userId = auth?.user?.id ?? null;
       for (const r of toUpdate) {
-        const newAdj = (r.current_adjustment ?? 0) + (r.delta ?? 0);
-        const { error: updErr } = await supabase
-          .from("productos")
-          .update({ stock_adjustment: newAdj } as any)
-          .eq("id", r.product_id!);
-        if (updErr) throw updErr;
-        // Log the movement for traceability.
-        await supabase.from("stock_adjustments").insert({
-          product_id: r.product_id!,
-          original_quantity: r.delta ?? 0,
-          remaining_quantity: r.delta ?? 0,
-          reason: "Importación Excel inventario",
-          notes: `SKU ${r.sku}: ${r.current_stock} → ${r.target_stock}`,
-          status: "applied",
-          created_by: userId,
-        } as any);
+        const notas = `Importación inventario — SKU ${r.sku}: ${r.current_stock} → ${r.target_stock}${r.lotes ? ` · lotes: ${r.lotes}` : ""}`;
+        const { error: rpcErr } = await supabase.rpc("ajustar_stock", {
+          _producto: r.product_id!,
+          _almacen: almacenId,
+          _nueva_cantidad: r.target_stock!,
+          _notas: notas,
+        });
+        if (rpcErr) throw rpcErr;
         updated++;
       }
       toast.success(`${updated} producto(s) actualizado(s)`);
@@ -281,15 +365,16 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" /> Importar inventario desde Excel
           </DialogTitle>
           <DialogDescription>
-            <Sparkles className="inline h-3.5 w-3.5 text-primary" /> La IA detecta
-            las columnas (SKU + cantidad) y compara contra el stock actual. Se
-            ajustará <code>stock_adjustment</code> para igualar el inventario importado.
+            <Sparkles className="inline h-3.5 w-3.5 text-primary" /> Compatible con
+            el reporte <em>Valor de inventario con lote</em> (columnas: Artículo,
+            Nombre, Valor de factura, Físico, Lotes). La IA detecta las columnas
+            y el ajuste se aplica al almacén principal usando <code>ajustar_stock</code>.
           </DialogDescription>
         </DialogHeader>
 
@@ -339,7 +424,7 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
                     : "Arrastra tu Excel de inventario o haz clic para seleccionar"}
               </div>
               <div className="text-xs text-muted-foreground">
-                .xlsx o .xls — la IA detecta SKU/clave y la columna de cantidad.
+                .xlsx o .xls — la IA detecta SKU/clave, cantidad física y lotes.
               </div>
             </div>
           </div>
@@ -375,6 +460,7 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
                       <TableHead className="text-right">Actual</TableHead>
                       <TableHead className="text-right">Objetivo</TableHead>
                       <TableHead className="text-right">Δ</TableHead>
+                      <TableHead>Lotes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -401,7 +487,7 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
-                        <TableCell className="max-w-[280px] truncate" title={r.name}>
+                        <TableCell className="max-w-[260px] truncate" title={r.name}>
                           {r.name || "—"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
@@ -418,6 +504,9 @@ Responde con: {"rows":[{"sku":"...","name":"...","target_stock":123}, ...]} en e
                           )}
                         >
                           {r.delta == null ? "—" : r.delta > 0 ? `+${r.delta}` : r.delta}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate text-xs text-muted-foreground" title={r.lotes ?? undefined}>
+                          {r.lotes ?? "—"}
                         </TableCell>
                       </TableRow>
                     ))}
