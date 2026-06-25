@@ -155,6 +155,7 @@ export default function PriceLists() {
   const [activePL, setActivePL] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showNewList, setShowNewList] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
