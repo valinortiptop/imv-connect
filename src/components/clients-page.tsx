@@ -32,6 +32,8 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
 import { Client360Drawer } from "@/components/clients/Client360Drawer";
+import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 type ClientType = "mayoreo" | "menudeo";
 
@@ -52,11 +54,12 @@ type Client = {
   active: boolean;
   client_type: ClientType;
   created_at: string;
-  /** Recepción de pedidos — hora desde / hasta + notas. NULL = no
-   *  capturado (la app trata como "abierto todo el día" + aviso). */
   delivery_window_from: string | null;
   delivery_window_until: string | null;
   delivery_notes: string | null;
+  lat: number | null;
+  lng: number | null;
+  google_place_id: string | null;
 };
 
 type ClientForm = {
@@ -77,6 +80,9 @@ type ClientForm = {
   delivery_window_from: string;
   delivery_window_until: string;
   delivery_notes: string;
+  lat: number | null;
+  lng: number | null;
+  google_place_id: string | null;
 };
 
 const emptyForm: ClientForm = {
@@ -97,6 +103,9 @@ const emptyForm: ClientForm = {
   delivery_window_from: "",
   delivery_window_until: "",
   delivery_notes: "",
+  lat: null,
+  lng: null,
+  google_place_id: null,
 };
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
@@ -500,6 +509,7 @@ export default function Clients() {
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deactivateClient, setDeactivateClient] = useState<Client | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // B2: filter to clients missing their delivery window (either side
   // null OR same value, both flagged as broken/incomplete). Drives the
@@ -730,6 +740,9 @@ export default function Clients() {
       delivery_window_from: trimSecs(c.delivery_window_from),
       delivery_window_until: trimSecs(c.delivery_window_until),
       delivery_notes: c.delivery_notes ?? "",
+      lat: c.lat ?? null,
+      lng: c.lng ?? null,
+      google_place_id: c.google_place_id ?? null,
     });
   };
 
@@ -793,6 +806,9 @@ export default function Clients() {
         delivery_window_from:  form.delivery_window_from.trim()  || null,
         delivery_window_until: form.delivery_window_until.trim() || null,
         delivery_notes:        form.delivery_notes.trim()        || null,
+        lat: form.lat,
+        lng: form.lng,
+        google_place_id: form.google_place_id,
       };
 
       if (isNew) {
@@ -1027,10 +1043,16 @@ export default function Clients() {
               ))}
             </div>
           </div>
-          <Button size="sm" onClick={openNew} className="gap-1.5 self-start sm:self-auto">
-            <Plus className="h-4 w-4" />
-            {t("newClient")}
-          </Button>
+          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </Button>
+            <Button size="sm" onClick={openNew} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {t("newClient")}
+            </Button>
+          </div>
         </div>
 
         {/* Date filter */}
@@ -1540,7 +1562,26 @@ export default function Clients() {
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label className="text-xs">{t("clientAddress")}</Label>
-                <Input value={form.address} onChange={e => updateField("address", e.target.value)} placeholder="Calle, Colonia, Ciudad" />
+                <AddressAutocomplete
+                  value={form.address}
+                  onChange={(v) => updateField("address", v)}
+                  onSelect={(r) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      address: r.address,
+                      lat: r.lat,
+                      lng: r.lng,
+                      google_place_id: r.place_id,
+                      codigo_postal: prev.codigo_postal || r.codigo_postal || "",
+                    }));
+                  }}
+                  placeholder="Empieza a escribir la dirección…"
+                />
+                {form.lat != null && form.lng != null && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    📍 {form.lat.toFixed(5)}, {form.lng.toFixed(5)}
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{t("clientCentral")}</Label>
@@ -1916,6 +1957,18 @@ export default function Clients() {
         open={!!client360Id}
         onOpenChange={(open) => { if (!open) setClient360Id(null); }}
       />
+
+      {/* Import Excel Dialog */}
+      {importOpen && (
+        <ClientsImportDialog
+          onClose={() => setImportOpen(false)}
+          onSaved={() => {
+            setImportOpen(false);
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
+      )}
+
 
       {/* Deactivate Confirmation Dialog */}
       <Dialog open={!!deactivateClient} onOpenChange={open => !open && setDeactivateClient(null)}>

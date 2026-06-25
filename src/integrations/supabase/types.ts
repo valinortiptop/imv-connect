@@ -316,7 +316,10 @@ export type Database = {
           direccion: string | null
           email: string | null
           email_extra: string | null
+          google_place_id: string | null
           id: string
+          lat: number | null
+          lng: number | null
           nickname: string | null
           nombre_cfdi: string | null
           nombre_comercial: string | null
@@ -350,7 +353,10 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           email_extra?: string | null
+          google_place_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           nickname?: string | null
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
@@ -384,7 +390,10 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           email_extra?: string | null
+          google_place_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           nickname?: string | null
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
@@ -4908,7 +4917,10 @@ export type Database = {
           delivery_window_from: string | null
           delivery_window_until: string | null
           email: string | null
+          google_place_id: string | null
           id: string | null
+          lat: number | null
+          lng: number | null
           name: string | null
           nickname: string | null
           nombre_cfdi: string | null
@@ -4939,7 +4951,10 @@ export type Database = {
           delivery_window_from?: string | null
           delivery_window_until?: string | null
           email?: string | null
+          google_place_id?: string | null
           id?: string | null
+          lat?: number | null
+          lng?: number | null
           name?: string | null
           nickname?: string | null
           nombre_cfdi?: string | null
@@ -4970,7 +4985,10 @@ export type Database = {
           delivery_window_from?: string | null
           delivery_window_until?: string | null
           email?: string | null
+          google_place_id?: string | null
           id?: string | null
+          lat?: number | null
+          lng?: number | null
           name?: string | null
           nickname?: string | null
           nombre_cfdi?: string | null
