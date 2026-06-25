@@ -133,48 +133,72 @@ export function ClientsImportDialog({
         return;
       }
 
-      // Existing clients (for new vs update detection).
-      const { data: existing } = await supabase
-        .from("clients")
-        .select(
-          "id, name, company, phone, rfc, razon_social, address, codigo_postal, payment_method, client_type",
-        );
-      type ExistingClient = {
-        id: string;
-        name: string | null;
-        company: string | null;
-        phone: string | null;
-        rfc: string | null;
-        razon_social: string | null;
-        address: string | null;
-        codigo_postal: string | null;
-        payment_method: string | null;
-        client_type: string | null;
-      };
-      const existingList = (existing ?? []) as ExistingClient[];
-      const byRfc = new Map<string, ExistingClient>();
-      const byName = new Map<string, ExistingClient>();
+      // Existing clients (for new vs update detection) — read from base table.
+      // Generic SAT RFC ("público en general / venta mostrador") must NOT be
+      // used as a match key, otherwise hundreds of unrelated clients collapse
+      // into one row.
+      const GENERIC_RFCS = new Set(["XAXX010101000", "XEXX010101000"]);
+      const normKey = (s: string | null | undefined) =>
+        (s ?? "")
+          .toString()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+      const normPhone = (s: string | null | undefined) =>
+        (s ?? "").toString().replace(/\D+/g, "").slice(-10);
+
+      const existingList: any[] = [];
+      // Paginate to bypass the 1000-row default limit.
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("clientes")
+          .select(
+            "id, razon_social, nombre_comercial, company, phone, telefono, rfc, direccion, codigo_postal, payment_method, client_type",
+          )
+          .range(from, from + 999);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        existingList.push(...data);
+        if (data.length < 1000) break;
+      }
+      const byRfc = new Map<string, any>();
+      const byName = new Map<string, any>();
+      const byPhone = new Map<string, any>();
       for (const c of existingList) {
-        if (c.rfc) byRfc.set(c.rfc.toLowerCase().trim(), c);
-        if (c.name) byName.set(c.name.toLowerCase().trim(), c);
+        if (c.rfc && !GENERIC_RFCS.has(String(c.rfc).toUpperCase()))
+          byRfc.set(String(c.rfc).toUpperCase().trim(), c);
+        const nk = normKey(c.razon_social) || normKey(c.nombre_comercial) || normKey(c.company);
+        if (nk) byName.set(nk, c);
+        const pk = normPhone(c.phone) || normPhone(c.telefono);
+        if (pk && pk.length === 10) byPhone.set(pk, c);
       }
 
       const diffRow = (
         r: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg">,
       ): { status: Status; existing_id?: string; diff_fields?: string[] } => {
+        const rfcUp = r.rfc ? r.rfc.toUpperCase().trim() : "";
+        const useRfc = rfcUp && !GENERIC_RFCS.has(rfcUp);
+        const nk = normKey(r.name) || normKey(r.company) || normKey(r.razon_social);
+        const pk = normPhone(r.phone);
         const match =
-          (r.rfc && byRfc.get(r.rfc.toLowerCase().trim())) ||
-          (r.name && byName.get(r.name.toLowerCase().trim())) ||
+          (useRfc && byRfc.get(rfcUp)) ||
+          (nk && byName.get(nk)) ||
+          (pk.length === 10 && byPhone.get(pk)) ||
           null;
         if (!match) return { status: "new" };
         const diff: string[] = [];
-        if (r.name && norm(r.name) !== norm(match.name)) diff.push("nombre");
+        const matchName = match.razon_social ?? match.nombre_comercial ?? match.company;
+        const matchPhone = match.phone ?? match.telefono;
+        if (r.name && norm(r.name) !== norm(matchName)) diff.push("nombre");
         if (r.company && norm(r.company) !== norm(match.company)) diff.push("empresa");
-        if (r.phone && norm(r.phone) !== norm(match.phone)) diff.push("teléfono");
+        if (r.phone && norm(r.phone) !== norm(matchPhone)) diff.push("teléfono");
         if (r.rfc && norm(r.rfc) !== norm(match.rfc)) diff.push("rfc");
         if (r.razon_social && norm(r.razon_social) !== norm(match.razon_social))
           diff.push("razón social");
-        if (r.address && norm(r.address) !== norm(match.address)) diff.push("dirección");
+        if (r.address && norm(r.address) !== norm(match.direccion))
+          diff.push("dirección");
         if (r.codigo_postal && norm(r.codigo_postal) !== norm(match.codigo_postal))
           diff.push("CP");
         if (r.payment_method && norm(r.payment_method) !== norm(match.payment_method))
@@ -185,6 +209,7 @@ export function ClientsImportDialog({
           ? { status: "update", existing_id: match.id, diff_fields: diff }
           : { status: "unchanged", existing_id: match.id };
       };
+
 
       // Ask the AI to normalize each row.
       setAnalyzing(true);
