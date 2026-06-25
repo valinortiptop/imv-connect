@@ -47,7 +47,7 @@ const fmt = (n: number | null | undefined) =>
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
-export function Client360Drawer({ clientId, open, onOpenChange }: Props) {
+export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit }: Props) {
   const q = useQuery({
     queryKey: ["client-360", clientId],
     enabled: !!clientId && open,
