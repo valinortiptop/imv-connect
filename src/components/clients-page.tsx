@@ -32,6 +32,8 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
 import { Client360Drawer } from "@/components/clients/Client360Drawer";
+import { ClientsImportDialog } from "@/components/clients/ClientsImportDialog";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 type ClientType = "mayoreo" | "menudeo";
 
@@ -52,11 +54,12 @@ type Client = {
   active: boolean;
   client_type: ClientType;
   created_at: string;
-  /** Recepción de pedidos — hora desde / hasta + notas. NULL = no
-   *  capturado (la app trata como "abierto todo el día" + aviso). */
   delivery_window_from: string | null;
   delivery_window_until: string | null;
   delivery_notes: string | null;
+  lat: number | null;
+  lng: number | null;
+  google_place_id: string | null;
 };
 
 type ClientForm = {
@@ -77,6 +80,9 @@ type ClientForm = {
   delivery_window_from: string;
   delivery_window_until: string;
   delivery_notes: string;
+  lat: number | null;
+  lng: number | null;
+  google_place_id: string | null;
 };
 
 const emptyForm: ClientForm = {
@@ -97,6 +103,9 @@ const emptyForm: ClientForm = {
   delivery_window_from: "",
   delivery_window_until: "",
   delivery_notes: "",
+  lat: null,
+  lng: null,
+  google_place_id: null,
 };
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
