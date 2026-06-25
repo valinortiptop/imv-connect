@@ -255,6 +255,7 @@ Para cada fila identifica los campos canónicos:
 - payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
 - payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
 - client_type ("mayoreo" si tiene crédito o RFC empresarial, "menudeo" si es contado/persona física)
+- representante_nombre (vendedor / representante de ventas asignado al cliente; si viene como "Apellido, Nombre" devuelve "Nombre Apellido"; si no aparece devuelve "")
 Si un campo no aparece, devuelve "" o null.
 Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
       const userMsg = JSON.stringify({ headers, rows: sampleRows });
