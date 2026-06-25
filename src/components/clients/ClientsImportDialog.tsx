@@ -299,13 +299,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const h = heuristicRow(raw);
         const pick = (a: any, b: any) =>
           a != null && String(a).trim() !== "" ? String(a).trim() : String(b ?? "").trim();
-        const name = pick(ai?.name, h.name);
-        const company = pick(ai?.company, h.company);
+        const rawName = pick(ai?.name, h.name);
+        const rawCompany = pick(ai?.company, h.company);
+        const rawRazon = pick(ai?.razon_social, h.razon_social);
+        // VM detection: strip the "VM " prefix from name/company/razón social
+        // and force the generic SAT RFC for these "Venta Mostrador" clients.
+        const wasVm =
+          hadVmPrefix(rawName) || hadVmPrefix(rawCompany) || hadVmPrefix(rawRazon);
+        const name = stripVmPrefix(rawName) || rawName;
+        const company = stripVmPrefix(rawCompany) || rawCompany;
+        const razon_social = stripVmPrefix(rawRazon) || rawRazon;
         const nickname = pick(ai?.nickname, h.nickname);
         const phone = pick(ai?.phone, h.phone);
         const email = pick(ai?.email, h.email);
-        const rfc = pick(ai?.rfc, h.rfc).toUpperCase();
-        const razon_social = pick(ai?.razon_social, h.razon_social);
+        const rfcInput = pick(ai?.rfc, h.rfc).toUpperCase();
+        const rfc = rfcInput || (wasVm ? GENERIC_RFC : "");
         const rawAddress = pick(ai?.address, h.address);
         const address = stripNamePrefix(rawAddress, name, company, razon_social, nickname);
         const codigo_postal = pick(ai?.codigo_postal, h.codigo_postal);
