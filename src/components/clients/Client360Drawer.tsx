@@ -58,7 +58,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
         supabase
           .from("clientes")
           .select(
-            "id, razon_social, nombre_comercial, company, nickname, rfc, curp, email, email_extra, telefono, phone, contact, direccion, codigo_postal, central, client_type, payment_method, payment_terms, credit_limit, delivery_window_from, delivery_window_until, delivery_notes, active, portal_activo, token_portal, notas, created_at, representante_id, price_list_id, price_lists(name)",
+            "id, razon_social, nombre_comercial, company, nickname, rfc, curp, email, email_extra, telefono, phone, contact, direccion, codigo_postal, central, client_type, payment_method, payment_terms, credit_limit, delivery_window_from, delivery_window_until, delivery_notes, active, portal_activo, token_portal, notas, created_at, representante_id, price_list_id, lat, lng, google_place_id, price_lists(name)",
           )
           .eq("id", clientId)
           .maybeSingle(),
