@@ -1587,7 +1587,9 @@ export default function Clients() {
           </div>
         </GlowCard>
         </div>
+        </>)}
       </div>
+
 
       {/* Edit / New Dialog */}
       <Dialog open={!!editClient} onOpenChange={open => !open && closeDialog()}>
