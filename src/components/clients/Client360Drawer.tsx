@@ -193,7 +193,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                 <Row icon={<Phone className="size-3.5" />} label="Teléfono" value={c.telefono || c.phone} />
                 <Row icon={<Mail className="size-3.5" />} label="Email" value={c.email || c.email_extra} />
                 <Row label="Contacto" value={c.contact} />
-                <Row icon={<MapPin className="size-3.5" />} label="Dirección" value={c.direccion} />
+                
                 <div className="flex items-start justify-between gap-3 py-1.5 border-b border-border/40">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground shrink-0">
                     <MapPin className="size-3.5" /> Dirección
