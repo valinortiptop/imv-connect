@@ -202,34 +202,36 @@ Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} 
         console.warn("AI mapping failed, falling back to heuristics", e);
       }
 
+      const stripAccents = (s: string) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const norm = (s: string) => stripAccents(String(s ?? "")).toLowerCase().trim();
+
       const get = (r: Record<string, unknown>, ...keys: string[]) => {
-        for (const k of keys) {
-          for (const real of Object.keys(r)) {
-            const norm = real.toLowerCase().trim();
-            if (norm === k.toLowerCase()) return String(r[real] ?? "").trim();
-            if (norm.startsWith(k.toLowerCase() + ":"))
+        const nkeys = keys.map(norm);
+        for (const real of Object.keys(r)) {
+          const nreal = norm(real);
+          for (const k of nkeys) {
+            if (nreal === k || nreal.startsWith(k + ":") || nreal.startsWith(k + " ")) {
               return String(r[real] ?? "").trim();
+            }
           }
         }
         return "";
       };
 
       const heuristicRow = (r: Record<string, unknown>) => ({
-        sku: get(r, "articulo", "artículo", "sku", "clave", "codigo", "código", "cb", "cod"),
+        sku: get(r, "articulo", "sku", "clave", "codigo", "cb", "cod"),
         name: get(
           r,
-          "artículo: nombre para mostrar",
           "articulo: nombre para mostrar",
           "nombre",
           "name",
           "producto",
           "descripcion",
-          "descripción",
         ),
         target_stock_str: get(
           r,
           "fisico",
-          "físico",
           "existencia",
           "stock",
           "cantidad",
@@ -241,7 +243,6 @@ Responde {"rows":[{"sku":"...","name":"...","target_stock":123,"lotes":"..."}]} 
         ),
         lotes: get(
           r,
-          "números de serie/lote",
           "numeros de serie/lote",
           "lote",
           "lotes",
