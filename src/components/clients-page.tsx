@@ -1407,10 +1407,10 @@ export default function Clients() {
                         {c.payment_method ?? "Transferencia"}
                       </Badge>
                     </div>
-                    {c.central && (
+                    {c.representante_nombre && (
                       <div>
-                        <span className="text-muted-foreground">Central: </span>
-                        <span className="text-foreground">{c.central}</span>
+                        <span className="text-muted-foreground">Rep: </span>
+                        <span className="text-foreground">{c.representante_nombre}</span>
                       </div>
                     )}
                     {c.rfc && (
