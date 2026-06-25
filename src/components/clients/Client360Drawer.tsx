@@ -194,8 +194,46 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                 <Row icon={<Mail className="size-3.5" />} label="Email" value={c.email || c.email_extra} />
                 <Row label="Contacto" value={c.contact} />
                 <Row icon={<MapPin className="size-3.5" />} label="Dirección" value={c.direccion} />
+                <div className="flex items-start justify-between gap-3 py-1.5 border-b border-border/40">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground shrink-0">
+                    <MapPin className="size-3.5" /> Dirección
+                  </div>
+                  <div className="text-sm text-right">
+                    {c.direccion ? (
+                      <a
+                        href={
+                          c.lat && c.lng
+                            ? `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.direccion)}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline inline-flex items-start gap-1"
+                        title="Abrir en Google Maps"
+                      >
+                        <span>{c.direccion}</span>
+                        <ExternalLink className="size-3 mt-0.5 shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+                {(c.lat && c.lng) && (
+                  <div className="rounded-md overflow-hidden border border-border">
+                    <iframe
+                      title="Ubicación del cliente"
+                      width="100%"
+                      height="180"
+                      style={{ border: 0, display: "block" }}
+                      loading="lazy"
+                      src={`https://www.google.com/maps?q=${c.lat},${c.lng}&z=15&output=embed`}
+                    />
+                  </div>
+                )}
                 <Row label="Código postal" value={c.codigo_postal} />
                 <Row label="Central" value={c.central} />
+
                 <Row label="RFC" value={c.rfc} />
                 <Row label="CURP" value={c.curp} />
                 <Row label="CFDI" value={(c as any).nombre_cfdi} />
