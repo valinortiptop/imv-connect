@@ -53,11 +53,28 @@ type ImportRow = {
   lat: number | null;
   lng: number | null;
   google_place_id: string | null;
+  representante_nombre: string;
+  representante_id?: string | null;
   status: Status;
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
 };
+
+// "Amaya, Marisol" -> "Marisol Amaya"; "Marisol Amaya" stays as is.
+const normalizeRepName = (raw: string) => {
+  const s = (raw || "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  if (s.includes(",")) {
+    const [last, first] = s.split(",", 2).map((t) => t.trim());
+    if (first && last) return `${first} ${last}`;
+  }
+  return s;
+};
+const repKey = (s: string) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ").trim();
+
 
 const norm = (v: unknown) =>
   v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
