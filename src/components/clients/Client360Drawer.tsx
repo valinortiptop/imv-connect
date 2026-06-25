@@ -154,7 +154,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
               <Kpi label="Crédito" value={c.credit_limit != null ? fmt(c.credit_limit) : "—"} />
             </div>
 
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Button asChild size="sm" variant="outline" className="gap-1.5">
                 <Link to="/admin/clientes/$id" params={{ id: c.id }}>
                   <ExternalLink className="size-3.5" /> Ver ficha completa
@@ -165,7 +165,21 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                   <Tag className="size-3.5" /> Precios
                 </Link>
               </Button>
+              {canEdit && onEdit && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="gap-1.5"
+                  onClick={() => {
+                    onEdit(c.id);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Pencil className="size-3.5" /> Editar
+                </Button>
+              )}
             </div>
+
 
             <Tabs defaultValue="general" className="mt-6">
               <TabsList className="grid w-full grid-cols-4">
