@@ -1518,14 +1518,22 @@ export default function Clients() {
                               className="truncate hover:underline hover:text-primary transition-colors"
                               title="Abrir vista 360"
                             >
-                              {c.name}
+                              {stripVmPrefix(c.name) || c.name}
                             </span>
-                            {(c.rfc === "XAXX010101000" || /\bVM\b/i.test(c.name ?? "") || /\bVM\b/i.test(c.company ?? "")) && (
+                            {isVmClient(c) && (
                               <Badge
                                 className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide"
-                                title="Venta Mostrador — no requiere factura oficial, solo nota o recibo (RFC genérico)"
+                                title="Venta Mostrador — no requiere factura oficial, solo nota o recibo"
                               >
                                 VM
+                              </Badge>
+                            )}
+                            {isGenericRfc(c.rfc) && (
+                              <Badge
+                                className="bg-purple-500/15 text-purple-700 border-purple-500/40 text-[10px] font-semibold tracking-wide"
+                                title={`RFC genérico (${GENERIC_RFC}) — público en general, sin factura nominativa`}
+                              >
+                                RFC genérico
                               </Badge>
                             )}
                           </div>
