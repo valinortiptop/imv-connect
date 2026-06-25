@@ -61,6 +61,47 @@ type ImportRow = {
 const norm = (v: unknown) =>
   v == null || v === "" ? null : typeof v === "string" ? v.trim() : v;
 
+/**
+ * In this Excel the "Dirección de envío" column is dumped as
+ * "<NOMBRE CLIENTE> <NOMBRE CLIENTE REPETIDO> <DIRECCIÓN REAL>".
+ * Strip any leading repetition of the client name / company / razón social
+ * so we keep only the actual street address before geocoding.
+ */
+const stripNamePrefix = (address: string, ...names: string[]) => {
+  let out = (address || "").replace(/\s+/g, " ").trim();
+  if (!out) return out;
+  const candidates = names
+    .map((n) => (n || "").replace(/\s+/g, " ").trim())
+    .filter((n) => n.length >= 3)
+    .sort((a, b) => b.length - a.length);
+
+  // Repeatedly peel off any leading occurrence of a name token.
+  for (let pass = 0; pass < 6; pass++) {
+    let changed = false;
+    for (const n of candidates) {
+      const re = new RegExp(
+        "^(?:" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")[\\s,:-]*",
+        "i",
+      );
+      if (re.test(out)) {
+        out = out.replace(re, "").trim();
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  // Drop a leading street-type keyword that lost its name (e.g. "VETERINARIA …").
+  // Only strip the very first word when it's a known business prefix AND
+  // the next token looks like another name (all caps) — keeps real
+  // street-type words like CALLE / AVENIDA intact.
+  const businessLead = /^(VETERINARIA|VETERINARIO|HOSPITAL|CLINICA|CLÍNICA|CONSULTORIO|FARMACIA|PET'?S?\s+HOME|PETSHOP|PET\s+SHOP|SERVICIO\s+MEDICO|SERVICIO\s+MÉDICO|ANIMAL\s+ZOO|CANNYS|LATIDO\s+ANIMAL|AGROPECUARIA|HAPPY\s+PETSAVE|CONSULTOR)\s+/i;
+  if (businessLead.test(out) && /^[A-ZÁÉÍÓÚÑ\s]{6,}/.test(out)) {
+    out = out.replace(businessLead, "").trim();
+  }
+  return out;
+};
+
 export function ClientsImportDialog({
   onClose,
   onSaved,
