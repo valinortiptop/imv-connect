@@ -145,6 +145,7 @@ function ProductosPage() {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [imagesImportOpen, setImagesImportOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState<
     "valor" | "comprometidos" | "distribucion" | null
   >(null);
