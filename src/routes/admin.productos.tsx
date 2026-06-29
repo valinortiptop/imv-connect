@@ -728,6 +728,10 @@ function ProductosPage() {
           }}
         />
       )}
+      <ProductImagesOneDriveDialog
+        open={imagesImportOpen}
+        onOpenChange={setImagesImportOpen}
+      />
       <Product360Drawer
         productId={drawerId}
         open={!!drawerId}
