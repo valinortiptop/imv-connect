@@ -314,6 +314,9 @@ function ProductosPage() {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar Excel
           </Button>
+          <Button variant="outline" onClick={() => setImagesImportOpen(true)}>
+            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (OneDrive)
+          </Button>
           <Button onClick={() => setNewOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Nuevo producto
           </Button>
