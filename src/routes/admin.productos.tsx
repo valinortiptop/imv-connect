@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { sortProducts } from "@/lib/sort-products";
 import { ProductImageUpload } from "@/components/ProductImageUpload";
 import { Product360Drawer } from "@/components/catalog/Product360Drawer";
+import { ProductImagesOneDriveDialog } from "@/components/catalog/ProductImagesOneDriveDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -144,6 +145,7 @@ function ProductosPage() {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [imagesImportOpen, setImagesImportOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState<
     "valor" | "comprometidos" | "distribucion" | null
   >(null);
@@ -311,6 +313,9 @@ function ProductosPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar Excel
+          </Button>
+          <Button variant="outline" onClick={() => setImagesImportOpen(true)}>
+            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (OneDrive)
           </Button>
           <Button onClick={() => setNewOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Nuevo producto
@@ -723,6 +728,10 @@ function ProductosPage() {
           }}
         />
       )}
+      <ProductImagesOneDriveDialog
+        open={imagesImportOpen}
+        onOpenChange={setImagesImportOpen}
+      />
       <Product360Drawer
         productId={drawerId}
         open={!!drawerId}
