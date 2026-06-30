@@ -35,6 +35,7 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
   const [progress, setProgress] = useState({ processed: 0, updated: 0 });
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ file: string; reason: string }[]>([]);
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const importFn = useServerFn(importProductImagesFromOneDrive);
   const qc = useQueryClient();
 
@@ -43,6 +44,7 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
     setProgress({ processed: 0, updated: 0 });
     setUnmatched([]);
     setErrors([]);
+    setFatalError(null);
     let nextLink: string | null | undefined = undefined;
     let totalProcessed = 0;
     let totalUpdated = 0;
@@ -67,7 +69,9 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
       toast.success(`Importadas ${totalUpdated} de ${totalProcessed} imágenes`);
       qc.invalidateQueries({ queryKey: ["productos-catalogo"] });
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message ?? "Error desconocido";
+      setFatalError(msg);
+      toast.error(msg);
     } finally {
       setRunning(false);
     }
@@ -116,6 +120,12 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
             <div>Actualizadas: {progress.updated}</div>
             <div>Sin match: {unmatched.length}</div>
             <div>Errores: {errors.length}</div>
+          </div>
+        )}
+
+        {fatalError && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive whitespace-pre-wrap">
+            {fatalError}
           </div>
         )}
 
