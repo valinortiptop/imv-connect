@@ -123,6 +123,12 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
           </div>
         )}
 
+        {fatalError && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive whitespace-pre-wrap">
+            {fatalError}
+          </div>
+        )}
+
         <div className="flex justify-between gap-2">
           {(unmatched.length > 0 || errors.length > 0) && !running && (
             <Button variant="outline" size="sm" onClick={downloadCsv}>
