@@ -277,9 +277,9 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
         )}
 
         <div className="flex justify-between gap-2">
-          {(unmatched.length > 0 || errors.length > 0) && !running && (
+          {(successes.length > 0 || unmatched.length > 0 || errors.length > 0) && !running && (
             <Button variant="outline" size="sm" onClick={downloadCsv}>
-              Descargar CSV
+              Descargar reporte CSV
             </Button>
           )}
           <div className="ml-auto flex gap-2">
