@@ -119,6 +119,9 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
         from += page;
       }
 
+      const skuById = new Map<string, string>();
+      for (const [sku, id] of skuMap.entries()) skuById.set(id, sku);
+
       let cursor = 0;
       const worker = async () => {
         while (cursor < entries.length) {
@@ -150,6 +153,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
                 .eq("id", productId);
               if (updErr) throw updErr;
               localUpdated++;
+              localSuccesses.push({ file: filename, sku: skuById.get(productId) ?? "" });
             }
           } catch (e) {
             localErrors.push({
@@ -163,6 +167,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
               setUpdated(localUpdated);
               setUnmatched([...localUnmatched]);
               setErrors([...localErrors]);
+              setSuccesses([...localSuccesses]);
             }
           }
         }
@@ -174,6 +179,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
       setUpdated(localUpdated);
       setUnmatched(localUnmatched);
       setErrors(localErrors);
+      setSuccesses(localSuccesses);
       toast.success(
         `Importadas ${localUpdated} de ${entries.length} imágenes`,
       );
