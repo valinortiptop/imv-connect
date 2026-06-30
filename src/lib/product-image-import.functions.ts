@@ -74,6 +74,11 @@ export const importProductImagesFromOneDrive = createServerFn({ method: "POST" }
     const listRes = await fetch(listUrl, { headers: { accept: "application/json" } });
     if (!listRes.ok) {
       const body = await listRes.text();
+      if (listRes.status === 401 || listRes.status === 403) {
+        throw new Error(
+          "OneDrive rechazó el enlace (401/403). La carpeta está compartida como \"Personas con el enlace\" y requiere iniciar sesión. Abre la carpeta en OneDrive → Compartir → Configuración del enlace → cambia a \"Cualquier persona con el enlace\" → copia el NUEVO enlace y pégalo aquí.",
+        );
+      }
       throw new Error(`OneDrive list falló (${listRes.status}): ${body.slice(0, 300)}`);
     }
     const listJson = (await listRes.json()) as {
