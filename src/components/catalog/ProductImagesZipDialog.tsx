@@ -56,6 +56,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
   const [updated, setUpdated] = useState(0);
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ file: string; reason: string }[]>([]);
+  const [successes, setSuccesses] = useState<{ file: string; sku: string }[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
@@ -65,6 +66,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
     setUpdated(0);
     setUnmatched([]);
     setErrors([]);
+    setSuccesses([]);
     setTotal(0);
   };
 
