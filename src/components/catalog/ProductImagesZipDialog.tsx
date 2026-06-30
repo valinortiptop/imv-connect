@@ -56,6 +56,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
   const [updated, setUpdated] = useState(0);
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ file: string; reason: string }[]>([]);
+  const [successes, setSuccesses] = useState<{ file: string; sku: string }[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
@@ -65,6 +66,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
     setUpdated(0);
     setUnmatched([]);
     setErrors([]);
+    setSuccesses([]);
     setTotal(0);
   };
 
@@ -84,6 +86,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
     reset();
     const localUnmatched: string[] = [];
     const localErrors: { file: string; reason: string }[] = [];
+    const localSuccesses: { file: string; sku: string }[] = [];
     let localUpdated = 0;
     let localProcessed = 0;
 
@@ -116,6 +119,9 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
         from += page;
       }
 
+      const skuById = new Map<string, string>();
+      for (const [sku, id] of skuMap.entries()) skuById.set(id, sku);
+
       let cursor = 0;
       const worker = async () => {
         while (cursor < entries.length) {
@@ -147,6 +153,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
                 .eq("id", productId);
               if (updErr) throw updErr;
               localUpdated++;
+              localSuccesses.push({ file: filename, sku: skuById.get(productId) ?? "" });
             }
           } catch (e) {
             localErrors.push({
@@ -160,6 +167,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
               setUpdated(localUpdated);
               setUnmatched([...localUnmatched]);
               setErrors([...localErrors]);
+              setSuccesses([...localSuccesses]);
             }
           }
         }
@@ -171,6 +179,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
       setUpdated(localUpdated);
       setUnmatched(localUnmatched);
       setErrors(localErrors);
+      setSuccesses(localSuccesses);
       toast.success(
         `Importadas ${localUpdated} de ${entries.length} imágenes`,
       );
@@ -184,17 +193,18 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
 
   function downloadCsv() {
     const rows = [
-      "archivo,motivo",
-      ...unmatched.map((f) => `"${f}","sin match (SKU no encontrado)"`),
+      "archivo,sku,estado,motivo",
+      ...successes.map((s) => `"${s.file}","${s.sku}","ok",""`),
+      ...unmatched.map((f) => `"${f}","","sin_match","SKU no encontrado en catálogo"`),
       ...errors.map(
-        (e) => `"${e.file}","${e.reason.replace(/"/g, "'")}"`,
+        (e) => `"${e.file}","","error","${e.reason.replace(/"/g, "'")}"`,
       ),
     ];
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "imagenes-no-importadas.csv";
+    a.download = "reporte-importacion-imagenes.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -267,9 +277,9 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
         )}
 
         <div className="flex justify-between gap-2">
-          {(unmatched.length > 0 || errors.length > 0) && !running && (
+          {(successes.length > 0 || unmatched.length > 0 || errors.length > 0) && !running && (
             <Button variant="outline" size="sm" onClick={downloadCsv}>
-              Descargar CSV
+              Descargar reporte CSV
             </Button>
           )}
           <div className="ml-auto flex gap-2">
