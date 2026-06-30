@@ -44,6 +44,7 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
     setProgress({ processed: 0, updated: 0 });
     setUnmatched([]);
     setErrors([]);
+    setFatalError(null);
     let nextLink: string | null | undefined = undefined;
     let totalProcessed = 0;
     let totalUpdated = 0;
@@ -68,7 +69,9 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
       toast.success(`Importadas ${totalUpdated} de ${totalProcessed} imágenes`);
       qc.invalidateQueries({ queryKey: ["productos-catalogo"] });
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message ?? "Error desconocido";
+      setFatalError(msg);
+      toast.error(msg);
     } finally {
       setRunning(false);
     }
