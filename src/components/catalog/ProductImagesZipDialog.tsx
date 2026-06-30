@@ -193,17 +193,18 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
 
   function downloadCsv() {
     const rows = [
-      "archivo,motivo",
-      ...unmatched.map((f) => `"${f}","sin match (SKU no encontrado)"`),
+      "archivo,sku,estado,motivo",
+      ...successes.map((s) => `"${s.file}","${s.sku}","ok",""`),
+      ...unmatched.map((f) => `"${f}","","sin_match","SKU no encontrado en catálogo"`),
       ...errors.map(
-        (e) => `"${e.file}","${e.reason.replace(/"/g, "'")}"`,
+        (e) => `"${e.file}","","error","${e.reason.replace(/"/g, "'")}"`,
       ),
     ];
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "imagenes-no-importadas.csv";
+    a.download = "reporte-importacion-imagenes.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
