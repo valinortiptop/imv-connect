@@ -86,6 +86,7 @@ export function ProductImagesZipDialog({ open, onOpenChange }: Props) {
     reset();
     const localUnmatched: string[] = [];
     const localErrors: { file: string; reason: string }[] = [];
+    const localSuccesses: { file: string; sku: string }[] = [];
     let localUpdated = 0;
     let localProcessed = 0;
 
