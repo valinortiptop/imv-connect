@@ -35,6 +35,7 @@ export function ProductImagesOneDriveDialog({ open, onOpenChange }: Props) {
   const [progress, setProgress] = useState({ processed: 0, updated: 0 });
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ file: string; reason: string }[]>([]);
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const importFn = useServerFn(importProductImagesFromOneDrive);
   const qc = useQueryClient();
 
