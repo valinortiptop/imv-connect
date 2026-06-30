@@ -7,6 +7,7 @@ import { sortProducts } from "@/lib/sort-products";
 import { ProductImageUpload } from "@/components/ProductImageUpload";
 import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { ProductImagesOneDriveDialog } from "@/components/catalog/ProductImagesOneDriveDialog";
+import { ProductImagesZipDialog } from "@/components/catalog/ProductImagesZipDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -146,6 +147,7 @@ function ProductosPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [imagesImportOpen, setImagesImportOpen] = useState(false);
+  const [imagesZipOpen, setImagesZipOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState<
     "valor" | "comprometidos" | "distribucion" | null
   >(null);
@@ -313,6 +315,9 @@ function ProductosPage() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar Excel
+          </Button>
+          <Button variant="outline" onClick={() => setImagesZipOpen(true)}>
+            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (ZIP)
           </Button>
           <Button variant="outline" onClick={() => setImagesImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (OneDrive)
@@ -731,6 +736,10 @@ function ProductosPage() {
       <ProductImagesOneDriveDialog
         open={imagesImportOpen}
         onOpenChange={setImagesImportOpen}
+      />
+      <ProductImagesZipDialog
+        open={imagesZipOpen}
+        onOpenChange={setImagesZipOpen}
       />
       <Product360Drawer
         productId={drawerId}
