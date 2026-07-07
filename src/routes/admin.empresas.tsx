@@ -519,3 +519,186 @@ function Field({
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// Almacenes per empresa — inline CRUD panel
+// ─────────────────────────────────────────────────────────────
+
+type Almacen = {
+  id: string;
+  nombre: string;
+  codigo: string | null;
+  direccion: string | null;
+  principal: boolean;
+  activo: boolean;
+  empresa_id: string | null;
+};
+
+function EmpresaAlmacenes({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState<{ nombre: string; codigo: string; direccion: string }>({
+    nombre: "", codigo: "", direccion: "",
+  });
+
+  const { data: almacenes = [], isLoading } = useQuery({
+    queryKey: ["almacenes-por-empresa", empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("almacenes")
+        .select("id, nombre, codigo, direccion, principal, activo, empresa_id")
+        .eq("empresa_id", empresaId)
+        .order("principal", { ascending: false })
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []) as unknown as Almacen[];
+    },
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["almacenes-por-empresa", empresaId] });
+    qc.invalidateQueries({ queryKey: ["almacenes"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-almacenes"] });
+  };
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const nombre = draft.nombre.trim();
+      if (!nombre) throw new Error("Nombre requerido");
+      const payload: any = {
+        empresa_id: empresaId,
+        nombre,
+        codigo: draft.codigo.trim() || null,
+        direccion: draft.direccion.trim() || null,
+        activo: true,
+        principal: almacenes.length === 0,
+      };
+      const { error } = await supabase.from("almacenes").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setDraft({ nombre: "", codigo: "", direccion: "" });
+      setAdding(false);
+      toast.success("Almacén agregado");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("almacenes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Almacén eliminado"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setPrincipal = useMutation({
+    mutationFn: async (id: string) => {
+      // clear other principals for this empresa
+      await supabase.from("almacenes").update({ principal: false } as any).eq("empresa_id", empresaId);
+      const { error } = await supabase.from("almacenes").update({ principal: true } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="mt-2 rounded-md border border-border/60 bg-muted/20 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Warehouse className="h-3.5 w-3.5" /> Almacenes
+        </div>
+        {!adding && (
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAdding(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+          </Button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">Cargando…</p>
+      ) : almacenes.length === 0 && !adding ? (
+        <p className="text-xs text-muted-foreground">Sin almacenes. Agrega el primero para esta empresa.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {almacenes.map((a) => (
+            <li
+              key={a.id}
+              className="flex items-center justify-between gap-2 rounded border border-border/50 bg-background/60 px-2.5 py-1.5"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm font-medium truncate">{a.nombre}</span>
+                  {a.codigo && (
+                    <span className="text-[10px] font-mono text-muted-foreground">{a.codigo}</span>
+                  )}
+                  {a.principal && (
+                    <Badge className="bg-primary/15 text-primary border-primary/30 h-4 px-1.5 text-[10px]">
+                      Principal
+                    </Badge>
+                  )}
+                </div>
+                {a.direccion && (
+                  <p className="text-[11px] text-muted-foreground truncate">{a.direccion}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                {!a.principal && (
+                  <Button
+                    size="icon" variant="ghost" className="h-6 w-6"
+                    title="Marcar como principal"
+                    onClick={() => setPrincipal.mutate(a.id)}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <Button
+                  size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                  onClick={() => { if (confirm(`¿Eliminar ${a.nombre}?`)) remove.mutate(a.id); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {adding && (
+        <div className="mt-2 space-y-2 rounded border border-dashed border-border p-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              placeholder="Nombre *"
+              value={draft.nombre}
+              onChange={(e) => setDraft({ ...draft, nombre: e.target.value })}
+              className="h-8 text-sm"
+            />
+            <Input
+              placeholder="Código"
+              value={draft.codigo}
+              onChange={(e) => setDraft({ ...draft, codigo: e.target.value })}
+              className="h-8 text-sm font-mono"
+            />
+          </div>
+          <Input
+            placeholder="Dirección"
+            value={draft.direccion}
+            onChange={(e) => setDraft({ ...draft, direccion: e.target.value })}
+            className="h-8 text-sm"
+          />
+          <div className="flex justify-end gap-1.5">
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setAdding(false); setDraft({ nombre: "", codigo: "", direccion: "" }); }}>
+              Cancelar
+            </Button>
+            <Button size="sm" className="h-7 text-xs" onClick={() => create.mutate()} disabled={create.isPending || !draft.nombre.trim()}>
+              <Check className="h-3.5 w-3.5 mr-1" /> Guardar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
