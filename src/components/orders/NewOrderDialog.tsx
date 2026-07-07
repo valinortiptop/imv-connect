@@ -609,20 +609,48 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                   </TabsList>
 
                   <TabsContent value="existing" className="mt-3 space-y-3">
-                    <Select value={selectedClientId ?? ""} onValueChange={selectClient}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar cliente..." /></SelectTrigger>
-                      <SelectContent>
-                        {clients.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            <span className="inline-flex items-center gap-2">
-                              {/* Pill on the LEFT so the client names align. */}
-                              <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
-                              <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between font-normal"
+                        >
+                          <span className="truncate">
+                            {selectedClientId
+                              ? (() => {
+                                  const c = clients.find((x) => x.id === selectedClientId);
+                                  return c ? `${c.name}${c.company ? ` — ${c.company}` : ""}` : "Seleccionar cliente...";
+                                })()
+                              : "Seleccionar cliente..."}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar cliente..." />
+                          <CommandList>
+                            <CommandEmpty>Sin resultados.</CommandEmpty>
+                            <CommandGroup>
+                              {clients.map((c) => (
+                                <CommandItem
+                                  key={c.id}
+                                  value={`${c.name} ${c.company ?? ""} ${(c as any).rfc ?? ""}`}
+                                  onSelect={() => selectClient(c.id)}
+                                >
+                                  <span className="inline-flex items-center gap-2">
+                                    <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
+                                    <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {selectedClientId && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between"><span className="text-muted-foreground">Teléfono</span><span>{form.getValues("phone") || "—"}</span></div>
