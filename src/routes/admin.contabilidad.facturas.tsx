@@ -29,7 +29,7 @@ function FacturasContPage() {
     queryFn: async () => {
       let q = supabase
         .from("facturas" as any)
-        .select("id, folio, fecha_emision, total, estado, poliza_id, cliente_id, uuid_cfdi, clientes(razon_social, nombre_comercial)")
+        .select("id, folio, fecha_emision, total, estado, poliza_id, cliente_id, clientes(razon_social, nombre_comercial)")
         .eq("empresa_id", empresaId!)
         .order("fecha_emision", { ascending: false })
         .limit(200);
@@ -78,7 +78,7 @@ function FacturasContPage() {
         { cuenta_id: map["105"], cargo: total, abono: 0, concepto: "Cliente" },
         { cuenta_id: map["401"], cargo: 0, abono: sub, concepto: "Ventas" },
         { cuenta_id: map["209-01"] ?? map["208-01"], cargo: 0, abono: iva, concepto: "IVA por trasladar 16%" },
-      ].filter((m) => m.cuenta_id).map((m, i) => ({ ...m, poliza_id: polizaId, orden: i, uuid_cfdi: factura.uuid_cfdi }));
+      ].filter((m) => m.cuenta_id).map((m, i) => ({ ...m, poliza_id: polizaId, orden: i }));
 
       const { error: e2 } = await supabase.from("poliza_movimientos" as any).insert(movs);
       if (e2) throw e2;
