@@ -848,23 +848,40 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 )
               ) : (
                 availableProducts.length > 0 && (
-                  <Select key={lines.length} value="" onValueChange={(v) => addProduct(v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Seleccionar producto..." /></SelectTrigger>
-                    <SelectContent>
-                      {availableProducts.map(p => (
-                        <SelectItem key={`normal-${p.id}`} value={`normal:${p.id}`}>
-                          <span className="inline-flex items-center gap-2">
-                            <ProductThumb src={p.image_url} size="xs" />
-                            <span className="font-mono text-xs">{p.clave}</span>
-                            <span>{p.name}</span>
-                            {promoProductIds.has(p.id) && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
-                            )}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        <span className="text-muted-foreground">Seleccionar producto...</span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar producto por clave o nombre..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            {availableProducts.map((p) => (
+                              <CommandItem
+                                key={`normal-${p.id}`}
+                                value={`${p.clave} ${p.name}`}
+                                onSelect={() => addProduct(`normal:${p.id}`)}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <ProductThumb src={p.image_url} size="xs" />
+                                  <span className="font-mono text-xs">{p.clave}</span>
+                                  <span>{p.name}</span>
+                                  {promoProductIds.has(p.id) && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
+                                  )}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )
               )}
 
