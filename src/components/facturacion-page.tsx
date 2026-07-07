@@ -148,11 +148,21 @@ export default function Facturacion() {
     queryKey: ["billing-entities"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("billing_entities" as any)
-        .select("*")
-        .order("is_default", { ascending: false });
+        .from("empresas" as any)
+        .select("id, razon_social, nombre_comercial, rfc, direccion_fiscal, cp_fiscal, regimen_fiscal, is_default, active")
+        .eq("active", true)
+        .order("is_default", { ascending: false })
+        .order("razon_social");
       if (error) throw error;
-      return (data ?? []) as unknown as BillingEntity[];
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        name: r.nombre_comercial || r.razon_social,
+        rfc: r.rfc,
+        address: r.direccion_fiscal,
+        codigo_postal: r.cp_fiscal,
+        regimen_fiscal: r.regimen_fiscal,
+        is_default: r.is_default,
+      })) as BillingEntity[];
     },
   });
 
