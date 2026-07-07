@@ -52,7 +52,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Inventario",
+    label: "Almacén y Compras",
     items: [
       { key: "navProducts",      label: "Productos",            url: "/admin/productos",          icon: Package },
       { key: "navInventory",     label: "Inventario",           url: "/admin/inventario",         icon: Warehouse },
