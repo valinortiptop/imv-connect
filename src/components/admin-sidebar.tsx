@@ -75,6 +75,21 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Contabilidad",
+    items: [
+      { key: "navContaDash",    label: "Dashboard fiscal",    url: "/admin/contabilidad",              icon: Landmark, exact: true },
+      { key: "navContaCuentas", label: "Catálogo de cuentas", url: "/admin/contabilidad/cuentas",      icon: BookText },
+      { key: "navContaPolizas", label: "Pólizas",             url: "/admin/contabilidad/polizas",      icon: ScrollText },
+      { key: "navContaDiario",  label: "Libro diario",        url: "/admin/contabilidad/diario",       icon: BookOpen },
+      { key: "navContaMayor",   label: "Libro mayor",         url: "/admin/contabilidad/mayor",        icon: BookText },
+      { key: "navContaBalanza", label: "Balanza",             url: "/admin/contabilidad/balanza",      icon: Scale },
+      { key: "navContaEstados", label: "Estados financieros", url: "/admin/contabilidad/estados",      icon: PieChart },
+      { key: "navContaIVA",     label: "IVA / IEPS",          url: "/admin/contabilidad/impuestos",    icon: Receipt },
+      { key: "navContaFact",    label: "Facturas contables",  url: "/admin/contabilidad/facturas",     icon: FileText },
+      { key: "navContaSAT",     label: "Cumplimiento SAT",    url: "/admin/contabilidad/sat",          icon: ShieldCheck },
+    ],
+  },
+  {
     label: "Configuración",
     items: [
       { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: Building2 },
