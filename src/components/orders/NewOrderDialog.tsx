@@ -17,9 +17,10 @@ import { ProductThumb } from "@/components/ui/product-thumb";
 import { ClientTypeBadge } from "@/components/ui/client-type-badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { Trash2, CalendarIcon, AlertOctagon } from "lucide-react";
+import { Trash2, CalendarIcon, AlertOctagon, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -608,20 +609,48 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                   </TabsList>
 
                   <TabsContent value="existing" className="mt-3 space-y-3">
-                    <Select value={selectedClientId ?? ""} onValueChange={selectClient}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar cliente..." /></SelectTrigger>
-                      <SelectContent>
-                        {clients.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            <span className="inline-flex items-center gap-2">
-                              {/* Pill on the LEFT so the client names align. */}
-                              <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
-                              <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between font-normal"
+                        >
+                          <span className="truncate">
+                            {selectedClientId
+                              ? (() => {
+                                  const c = clients.find((x) => x.id === selectedClientId);
+                                  return c ? `${c.name}${c.company ? ` — ${c.company}` : ""}` : "Seleccionar cliente...";
+                                })()
+                              : "Seleccionar cliente..."}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar cliente..." />
+                          <CommandList>
+                            <CommandEmpty>Sin resultados.</CommandEmpty>
+                            <CommandGroup>
+                              {clients.map((c) => (
+                                <CommandItem
+                                  key={c.id}
+                                  value={`${c.name} ${c.company ?? ""} ${(c as any).rfc ?? ""}`}
+                                  onSelect={() => selectClient(c.id)}
+                                >
+                                  <span className="inline-flex items-center gap-2">
+                                    <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
+                                    <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {selectedClientId && (
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between"><span className="text-muted-foreground">Teléfono</span><span>{form.getValues("phone") || "—"}</span></div>
@@ -775,28 +804,43 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {pickerMode === "damaged" ? (
                 availableDamaged.length > 0 ? (
-                  <Select key={`d-${lines.length}`} value="" onValueChange={(v) => addProduct(v)}>
-                    <SelectTrigger className="w-full border-orange-500/40">
-                      <SelectValue placeholder="Seleccionar lote dañado..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDamaged.map(b => (
-                        <SelectItem key={`damaged-${b.id}`} value={`damaged:${b.id}`}>
-                          <span className="inline-flex items-center gap-2">
-                            <ProductThumb src={b.image_url} size="xs" />
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
-                              {b.condition}
-                            </span>
-                            <span className="font-mono text-xs">{b.clave}</span>
-                            <span>{b.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
-                            </span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal border-orange-500/40">
+                        <span className="text-muted-foreground">Seleccionar lote dañado...</span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar lote..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            {availableDamaged.map((b) => (
+                              <CommandItem
+                                key={`damaged-${b.id}`}
+                                value={`${b.clave} ${b.name} ${b.condition}`}
+                                onSelect={() => addProduct(`damaged:${b.id}`)}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <ProductThumb src={b.image_url} size="xs" />
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
+                                    {b.condition}
+                                  </span>
+                                  <span className="font-mono text-xs">{b.clave}</span>
+                                  <span>{b.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
+                                  </span>
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 ) : (
                   <div className="text-xs text-muted-foreground text-center py-2 border border-dashed border-orange-500/30 rounded-md">
                     No hay lotes dañados disponibles
@@ -804,23 +848,40 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 )
               ) : (
                 availableProducts.length > 0 && (
-                  <Select key={lines.length} value="" onValueChange={(v) => addProduct(v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Seleccionar producto..." /></SelectTrigger>
-                    <SelectContent>
-                      {availableProducts.map(p => (
-                        <SelectItem key={`normal-${p.id}`} value={`normal:${p.id}`}>
-                          <span className="inline-flex items-center gap-2">
-                            <ProductThumb src={p.image_url} size="xs" />
-                            <span className="font-mono text-xs">{p.clave}</span>
-                            <span>{p.name}</span>
-                            {promoProductIds.has(p.id) && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
-                            )}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        <span className="text-muted-foreground">Seleccionar producto...</span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar producto por clave o nombre..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            {availableProducts.map((p) => (
+                              <CommandItem
+                                key={`normal-${p.id}`}
+                                value={`${p.clave} ${p.name}`}
+                                onSelect={() => addProduct(`normal:${p.id}`)}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <ProductThumb src={p.image_url} size="xs" />
+                                  <span className="font-mono text-xs">{p.clave}</span>
+                                  <span>{p.name}</span>
+                                  {promoProductIds.has(p.id) && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
+                                  )}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )
               )}
 
