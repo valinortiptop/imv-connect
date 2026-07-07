@@ -134,6 +134,7 @@ export default function PurchaseNeeds() {
   }, [allProducts]);
 
   const [poOpen, setPoOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // The view (v_purchase_by_order) now does the chronological burn-down server-side,
   // accounting for incoming Programado entradas per delivery_date. Trust it as-is.
