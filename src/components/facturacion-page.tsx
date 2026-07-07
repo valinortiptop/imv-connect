@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "@/lib/router-compat";
+import { Link, useNavigate } from "@/lib/router-compat";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { useToast } from "@/hooks/use-toast";
+import { stampInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
-  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink,
+  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp,
 } from "lucide-react";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -113,6 +115,8 @@ const fmtCurrency = (n: number) =>
 export default function Facturacion() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const stampFn = useServerFn(stampInvoiceFn);
 
   /* ── state ── */
   // Mayoreo / Menudeo / Todos — filters the client picker dropdown.
@@ -266,6 +270,67 @@ export default function Facturacion() {
   const removeLine = (idx: number) => {
     setLines(prev => prev.filter((_, i) => i !== idx));
   };
+
+  /* ── Crear factura y timbrar CFDI vía Facturapi ── */
+  const crearYTimbrar = useMutation({
+    mutationFn: async () => {
+      if (!selectedClient) throw new Error("Selecciona un cliente");
+      if (!activeEntity) throw new Error("Selecciona la empresa que factura");
+      if (lines.length === 0) throw new Error("La factura no tiene conceptos");
+      if (!selectedClient.rfc) throw new Error("El cliente no tiene RFC");
+      if (!selectedClient.codigo_postal) throw new Error("El cliente no tiene código postal fiscal");
+
+      const subtotalCalc = lines.reduce((s, l) => s + l.valor_unitario * l.cantidad, 0);
+      const ivaCalc = subtotalCalc * 0.16;
+      const totalCalc = subtotalCalc + ivaCalc;
+
+      // 1) Insertar factura
+      const { data: fRow, error: fErr } = await supabase
+        .from("facturas")
+        .insert({
+          cliente_id: selectedClient.id,
+          pedido_id: selectedOrderId || null,
+          empresa_id: activeEntity.id,
+          subtotal: Math.round(subtotalCalc * 100) / 100,
+          iva: Math.round(ivaCalc * 100) / 100,
+          total: Math.round(totalCalc * 100) / 100,
+          cfdi_use: selectedClient.uso_cfdi || "G03",
+          payment_form: selectedClient.payment_method || "99",
+          payment_method: (selectedClient.metodo_pago as any) || "PUE",
+        } as any)
+        .select("id")
+        .single();
+      if (fErr) throw fErr;
+      const facturaId = (fRow as any).id as string;
+
+      // 2) Insertar factura_items
+      const items = lines.map((l) => ({
+        factura_id: facturaId,
+        nombre_snapshot: l.descripcion,
+        sku_snapshot: l.modelo || null,
+        unidad_snapshot: l.clave_unidad || "Pieza",
+        cantidad: l.cantidad,
+        precio_unitario: Math.round(l.valor_unitario * 100) / 100,
+        iva_pct: 0.16,
+        importe: Math.round(l.valor_unitario * l.cantidad * 100) / 100,
+      }));
+      const { error: iErr } = await supabase.from("factura_items").insert(items as any);
+      if (iErr) throw iErr;
+
+      // 3) Timbrar con Facturapi
+      await stampFn({ data: { facturaId } });
+      return facturaId;
+    },
+    onSuccess: (facturaId) => {
+      toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
+      queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      navigate(`/admin/facturas/${facturaId}`);
+    },
+    onError: (err: any) => {
+      toast({ title: "No se pudo timbrar", description: err.message ?? String(err), variant: "destructive" });
+    },
+  });
+
 
   /* ── download Excel ── */
   const downloadInvoiceExcel = () => {
@@ -661,16 +726,28 @@ export default function Facturacion() {
             <div className="lg:col-span-2">
               <GlowCard>
                 <div className="p-4 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <h3 className="text-sm font-semibold">Conceptos de Factura</h3>
-                    <Button
-                      onClick={downloadInvoiceExcel}
-                      disabled={lines.length === 0}
-                      size="sm"
-                    >
-                      <Download className="h-4 w-4 mr-1.5" /> Descargar Excel
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={downloadInvoiceExcel}
+                        disabled={lines.length === 0}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Download className="h-4 w-4 mr-1.5" /> Descargar Excel
+                      </Button>
+                      <Button
+                        onClick={() => crearYTimbrar.mutate()}
+                        disabled={lines.length === 0 || crearYTimbrar.isPending || !activeEntity}
+                        size="sm"
+                      >
+                        <Stamp className="h-4 w-4 mr-1.5" />
+                        {crearYTimbrar.isPending ? "Timbrando…" : "Timbrar CFDI"}
+                      </Button>
+                    </div>
                   </div>
+
 
                   {lines.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground text-sm">
