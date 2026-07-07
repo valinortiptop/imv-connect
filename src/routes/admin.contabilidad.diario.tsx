@@ -1,0 +1,123 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { BookText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
+import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+
+export const Route = createFileRoute("/admin/contabilidad/diario")({
+  head: () => ({ meta: [{ title: "Libro diario — Contabilidad" }] }),
+  component: DiarioPage,
+});
+
+const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+function firstOfMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function DiarioPage() {
+  const { selected } = useSelectedEmpresa();
+  const empresaId = selected?.id;
+  const [desde, setDesde] = useState(firstOfMonth());
+  const [hasta, setHasta] = useState(today());
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["diario", empresaId, desde, hasta],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("polizas" as any)
+        .select("id, folio, tipo, fecha, concepto, poliza_movimientos!inner(id, cargo, abono, concepto, cuenta_id, orden, cuentas_contables(codigo, nombre))")
+        .eq("empresa_id", empresaId!)
+        .eq("estado", "asentada")
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("fecha")
+        .order("folio");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const totals = useMemo(() => {
+    let c = 0, a = 0;
+    for (const p of rows) for (const m of p.poliza_movimientos) { c += Number(m.cargo); a += Number(m.abono); }
+    return { c, a };
+  }, [rows]);
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookText className="h-6 w-6 text-primary" /> Libro diario
+          </h1>
+          <p className="text-sm text-muted-foreground">Cronología de todas las pólizas asentadas en el periodo.</p>
+        </div>
+        <EmpresaSelector />
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div><Label className="text-xs">Desde</Label><Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></div>
+        <div><Label className="text-xs">Hasta</Label><Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></div>
+      </div>
+
+      {!empresaId ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Elige una empresa.</div>
+      ) : (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="text-left px-2 py-2 w-24">Fecha</th>
+                <th className="text-left px-2 py-2 w-24">Folio</th>
+                <th className="text-left px-2 py-2 w-28">Cuenta</th>
+                <th className="text-left px-2 py-2">Concepto</th>
+                <th className="text-right px-2 py-2 w-28">Cargo</th>
+                <th className="text-right px-2 py-2 w-28">Abono</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas asentadas en el rango.</td></tr>
+              ) : rows.flatMap((p: any) =>
+                p.poliza_movimientos.map((m: any, i: number) => (
+                  <tr key={m.id} className={`${i === 0 ? "border-t-2 border-primary/20" : "border-t border-border/60"} hover:bg-muted/20`}>
+                    <td className="px-2 py-1.5 text-xs">{i === 0 ? p.fecha : ""}</td>
+                    <td className="px-2 py-1.5">
+                      {i === 0 ? (
+                        <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">{p.folio}</Link>
+                      ) : ""}
+                    </td>
+                    <td className="px-2 py-1.5 font-mono text-xs">{m.cuentas_contables?.codigo}</td>
+                    <td className="px-2 py-1.5 truncate max-w-[420px]">
+                      <span className="text-xs">{m.cuentas_contables?.nombre}</span>
+                      {(m.concepto || p.concepto) && <div className="text-[11px] text-muted-foreground truncate">{m.concepto || p.concepto}</div>}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(m.cargo) > 0 ? mxn.format(Number(m.cargo)) : ""}</td>
+                    <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(m.abono) > 0 ? mxn.format(Number(m.abono)) : ""}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            <tfoot className="bg-muted/40">
+              <tr className="border-t border-border">
+                <td colSpan={4} className="px-2 py-2 text-right text-xs uppercase tracking-wider">Totales</td>
+                <td className="px-2 py-2 text-right font-mono">{mxn.format(totals.c)}</td>
+                <td className="px-2 py-2 text-right font-mono">{mxn.format(totals.a)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
