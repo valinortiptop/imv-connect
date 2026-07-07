@@ -804,28 +804,43 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {pickerMode === "damaged" ? (
                 availableDamaged.length > 0 ? (
-                  <Select key={`d-${lines.length}`} value="" onValueChange={(v) => addProduct(v)}>
-                    <SelectTrigger className="w-full border-orange-500/40">
-                      <SelectValue placeholder="Seleccionar lote dañado..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDamaged.map(b => (
-                        <SelectItem key={`damaged-${b.id}`} value={`damaged:${b.id}`}>
-                          <span className="inline-flex items-center gap-2">
-                            <ProductThumb src={b.image_url} size="xs" />
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
-                              {b.condition}
-                            </span>
-                            <span className="font-mono text-xs">{b.clave}</span>
-                            <span>{b.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
-                            </span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal border-orange-500/40">
+                        <span className="text-muted-foreground">Seleccionar lote dañado...</span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar lote..." />
+                        <CommandList>
+                          <CommandEmpty>Sin resultados.</CommandEmpty>
+                          <CommandGroup>
+                            {availableDamaged.map((b) => (
+                              <CommandItem
+                                key={`damaged-${b.id}`}
+                                value={`${b.clave} ${b.name} ${b.condition}`}
+                                onSelect={() => addProduct(`damaged:${b.id}`)}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <ProductThumb src={b.image_url} size="xs" />
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
+                                    {b.condition}
+                                  </span>
+                                  <span className="font-mono text-xs">{b.clave}</span>
+                                  <span>{b.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
+                                  </span>
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 ) : (
                   <div className="text-xs text-muted-foreground text-center py-2 border border-dashed border-orange-500/30 rounded-md">
                     No hay lotes dañados disponibles
