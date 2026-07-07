@@ -29,7 +29,7 @@ function FacturasContPage() {
     queryFn: async () => {
       let q = supabase
         .from("facturas" as any)
-        .select("id, folio, fecha_emision, total, estado, poliza_id, cliente_id, uuid_cfdi, clientes(razon_social, nombre_comercial)")
+        .select("id, folio, fecha_emision, total, estado, poliza_id, cliente_id, clientes(razon_social, nombre_comercial)")
         .eq("empresa_id", empresaId!)
         .order("fecha_emision", { ascending: false })
         .limit(200);
