@@ -1,0 +1,519 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Building2, Plus, Star, Pencil, Trash2, Check, X,
+  Mail, Phone, Globe, MapPin, Receipt,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+
+export const Route = createFileRoute("/admin/empresas")({
+  head: () => ({
+    meta: [
+      { title: "Empresas — Configuración" },
+      { name: "description", content: "Administra las empresas que emiten facturas y documentos." },
+    ],
+  }),
+  component: EmpresasPage,
+});
+
+export type Empresa = {
+  id: string;
+  razon_social: string;
+  nombre_comercial: string | null;
+  rfc: string;
+  regimen_fiscal: string | null;
+  uso_cfdi_default: string | null;
+  cp_fiscal: string | null;
+  direccion_fiscal: string | null;
+  lugar_expedicion: string | null;
+  telefono: string | null;
+  email_contacto: string | null;
+  sitio_web: string | null;
+  representante_legal: string | null;
+  logo_url: string | null;
+  serie_factura_default: string | null;
+  folio_next: number;
+  moneda_default: string;
+  iva_default: number;
+  is_default: boolean;
+  active: boolean;
+};
+
+const EMPTY: Partial<Empresa> = {
+  razon_social: "",
+  rfc: "",
+  moneda_default: "MXN",
+  iva_default: 16,
+  folio_next: 1,
+  is_default: false,
+  active: true,
+};
+
+function EmpresasPage() {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<Partial<Empresa> | null>(null);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["empresas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("empresas" as any)
+        .select("*")
+        .order("is_default", { ascending: false })
+        .order("razon_social");
+      if (error) throw error;
+      return (data ?? []) as unknown as Empresa[];
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async (e: Partial<Empresa>) => {
+      const payload: any = {
+        razon_social: (e.razon_social ?? "").trim(),
+        nombre_comercial: e.nombre_comercial?.trim() || null,
+        rfc: (e.rfc ?? "").trim().toUpperCase(),
+        regimen_fiscal: e.regimen_fiscal?.trim() || null,
+        uso_cfdi_default: e.uso_cfdi_default?.trim() || null,
+        cp_fiscal: e.cp_fiscal?.trim() || null,
+        direccion_fiscal: e.direccion_fiscal?.trim() || null,
+        lugar_expedicion: e.lugar_expedicion?.trim() || null,
+        telefono: e.telefono?.trim() || null,
+        email_contacto: e.email_contacto?.trim() || null,
+        sitio_web: e.sitio_web?.trim() || null,
+        representante_legal: e.representante_legal?.trim() || null,
+        logo_url: e.logo_url?.trim() || null,
+        serie_factura_default: e.serie_factura_default?.trim() || null,
+        folio_next: Number(e.folio_next ?? 1) || 1,
+        moneda_default: e.moneda_default?.trim() || "MXN",
+        iva_default: Number(e.iva_default ?? 16),
+        is_default: e.is_default ?? false,
+        active: e.active ?? true,
+      };
+      if (!payload.razon_social) throw new Error("Razón social requerida");
+      if (!payload.rfc) throw new Error("RFC requerido");
+
+      // If marking as default, clear other defaults first
+      if (payload.is_default) {
+        await supabase
+          .from("empresas" as any)
+          .update({ is_default: false })
+          .neq("id", e.id ?? "00000000-0000-0000-0000-000000000000");
+      }
+
+      if (e.id) {
+        const { error } = await supabase.from("empresas" as any).update(payload).eq("id", e.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("empresas" as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Empresa guardada");
+      qc.invalidateQueries({ queryKey: ["empresas"] });
+      qc.invalidateQueries({ queryKey: ["billing-entities"] });
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setDefault = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("empresas" as any).update({ is_default: false }).neq("id", id);
+      const { error } = await supabase.from("empresas" as any).update({ is_default: true }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Predeterminada actualizada");
+      qc.invalidateQueries({ queryKey: ["empresas"] });
+      qc.invalidateQueries({ queryKey: ["billing-entities"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("empresas" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Empresa eliminada");
+      qc.invalidateQueries({ queryKey: ["empresas"] });
+      qc.invalidateQueries({ queryKey: ["billing-entities"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary" />
+            Empresas
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Administra las empresas que emiten facturas y documentos. La empresa marcada como
+            <strong className="text-foreground"> predeterminada </strong>
+            se selecciona automáticamente al crear una factura.
+          </p>
+        </div>
+        <Button onClick={() => setEditing({ ...EMPTY })}>
+          <Plus className="h-4 w-4 mr-2" /> Nueva empresa
+        </Button>
+      </div>
+
+      {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
+      {error && (
+        <p className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+          {(error as Error).message}
+        </p>
+      )}
+
+      {data && data.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center">
+          <Building2 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground mb-4">
+            Aún no tienes empresas registradas. Agrega la primera para poder facturar.
+          </p>
+          <Button onClick={() => setEditing({ ...EMPTY, is_default: true })}>
+            <Plus className="h-4 w-4 mr-2" /> Registrar empresa
+          </Button>
+        </div>
+      )}
+
+      {data && data.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {data.map((e) => (
+            <div
+              key={e.id}
+              className="rounded-lg border border-border bg-card p-5 space-y-3 hover:border-primary/40 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-base truncate">
+                      {e.nombre_comercial || e.razon_social}
+                    </h3>
+                    {e.is_default && (
+                      <Badge className="bg-primary/15 text-primary border-primary/30 gap-1">
+                        <Star className="h-3 w-3 fill-current" /> Predeterminada
+                      </Badge>
+                    )}
+                    {!e.active && (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Inactiva
+                      </Badge>
+                    )}
+                  </div>
+                  {e.nombre_comercial && (
+                    <p className="text-xs text-muted-foreground truncate">{e.razon_social}</p>
+                  )}
+                  <p className="text-xs font-mono text-muted-foreground mt-1">{e.rfc}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!e.is_default && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      title="Marcar como predeterminada"
+                      onClick={() => setDefault.mutate(e.id)}
+                    >
+                      <Star className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing(e)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      if (confirm(`¿Eliminar ${e.razon_social}?`)) remove.mutate(e.id);
+                    }}
+                    disabled={e.is_default}
+                    title={e.is_default ? "No puedes eliminar la predeterminada" : "Eliminar"}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                {e.regimen_fiscal && (
+                  <InfoRow icon={<Receipt className="h-3.5 w-3.5" />} label="Régimen" value={e.regimen_fiscal} />
+                )}
+                {e.cp_fiscal && (
+                  <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="C.P." value={e.cp_fiscal} />
+                )}
+                {e.direccion_fiscal && (
+                  <div className="col-span-2">
+                    <InfoRow icon={<MapPin className="h-3.5 w-3.5" />} label="Dirección" value={e.direccion_fiscal} />
+                  </div>
+                )}
+                {e.telefono && (
+                  <InfoRow icon={<Phone className="h-3.5 w-3.5" />} label="Teléfono" value={e.telefono} />
+                )}
+                {e.email_contacto && (
+                  <InfoRow icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={e.email_contacto} />
+                )}
+                {e.sitio_web && (
+                  <div className="col-span-2">
+                    <InfoRow icon={<Globe className="h-3.5 w-3.5" />} label="Web" value={e.sitio_web} />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {editing && (
+        <EmpresaDialog
+          value={editing}
+          onClose={() => setEditing(null)}
+          onSave={(v) => save.mutate(v)}
+          saving={save.isPending}
+        />
+      )}
+    </section>
+  );
+}
+
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2 text-muted-foreground">
+      <span className="mt-0.5 text-muted-foreground/70">{icon}</span>
+      <div className="min-w-0">
+        <span className="text-[10px] uppercase tracking-wider">{label}</span>
+        <p className="text-xs text-foreground truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function EmpresaDialog({
+  value, onClose, onSave, saving,
+}: {
+  value: Partial<Empresa>;
+  onClose: () => void;
+  onSave: (v: Partial<Empresa>) => void;
+  saving: boolean;
+}) {
+  const [v, setV] = useState<Partial<Empresa>>(value);
+  const set = <K extends keyof Empresa>(k: K, val: Empresa[K] | null) =>
+    setV((prev) => ({ ...prev, [k]: val as any }));
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{v.id ? "Editar empresa" : "Nueva empresa"}</DialogTitle>
+        </DialogHeader>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSave(v);
+          }}
+          className="space-y-6 pt-2"
+        >
+          <Section title="Datos fiscales">
+            <Field label="Razón social *" className="sm:col-span-2">
+              <Input
+                required
+                value={v.razon_social ?? ""}
+                onChange={(e) => set("razon_social", e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="Nombre comercial">
+              <Input
+                value={v.nombre_comercial ?? ""}
+                onChange={(e) => set("nombre_comercial", e.target.value)}
+              />
+            </Field>
+            <Field label="RFC *">
+              <Input
+                required
+                className="font-mono"
+                value={v.rfc ?? ""}
+                onChange={(e) => set("rfc", e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="Régimen fiscal">
+              <Input
+                placeholder="Ej: 601 General de Ley Personas Morales"
+                value={v.regimen_fiscal ?? ""}
+                onChange={(e) => set("regimen_fiscal", e.target.value)}
+              />
+            </Field>
+            <Field label="Uso CFDI predeterminado">
+              <Input
+                placeholder="Ej: G03 Gastos en general"
+                value={v.uso_cfdi_default ?? ""}
+                onChange={(e) => set("uso_cfdi_default", e.target.value)}
+              />
+            </Field>
+            <Field label="C.P. fiscal">
+              <Input
+                value={v.cp_fiscal ?? ""}
+                onChange={(e) => set("cp_fiscal", e.target.value)}
+              />
+            </Field>
+            <Field label="Lugar de expedición">
+              <Input
+                value={v.lugar_expedicion ?? ""}
+                onChange={(e) => set("lugar_expedicion", e.target.value)}
+              />
+            </Field>
+            <Field label="Dirección fiscal" className="sm:col-span-2">
+              <Textarea
+                rows={2}
+                value={v.direccion_fiscal ?? ""}
+                onChange={(e) => set("direccion_fiscal", e.target.value)}
+              />
+            </Field>
+            <Field label="Representante legal" className="sm:col-span-2">
+              <Input
+                value={v.representante_legal ?? ""}
+                onChange={(e) => set("representante_legal", e.target.value)}
+              />
+            </Field>
+          </Section>
+
+          <Section title="Contacto">
+            <Field label="Teléfono">
+              <Input value={v.telefono ?? ""} onChange={(e) => set("telefono", e.target.value)} />
+            </Field>
+            <Field label="Email">
+              <Input
+                type="email"
+                value={v.email_contacto ?? ""}
+                onChange={(e) => set("email_contacto", e.target.value)}
+              />
+            </Field>
+            <Field label="Sitio web" className="sm:col-span-2">
+              <Input
+                placeholder="https://…"
+                value={v.sitio_web ?? ""}
+                onChange={(e) => set("sitio_web", e.target.value)}
+              />
+            </Field>
+          </Section>
+
+          <Section title="Facturación">
+            <Field label="Serie factura (default)">
+              <Input
+                value={v.serie_factura_default ?? ""}
+                onChange={(e) => set("serie_factura_default", e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="Próximo folio">
+              <Input
+                type="number"
+                min={1}
+                value={v.folio_next ?? 1}
+                onChange={(e) => set("folio_next", Number(e.target.value) as any)}
+              />
+            </Field>
+            <Field label="Moneda">
+              <Input
+                value={v.moneda_default ?? "MXN"}
+                onChange={(e) => set("moneda_default", e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="IVA %">
+              <Input
+                type="number"
+                step="0.01"
+                value={v.iva_default ?? 16}
+                onChange={(e) => set("iva_default", Number(e.target.value) as any)}
+              />
+            </Field>
+          </Section>
+
+          <Section title="Branding">
+            <Field label="Logo (URL)" className="sm:col-span-2">
+              <Input
+                placeholder="https://…/logo.png"
+                value={v.logo_url ?? ""}
+                onChange={(e) => set("logo_url", e.target.value)}
+              />
+              {v.logo_url && (
+                <img
+                  src={v.logo_url}
+                  alt="Logo preview"
+                  className="mt-2 max-h-16 rounded border border-border object-contain bg-muted p-1"
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                />
+              )}
+            </Field>
+          </Section>
+
+          <div className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-muted/30 p-3">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Switch
+                checked={v.is_default ?? false}
+                onCheckedChange={(c) => set("is_default", c)}
+              />
+              Predeterminada para facturar
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Switch checked={v.active ?? true} onCheckedChange={(c) => set("active", c)} />
+              Activa
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-1">
+            <Button type="button" variant="outline" onClick={onClose}>
+              <X className="h-4 w-4 mr-1" /> Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              <Check className="h-4 w-4 mr-1" />
+              {saving ? "Guardando…" : "Guardar"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border pb-1">
+        {title}
+      </h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}
