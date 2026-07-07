@@ -274,6 +274,8 @@ function EmpresasPage() {
                   </div>
                 )}
               </div>
+
+              <EmpresaAlmacenes empresaId={e.id} />
             </div>
           ))}
         </div>
