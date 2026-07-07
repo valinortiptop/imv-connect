@@ -116,6 +116,33 @@ export default function Dashboard() {
   const topClientsData: any[] = rangeData.data?.top_clients ?? [];
   const topProductsData: any[] = rangeData.data?.top_products ?? [];
 
+  // Dashboard warehouse chips are labeled from the default empresa's almacenes
+  // (Configuración → Empresas). Falls back to generic "Almacén N" if no
+  // empresa/almacenes are configured yet. Keys stay stable so downstream
+  // partner-dashboard wiring (tamemes/gdl) is unchanged.
+  const almacenesEmpresa = useQuery({
+    queryKey: ["dashboard-almacenes"],
+    queryFn: async () => {
+      const { data: emp } = await supabase
+        .from("empresas" as any)
+        .select("id, is_default, nombre_comercial, razon_social")
+        .eq("active", true)
+        .order("is_default", { ascending: false })
+        .order("razon_social")
+        .limit(1);
+      const empresa: any = Array.isArray(emp) && emp.length > 0 ? emp[0] : null;
+      if (!empresa) return [] as { nombre: string; direccion: string | null }[];
+      const { data } = await supabase
+        .from("almacenes")
+        .select("nombre, direccion, principal")
+        .eq("empresa_id", empresa.id)
+        .eq("activo", true)
+        .order("principal", { ascending: false })
+        .order("nombre");
+      return (data ?? []) as { nombre: string; direccion: string | null }[];
+    },
+  });
+
   // Non-date-dependent queries (always current state)
   const openOrders = useQuery({
     queryKey: ["dashboard-open-orders"],
