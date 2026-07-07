@@ -1482,8 +1482,8 @@ export default function Clients() {
                   <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientPhone")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">{t("clientRep")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">Método de pago</TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">{t("clientRep")}</TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">Método de pago</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">{t("thActive")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap w-20">{t("thActions")}</TableHead>
                 </TableRow>
