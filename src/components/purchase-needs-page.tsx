@@ -20,6 +20,7 @@ import html2canvas from "html2canvas";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
 import { PurchaseOrderDialog } from "@/components/PurchaseOrderDialog";
+import { SuppliersImportDialog } from "@/components/SuppliersImportDialog";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { cn } from "@/lib/utils";
 
