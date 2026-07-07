@@ -445,6 +445,82 @@ export type Database = {
           },
         ]
       }
+      cuentas_contables: {
+        Row: {
+          activa: boolean
+          codigo: string
+          codigo_agrupador: string | null
+          created_at: string
+          descripcion: string | null
+          empresa_id: string
+          id: string
+          moneda: string
+          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel: number
+          nombre: string
+          padre_id: string | null
+          permite_movimientos: boolean
+          saldo_inicial: number
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          codigo: string
+          codigo_agrupador?: string | null
+          created_at?: string
+          descripcion?: string | null
+          empresa_id: string
+          id?: string
+          moneda?: string
+          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel: number
+          nombre: string
+          padre_id?: string | null
+          permite_movimientos?: boolean
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          codigo?: string
+          codigo_agrupador?: string | null
+          created_at?: string
+          descripcion?: string | null
+          empresa_id?: string
+          id?: string
+          moneda?: string
+          naturaleza?: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel?: number
+          nombre?: string
+          padre_id?: string | null
+          permite_movimientos?: boolean
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_contables_codigo_agrupador_fkey"
+            columns: ["codigo_agrupador"]
+            isOneToOne: false
+            referencedRelation: "sat_codigo_agrupador"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "cuentas_contables_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuentas_contables_padre_id_fkey"
+            columns: ["padre_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_contables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       damaged_batches: {
         Row: {
           bonificacion_pct: number | null
@@ -906,6 +982,7 @@ export type Database = {
           iva: number
           motivo: string | null
           notas: string | null
+          poliza_id: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -923,6 +1000,7 @@ export type Database = {
           iva?: number
           motivo?: string | null
           notas?: string | null
+          poliza_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -940,6 +1018,7 @@ export type Database = {
           iva?: number
           motivo?: string | null
           notas?: string | null
+          poliza_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -999,6 +1078,48 @@ export type Database = {
             columns: ["factura_id"]
             isOneToOne: false
             referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ejercicios_fiscales: {
+        Row: {
+          anio: number
+          cerrado: boolean
+          created_at: string
+          empresa_id: string
+          fecha_cierre: string | null
+          id: string
+        }
+        Insert: {
+          anio: number
+          cerrado?: boolean
+          created_at?: string
+          empresa_id: string
+          fecha_cierre?: string | null
+          id?: string
+        }
+        Update: {
+          anio?: number
+          cerrado?: boolean
+          created_at?: string
+          empresa_id?: string
+          fecha_cierre?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ejercicios_fiscales_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
         ]
@@ -1333,6 +1454,7 @@ export type Database = {
           notas: string | null
           pagado: number
           pedido_id: string | null
+          poliza_id: string | null
           representante_id: string | null
           saldo: number | null
           subtotal: number
@@ -1352,6 +1474,7 @@ export type Database = {
           notas?: string | null
           pagado?: number
           pedido_id?: string | null
+          poliza_id?: string | null
           representante_id?: string | null
           saldo?: number | null
           subtotal?: number
@@ -1371,6 +1494,7 @@ export type Database = {
           notas?: string | null
           pagado?: number
           pedido_id?: string | null
+          poliza_id?: string | null
           representante_id?: string | null
           saldo?: number | null
           subtotal?: number
@@ -1447,6 +1571,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_purchase_by_order"
             referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "facturas_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "facturas_representante_id_fkey"
@@ -2348,6 +2479,7 @@ export type Database = {
           iva: number
           laboratorio_id: string
           notas: string | null
+          poliza_id: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -2365,6 +2497,7 @@ export type Database = {
           iva?: number
           laboratorio_id: string
           notas?: string | null
+          poliza_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -2382,6 +2515,7 @@ export type Database = {
           iva?: number
           laboratorio_id?: string
           notas?: string | null
+          poliza_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -2428,6 +2562,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_stock_productos"
             referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "ordenes_compra_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2696,6 +2837,7 @@ export type Database = {
           metodo: Database["public"]["Enums"]["pago_metodo"]
           monto: number
           notas: string | null
+          poliza_id: string | null
           referencia: string | null
         }
         Insert: {
@@ -2707,6 +2849,7 @@ export type Database = {
           metodo?: Database["public"]["Enums"]["pago_metodo"]
           monto: number
           notas?: string | null
+          poliza_id?: string | null
           referencia?: string | null
         }
         Update: {
@@ -2718,6 +2861,7 @@ export type Database = {
           metodo?: Database["public"]["Enums"]["pago_metodo"]
           monto?: number
           notas?: string | null
+          poliza_id?: string | null
           referencia?: string | null
         }
         Relationships: [
@@ -2733,6 +2877,13 @@ export type Database = {
             columns: ["factura_id"]
             isOneToOne: false
             referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
             referencedColumns: ["id"]
           },
         ]
@@ -3266,6 +3417,51 @@ export type Database = {
           },
         ]
       }
+      periodos_contables: {
+        Row: {
+          anio: number
+          ejercicio_id: string
+          empresa_id: string
+          estado: Database["public"]["Enums"]["periodo_estado"]
+          fecha_envio: string | null
+          id: string
+          mes: number
+        }
+        Insert: {
+          anio: number
+          ejercicio_id: string
+          empresa_id: string
+          estado?: Database["public"]["Enums"]["periodo_estado"]
+          fecha_envio?: string | null
+          id?: string
+          mes: number
+        }
+        Update: {
+          anio?: number
+          ejercicio_id?: string
+          empresa_id?: string
+          estado?: Database["public"]["Enums"]["periodo_estado"]
+          fecha_envio?: string | null
+          id?: string
+          mes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodos_contables_ejercicio_id_fkey"
+            columns: ["ejercicio_id"]
+            isOneToOne: false
+            referencedRelation: "ejercicios_fiscales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodos_contables_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_routes: {
         Row: {
           active: boolean
@@ -3295,6 +3491,192 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      poliza_impuestos: {
+        Row: {
+          base: number
+          id: string
+          monto: number
+          notas: string | null
+          poliza_id: string
+          tasa: number
+          tipo: Database["public"]["Enums"]["impuesto_tipo"]
+          uuid_cfdi: string | null
+        }
+        Insert: {
+          base?: number
+          id?: string
+          monto?: number
+          notas?: string | null
+          poliza_id: string
+          tasa: number
+          tipo: Database["public"]["Enums"]["impuesto_tipo"]
+          uuid_cfdi?: string | null
+        }
+        Update: {
+          base?: number
+          id?: string
+          monto?: number
+          notas?: string | null
+          poliza_id?: string
+          tasa?: number
+          tipo?: Database["public"]["Enums"]["impuesto_tipo"]
+          uuid_cfdi?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poliza_impuestos_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poliza_movimientos: {
+        Row: {
+          abono: number
+          cargo: number
+          concepto: string | null
+          cuenta_id: string
+          devolucion_id: string | null
+          factura_id: string | null
+          id: string
+          oc_id: string | null
+          orden: number
+          pago_id: string | null
+          poliza_id: string
+          uuid_cfdi: string | null
+        }
+        Insert: {
+          abono?: number
+          cargo?: number
+          concepto?: string | null
+          cuenta_id: string
+          devolucion_id?: string | null
+          factura_id?: string | null
+          id?: string
+          oc_id?: string | null
+          orden?: number
+          pago_id?: string | null
+          poliza_id: string
+          uuid_cfdi?: string | null
+        }
+        Update: {
+          abono?: number
+          cargo?: number
+          concepto?: string | null
+          cuenta_id?: string
+          devolucion_id?: string | null
+          factura_id?: string | null
+          id?: string
+          oc_id?: string | null
+          orden?: number
+          pago_id?: string | null
+          poliza_id?: string
+          uuid_cfdi?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poliza_movimientos_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_contables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poliza_movimientos_poliza_id_fkey"
+            columns: ["poliza_id"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polizas: {
+        Row: {
+          cancelada_por: string | null
+          concepto: string
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          estado: Database["public"]["Enums"]["poliza_estado"]
+          fecha: string
+          folio: string
+          id: string
+          origen: string | null
+          origen_id: string | null
+          periodo_id: string | null
+          posted_at: string | null
+          posted_by: string | null
+          tipo: Database["public"]["Enums"]["poliza_tipo"]
+          total_abonos: number
+          total_cargos: number
+          updated_at: string
+        }
+        Insert: {
+          cancelada_por?: string | null
+          concepto?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          estado?: Database["public"]["Enums"]["poliza_estado"]
+          fecha?: string
+          folio: string
+          id?: string
+          origen?: string | null
+          origen_id?: string | null
+          periodo_id?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          tipo: Database["public"]["Enums"]["poliza_tipo"]
+          total_abonos?: number
+          total_cargos?: number
+          updated_at?: string
+        }
+        Update: {
+          cancelada_por?: string | null
+          concepto?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          estado?: Database["public"]["Enums"]["poliza_estado"]
+          fecha?: string
+          folio?: string
+          id?: string
+          origen?: string | null
+          origen_id?: string | null
+          periodo_id?: string | null
+          posted_at?: string | null
+          posted_by?: string | null
+          tipo?: Database["public"]["Enums"]["poliza_tipo"]
+          total_abonos?: number
+          total_cargos?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polizas_cancelada_por_fkey"
+            columns: ["cancelada_por"]
+            isOneToOne: false
+            referencedRelation: "polizas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "polizas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "polizas_periodo_id_fkey"
+            columns: ["periodo_id"]
+            isOneToOne: false
+            referencedRelation: "periodos_contables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       precios_cliente: {
         Row: {
@@ -4013,6 +4395,47 @@ export type Database = {
         }
         Relationships: []
       }
+      reportes_personalizados: {
+        Row: {
+          configuracion: Json
+          created_at: string
+          created_by: string | null
+          descripcion: string | null
+          empresa_id: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          configuracion?: Json
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          empresa_id: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          configuracion?: Json
+          created_at?: string
+          created_by?: string | null
+          descripcion?: string | null
+          empresa_id?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportes_personalizados_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       representantes: {
         Row: {
           activo: boolean
@@ -4086,6 +4509,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "permission_routes"
             referencedColumns: ["route_key"]
+          },
+        ]
+      }
+      sat_codigo_agrupador: {
+        Row: {
+          codigo: string
+          created_at: string
+          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel: number
+          nombre: string
+          padre: string | null
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel: number
+          nombre: string
+          padre?: string | null
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          naturaleza?: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel?: number
+          nombre?: string
+          padre?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sat_codigo_agrupador_padre_fkey"
+            columns: ["padre"]
+            isOneToOne: false
+            referencedRelation: "sat_codigo_agrupador"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -6123,6 +6581,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      balanza_de_comprobacion: {
+        Args: { _desde: string; _empresa: string; _hasta: string }
+        Returns: {
+          abonos: number
+          cargos: number
+          codigo: string
+          codigo_agrupador: string
+          cuenta_id: string
+          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+          nivel: number
+          nombre: string
+          saldo_final: number
+          saldo_inicial: number
+        }[]
+      }
       bootstrap_admin: { Args: never; Returns: undefined }
       crear_factura_desde_pedido: {
         Args: {
@@ -6221,6 +6694,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      iva_ieps_saldos: {
+        Args: { _empresa: string; _hasta: string }
+        Returns: {
+          base: number
+          monto: number
+          tasa: number
+          tipo: Database["public"]["Enums"]["impuesto_tipo"]
+        }[]
+      }
+      libro_mayor_cuenta: {
+        Args: { _cuenta: string; _desde: string; _hasta: string }
+        Returns: {
+          abono: number
+          cargo: number
+          concepto: string
+          fecha: string
+          folio: string
+          poliza_id: string
+          saldo: number
+          tipo: Database["public"]["Enums"]["poliza_tipo"]
+          uuid_cfdi: string
+        }[]
+      }
       listar_usuarios: {
         Args: never
         Returns: {
@@ -6232,6 +6728,7 @@ export type Database = {
         }[]
       }
       oc_recalc_totales: { Args: { _oc: string }; Returns: undefined }
+      polizas_recalc: { Args: { _poliza: string }; Returns: undefined }
       recibir_oc: { Args: { _items: Json; _oc: string }; Returns: undefined }
       remover_rol: {
         Args: {
@@ -6248,6 +6745,7 @@ export type Database = {
           updated: number
         }[]
       }
+      seed_cuentas_empresa: { Args: { _empresa: string }; Returns: undefined }
     }
     Enums: {
       app_role:
@@ -6258,6 +6756,7 @@ export type Database = {
         | "logistica"
         | "contabilidad"
         | "viewer"
+      cta_naturaleza: "deudora" | "acreedora"
       devolucion_estado: "borrador" | "aplicada" | "cancelada"
       factura_estado:
         | "borrador"
@@ -6265,6 +6764,17 @@ export type Database = {
         | "parcial"
         | "pagada"
         | "cancelada"
+      impuesto_tipo:
+        | "iva_trasladado_cobrado"
+        | "iva_trasladado_pendiente"
+        | "iva_acreditable_pagado"
+        | "iva_acreditable_pendiente"
+        | "ieps_trasladado_cobrado"
+        | "ieps_trasladado_pendiente"
+        | "ieps_acreditable_pagado"
+        | "ieps_acreditable_pendiente"
+        | "ret_isr"
+        | "ret_iva"
       movimiento_tipo: "entrada" | "salida" | "ajuste" | "venta" | "devolucion"
       oc_estado: "borrador" | "enviada" | "parcial" | "recibida" | "cancelada"
       onboarding_categoria:
@@ -6294,6 +6804,9 @@ export type Database = {
         | "En ruta"
         | "Entregado"
         | "Cancelado"
+      periodo_estado: "abierto" | "cerrado" | "enviado_sat"
+      poliza_estado: "borrador" | "asentada" | "cancelada"
+      poliza_tipo: "ingreso" | "egreso" | "diario"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6430,8 +6943,21 @@ export const Constants = {
         "contabilidad",
         "viewer",
       ],
+      cta_naturaleza: ["deudora", "acreedora"],
       devolucion_estado: ["borrador", "aplicada", "cancelada"],
       factura_estado: ["borrador", "emitida", "parcial", "pagada", "cancelada"],
+      impuesto_tipo: [
+        "iva_trasladado_cobrado",
+        "iva_trasladado_pendiente",
+        "iva_acreditable_pagado",
+        "iva_acreditable_pendiente",
+        "ieps_trasladado_cobrado",
+        "ieps_trasladado_pendiente",
+        "ieps_acreditable_pagado",
+        "ieps_acreditable_pendiente",
+        "ret_isr",
+        "ret_iva",
+      ],
       movimiento_tipo: ["entrada", "salida", "ajuste", "venta", "devolucion"],
       oc_estado: ["borrador", "enviada", "parcial", "recibida", "cancelada"],
       onboarding_categoria: [
@@ -6463,6 +6989,9 @@ export const Constants = {
         "Entregado",
         "Cancelado",
       ],
+      periodo_estado: ["abierto", "cerrado", "enviado_sat"],
+      poliza_estado: ["borrador", "asentada", "cancelada"],
+      poliza_tipo: ["ingreso", "egreso", "diario"],
     },
   },
 } as const

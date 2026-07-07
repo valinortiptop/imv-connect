@@ -4,6 +4,7 @@ import {
   ClipboardList, Settings, Truck, Tag, TrendingUp, Route as RouteIcon, BookOpen,
   Bot, FileText, Link2, BarChart3, ChevronDown, LogOut, CheckSquare,
   AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
+  Calculator as CalcIcon, BookText, Scale, Receipt, Landmark, ShieldCheck, PieChart, ScrollText,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,21 @@ const navGroups: NavGroup[] = [
       { key: "navManiobra",    label: "Maniobra",   url: "/admin/maniobra",   icon: Package },
       { key: "navCatalogo",    label: "Catálogo",   url: "/admin/catalogo",   icon: BookOpen },
       { key: "navDocuments",   label: "Documentos", url: "/admin/documentos", icon: FileText },
+    ],
+  },
+  {
+    label: "Contabilidad",
+    items: [
+      { key: "navContaDash",    label: "Dashboard fiscal",    url: "/admin/contabilidad",              icon: Landmark, exact: true },
+      { key: "navContaCuentas", label: "Catálogo de cuentas", url: "/admin/contabilidad/cuentas",      icon: BookText },
+      { key: "navContaPolizas", label: "Pólizas",             url: "/admin/contabilidad/polizas",      icon: ScrollText },
+      { key: "navContaDiario",  label: "Libro diario",        url: "/admin/contabilidad/diario",       icon: BookOpen },
+      { key: "navContaMayor",   label: "Libro mayor",         url: "/admin/contabilidad/mayor",        icon: BookText },
+      { key: "navContaBalanza", label: "Balanza",             url: "/admin/contabilidad/balanza",      icon: Scale },
+      { key: "navContaEstados", label: "Estados financieros", url: "/admin/contabilidad/estados",      icon: PieChart },
+      { key: "navContaIVA",     label: "IVA / IEPS",          url: "/admin/contabilidad/impuestos",    icon: Receipt },
+      { key: "navContaFact",    label: "Facturas contables",  url: "/admin/contabilidad/facturas",     icon: FileText },
+      { key: "navContaSAT",     label: "Cumplimiento SAT",    url: "/admin/contabilidad/sat",          icon: ShieldCheck },
     ],
   },
   {
