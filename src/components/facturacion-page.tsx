@@ -271,6 +271,67 @@ export default function Facturacion() {
     setLines(prev => prev.filter((_, i) => i !== idx));
   };
 
+  /* ── Crear factura y timbrar CFDI vía Facturapi ── */
+  const crearYTimbrar = useMutation({
+    mutationFn: async () => {
+      if (!selectedClient) throw new Error("Selecciona un cliente");
+      if (!activeEntity) throw new Error("Selecciona la empresa que factura");
+      if (lines.length === 0) throw new Error("La factura no tiene conceptos");
+      if (!selectedClient.rfc) throw new Error("El cliente no tiene RFC");
+      if (!selectedClient.codigo_postal) throw new Error("El cliente no tiene código postal fiscal");
+
+      const subtotalCalc = lines.reduce((s, l) => s + l.valor_unitario * l.cantidad, 0);
+      const ivaCalc = subtotalCalc * 0.16;
+      const totalCalc = subtotalCalc + ivaCalc;
+
+      // 1) Insertar factura
+      const { data: fRow, error: fErr } = await supabase
+        .from("facturas")
+        .insert({
+          cliente_id: selectedClient.id,
+          pedido_id: selectedOrderId || null,
+          empresa_id: activeEntity.id,
+          subtotal: Math.round(subtotalCalc * 100) / 100,
+          iva: Math.round(ivaCalc * 100) / 100,
+          total: Math.round(totalCalc * 100) / 100,
+          cfdi_use: selectedClient.uso_cfdi || "G03",
+          payment_form: selectedClient.payment_method || "99",
+          payment_method: (selectedClient.metodo_pago as any) || "PUE",
+        } as any)
+        .select("id")
+        .single();
+      if (fErr) throw fErr;
+      const facturaId = (fRow as any).id as string;
+
+      // 2) Insertar factura_items
+      const items = lines.map((l) => ({
+        factura_id: facturaId,
+        nombre_snapshot: l.descripcion,
+        sku_snapshot: l.modelo || null,
+        unidad_snapshot: l.clave_unidad || "Pieza",
+        cantidad: l.cantidad,
+        precio_unitario: Math.round(l.valor_unitario * 100) / 100,
+        iva_pct: 0.16,
+        importe: Math.round(l.valor_unitario * l.cantidad * 100) / 100,
+      }));
+      const { error: iErr } = await supabase.from("factura_items").insert(items as any);
+      if (iErr) throw iErr;
+
+      // 3) Timbrar con Facturapi
+      await stampFn({ data: { facturaId } });
+      return facturaId;
+    },
+    onSuccess: (facturaId) => {
+      toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
+      queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      navigate(`/admin/facturas/${facturaId}`);
+    },
+    onError: (err: any) => {
+      toast({ title: "No se pudo timbrar", description: err.message ?? String(err), variant: "destructive" });
+    },
+  });
+
+
   /* ── download Excel ── */
   const downloadInvoiceExcel = () => {
     if (!selectedClient || lines.length === 0) return;
