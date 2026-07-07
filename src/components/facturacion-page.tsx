@@ -115,6 +115,8 @@ const fmtCurrency = (n: number) =>
 export default function Facturacion() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const stampFn = useServerFn(stampInvoiceFn);
 
   /* ── state ── */
   // Mayoreo / Menudeo / Todos — filters the client picker dropdown.
