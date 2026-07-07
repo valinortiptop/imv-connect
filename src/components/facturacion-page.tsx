@@ -726,16 +726,28 @@ export default function Facturacion() {
             <div className="lg:col-span-2">
               <GlowCard>
                 <div className="p-4 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <h3 className="text-sm font-semibold">Conceptos de Factura</h3>
-                    <Button
-                      onClick={downloadInvoiceExcel}
-                      disabled={lines.length === 0}
-                      size="sm"
-                    >
-                      <Download className="h-4 w-4 mr-1.5" /> Descargar Excel
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={downloadInvoiceExcel}
+                        disabled={lines.length === 0}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Download className="h-4 w-4 mr-1.5" /> Descargar Excel
+                      </Button>
+                      <Button
+                        onClick={() => crearYTimbrar.mutate()}
+                        disabled={lines.length === 0 || crearYTimbrar.isPending || !activeEntity}
+                        size="sm"
+                      >
+                        <Stamp className="h-4 w-4 mr-1.5" />
+                        {crearYTimbrar.isPending ? "Timbrando…" : "Timbrar CFDI"}
+                      </Button>
+                    </div>
                   </div>
+
 
                   {lines.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground text-sm">
