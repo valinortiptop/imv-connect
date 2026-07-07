@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Calculator, ShoppingCart, Users, Package, Warehouse,
   ClipboardList, Settings, Truck, Tag, TrendingUp, Route as RouteIcon, BookOpen,
   Bot, FileText, Link2, BarChart3, ChevronDown, LogOut, CheckSquare,
-  AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge,
+  AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
