@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Building2, Plus, Star, Pencil, Trash2, Check, X,
   Mail, Phone, Globe, MapPin, Receipt, Warehouse,
+  Upload, FileText, Sparkles, Image as ImageIcon, Type,
+  FileSignature, Loader2, Download, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  parseCsfDocumentFn,
+  uploadEmpresaDocFn,
+  listEmpresaDocsFn,
+  deleteEmpresaDocFn,
+} from "@/lib/empresa-docs.functions";
+
 
 export const Route = createFileRoute("/admin/empresas")({
   head: () => ({
@@ -314,6 +325,7 @@ function EmpresaDialog({
   saving: boolean;
 }) {
   const [v, setV] = useState<Partial<Empresa>>(value);
+  const [tab, setTab] = useState<string>("datos");
   const set = <K extends keyof Empresa>(k: K, val: Empresa[K] | null) =>
     setV((prev) => ({ ...prev, [k]: val as any }));
 
@@ -324,173 +336,218 @@ function EmpresaDialog({
           <DialogTitle>{v.id ? "Editar empresa" : "Nueva empresa"}</DialogTitle>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave(v);
-          }}
-          className="space-y-6 pt-2"
-        >
-          <Section title="Datos fiscales">
-            <Field label="Razón social *" className="sm:col-span-2">
-              <Input
-                required
-                value={v.razon_social ?? ""}
-                onChange={(e) => set("razon_social", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Nombre comercial">
-              <Input
-                value={v.nombre_comercial ?? ""}
-                onChange={(e) => set("nombre_comercial", e.target.value)}
-              />
-            </Field>
-            <Field label="RFC *">
-              <Input
-                required
-                className="font-mono"
-                value={v.rfc ?? ""}
-                onChange={(e) => set("rfc", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Régimen fiscal">
-              <Input
-                placeholder="Ej: 601 General de Ley Personas Morales"
-                value={v.regimen_fiscal ?? ""}
-                onChange={(e) => set("regimen_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Uso CFDI predeterminado">
-              <Input
-                placeholder="Ej: G03 Gastos en general"
-                value={v.uso_cfdi_default ?? ""}
-                onChange={(e) => set("uso_cfdi_default", e.target.value)}
-              />
-            </Field>
-            <Field label="C.P. fiscal">
-              <Input
-                value={v.cp_fiscal ?? ""}
-                onChange={(e) => set("cp_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Lugar de expedición">
-              <Input
-                value={v.lugar_expedicion ?? ""}
-                onChange={(e) => set("lugar_expedicion", e.target.value)}
-              />
-            </Field>
-            <Field label="Dirección fiscal" className="sm:col-span-2">
-              <Textarea
-                rows={2}
-                value={v.direccion_fiscal ?? ""}
-                onChange={(e) => set("direccion_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Representante legal" className="sm:col-span-2">
-              <Input
-                value={v.representante_legal ?? ""}
-                onChange={(e) => set("representante_legal", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Contacto">
-            <Field label="Teléfono">
-              <Input value={v.telefono ?? ""} onChange={(e) => set("telefono", e.target.value)} />
-            </Field>
-            <Field label="Email">
-              <Input
-                type="email"
-                value={v.email_contacto ?? ""}
-                onChange={(e) => set("email_contacto", e.target.value)}
-              />
-            </Field>
-            <Field label="Sitio web" className="sm:col-span-2">
-              <Input
-                placeholder="https://…"
-                value={v.sitio_web ?? ""}
-                onChange={(e) => set("sitio_web", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Facturación">
-            <Field label="Serie factura (default)">
-              <Input
-                value={v.serie_factura_default ?? ""}
-                onChange={(e) => set("serie_factura_default", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Próximo folio">
-              <Input
-                type="number"
-                min={1}
-                value={v.folio_next ?? 1}
-                onChange={(e) => set("folio_next", Number(e.target.value) as any)}
-              />
-            </Field>
-            <Field label="Moneda">
-              <Input
-                value={v.moneda_default ?? "MXN"}
-                onChange={(e) => set("moneda_default", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="IVA %">
-              <Input
-                type="number"
-                step="0.01"
-                value={v.iva_default ?? 16}
-                onChange={(e) => set("iva_default", Number(e.target.value) as any)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Branding">
-            <Field label="Logo (URL)" className="sm:col-span-2">
-              <Input
-                placeholder="https://…/logo.png"
-                value={v.logo_url ?? ""}
-                onChange={(e) => set("logo_url", e.target.value)}
-              />
-              {v.logo_url && (
-                <img
-                  src={v.logo_url}
-                  alt="Logo preview"
-                  className="mt-2 max-h-16 rounded border border-border object-contain bg-muted p-1"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                />
+        <Tabs value={tab} onValueChange={setTab} className="pt-2">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="datos">Datos</TabsTrigger>
+            <TabsTrigger value="documentos" disabled={!v.id}>
+              Documentos
+              {!v.id && (
+                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  (guarda primero)
+                </span>
               )}
-            </Field>
-          </Section>
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-muted/30 p-3">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Switch
-                checked={v.is_default ?? false}
-                onCheckedChange={(c) => set("is_default", c)}
-              />
-              Predeterminada para facturar
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Switch checked={v.active ?? true} onCheckedChange={(c) => set("active", c)} />
-              Activa
-            </label>
-          </div>
+          <TabsContent value="datos" className="mt-4">
+            <CsfImportRow
+              onExtracted={(x) => {
+                setV((prev) => ({
+                  ...prev,
+                  razon_social: x.razon_social ?? prev.razon_social,
+                  nombre_comercial: x.nombre_comercial ?? prev.nombre_comercial,
+                  rfc: x.rfc ?? prev.rfc,
+                  regimen_fiscal: x.regimen_fiscal ?? prev.regimen_fiscal,
+                  cp_fiscal: x.cp_fiscal ?? prev.cp_fiscal,
+                  direccion_fiscal: x.direccion_fiscal ?? prev.direccion_fiscal,
+                  representante_legal:
+                    x.representante_legal ?? prev.representante_legal,
+                  telefono: x.telefono ?? prev.telefono,
+                  email_contacto: x.email_contacto ?? prev.email_contacto,
+                }));
+              }}
+            />
 
-          <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-1">
-            <Button type="button" variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-1" /> Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              <Check className="h-4 w-4 mr-1" />
-              {saving ? "Guardando…" : "Guardar"}
-            </Button>
-          </div>
-        </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSave(v);
+              }}
+              className="space-y-6 pt-4"
+            >
+              <Section title="Datos fiscales">
+                <Field label="Razón social *" className="sm:col-span-2">
+                  <Input
+                    required
+                    value={v.razon_social ?? ""}
+                    onChange={(e) => set("razon_social", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Nombre comercial">
+                  <Input
+                    value={v.nombre_comercial ?? ""}
+                    onChange={(e) => set("nombre_comercial", e.target.value)}
+                  />
+                </Field>
+                <Field label="RFC *">
+                  <Input
+                    required
+                    className="font-mono"
+                    value={v.rfc ?? ""}
+                    onChange={(e) => set("rfc", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Régimen fiscal">
+                  <Input
+                    placeholder="Ej: 601 General de Ley Personas Morales"
+                    value={v.regimen_fiscal ?? ""}
+                    onChange={(e) => set("regimen_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Uso CFDI predeterminado">
+                  <Input
+                    placeholder="Ej: G03 Gastos en general"
+                    value={v.uso_cfdi_default ?? ""}
+                    onChange={(e) => set("uso_cfdi_default", e.target.value)}
+                  />
+                </Field>
+                <Field label="C.P. fiscal">
+                  <Input
+                    value={v.cp_fiscal ?? ""}
+                    onChange={(e) => set("cp_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Lugar de expedición">
+                  <Input
+                    value={v.lugar_expedicion ?? ""}
+                    onChange={(e) => set("lugar_expedicion", e.target.value)}
+                  />
+                </Field>
+                <Field label="Dirección fiscal" className="sm:col-span-2">
+                  <Textarea
+                    rows={2}
+                    value={v.direccion_fiscal ?? ""}
+                    onChange={(e) => set("direccion_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Representante legal" className="sm:col-span-2">
+                  <Input
+                    value={v.representante_legal ?? ""}
+                    onChange={(e) => set("representante_legal", e.target.value)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Contacto">
+                <Field label="Teléfono">
+                  <Input value={v.telefono ?? ""} onChange={(e) => set("telefono", e.target.value)} />
+                </Field>
+                <Field label="Email">
+                  <Input
+                    type="email"
+                    value={v.email_contacto ?? ""}
+                    onChange={(e) => set("email_contacto", e.target.value)}
+                  />
+                </Field>
+                <Field label="Sitio web" className="sm:col-span-2">
+                  <Input
+                    placeholder="https://…"
+                    value={v.sitio_web ?? ""}
+                    onChange={(e) => set("sitio_web", e.target.value)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Facturación">
+                <Field label="Serie factura (default)">
+                  <Input
+                    value={v.serie_factura_default ?? ""}
+                    onChange={(e) => set("serie_factura_default", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Próximo folio">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={v.folio_next ?? 1}
+                    onChange={(e) => set("folio_next", Number(e.target.value) as any)}
+                  />
+                </Field>
+                <Field label="Moneda">
+                  <Input
+                    value={v.moneda_default ?? "MXN"}
+                    onChange={(e) => set("moneda_default", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="IVA %">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={v.iva_default ?? 16}
+                    onChange={(e) => set("iva_default", Number(e.target.value) as any)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Branding">
+                <Field label="Logo (URL)" className="sm:col-span-2">
+                  <Input
+                    placeholder="https://…/logo.png"
+                    value={v.logo_url ?? ""}
+                    onChange={(e) => set("logo_url", e.target.value)}
+                  />
+                  {v.logo_url && (
+                    <img
+                      src={v.logo_url}
+                      alt="Logo preview"
+                      className="mt-2 max-h-16 rounded border border-border object-contain bg-muted p-1"
+                      onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                    />
+                  )}
+                </Field>
+              </Section>
+
+              <div className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-muted/30 p-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Switch
+                    checked={v.is_default ?? false}
+                    onCheckedChange={(c) => set("is_default", c)}
+                  />
+                  Predeterminada para facturar
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Switch checked={v.active ?? true} onCheckedChange={(c) => set("active", c)} />
+                  Activa
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-1">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  <X className="h-4 w-4 mr-1" /> Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  <Check className="h-4 w-4 mr-1" />
+                  {saving ? "Guardando…" : "Guardar"}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="documentos" className="mt-4">
+            {v.id ? (
+              <EmpresaDocumentos empresaId={v.id} />
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Guarda la empresa para poder subir documentos.
+              </p>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -699,6 +756,373 @@ function EmpresaAlmacenes({ empresaId }: { empresaId: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// CSF import row (autofill Datos tab from a Constancia)
+// ─────────────────────────────────────────────────────────────
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(
+      ...bytes.subarray(i, Math.min(i + chunk, bytes.length)),
+    );
+  }
+  return btoa(binary);
+}
+
+function CsfImportRow({
+  onExtracted,
+}: {
+  onExtracted: (x: any) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const parseCsf = useServerFn(parseCsfDocumentFn);
+
+  const handle = async (file: File) => {
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("El archivo excede 15 MB.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await parseCsf({
+        data: { filename: file.name, mime: file.type || "application/pdf", base64 },
+      });
+      if (!res.extracted) {
+        toast.error("No pude extraer datos del documento.");
+        return;
+      }
+      onExtracted(res.extracted);
+      toast.success(
+        `Datos extraídos${
+          res.extracted.confianza
+            ? ` (confianza ${Math.round(res.extracted.confianza * 100)}%)`
+            : ""
+        }. Revisa antes de guardar.`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message || "Error al analizar el documento.");
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
+      <div className="flex items-start gap-3">
+        <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Importar desde Constancia de Situación Fiscal</p>
+          <p className="text-xs text-muted-foreground">
+            Sube el PDF (o foto) de la CSF y la IA autocompleta RFC, razón social,
+            régimen fiscal, dirección y más.
+          </p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handle(f);
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => inputRef.current?.click()}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analizando…
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-1" /> Subir CSF
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Documentos tab
+// ─────────────────────────────────────────────────────────────
+
+type EmpresaDoc = {
+  id: string;
+  empresa_id: string;
+  storage_path: string;
+  filename: string;
+  mime: string | null;
+  size_bytes: number | null;
+  categoria: string;
+  etiquetas: string[];
+  resumen: string | null;
+  ai_analyzed: boolean;
+  created_at: string;
+  signed_url: string | null;
+};
+
+const CAT_LABEL: Record<string, string> = {
+  logo: "Logo",
+  fuente: "Fuente",
+  csf: "CSF",
+  fiscal: "Fiscal",
+  legal: "Legal",
+  contrato: "Contrato",
+  branding: "Branding",
+  comprobante: "Comprobante",
+  general: "General",
+  otro: "Otro",
+};
+
+function CategoriaIcon({ categoria }: { categoria: string }) {
+  const cls = "h-4 w-4";
+  switch (categoria) {
+    case "logo": return <ImageIcon className={cls} />;
+    case "fuente": return <Type className={cls} />;
+    case "csf":
+    case "fiscal": return <Receipt className={cls} />;
+    case "legal":
+    case "contrato": return <FileSignature className={cls} />;
+    default: return <FileText className={cls} />;
+  }
+}
+
+function formatBytes(n: number | null) {
+  if (!n) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function EmpresaDocumentos({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const uploadDoc = useServerFn(uploadEmpresaDocFn);
+  const listDocs = useServerFn(listEmpresaDocsFn);
+  const deleteDoc = useServerFn(deleteEmpresaDocFn);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["empresa-docs", empresaId],
+    queryFn: async () => {
+      const res = await listDocs({ data: { empresa_id: empresaId } });
+      return res.documents as EmpresaDoc[];
+    },
+  });
+
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["empresa-docs", empresaId] });
+
+  const handleUpload = async (file: File) => {
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("El archivo excede 20 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await uploadDoc({
+        data: {
+          empresa_id: empresaId,
+          filename: file.name,
+          mime: file.type || "application/octet-stream",
+          base64,
+          size_bytes: file.size,
+        },
+      });
+      const cat = (res.document as any)?.categoria ?? "general";
+      toast.success(
+        `Documento subido${
+          (res.document as any)?.ai_analyzed
+            ? ` — categorizado como “${CAT_LABEL[cat] ?? cat}”`
+            : ""
+        }.`,
+      );
+      invalidate();
+    } catch (e) {
+      toast.error((e as Error).message || "Error al subir.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const onDelete = async (d: EmpresaDoc) => {
+    if (!confirm(`¿Eliminar ${d.filename}?`)) return;
+    try {
+      await deleteDoc({ data: { id: d.id } });
+      toast.success("Documento eliminado");
+      invalidate();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const groups = (data ?? []).reduce<Record<string, EmpresaDoc[]>>((acc, d) => {
+    (acc[d.categoria] ??= []).push(d);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center gap-3">
+        <Sparkles className="h-5 w-5 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Sube documentos de la empresa</p>
+          <p className="text-xs text-muted-foreground">
+            La IA los clasifica en logo, fuente, CSF, fiscal, legal, contrato,
+            branding, etc.
+          </p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleUpload(f);
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Subiendo…
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-1" /> Subir
+            </>
+          )}
+        </Button>
+      </div>
+
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">Cargando documentos…</p>
+      )}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
+      {data && data.length === 0 && !isLoading && (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          Aún no hay documentos.
+        </p>
+      )}
+
+      {Object.entries(groups).map(([cat, docs]) => (
+        <div key={cat} className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <CategoriaIcon categoria={cat} />
+            {CAT_LABEL[cat] ?? cat}
+            <span className="text-muted-foreground/60">({docs.length})</span>
+          </div>
+          <ul className="space-y-1.5">
+            {docs.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-start gap-3 rounded border border-border bg-card p-2.5"
+              >
+                {d.mime?.startsWith("image/") && d.signed_url ? (
+                  <img
+                    src={d.signed_url}
+                    alt={d.filename}
+                    className="h-12 w-12 rounded object-contain bg-muted shrink-0"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded bg-muted grid place-items-center shrink-0">
+                    <CategoriaIcon categoria={d.categoria} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium truncate">{d.filename}</span>
+                    {d.ai_analyzed && (
+                      <Badge variant="outline" className="h-4 px-1.5 text-[10px] gap-1">
+                        <Sparkles className="h-2.5 w-2.5" /> IA
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span>{formatBytes(d.size_bytes)}</span>
+                    <span>·</span>
+                    <span>{new Date(d.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {d.resumen && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {d.resumen}
+                    </p>
+                  )}
+                  {d.etiquetas?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {d.etiquetas.slice(0, 6).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {d.signed_url && (
+                    <a
+                      href={d.signed_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground"
+                      title="Abrir"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
+                  {d.signed_url && (
+                    <a
+                      href={d.signed_url}
+                      download={d.filename}
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground"
+                      title="Descargar"
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
+                    onClick={() => onDelete(d)}
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
