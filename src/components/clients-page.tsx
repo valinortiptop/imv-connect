@@ -1525,14 +1525,14 @@ export default function Clients() {
                               : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                           </Button>
                         </TableCell>
-                        <TableCell className="text-foreground font-medium">
-                          <div className="flex items-center gap-2">
+                        <TableCell className="text-foreground font-medium align-top">
+                          <div className="flex items-start gap-2 flex-wrap">
                             <ClientTypeBadge
                               type={c.client_type}
                               invisible={typeFilter !== "todos"}
                             />
                             <span
-                              className="truncate hover:underline hover:text-primary transition-colors"
+                              className="whitespace-normal break-words hover:underline hover:text-primary transition-colors"
                               title="Abrir vista 360"
                             >
                               {stripVmPrefix(c.name) || c.name}
