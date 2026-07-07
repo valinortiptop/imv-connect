@@ -1482,8 +1482,8 @@ export default function Clients() {
                   <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientPhone")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">{t("clientRep")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden lg:table-cell">Método de pago</TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">{t("clientRep")}</TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">Método de pago</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">{t("thActive")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap w-20">{t("thActions")}</TableHead>
                 </TableRow>
@@ -1525,14 +1525,14 @@ export default function Clients() {
                               : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                           </Button>
                         </TableCell>
-                        <TableCell className="text-foreground font-medium">
-                          <div className="flex items-center gap-2">
+                        <TableCell className="text-foreground font-medium align-top">
+                          <div className="flex items-start gap-2 flex-wrap">
                             <ClientTypeBadge
                               type={c.client_type}
                               invisible={typeFilter !== "todos"}
                             />
                             <span
-                              className="truncate hover:underline hover:text-primary transition-colors"
+                              className="whitespace-normal break-words hover:underline hover:text-primary transition-colors"
                               title="Abrir vista 360"
                             >
                               {stripVmPrefix(c.name) || c.name}
@@ -1558,7 +1558,7 @@ export default function Clients() {
 
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{c.representante_nombre ?? "---"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">{c.representante_nombre ?? "---"}</TableCell>
                         <TableCell className="text-sm hidden lg:table-cell">
                           <Badge className={cn("text-xs",
                             c.payment_method === "Efectivo" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
