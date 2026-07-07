@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  stampInvoiceFn,
+  cancelInvoiceFn,
+  downloadInvoiceFn,
+  sendInvoiceEmailFn,
+} from "@/lib/facturapi.functions";
 
 export const Route = createFileRoute("/admin/facturas/$id")({
   component: FacturaDetalle,
@@ -43,6 +50,12 @@ type Factura = {
   estado: Estado;
   notas: string | null;
   pedido_id: string | null;
+  facturapi_id: string | null;
+  uuid_fiscal: string | null;
+  serie: string | null;
+  pdf_url: string | null;
+  xml_url: string | null;
+  cfdi_status: string | null;
   cliente: { id: string; razon_social: string; nombre_comercial: string | null; rfc: string | null; email: string | null } | null;
   representante: { nombre: string } | null;
   factura_items: Item[];
@@ -65,7 +78,7 @@ function FacturaDetalle() {
       const { data, error } = await supabase
         .from("facturas")
         .select(
-          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email), representante:representantes(nombre), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe), pagos(id, fecha, monto, metodo, referencia, notas)",
+          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, facturapi_id, uuid_fiscal, serie, pdf_url, xml_url, cfdi_status, cliente:clientes(id, razon_social, nombre_comercial, rfc, email), representante:representantes(nombre), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe), pagos(id, fecha, monto, metodo, referencia, notas)",
         )
         .eq("id", id)
         .single();
@@ -124,6 +137,55 @@ function FacturaDetalle() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const stampFn = useServerFn(stampInvoiceFn);
+  const cancelCfdiFn = useServerFn(cancelInvoiceFn);
+  const downloadFn = useServerFn(downloadInvoiceFn);
+  const emailFn = useServerFn(sendInvoiceEmailFn);
+
+  const timbrar = useMutation({
+    mutationFn: () => stampFn({ data: { facturaId: id } }),
+    onSuccess: () => {
+      toast.success("CFDI timbrado");
+      qc.invalidateQueries({ queryKey: ["factura", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelarCfdi = useMutation({
+    mutationFn: (motivo: "01" | "02" | "03" | "04") =>
+      cancelCfdiFn({ data: { facturaId: id, motivo } }),
+    onSuccess: () => {
+      toast.success("CFDI cancelado ante SAT");
+      qc.invalidateQueries({ queryKey: ["factura", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const descargar = async (format: "pdf" | "xml" | "zip") => {
+    try {
+      const res = await downloadFn({ data: { facturaId: id, format } });
+      const blob = new Blob(
+        [Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0))],
+        { type: res.contentType },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const enviarCorreo = useMutation({
+    mutationFn: (email?: string) => emailFn({ data: { facturaId: id, email } }),
+    onSuccess: () => toast.success("Correo enviado"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (error) {
@@ -336,6 +398,63 @@ function FacturaDetalle() {
               <p className="text-sm whitespace-pre-wrap">{data.notas}</p>
             </div>
           )}
+
+          <div className="rounded-md border border-border bg-card p-4 space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Timbrado CFDI 4.0</h2>
+            {data.uuid_fiscal ? (
+              <>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground">UUID</span>
+                    <span className="font-mono truncate max-w-[180px]" title={data.uuid_fiscal}>{data.uuid_fiscal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Estado</span>
+                    <span className={data.cfdi_status === "canceled" ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}>
+                      {data.cfdi_status ?? "valid"}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => descargar("pdf")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">PDF</button>
+                  <button onClick={() => descargar("xml")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">XML</button>
+                  <button onClick={() => descargar("zip")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">ZIP</button>
+                </div>
+                <button
+                  onClick={() => {
+                    const email = prompt("Enviar CFDI al correo:", data.cliente?.email ?? "");
+                    if (email !== null) enviarCorreo.mutate(email || undefined);
+                  }}
+                  className="w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+                >
+                  Enviar por correo
+                </button>
+                {data.cfdi_status !== "canceled" && (
+                  <button
+                    onClick={() => {
+                      const m = prompt("Motivo SAT (01=Errores con relación, 02=Errores sin relación, 03=No se llevó a cabo, 04=Sustituye a otro):", "02");
+                      if (m && ["01","02","03","04"].includes(m)) cancelarCfdi.mutate(m as any);
+                    }}
+                    disabled={cancelarCfdi.isPending}
+                    className="w-full rounded-md border border-destructive bg-destructive/10 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/20"
+                  >
+                    {cancelarCfdi.isPending ? "Cancelando…" : "Cancelar CFDI ante SAT"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">Esta factura aún no ha sido timbrada.</p>
+                <button
+                  onClick={() => timbrar.mutate()}
+                  disabled={timbrar.isPending || data.estado === "cancelada"}
+                  className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {timbrar.isPending ? "Timbrando…" : "Timbrar con Facturapi"}
+                </button>
+              </>
+            )}
+          </div>
 
           {data.estado !== "cancelada" && (
             <button
