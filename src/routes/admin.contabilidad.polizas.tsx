@@ -1,0 +1,206 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
+import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+
+export const Route = createFileRoute("/admin/contabilidad/polizas")({
+  head: () => ({
+    meta: [
+      { title: "Pólizas — Contabilidad" },
+      { name: "description", content: "Pólizas de ingreso, egreso y diario conforme al SAT." },
+    ],
+  }),
+  component: PolizasPage,
+});
+
+const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+type Poliza = {
+  id: string;
+  tipo: "ingreso" | "egreso" | "diario";
+  folio: string;
+  fecha: string;
+  concepto: string;
+  estado: "borrador" | "asentada" | "cancelada";
+  total_cargos: number;
+  total_abonos: number;
+};
+
+function PolizasPage() {
+  const qc = useQueryClient();
+  const { selected } = useSelectedEmpresa();
+  const empresaId = selected?.id;
+  const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
+  const [estadoFiltro, setEstadoFiltro] = useState<string>("todos");
+  const [search, setSearch] = useState("");
+
+  const { data: polizas = [], isLoading } = useQuery({
+    queryKey: ["polizas", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("polizas" as any)
+        .select("id, tipo, folio, fecha, concepto, estado, total_cargos, total_abonos")
+        .eq("empresa_id", empresaId!)
+        .order("fecha", { ascending: false })
+        .order("folio", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Poliza[];
+    },
+  });
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return polizas.filter((p) =>
+      (tipoFiltro === "todos" || p.tipo === tipoFiltro) &&
+      (estadoFiltro === "todos" || p.estado === estadoFiltro) &&
+      (!q || p.folio.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q))
+    );
+  }, [polizas, tipoFiltro, estadoFiltro, search]);
+
+  const crear = useMutation({
+    mutationFn: async (tipo: "ingreso" | "egreso" | "diario") => {
+      if (!empresaId) throw new Error("Selecciona una empresa");
+      // Try to attach to the open period for the current month
+      const hoy = new Date();
+      const anio = hoy.getFullYear();
+      const mes = hoy.getMonth() + 1;
+      const { data: per } = await supabase
+        .from("periodos_contables" as any)
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .eq("anio", anio)
+        .eq("mes", mes)
+        .maybeSingle();
+      const { data, error } = await supabase
+        .from("polizas" as any)
+        .insert({
+          empresa_id: empresaId,
+          tipo,
+          fecha: hoy.toISOString().slice(0, 10),
+          concepto: "",
+          estado: "borrador",
+          periodo_id: (per as any)?.id ?? null,
+          origen: "manual",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return (data as any).id as string;
+    },
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ["polizas"] });
+      window.location.href = `/admin/contabilidad/polizas/${id}`;
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <ScrollText className="h-6 w-6 text-primary" /> Pólizas
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Ingreso, egreso y diario. Solo las pólizas asentadas afectan libros y balanza.
+          </p>
+        </div>
+        <EmpresaSelector />
+      </div>
+
+      {!empresaId ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Elige una empresa.
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar folio o concepto…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+            </div>
+            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los tipos</SelectItem>
+                <SelectItem value="ingreso">Ingreso</SelectItem>
+                <SelectItem value="egreso">Egreso</SelectItem>
+                <SelectItem value="diario">Diario</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los estados</SelectItem>
+                <SelectItem value="borrador">Borrador</SelectItem>
+                <SelectItem value="asentada">Asentada</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex gap-1">
+              <Button onClick={() => crear.mutate("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
+              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Egreso</Button>
+              <Button onClick={() => crear.mutate("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="text-left px-3 py-2 w-24">Folio</th>
+                  <th className="text-left px-3 py-2 w-24">Tipo</th>
+                  <th className="text-left px-3 py-2 w-28">Fecha</th>
+                  <th className="text-left px-3 py-2">Concepto</th>
+                  <th className="text-right px-3 py-2 w-32">Cargos</th>
+                  <th className="text-right px-3 py-2 w-32">Abonos</th>
+                  <th className="text-center px-3 py-2 w-24">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas.</td></tr>
+                ) : filtered.map((p) => (
+                  <tr key={p.id} className="border-t border-border hover:bg-muted/20">
+                    <td className="px-3 py-2">
+                      <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">
+                        {p.folio}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 capitalize">{p.tipo}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{p.fecha}</td>
+                    <td className="px-3 py-2 truncate max-w-[420px]">{p.concepto || <span className="text-muted-foreground italic">(sin concepto)</span>}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_cargos))}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_abonos))}</td>
+                    <td className="px-3 py-2 text-center">
+                      <EstadoBadge estado={p.estado} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function EstadoBadge({ estado }: { estado: string }) {
+  if (estado === "asentada") return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Asentada</Badge>;
+  if (estado === "cancelada") return <Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1"><XCircle className="h-3 w-3" /> Cancelada</Badge>;
+  return <Badge variant="outline" className="gap-1"><FileText className="h-3 w-3" /> Borrador</Badge>;
+}
