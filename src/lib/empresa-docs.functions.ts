@@ -87,7 +87,7 @@ export const parseCsfDocumentFn = createServerFn({ method: "POST" })
     }
 
     const res = await geminiGenerateInline({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       parts,
       jsonMode: true,
     });
@@ -187,7 +187,7 @@ export const uploadEmpresaDocFn = createServerFn({ method: "POST" })
     if (canAnalyze) {
       try {
         const res = await geminiGenerateInline({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           parts: [
             { text: `${CAT_PROMPT}\n\nArchivo: ${data.filename} (${data.mime})` },
             { inline_data: { mime_type: data.mime, data: data.base64 } },
