@@ -325,6 +325,7 @@ function EmpresaDialog({
   saving: boolean;
 }) {
   const [v, setV] = useState<Partial<Empresa>>(value);
+  const [tab, setTab] = useState<string>("datos");
   const set = <K extends keyof Empresa>(k: K, val: Empresa[K] | null) =>
     setV((prev) => ({ ...prev, [k]: val as any }));
 
@@ -335,173 +336,218 @@ function EmpresaDialog({
           <DialogTitle>{v.id ? "Editar empresa" : "Nueva empresa"}</DialogTitle>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave(v);
-          }}
-          className="space-y-6 pt-2"
-        >
-          <Section title="Datos fiscales">
-            <Field label="Razón social *" className="sm:col-span-2">
-              <Input
-                required
-                value={v.razon_social ?? ""}
-                onChange={(e) => set("razon_social", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Nombre comercial">
-              <Input
-                value={v.nombre_comercial ?? ""}
-                onChange={(e) => set("nombre_comercial", e.target.value)}
-              />
-            </Field>
-            <Field label="RFC *">
-              <Input
-                required
-                className="font-mono"
-                value={v.rfc ?? ""}
-                onChange={(e) => set("rfc", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Régimen fiscal">
-              <Input
-                placeholder="Ej: 601 General de Ley Personas Morales"
-                value={v.regimen_fiscal ?? ""}
-                onChange={(e) => set("regimen_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Uso CFDI predeterminado">
-              <Input
-                placeholder="Ej: G03 Gastos en general"
-                value={v.uso_cfdi_default ?? ""}
-                onChange={(e) => set("uso_cfdi_default", e.target.value)}
-              />
-            </Field>
-            <Field label="C.P. fiscal">
-              <Input
-                value={v.cp_fiscal ?? ""}
-                onChange={(e) => set("cp_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Lugar de expedición">
-              <Input
-                value={v.lugar_expedicion ?? ""}
-                onChange={(e) => set("lugar_expedicion", e.target.value)}
-              />
-            </Field>
-            <Field label="Dirección fiscal" className="sm:col-span-2">
-              <Textarea
-                rows={2}
-                value={v.direccion_fiscal ?? ""}
-                onChange={(e) => set("direccion_fiscal", e.target.value)}
-              />
-            </Field>
-            <Field label="Representante legal" className="sm:col-span-2">
-              <Input
-                value={v.representante_legal ?? ""}
-                onChange={(e) => set("representante_legal", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Contacto">
-            <Field label="Teléfono">
-              <Input value={v.telefono ?? ""} onChange={(e) => set("telefono", e.target.value)} />
-            </Field>
-            <Field label="Email">
-              <Input
-                type="email"
-                value={v.email_contacto ?? ""}
-                onChange={(e) => set("email_contacto", e.target.value)}
-              />
-            </Field>
-            <Field label="Sitio web" className="sm:col-span-2">
-              <Input
-                placeholder="https://…"
-                value={v.sitio_web ?? ""}
-                onChange={(e) => set("sitio_web", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Facturación">
-            <Field label="Serie factura (default)">
-              <Input
-                value={v.serie_factura_default ?? ""}
-                onChange={(e) => set("serie_factura_default", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="Próximo folio">
-              <Input
-                type="number"
-                min={1}
-                value={v.folio_next ?? 1}
-                onChange={(e) => set("folio_next", Number(e.target.value) as any)}
-              />
-            </Field>
-            <Field label="Moneda">
-              <Input
-                value={v.moneda_default ?? "MXN"}
-                onChange={(e) => set("moneda_default", e.target.value.toUpperCase())}
-              />
-            </Field>
-            <Field label="IVA %">
-              <Input
-                type="number"
-                step="0.01"
-                value={v.iva_default ?? 16}
-                onChange={(e) => set("iva_default", Number(e.target.value) as any)}
-              />
-            </Field>
-          </Section>
-
-          <Section title="Branding">
-            <Field label="Logo (URL)" className="sm:col-span-2">
-              <Input
-                placeholder="https://…/logo.png"
-                value={v.logo_url ?? ""}
-                onChange={(e) => set("logo_url", e.target.value)}
-              />
-              {v.logo_url && (
-                <img
-                  src={v.logo_url}
-                  alt="Logo preview"
-                  className="mt-2 max-h-16 rounded border border-border object-contain bg-muted p-1"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                />
+        <Tabs value={tab} onValueChange={setTab} className="pt-2">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="datos">Datos</TabsTrigger>
+            <TabsTrigger value="documentos" disabled={!v.id}>
+              Documentos
+              {!v.id && (
+                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  (guarda primero)
+                </span>
               )}
-            </Field>
-          </Section>
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-muted/30 p-3">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Switch
-                checked={v.is_default ?? false}
-                onCheckedChange={(c) => set("is_default", c)}
-              />
-              Predeterminada para facturar
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Switch checked={v.active ?? true} onCheckedChange={(c) => set("active", c)} />
-              Activa
-            </label>
-          </div>
+          <TabsContent value="datos" className="mt-4">
+            <CsfImportRow
+              onExtracted={(x) => {
+                setV((prev) => ({
+                  ...prev,
+                  razon_social: x.razon_social ?? prev.razon_social,
+                  nombre_comercial: x.nombre_comercial ?? prev.nombre_comercial,
+                  rfc: x.rfc ?? prev.rfc,
+                  regimen_fiscal: x.regimen_fiscal ?? prev.regimen_fiscal,
+                  cp_fiscal: x.cp_fiscal ?? prev.cp_fiscal,
+                  direccion_fiscal: x.direccion_fiscal ?? prev.direccion_fiscal,
+                  representante_legal:
+                    x.representante_legal ?? prev.representante_legal,
+                  telefono: x.telefono ?? prev.telefono,
+                  email_contacto: x.email_contacto ?? prev.email_contacto,
+                }));
+              }}
+            />
 
-          <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-1">
-            <Button type="button" variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-1" /> Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              <Check className="h-4 w-4 mr-1" />
-              {saving ? "Guardando…" : "Guardar"}
-            </Button>
-          </div>
-        </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSave(v);
+              }}
+              className="space-y-6 pt-4"
+            >
+              <Section title="Datos fiscales">
+                <Field label="Razón social *" className="sm:col-span-2">
+                  <Input
+                    required
+                    value={v.razon_social ?? ""}
+                    onChange={(e) => set("razon_social", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Nombre comercial">
+                  <Input
+                    value={v.nombre_comercial ?? ""}
+                    onChange={(e) => set("nombre_comercial", e.target.value)}
+                  />
+                </Field>
+                <Field label="RFC *">
+                  <Input
+                    required
+                    className="font-mono"
+                    value={v.rfc ?? ""}
+                    onChange={(e) => set("rfc", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Régimen fiscal">
+                  <Input
+                    placeholder="Ej: 601 General de Ley Personas Morales"
+                    value={v.regimen_fiscal ?? ""}
+                    onChange={(e) => set("regimen_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Uso CFDI predeterminado">
+                  <Input
+                    placeholder="Ej: G03 Gastos en general"
+                    value={v.uso_cfdi_default ?? ""}
+                    onChange={(e) => set("uso_cfdi_default", e.target.value)}
+                  />
+                </Field>
+                <Field label="C.P. fiscal">
+                  <Input
+                    value={v.cp_fiscal ?? ""}
+                    onChange={(e) => set("cp_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Lugar de expedición">
+                  <Input
+                    value={v.lugar_expedicion ?? ""}
+                    onChange={(e) => set("lugar_expedicion", e.target.value)}
+                  />
+                </Field>
+                <Field label="Dirección fiscal" className="sm:col-span-2">
+                  <Textarea
+                    rows={2}
+                    value={v.direccion_fiscal ?? ""}
+                    onChange={(e) => set("direccion_fiscal", e.target.value)}
+                  />
+                </Field>
+                <Field label="Representante legal" className="sm:col-span-2">
+                  <Input
+                    value={v.representante_legal ?? ""}
+                    onChange={(e) => set("representante_legal", e.target.value)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Contacto">
+                <Field label="Teléfono">
+                  <Input value={v.telefono ?? ""} onChange={(e) => set("telefono", e.target.value)} />
+                </Field>
+                <Field label="Email">
+                  <Input
+                    type="email"
+                    value={v.email_contacto ?? ""}
+                    onChange={(e) => set("email_contacto", e.target.value)}
+                  />
+                </Field>
+                <Field label="Sitio web" className="sm:col-span-2">
+                  <Input
+                    placeholder="https://…"
+                    value={v.sitio_web ?? ""}
+                    onChange={(e) => set("sitio_web", e.target.value)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Facturación">
+                <Field label="Serie factura (default)">
+                  <Input
+                    value={v.serie_factura_default ?? ""}
+                    onChange={(e) => set("serie_factura_default", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="Próximo folio">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={v.folio_next ?? 1}
+                    onChange={(e) => set("folio_next", Number(e.target.value) as any)}
+                  />
+                </Field>
+                <Field label="Moneda">
+                  <Input
+                    value={v.moneda_default ?? "MXN"}
+                    onChange={(e) => set("moneda_default", e.target.value.toUpperCase())}
+                  />
+                </Field>
+                <Field label="IVA %">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={v.iva_default ?? 16}
+                    onChange={(e) => set("iva_default", Number(e.target.value) as any)}
+                  />
+                </Field>
+              </Section>
+
+              <Section title="Branding">
+                <Field label="Logo (URL)" className="sm:col-span-2">
+                  <Input
+                    placeholder="https://…/logo.png"
+                    value={v.logo_url ?? ""}
+                    onChange={(e) => set("logo_url", e.target.value)}
+                  />
+                  {v.logo_url && (
+                    <img
+                      src={v.logo_url}
+                      alt="Logo preview"
+                      className="mt-2 max-h-16 rounded border border-border object-contain bg-muted p-1"
+                      onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                    />
+                  )}
+                </Field>
+              </Section>
+
+              <div className="flex flex-wrap items-center gap-6 rounded-lg border border-border bg-muted/30 p-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Switch
+                    checked={v.is_default ?? false}
+                    onCheckedChange={(c) => set("is_default", c)}
+                  />
+                  Predeterminada para facturar
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Switch checked={v.active ?? true} onCheckedChange={(c) => set("active", c)} />
+                  Activa
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-background pb-1">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  <X className="h-4 w-4 mr-1" /> Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  <Check className="h-4 w-4 mr-1" />
+                  {saving ? "Guardando…" : "Guardar"}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="documentos" className="mt-4">
+            {v.id ? (
+              <EmpresaDocumentos empresaId={v.id} />
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Guarda la empresa para poder subir documentos.
+              </p>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
