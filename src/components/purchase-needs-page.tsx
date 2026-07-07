@@ -395,7 +395,7 @@ export default function PurchaseNeeds() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Necesidades de Compra</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Compras</h1>
           <p className="text-sm text-muted-foreground">
             Vista por pedido — stock disponible vs comprometido
           </p>
@@ -420,6 +420,14 @@ export default function PurchaseNeeds() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setImportOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importar proveedores
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleDownloadExcel}
             disabled={shortageRows.length === 0}
           >
@@ -437,6 +445,13 @@ export default function PurchaseNeeds() {
           </Button>
         </div>
       </div>
+
+      {importOpen && (
+        <SuppliersImportDialog
+          onClose={() => setImportOpen(false)}
+          onSaved={() => setImportOpen(false)}
+        />
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
