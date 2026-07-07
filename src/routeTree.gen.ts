@@ -67,6 +67,7 @@ import { Route as AdminContabilidadPolizasRouteImport } from './routes/admin.con
 import { Route as AdminContabilidadMayorRouteImport } from './routes/admin.contabilidad.mayor'
 import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.contabilidad.diario'
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
+import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.contabilidad.balanza'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
@@ -364,6 +365,12 @@ const AdminContabilidadCuentasRoute =
     path: '/contabilidad/cuentas',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminContabilidadBalanzaRoute =
+  AdminContabilidadBalanzaRouteImport.update({
+    id: '/contabilidad/balanza',
+    path: '/contabilidad/balanza',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -437,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
@@ -500,6 +508,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
@@ -565,6 +574,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/mayor'
@@ -694,6 +705,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/mayor'
@@ -758,6 +770,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/mayor'
@@ -1189,6 +1202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadCuentasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/balanza': {
+      id: '/admin/contabilidad/balanza'
+      path: '/contabilidad/balanza'
+      fullPath: '/admin/contabilidad/balanza'
+      preLoaderRoute: typeof AdminContabilidadBalanzaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/compras/$id': {
       id: '/admin/compras/$id'
       path: '/$id'
@@ -1352,6 +1372,7 @@ interface AdminRouteChildren {
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVentasRoute: typeof AdminVentasRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminContabilidadBalanzaRoute: typeof AdminContabilidadBalanzaRoute
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
   AdminContabilidadDiarioRoute: typeof AdminContabilidadDiarioRoute
   AdminContabilidadMayorRoute: typeof AdminContabilidadMayorRoute
@@ -1402,6 +1423,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVentasRoute: AdminVentasRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminContabilidadBalanzaRoute: AdminContabilidadBalanzaRoute,
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
   AdminContabilidadDiarioRoute: AdminContabilidadDiarioRoute,
   AdminContabilidadMayorRoute: AdminContabilidadMayorRoute,
