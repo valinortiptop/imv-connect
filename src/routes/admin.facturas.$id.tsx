@@ -399,6 +399,63 @@ function FacturaDetalle() {
             </div>
           )}
 
+          <div className="rounded-md border border-border bg-card p-4 space-y-3">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Timbrado CFDI 4.0</h2>
+            {data.uuid_fiscal ? (
+              <>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-muted-foreground">UUID</span>
+                    <span className="font-mono truncate max-w-[180px]" title={data.uuid_fiscal}>{data.uuid_fiscal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Estado</span>
+                    <span className={data.cfdi_status === "canceled" ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}>
+                      {data.cfdi_status ?? "valid"}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => descargar("pdf")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">PDF</button>
+                  <button onClick={() => descargar("xml")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">XML</button>
+                  <button onClick={() => descargar("zip")} className="rounded-md border border-border px-2 py-1.5 text-xs hover:bg-muted">ZIP</button>
+                </div>
+                <button
+                  onClick={() => {
+                    const email = prompt("Enviar CFDI al correo:", data.cliente?.email ?? "");
+                    if (email !== null) enviarCorreo.mutate(email || undefined);
+                  }}
+                  className="w-full rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+                >
+                  Enviar por correo
+                </button>
+                {data.cfdi_status !== "canceled" && (
+                  <button
+                    onClick={() => {
+                      const m = prompt("Motivo SAT (01=Errores con relación, 02=Errores sin relación, 03=No se llevó a cabo, 04=Sustituye a otro):", "02");
+                      if (m && ["01","02","03","04"].includes(m)) cancelarCfdi.mutate(m as any);
+                    }}
+                    disabled={cancelarCfdi.isPending}
+                    className="w-full rounded-md border border-destructive bg-destructive/10 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/20"
+                  >
+                    {cancelarCfdi.isPending ? "Cancelando…" : "Cancelar CFDI ante SAT"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">Esta factura aún no ha sido timbrada.</p>
+                <button
+                  onClick={() => timbrar.mutate()}
+                  disabled={timbrar.isPending || data.estado === "cancelada"}
+                  className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {timbrar.isPending ? "Timbrando…" : "Timbrar con Facturapi"}
+                </button>
+              </>
+            )}
+          </div>
+
           {data.estado !== "cancelada" && (
             <button
               onClick={() => { if (confirm("¿Cancelar esta factura? No se podrán registrar más pagos.")) cancelarFactura.mutate(); }}
