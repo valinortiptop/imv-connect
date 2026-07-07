@@ -116,6 +116,33 @@ export default function Dashboard() {
   const topClientsData: any[] = rangeData.data?.top_clients ?? [];
   const topProductsData: any[] = rangeData.data?.top_products ?? [];
 
+  // Dashboard warehouse chips are labeled from the default empresa's almacenes
+  // (Configuración → Empresas). Falls back to generic "Almacén N" if no
+  // empresa/almacenes are configured yet. Keys stay stable so downstream
+  // partner-dashboard wiring (tamemes/gdl) is unchanged.
+  const almacenesEmpresa = useQuery({
+    queryKey: ["dashboard-almacenes"],
+    queryFn: async () => {
+      const { data: emp } = await supabase
+        .from("empresas" as any)
+        .select("id, is_default, nombre_comercial, razon_social")
+        .eq("active", true)
+        .order("is_default", { ascending: false })
+        .order("razon_social")
+        .limit(1);
+      const empresa: any = Array.isArray(emp) && emp.length > 0 ? emp[0] : null;
+      if (!empresa) return [] as { nombre: string; direccion: string | null }[];
+      const { data } = await supabase
+        .from("almacenes")
+        .select("nombre, direccion, principal")
+        .eq("empresa_id", empresa.id)
+        .eq("activo", true)
+        .order("principal", { ascending: false })
+        .order("nombre");
+      return (data ?? []) as { nombre: string; direccion: string | null }[];
+    },
+  });
+
   // Non-date-dependent queries (always current state)
   const openOrders = useQuery({
     queryKey: ["dashboard-open-orders"],
@@ -333,34 +360,42 @@ export default function Dashboard() {
           compact
         />
 
-        {/* Business-unit filter — [ ALL · Almacén 1 · Almacén 2 · Almacén 3 ] */}
+        {/* Business-unit filter — labels are driven by the default empresa's almacenes.
+            Configure in Configuración → Empresas → Almacenes. */}
         <div className="flex gap-1.5 flex-wrap">
-          {([
-            { key: "all" as const,       label: "Todo",       sub: "Almacén 1 + Partners" },
-            { key: "naucalpan" as const, label: "Almacén 1",  sub: "Ventas directas" },
-            { key: "tamemes" as const,   label: "Almacén 2",  sub: "Iztapalapa · liquidación mensual" },
-            { key: "gdl" as const,       label: "Almacén 3",  sub: "Almacén 3 · markup por embarque" },
-          ]).map(v => {
-            const isActive = businessView === v.key;
-            return (
-              <button
-                key={v.key}
-                onClick={() => setBusinessView(v.key)}
-                className={cn(
-                  "shrink-0 px-3 py-2 rounded-lg text-xs font-medium border transition-colors text-left",
-                  isActive
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-muted/40",
-                )}
-              >
-                <div className="font-semibold">{v.label}</div>
-                <div className={cn("text-[10px] font-normal", isActive ? "opacity-80" : "text-muted-foreground")}>
-                  {v.sub}
-                </div>
-              </button>
-            );
-          })}
+          {(() => {
+            const alms = almacenesEmpresa.data ?? [];
+            const n = (i: number, fallback: string) => alms[i]?.nombre?.trim() || fallback;
+            const d = (i: number, fallback: string) => alms[i]?.direccion?.trim() || fallback;
+            const chips = [
+              { key: "all" as const,       label: "Todo",              sub: `${n(0, "Almacén 1")} + Partners` },
+              { key: "naucalpan" as const, label: n(0, "Almacén 1"),   sub: d(0, "Ventas directas") },
+              { key: "tamemes" as const,   label: n(1, "Almacén 2"),   sub: d(1, "Liquidación mensual") },
+              { key: "gdl" as const,       label: n(2, "Almacén 3"),   sub: d(2, "Markup por embarque") },
+            ];
+            return chips.map(v => {
+              const isActive = businessView === v.key;
+              return (
+                <button
+                  key={v.key}
+                  onClick={() => setBusinessView(v.key)}
+                  className={cn(
+                    "shrink-0 px-3 py-2 rounded-lg text-xs font-medium border transition-colors text-left",
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-muted/40",
+                  )}
+                >
+                  <div className="font-semibold">{v.label}</div>
+                  <div className={cn("text-[10px] font-normal", isActive ? "opacity-80" : "text-muted-foreground")}>
+                    {v.sub}
+                  </div>
+                </button>
+              );
+            });
+          })()}
         </div>
+
 
         {/* Conditional content based on business view */}
         {businessView === "tamemes" && (
