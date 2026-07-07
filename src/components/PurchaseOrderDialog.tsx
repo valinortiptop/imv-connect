@@ -155,23 +155,31 @@ export function PurchaseOrderDialog({
     setRows(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const addProduct = (clave: string) => {
-    if (rows.some(r => r.clave === clave)) {
-      toast("Producto ya está en la orden");
-      return;
-    }
-    const product = allProducts.find(p => p.clave === clave);
-    if (!product) return;
-    const kg = productWeights[clave] ?? 0;
-    setRows(prev => [...prev, {
-      clave,
-      product_name: product.product_name,
-      image_url: product.image_url,
-      bultos: 0,
-      tons: 0,
-      weight_kg: kg,
-    }]);
+  const addProducts = (claves: string[]) => {
+    const toAdd = claves
+      .filter(c => !rows.some(r => r.clave === c))
+      .map(c => {
+        const product = allProducts.find(p => p.clave === c);
+        if (!product) return null;
+        const kg = productWeights[c] ?? 0;
+        return {
+          clave: c,
+          product_name: product.product_name,
+          image_url: product.image_url,
+          bultos: 0,
+          tons: 0,
+          weight_kg: kg,
+        };
+      })
+      .filter(Boolean) as PORow[];
+    if (toAdd.length === 0) return;
+    setRows(prev => [...prev, ...toAdd]);
   };
+
+  // Multi-select popover state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSearch, setAddSearch] = useState("");
+  const [addSelection, setAddSelection] = useState<Set<string>>(new Set());
 
   // Products available for "add" (filtered by supplier, sorted Ganador/Minino first)
   const addableProducts = useMemo(() => {
@@ -182,6 +190,139 @@ export function PurchaseOrderDialog({
     const available = prods.filter(p => !rows.some(r => r.clave === p.clave));
     return sortProducts(available.map(p => ({ ...p, name: p.product_name })));
   }, [allProducts, poSupplier, rows]);
+
+  const filteredAddable = useMemo(() => {
+    const q = addSearch.trim().toLowerCase();
+    if (!q) return addableProducts;
+    return addableProducts.filter(p =>
+      p.clave.toLowerCase().includes(q) || (p.product_name ?? "").toLowerCase().includes(q)
+    );
+  }, [addableProducts, addSearch]);
+
+  const commitAddSelection = () => {
+    if (addSelection.size === 0) { setAddOpen(false); return; }
+    addProducts(Array.from(addSelection));
+    setAddSelection(new Set());
+    setAddSearch("");
+    setAddOpen(false);
+  };
+
+  // AI suggestion: query historical purchases from stock_entries for the
+  // current supplier and ask the model to recommend which SKUs to reorder
+  // and typical bulto quantities.
+  const [aiLoading, setAiLoading] = useState(false);
+  const suggestRepeat = async () => {
+    setAiLoading(true);
+    try {
+      const since = new Date();
+      since.setMonth(since.getMonth() - 6);
+      const sinceStr = since.toISOString().slice(0, 10);
+
+      // Restrict to the current supplier's product ids (via products.supplier text match)
+      const supplierProductIds = poSupplier === "all"
+        ? null
+        : (await supabase.from("products").select("id, clave").eq("supplier", poSupplier).eq("active", true)).data ?? [];
+      const idFilter = supplierProductIds ? supplierProductIds.map((p: any) => p.id) : null;
+
+      let q = supabase
+        .from("stock_entries")
+        .select("product_id, quantity, entry_date, supplier")
+        .gte("entry_date", sinceStr)
+        .limit(2000);
+      if (idFilter) q = q.in("product_id", idFilter);
+      else if (poSupplier !== "all") q = q.eq("supplier", poSupplier);
+      const { data: entries, error } = await q;
+      if (error) throw error;
+
+      // Aggregate by clave
+      const productById = new Map(allProducts.map((p: any) => [p.id ?? p.clave, p]));
+      // We only have clave in allProducts, need to fetch id->clave map
+      const { data: prodMap } = await supabase
+        .from("products")
+        .select("id, clave, name, supplier")
+        .in("id", Array.from(new Set((entries ?? []).map(e => e.product_id).filter(Boolean))));
+      const byId = new Map((prodMap ?? []).map((p: any) => [p.id, p]));
+
+      type Agg = { clave: string; product_name: string; supplier: string; total: number; orders: number; last_date: string | null };
+      const agg = new Map<string, Agg>();
+      for (const e of entries ?? []) {
+        const p = byId.get(e.product_id);
+        if (!p?.clave) continue;
+        const cur = agg.get(p.clave) ?? {
+          clave: p.clave, product_name: p.name, supplier: p.supplier ?? "",
+          total: 0, orders: 0, last_date: null,
+        };
+        cur.total += Number(e.quantity ?? 0);
+        cur.orders += 1;
+        if (!cur.last_date || (e.entry_date && e.entry_date > cur.last_date)) cur.last_date = e.entry_date;
+        agg.set(p.clave, cur);
+      }
+      const history = Array.from(agg.values()).sort((a, b) => b.total - a.total).slice(0, 60);
+      if (history.length === 0) {
+        toast.info("Sin historial de compras para este proveedor en los últimos 6 meses");
+        return;
+      }
+
+      const currentRows = rows.map(r => ({ clave: r.clave, bultos: r.bultos }));
+      const system = `Eres un asistente de compras para una distribuidora farmacéutica veterinaria en México.
+Analiza el historial de compras al proveedor y recomienda una orden de compra para repetir el patrón habitual.
+Devuelve SOLO JSON válido, sin markdown, con la forma:
+{"suggestions":[{"clave":"...","bultos": N, "reason":"corto"}]}
+Reglas:
+- Sugiere SKUs frecuentes del historial (>=2 órdenes en 6 meses) o de alta rotación (total alto).
+- Para cada sugerencia, propone "bultos" como el promedio redondeado de bultos por orden histórica.
+- No incluyas SKUs ya cubiertos con bultos > 0 en "currentRows".
+- Máximo 20 sugerencias, ordenadas por total desc.`;
+      const userMsg = JSON.stringify({ supplier: poSupplier, since: sinceStr, currentRows, history });
+
+      const resp = await aiChatFn({
+        data: {
+          model: "google/gemini-2.5-flash",
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ],
+        },
+      });
+      const content = (resp as any)?.content ?? (resp as any)?.choices?.[0]?.message?.content ?? "";
+      const cleaned = String(content).replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+      const parsed = JSON.parse(cleaned);
+      const suggestions: { clave: string; bultos: number }[] = Array.isArray(parsed?.suggestions) ? parsed.suggestions : [];
+
+      let added = 0;
+      const newRows: PORow[] = [];
+      for (const s of suggestions) {
+        if (!s?.clave) continue;
+        if (rows.some(r => r.clave === s.clave)) continue;
+        const product = allProducts.find(p => p.clave === s.clave);
+        if (!product) continue;
+        const kg = productWeights[s.clave] ?? 0;
+        const bultos = Math.max(0, Math.round(Number(s.bultos) || 0));
+        newRows.push({
+          clave: s.clave,
+          product_name: product.product_name,
+          image_url: product.image_url,
+          bultos,
+          tons: (bultos * kg) / 1000,
+          weight_kg: kg,
+        });
+        added++;
+      }
+      if (added === 0) {
+        toast.info("La IA no encontró sugerencias nuevas para este proveedor");
+      } else {
+        setRows(prev => [...prev, ...newRows]);
+        toast.success(`IA sugirió ${added} productos con base en compras previas`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al generar sugerencias con IA");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
   const totalBultos = rows.reduce((s, r) => s + r.bultos, 0);
   const totalTons = rows.reduce((s, r) => s + r.tons, 0);
