@@ -327,6 +327,7 @@ export type Database = {
           direccion: string | null
           email: string | null
           email_extra: string | null
+          facturapi_id: string | null
           google_place_id: string | null
           id: string
           lat: number | null
@@ -341,11 +342,13 @@ export type Database = {
           portal_activo: boolean
           price_list_id: string | null
           razon_social: string
+          regimen_fiscal: string | null
           representante_id: string | null
           rfc: string | null
           telefono: string | null
           token_portal: string
           updated_at: string
+          uso_cfdi_default: string | null
         }
         Insert: {
           active?: boolean
@@ -364,6 +367,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           email_extra?: string | null
+          facturapi_id?: string | null
           google_place_id?: string | null
           id?: string
           lat?: number | null
@@ -378,11 +382,13 @@ export type Database = {
           portal_activo?: boolean
           price_list_id?: string | null
           razon_social: string
+          regimen_fiscal?: string | null
           representante_id?: string | null
           rfc?: string | null
           telefono?: string | null
           token_portal?: string
           updated_at?: string
+          uso_cfdi_default?: string | null
         }
         Update: {
           active?: boolean
@@ -401,6 +407,7 @@ export type Database = {
           direccion?: string | null
           email?: string | null
           email_extra?: string | null
+          facturapi_id?: string | null
           google_place_id?: string | null
           id?: string
           lat?: number | null
@@ -415,11 +422,13 @@ export type Database = {
           portal_activo?: boolean
           price_list_id?: string | null
           razon_social?: string
+          regimen_fiscal?: string | null
           representante_id?: string | null
           rfc?: string | null
           telefono?: string | null
           token_portal?: string
           updated_at?: string
+          uso_cfdi_default?: string | null
         }
         Relationships: [
           {
@@ -1508,10 +1517,15 @@ export type Database = {
       }
       facturas: {
         Row: {
+          cancel_motivo: string | null
+          canceled_at: string | null
+          cfdi_status: string | null
+          cfdi_use: string | null
           cliente_id: string
           created_at: string
           empresa_id: string | null
           estado: Database["public"]["Enums"]["factura_estado"]
+          facturapi_id: string | null
           fecha_emision: string
           fecha_vencimiento: string
           folio: string
@@ -1519,19 +1533,30 @@ export type Database = {
           iva: number
           notas: string | null
           pagado: number
+          payment_form: string | null
+          payment_method: string | null
+          pdf_url: string | null
           pedido_id: string | null
           poliza_id: string | null
           representante_id: string | null
           saldo: number | null
+          serie: string | null
           subtotal: number
           total: number
           updated_at: string
+          uuid_fiscal: string | null
+          xml_url: string | null
         }
         Insert: {
+          cancel_motivo?: string | null
+          canceled_at?: string | null
+          cfdi_status?: string | null
+          cfdi_use?: string | null
           cliente_id: string
           created_at?: string
           empresa_id?: string | null
           estado?: Database["public"]["Enums"]["factura_estado"]
+          facturapi_id?: string | null
           fecha_emision?: string
           fecha_vencimiento?: string
           folio?: string
@@ -1539,19 +1564,30 @@ export type Database = {
           iva?: number
           notas?: string | null
           pagado?: number
+          payment_form?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
           pedido_id?: string | null
           poliza_id?: string | null
           representante_id?: string | null
           saldo?: number | null
+          serie?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
+          uuid_fiscal?: string | null
+          xml_url?: string | null
         }
         Update: {
+          cancel_motivo?: string | null
+          canceled_at?: string | null
+          cfdi_status?: string | null
+          cfdi_use?: string | null
           cliente_id?: string
           created_at?: string
           empresa_id?: string | null
           estado?: Database["public"]["Enums"]["factura_estado"]
+          facturapi_id?: string | null
           fecha_emision?: string
           fecha_vencimiento?: string
           folio?: string
@@ -1559,13 +1595,19 @@ export type Database = {
           iva?: number
           notas?: string | null
           pagado?: number
+          payment_form?: string | null
+          payment_method?: string | null
+          pdf_url?: string | null
           pedido_id?: string | null
           poliza_id?: string | null
           representante_id?: string | null
           saldo?: number | null
+          serie?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
+          uuid_fiscal?: string | null
+          xml_url?: string | null
         }
         Relationships: [
           {
@@ -4101,6 +4143,7 @@ export type Database = {
           created_at: string
           descripcion: string | null
           especie: string[] | null
+          facturapi_id: string | null
           grupo: string | null
           id: string
           imagen_url: string | null
@@ -4117,6 +4160,8 @@ export type Database = {
           promo: boolean
           proveedor: string | null
           sat_clave: string | null
+          sat_product_key: string | null
+          sat_unit_key: string | null
           search_tsv: unknown
           sku: string | null
           stock_comprometido: number
@@ -4137,6 +4182,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           especie?: string[] | null
+          facturapi_id?: string | null
           grupo?: string | null
           id?: string
           imagen_url?: string | null
@@ -4153,6 +4199,8 @@ export type Database = {
           promo?: boolean
           proveedor?: string | null
           sat_clave?: string | null
+          sat_product_key?: string | null
+          sat_unit_key?: string | null
           search_tsv?: unknown
           sku?: string | null
           stock_comprometido?: number
@@ -4173,6 +4221,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           especie?: string[] | null
+          facturapi_id?: string | null
           grupo?: string | null
           id?: string
           imagen_url?: string | null
@@ -4189,6 +4238,8 @@ export type Database = {
           promo?: boolean
           proveedor?: string | null
           sat_clave?: string | null
+          sat_product_key?: string | null
+          sat_unit_key?: string | null
           search_tsv?: unknown
           sku?: string | null
           stock_comprometido?: number
