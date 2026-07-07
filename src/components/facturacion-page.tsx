@@ -468,21 +468,11 @@ export default function Facturacion() {
                 ))}
               </SelectContent>
             </Select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Gestionar empresas">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEntityDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Agregar empresa
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setEntityManageOpen(true)}>
-                  <Edit2 className="h-4 w-4 mr-2" /> Editar / Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" asChild title="Administrar empresas">
+              <Link to="/admin/empresas">
+                <Building2 className="h-4 w-4 mr-2" /> Administrar
+              </Link>
+            </Button>
           </div>
         </div>
 
