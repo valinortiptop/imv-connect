@@ -78,7 +78,7 @@ function FacturasContPage() {
         { cuenta_id: map["105"], cargo: total, abono: 0, concepto: "Cliente" },
         { cuenta_id: map["401"], cargo: 0, abono: sub, concepto: "Ventas" },
         { cuenta_id: map["209-01"] ?? map["208-01"], cargo: 0, abono: iva, concepto: "IVA por trasladar 16%" },
-      ].filter((m) => m.cuenta_id).map((m, i) => ({ ...m, poliza_id: polizaId, orden: i, uuid_cfdi: factura.uuid_cfdi }));
+      ].filter((m) => m.cuenta_id).map((m, i) => ({ ...m, poliza_id: polizaId, orden: i }));
 
       const { error: e2 } = await supabase.from("poliza_movimientos" as any).insert(movs);
       if (e2) throw e2;
