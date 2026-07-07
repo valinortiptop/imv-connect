@@ -78,7 +78,7 @@ function FacturaDetalle() {
       const { data, error } = await supabase
         .from("facturas")
         .select(
-          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email), representante:representantes(nombre), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe), pagos(id, fecha, monto, metodo, referencia, notas)",
+          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, facturapi_id, uuid_fiscal, serie, pdf_url, xml_url, cfdi_status, cliente:clientes(id, razon_social, nombre_comercial, rfc, email), representante:representantes(nombre), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe), pagos(id, fecha, monto, metodo, referencia, notas)",
         )
         .eq("id", id)
         .single();
