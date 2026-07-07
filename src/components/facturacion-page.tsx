@@ -122,8 +122,7 @@ export default function Facturacion() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
-  const [entityDialogOpen, setEntityDialogOpen] = useState(false);
-  const [entityManageOpen, setEntityManageOpen] = useState(false);
+  
   const [cfdiEditOpen, setCfdiEditOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
 
@@ -148,11 +147,21 @@ export default function Facturacion() {
     queryKey: ["billing-entities"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("billing_entities" as any)
-        .select("*")
-        .order("is_default", { ascending: false });
+        .from("empresas" as any)
+        .select("id, razon_social, nombre_comercial, rfc, direccion_fiscal, cp_fiscal, regimen_fiscal, is_default, active")
+        .eq("active", true)
+        .order("is_default", { ascending: false })
+        .order("razon_social");
       if (error) throw error;
-      return (data ?? []) as unknown as BillingEntity[];
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        name: r.nombre_comercial || r.razon_social,
+        rfc: r.rfc,
+        address: r.direccion_fiscal,
+        codigo_postal: r.cp_fiscal,
+        regimen_fiscal: r.regimen_fiscal,
+        is_default: r.is_default,
+      })) as BillingEntity[];
     },
   });
 
@@ -458,21 +467,11 @@ export default function Facturacion() {
                 ))}
               </SelectContent>
             </Select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Gestionar empresas">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEntityDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Agregar empresa
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setEntityManageOpen(true)}>
-                  <Edit2 className="h-4 w-4 mr-2" /> Editar / Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" asChild title="Administrar empresas">
+              <Link to="/admin/empresas">
+                <Building2 className="h-4 w-4 mr-2" /> Administrar
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -779,20 +778,7 @@ export default function Facturacion() {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ["facturacion-clients"] })}
         />
 
-        {/* Billing Entity Dialog */}
-        <BillingEntityDialog
-          open={entityDialogOpen}
-          onOpenChange={setEntityDialogOpen}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ["billing-entities"] })}
-        />
-
-        {/* Billing Entity Manage Dialog */}
-        <EntityManageDialog
-          open={entityManageOpen}
-          onOpenChange={setEntityManageOpen}
-          entities={billingEntities}
-          onChanged={() => queryClient.invalidateQueries({ queryKey: ["billing-entities"] })}
-        />
+        {/* Billing entity management now lives at /admin/empresas */}
       </div>
     </div>
   );

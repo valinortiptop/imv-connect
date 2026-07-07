@@ -1,34 +1,46 @@
-# Plan: Import product images from OneDrive into `productos` bucket
+## Goal
+Add a page in Configuración to manage multiple companies (emisores) with full fiscal info (RFC, razón social, régimen, CP fiscal, dirección, contacto, logo, etc.), and let the app — starting with Facturación — pick which company is issuing the invoice.
 
-## Prerequisite (user action)
-- Set the OneDrive share link to **"Anyone with the link can view"** so the server can list and download anonymously via the public Graph API (`https://api.onedrive.com/v1.0/shares/u!{base64url}/root/children`).
+## 1. Database (migration)
+Create a new table `public.empresas` (multi-row emisores):
 
-## Steps
+- razon_social, nombre_comercial
+- rfc, regimen_fiscal, uso_cfdi_default
+- cp_fiscal, direccion_fiscal (street/colonia/municipio/estado all in one text)
+- telefono, email_contacto, sitio_web
+- representante_legal
+- logo_url
+- serie_factura_default, folio_next
+- moneda_default (default 'MXN'), iva_default (default 16)
+- lugar_expedicion
+- is_default (bool), active (bool)
+- created_at, updated_at, updated_by
 
-1. **Server function `importProductImagesFromOneDrive`** (admin-only, in `src/lib/product-image-import.functions.ts`):
-   - Input: `{ shareUrl: string }`.
-   - Guard: `requireSupabaseAuth` + `has_role(admin)`.
-   - List children of the shared folder via OneDrive public shares API, paginating `@odata.nextLink`. Only keep image files (jpg/jpeg/png/webp).
-   - For each file:
-     - Derive code = filename without extension.
-     - Match product: first `products.sku == code` (or `productos.sku`), then `products.clave == code`. Normalize as fallback (uppercase, trim, strip leading zeros, remove spaces/dashes).
-     - Stream-download via `@microsoft.graph.downloadUrl`.
-     - Upload to `productos` bucket at `catalog/{productId}/{code}.{ext}` with `upsert: true` using `supabaseAdmin`.
-     - Get public URL and `UPDATE products SET image_url = ...` (overwrite all).
-   - Return `{ matched, updated, skipped: [{filename, reason}], unmatched: [...] }`.
-   - Process in batches of ~10 concurrent downloads to avoid Worker timeout; if folder is large, support resuming via `?skipToken` continuation passed back from client.
+Rules: only one `is_default = true` at a time (partial unique index). GRANT to authenticated + service_role. RLS: authenticated can read/write (admin-facing table). Seed one row from existing `empresa_datos` (id=1) so the current data isn't lost.
 
-2. **Admin UI dialog** in `src/routes/admin.productos.tsx` (next to existing Importar Excel CTA): "Importar imágenes desde OneDrive"
-   - Input field for share URL (prefilled with the user's link).
-   - Button "Iniciar importación" → calls server fn (loops continuations until done).
-   - Live progress: matched / updated / unmatched counts.
-   - Final report with downloadable CSV of unmatched filenames.
+Also add `empresa_id uuid` (nullable, FK to `empresas`) to `public.facturas` so we know which company issued each invoice.
 
-3. **Verification**: after run, re-query products and show count of products now with `image_url`. Spot-check a few via `Product360Drawer`.
+## 2. New route: `/admin/empresas`
+- List of empresas as cards/table with badges for "Predeterminada" and "Activa".
+- Create / edit dialog with all fields grouped in sections (Fiscal, Contacto, Facturación, Branding).
+- Actions: set as default, activate/deactivate, delete (only if not referenced).
+- Uses `supabase.from('empresas')` directly (RLS-protected).
 
-## Technical notes
-- Bucket `productos` is already public — no policy changes needed.
-- No DB migration required (uses existing `products.image_url`).
-- OneDrive public shares API encoding: `u!` + base64url(shareUrl) (RFC 4648 §5, strip `=` padding).
-- Overwrite policy: existing `image_url` values are replaced.
-- All work stays server-side; service-role client only loaded inside handler.
+## 3. Sidebar
+Add "Empresas" entry under CONFIGURACIÓN group, above "Uso de APIs".
+
+## 4. Facturación integration (facturacion-page.tsx)
+- Add a company picker at the top of the invoice form: "Facturando desde: [Select empresa]".
+- Default the selection to the `is_default` empresa on mount; persist last choice in `localStorage`.
+- When saving a factura, store `empresa_id`.
+- When rendering / printing the invoice preview, pull emisor block (RFC, razón social, régimen, CP, dirección, teléfono, email, logo_url) from the selected empresa instead of the singleton `empresa_datos`.
+- Keep `empresa_datos` untouched (legacy) — this page now sources from `empresas`.
+
+## 5. Reusable hook
+`src/hooks/use-empresas.ts` exposing `{ empresas, defaultEmpresa, selectedEmpresa, selectEmpresa }` so future pages (pedidos PDF, cotizaciones, remisiones, notas de crédito) can adopt the same selector with one import.
+
+## Out of scope (this pass)
+- Wiring the selector into pedidos/cotizaciones/notas — the hook is ready for a follow-up.
+- Uploading logo files to Storage — logo is a URL field for now (we can add a Storage picker later if needed).
+
+Confirm and I'll ship the migration first, then the page, sidebar entry, and Facturación wiring.

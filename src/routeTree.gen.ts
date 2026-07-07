@@ -42,6 +42,7 @@ import { Route as AdminGandalfRouteImport } from './routes/admin.gandalf'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminEstadoApisRouteImport } from './routes/admin.estado-apis'
 import { Route as AdminEntradasRouteImport } from './routes/admin.entradas'
+import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminDocumentosRouteImport } from './routes/admin.documentos'
 import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
 import { Route as AdminDanadosRouteImport } from './routes/admin.danados'
@@ -230,6 +231,11 @@ const AdminEntradasRoute = AdminEntradasRouteImport.update({
   path: '/entradas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
+  id: '/empresas',
+  path: '/empresas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDocumentosRoute = AdminDocumentosRouteImport.update({
   id: '/documentos',
   path: '/documentos',
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/documentos': typeof AdminDocumentosRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/documentos': typeof AdminDocumentosRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
   '/admin/documentos': typeof AdminDocumentosRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/entradas': typeof AdminEntradasRoute
   '/admin/estado-apis': typeof AdminEstadoApisRoute
   '/admin/facturas': typeof AdminFacturasRouteWithChildren
@@ -532,6 +541,7 @@ export interface FileRouteTypes {
     | '/admin/danados'
     | '/admin/devoluciones'
     | '/admin/documentos'
+    | '/admin/empresas'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
@@ -588,6 +598,7 @@ export interface FileRouteTypes {
     | '/admin/danados'
     | '/admin/devoluciones'
     | '/admin/documentos'
+    | '/admin/empresas'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/admin/danados'
     | '/admin/devoluciones'
     | '/admin/documentos'
+    | '/admin/empresas'
     | '/admin/entradas'
     | '/admin/estado-apis'
     | '/admin/facturas'
@@ -927,6 +939,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEntradasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/empresas': {
+      id: '/admin/empresas'
+      path: '/empresas'
+      fullPath: '/admin/empresas'
+      preLoaderRoute: typeof AdminEmpresasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/documentos': {
       id: '/admin/documentos'
       path: '/documentos'
@@ -1174,6 +1193,7 @@ interface AdminRouteChildren {
   AdminDanadosRoute: typeof AdminDanadosRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
   AdminDocumentosRoute: typeof AdminDocumentosRoute
+  AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminEntradasRoute: typeof AdminEntradasRoute
   AdminEstadoApisRoute: typeof AdminEstadoApisRoute
   AdminFacturasRoute: typeof AdminFacturasRouteWithChildren
@@ -1218,6 +1238,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDanadosRoute: AdminDanadosRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
   AdminDocumentosRoute: AdminDocumentosRoute,
+  AdminEmpresasRoute: AdminEmpresasRoute,
   AdminEntradasRoute: AdminEntradasRoute,
   AdminEstadoApisRoute: AdminEstadoApisRoute,
   AdminFacturasRoute: AdminFacturasRouteWithChildren,
