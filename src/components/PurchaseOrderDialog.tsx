@@ -7,14 +7,19 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { ProductThumb } from "@/components/ui/product-thumb";
-import { Trash2, FileSpreadsheet, Download } from "lucide-react";
+import { Trash2, FileSpreadsheet, Download, ChevronDown, Search, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { sortProducts } from "@/lib/sort-products";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx-js-style";
+import { supabase } from "@/integrations/supabase/client";
+import { aiChatFn } from "@/lib/valinor.functions";
 
 interface OrderLine {
   order_id: string;
