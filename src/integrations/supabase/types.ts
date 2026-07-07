@@ -35,6 +35,7 @@ export type Database = {
           codigo: string | null
           created_at: string
           direccion: string | null
+          empresa_id: string | null
           id: string
           nombre: string
           principal: boolean
@@ -44,6 +45,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           direccion?: string | null
+          empresa_id?: string | null
           id?: string
           nombre: string
           principal?: boolean
@@ -53,11 +55,20 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           direccion?: string | null
+          empresa_id?: string | null
           id?: string
           nombre?: string
           principal?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "almacenes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bonifications_received: {
         Row: {
