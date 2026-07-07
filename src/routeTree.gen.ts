@@ -65,6 +65,7 @@ import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devol
 import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
 import { Route as AdminContabilidadPolizasRouteImport } from './routes/admin.contabilidad.polizas'
 import { Route as AdminContabilidadMayorRouteImport } from './routes/admin.contabilidad.mayor'
+import { Route as AdminContabilidadImpuestosRouteImport } from './routes/admin.contabilidad.impuestos'
 import { Route as AdminContabilidadEstadosRouteImport } from './routes/admin.contabilidad.estados'
 import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.contabilidad.diario'
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
@@ -355,6 +356,12 @@ const AdminContabilidadMayorRoute = AdminContabilidadMayorRouteImport.update({
   path: '/contabilidad/mayor',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContabilidadImpuestosRoute =
+  AdminContabilidadImpuestosRouteImport.update({
+    id: '/contabilidad/impuestos',
+    path: '/contabilidad/impuestos',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminContabilidadEstadosRoute =
   AdminContabilidadEstadosRouteImport.update({
     id: '/contabilidad/estados',
@@ -455,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
+  '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -520,6 +528,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
+  '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -587,6 +596,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
+  '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -655,6 +665,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/estados'
+    | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
     | '/admin/devoluciones/$id'
@@ -720,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/estados'
+    | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
     | '/admin/devoluciones/$id'
@@ -786,6 +798,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
     | '/admin/contabilidad/estados'
+    | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
     | '/admin/devoluciones/$id'
@@ -1201,6 +1214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadMayorRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/impuestos': {
+      id: '/admin/contabilidad/impuestos'
+      path: '/contabilidad/impuestos'
+      fullPath: '/admin/contabilidad/impuestos'
+      preLoaderRoute: typeof AdminContabilidadImpuestosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contabilidad/estados': {
       id: '/admin/contabilidad/estados'
       path: '/contabilidad/estados'
@@ -1396,6 +1416,7 @@ interface AdminRouteChildren {
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
   AdminContabilidadDiarioRoute: typeof AdminContabilidadDiarioRoute
   AdminContabilidadEstadosRoute: typeof AdminContabilidadEstadosRoute
+  AdminContabilidadImpuestosRoute: typeof AdminContabilidadImpuestosRoute
   AdminContabilidadMayorRoute: typeof AdminContabilidadMayorRoute
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
   AdminContabilidadIndexRoute: typeof AdminContabilidadIndexRoute
@@ -1448,6 +1469,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
   AdminContabilidadDiarioRoute: AdminContabilidadDiarioRoute,
   AdminContabilidadEstadosRoute: AdminContabilidadEstadosRoute,
+  AdminContabilidadImpuestosRoute: AdminContabilidadImpuestosRoute,
   AdminContabilidadMayorRoute: AdminContabilidadMayorRoute,
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
   AdminContabilidadIndexRoute: AdminContabilidadIndexRoute,
