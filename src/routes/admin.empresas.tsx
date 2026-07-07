@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Building2, Plus, Star, Pencil, Trash2, Check, X,
-  Mail, Phone, Globe, MapPin, Receipt,
+  Mail, Phone, Globe, MapPin, Receipt, Warehouse,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
