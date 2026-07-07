@@ -7,14 +7,19 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { ProductThumb } from "@/components/ui/product-thumb";
-import { Trash2, FileSpreadsheet, Download } from "lucide-react";
+import { Trash2, FileSpreadsheet, Download, ChevronDown, Search, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { sortProducts } from "@/lib/sort-products";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx-js-style";
+import { supabase } from "@/integrations/supabase/client";
+import { aiChatFn } from "@/lib/valinor.functions";
 
 interface OrderLine {
   order_id: string;
@@ -150,23 +155,31 @@ export function PurchaseOrderDialog({
     setRows(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const addProduct = (clave: string) => {
-    if (rows.some(r => r.clave === clave)) {
-      toast("Producto ya está en la orden");
-      return;
-    }
-    const product = allProducts.find(p => p.clave === clave);
-    if (!product) return;
-    const kg = productWeights[clave] ?? 0;
-    setRows(prev => [...prev, {
-      clave,
-      product_name: product.product_name,
-      image_url: product.image_url,
-      bultos: 0,
-      tons: 0,
-      weight_kg: kg,
-    }]);
+  const addProducts = (claves: string[]) => {
+    const toAdd = claves
+      .filter(c => !rows.some(r => r.clave === c))
+      .map(c => {
+        const product = allProducts.find(p => p.clave === c);
+        if (!product) return null;
+        const kg = productWeights[c] ?? 0;
+        return {
+          clave: c,
+          product_name: product.product_name,
+          image_url: product.image_url,
+          bultos: 0,
+          tons: 0,
+          weight_kg: kg,
+        };
+      })
+      .filter(Boolean) as PORow[];
+    if (toAdd.length === 0) return;
+    setRows(prev => [...prev, ...toAdd]);
   };
+
+  // Multi-select popover state
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSearch, setAddSearch] = useState("");
+  const [addSelection, setAddSelection] = useState<Set<string>>(new Set());
 
   // Products available for "add" (filtered by supplier, sorted Ganador/Minino first)
   const addableProducts = useMemo(() => {
@@ -177,6 +190,139 @@ export function PurchaseOrderDialog({
     const available = prods.filter(p => !rows.some(r => r.clave === p.clave));
     return sortProducts(available.map(p => ({ ...p, name: p.product_name })));
   }, [allProducts, poSupplier, rows]);
+
+  const filteredAddable = useMemo(() => {
+    const q = addSearch.trim().toLowerCase();
+    if (!q) return addableProducts;
+    return addableProducts.filter(p =>
+      p.clave.toLowerCase().includes(q) || (p.product_name ?? "").toLowerCase().includes(q)
+    );
+  }, [addableProducts, addSearch]);
+
+  const commitAddSelection = () => {
+    if (addSelection.size === 0) { setAddOpen(false); return; }
+    addProducts(Array.from(addSelection));
+    setAddSelection(new Set());
+    setAddSearch("");
+    setAddOpen(false);
+  };
+
+  // AI suggestion: query historical purchases from stock_entries for the
+  // current supplier and ask the model to recommend which SKUs to reorder
+  // and typical bulto quantities.
+  const [aiLoading, setAiLoading] = useState(false);
+  const suggestRepeat = async () => {
+    setAiLoading(true);
+    try {
+      const since = new Date();
+      since.setMonth(since.getMonth() - 6);
+      const sinceStr = since.toISOString().slice(0, 10);
+
+      // Restrict to the current supplier's product ids (via products.supplier text match)
+      const supplierProductIds = poSupplier === "all"
+        ? null
+        : (await supabase.from("products").select("id, clave").eq("supplier", poSupplier).eq("active", true)).data ?? [];
+      const idFilter = supplierProductIds ? supplierProductIds.map((p: any) => p.id) : null;
+
+      let q = supabase
+        .from("stock_entries")
+        .select("product_id, quantity, entry_date, supplier")
+        .gte("entry_date", sinceStr)
+        .limit(2000);
+      if (idFilter) q = q.in("product_id", idFilter);
+      else if (poSupplier !== "all") q = q.eq("supplier", poSupplier);
+      const { data: entries, error } = await q;
+      if (error) throw error;
+
+      // Aggregate by clave
+      const productById = new Map(allProducts.map((p: any) => [p.id ?? p.clave, p]));
+      // We only have clave in allProducts, need to fetch id->clave map
+      const { data: prodMap } = await supabase
+        .from("products")
+        .select("id, clave, name, supplier")
+        .in("id", Array.from(new Set((entries ?? []).map(e => e.product_id).filter(Boolean))));
+      const byId = new Map((prodMap ?? []).map((p: any) => [p.id, p]));
+
+      type Agg = { clave: string; product_name: string; supplier: string; total: number; orders: number; last_date: string | null };
+      const agg = new Map<string, Agg>();
+      for (const e of entries ?? []) {
+        const p = byId.get(e.product_id);
+        if (!p?.clave) continue;
+        const cur = agg.get(p.clave) ?? {
+          clave: p.clave, product_name: p.name, supplier: p.supplier ?? "",
+          total: 0, orders: 0, last_date: null,
+        };
+        cur.total += Number(e.quantity ?? 0);
+        cur.orders += 1;
+        if (!cur.last_date || (e.entry_date && e.entry_date > cur.last_date)) cur.last_date = e.entry_date;
+        agg.set(p.clave, cur);
+      }
+      const history = Array.from(agg.values()).sort((a, b) => b.total - a.total).slice(0, 60);
+      if (history.length === 0) {
+        toast.info("Sin historial de compras para este proveedor en los últimos 6 meses");
+        return;
+      }
+
+      const currentRows = rows.map(r => ({ clave: r.clave, bultos: r.bultos }));
+      const system = `Eres un asistente de compras para una distribuidora farmacéutica veterinaria en México.
+Analiza el historial de compras al proveedor y recomienda una orden de compra para repetir el patrón habitual.
+Devuelve SOLO JSON válido, sin markdown, con la forma:
+{"suggestions":[{"clave":"...","bultos": N, "reason":"corto"}]}
+Reglas:
+- Sugiere SKUs frecuentes del historial (>=2 órdenes en 6 meses) o de alta rotación (total alto).
+- Para cada sugerencia, propone "bultos" como el promedio redondeado de bultos por orden histórica.
+- No incluyas SKUs ya cubiertos con bultos > 0 en "currentRows".
+- Máximo 20 sugerencias, ordenadas por total desc.`;
+      const userMsg = JSON.stringify({ supplier: poSupplier, since: sinceStr, currentRows, history });
+
+      const resp = await aiChatFn({
+        data: {
+          model: "google/gemini-2.5-flash",
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ],
+        },
+      });
+      const content = (resp as any)?.content ?? (resp as any)?.choices?.[0]?.message?.content ?? "";
+      const cleaned = String(content).replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+      const parsed = JSON.parse(cleaned);
+      const suggestions: { clave: string; bultos: number }[] = Array.isArray(parsed?.suggestions) ? parsed.suggestions : [];
+
+      let added = 0;
+      const newRows: PORow[] = [];
+      for (const s of suggestions) {
+        if (!s?.clave) continue;
+        if (rows.some(r => r.clave === s.clave)) continue;
+        const product = allProducts.find(p => p.clave === s.clave);
+        if (!product) continue;
+        const kg = productWeights[s.clave] ?? 0;
+        const bultos = Math.max(0, Math.round(Number(s.bultos) || 0));
+        newRows.push({
+          clave: s.clave,
+          product_name: product.product_name,
+          image_url: product.image_url,
+          bultos,
+          tons: (bultos * kg) / 1000,
+          weight_kg: kg,
+        });
+        added++;
+      }
+      if (added === 0) {
+        toast.info("La IA no encontró sugerencias nuevas para este proveedor");
+      } else {
+        setRows(prev => [...prev, ...newRows]);
+        toast.success(`IA sugirió ${added} productos con base en compras previas`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al generar sugerencias con IA");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
   const totalBultos = rows.reduce((s, r) => s + r.bultos, 0);
   const totalTons = rows.reduce((s, r) => s + r.tons, 0);
@@ -289,23 +435,104 @@ export function PurchaseOrderDialog({
           </div>
         </div>
 
-        {/* Add product dropdown — full width with images */}
-        <Select key={rows.length} value="" onValueChange={(v) => addProduct(v)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Agregar producto..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            {addableProducts.map(p => (
-              <SelectItem key={p.clave} value={p.clave}>
-                <div className="flex items-center gap-3">
-                  <ProductThumb src={p.image_url} size="sm" />
-                  <span className="font-mono text-xs text-muted-foreground">{p.clave}</span>
-                  <span className="text-sm">{p.product_name}</span>
+        {/* Add product multi-select + AI suggest */}
+        <div className="flex gap-2">
+          <Popover open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddSearch(""); setAddSelection(new Set()); } }}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-between font-normal">
+                <span className="text-muted-foreground">
+                  {addSelection.size > 0
+                    ? `${addSelection.size} seleccionados`
+                    : "Agregar productos..."}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <div className="p-2 border-b border-border">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    value={addSearch}
+                    onChange={(e) => setAddSearch(e.target.value)}
+                    placeholder="Buscar por clave o nombre…"
+                    className="pl-7 h-8"
+                  />
                 </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                <div className="flex items-center justify-between px-1 pt-2 text-xs text-muted-foreground">
+                  <button
+                    className="hover:text-foreground"
+                    onClick={() => setAddSelection(new Set(filteredAddable.map(p => p.clave)))}
+                  >
+                    Seleccionar todo ({filteredAddable.length})
+                  </button>
+                  {addSelection.size > 0 && (
+                    <button
+                      className="hover:text-foreground"
+                      onClick={() => setAddSelection(new Set())}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+              <ScrollArea className="max-h-[320px]">
+                <div className="p-1">
+                  {filteredAddable.length === 0 && (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      Sin resultados
+                    </div>
+                  )}
+                  {filteredAddable.map((p) => {
+                    const checked = addSelection.has(p.clave);
+                    return (
+                      <label
+                        key={p.clave}
+                        className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            setAddSelection(prev => {
+                              const next = new Set(prev);
+                              if (v) next.add(p.clave);
+                              else next.delete(p.clave);
+                              return next;
+                            });
+                          }}
+                        />
+                        <ProductThumb src={p.image_url} size="sm" />
+                        <span className="font-mono text-xs text-muted-foreground shrink-0">{p.clave}</span>
+                        <span className="truncate">{p.product_name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              <div className="flex items-center justify-between p-2 border-t border-border gap-2">
+                {addSelection.size > 0 && (
+                  <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
+                )}
+                <div className="ml-auto flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={commitAddSelection} disabled={addSelection.size === 0}>
+                    Agregar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="outline"
+            onClick={suggestRepeat}
+            disabled={aiLoading}
+            title="Sugerir productos con base en compras anteriores al proveedor"
+          >
+            {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Sugerir con IA
+          </Button>
+        </div>
 
         {/* Table */}
         <ScrollArea className="flex-1 min-h-0">
