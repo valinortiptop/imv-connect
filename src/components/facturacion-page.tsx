@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "@/lib/router-compat";
+import { Link, useNavigate } from "@/lib/router-compat";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { useToast } from "@/hooks/use-toast";
+import { stampInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
-  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink,
+  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp,
 } from "lucide-react";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
