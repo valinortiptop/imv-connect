@@ -1558,7 +1558,7 @@ export default function Clients() {
 
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{c.representante_nombre ?? "---"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">{c.representante_nombre ?? "---"}</TableCell>
                         <TableCell className="text-sm hidden lg:table-cell">
                           <Badge className={cn("text-xs",
                             c.payment_method === "Efectivo" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
