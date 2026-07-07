@@ -63,6 +63,7 @@ import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
 import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devoluciones.lista'
 import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
+import { Route as AdminContabilidadSatRouteImport } from './routes/admin.contabilidad.sat'
 import { Route as AdminContabilidadPolizasRouteImport } from './routes/admin.contabilidad.polizas'
 import { Route as AdminContabilidadMayorRouteImport } from './routes/admin.contabilidad.mayor'
 import { Route as AdminContabilidadImpuestosRouteImport } from './routes/admin.contabilidad.impuestos'
@@ -346,6 +347,11 @@ const AdminDevolucionesIdRoute = AdminDevolucionesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminDevolucionesRoute,
 } as any)
+const AdminContabilidadSatRoute = AdminContabilidadSatRouteImport.update({
+  id: '/contabilidad/sat',
+  path: '/contabilidad/sat',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContabilidadPolizasRoute =
   AdminContabilidadPolizasRouteImport.update({
     id: '/contabilidad/polizas',
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
+  '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -540,6 +547,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
+  '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -609,6 +617,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
+  '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
@@ -679,6 +688,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
+    | '/admin/contabilidad/sat'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
@@ -746,6 +756,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
+    | '/admin/contabilidad/sat'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
@@ -814,6 +825,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
+    | '/admin/contabilidad/sat'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
@@ -1213,6 +1225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDevolucionesIdRouteImport
       parentRoute: typeof AdminDevolucionesRoute
     }
+    '/admin/contabilidad/sat': {
+      id: '/admin/contabilidad/sat'
+      path: '/contabilidad/sat'
+      fullPath: '/admin/contabilidad/sat'
+      preLoaderRoute: typeof AdminContabilidadSatRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contabilidad/polizas': {
       id: '/admin/contabilidad/polizas'
       path: '/contabilidad/polizas'
@@ -1440,6 +1459,7 @@ interface AdminRouteChildren {
   AdminContabilidadImpuestosRoute: typeof AdminContabilidadImpuestosRoute
   AdminContabilidadMayorRoute: typeof AdminContabilidadMayorRoute
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
+  AdminContabilidadSatRoute: typeof AdminContabilidadSatRoute
   AdminContabilidadIndexRoute: typeof AdminContabilidadIndexRoute
 }
 
@@ -1494,6 +1514,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadImpuestosRoute: AdminContabilidadImpuestosRoute,
   AdminContabilidadMayorRoute: AdminContabilidadMayorRoute,
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
+  AdminContabilidadSatRoute: AdminContabilidadSatRoute,
   AdminContabilidadIndexRoute: AdminContabilidadIndexRoute,
 }
 
