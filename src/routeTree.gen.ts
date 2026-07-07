@@ -57,6 +57,7 @@ import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
+import { Route as AdminContabilidadIndexRouteImport } from './routes/admin.contabilidad.index'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
@@ -306,6 +307,11 @@ const AdminAdministracionRoute = AdminAdministracionRouteImport.update({
   path: '/administracion',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContabilidadIndexRoute = AdminContabilidadIndexRouteImport.update({
+  id: '/contabilidad/',
+  path: '/contabilidad/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
 export interface FileRoutesByTo {
@@ -460,6 +467,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/contabilidad': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
 export interface FileRoutesById {
@@ -519,6 +527,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
 }
 export interface FileRouteTypes {
@@ -579,6 +588,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/contabilidad'
     | '/admin/clientes/$id/precios'
   id:
     | '__root__'
@@ -694,6 +705,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
   fileRoutesById: FileRoutesById
 }
@@ -1044,6 +1056,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdministracionRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/': {
+      id: '/admin/contabilidad/'
+      path: '/contabilidad'
+      fullPath: '/admin/contabilidad/'
+      preLoaderRoute: typeof AdminContabilidadIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pedidos/$id': {
       id: '/admin/pedidos/$id'
       path: '/$id'
@@ -1221,6 +1240,7 @@ interface AdminRouteChildren {
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVentasRoute: typeof AdminVentasRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminContabilidadIndexRoute: typeof AdminContabilidadIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1266,6 +1286,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVentasRoute: AdminVentasRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminContabilidadIndexRoute: AdminContabilidadIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
