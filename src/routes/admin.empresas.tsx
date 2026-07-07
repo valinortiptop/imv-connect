@@ -759,3 +759,370 @@ function EmpresaAlmacenes({ empresaId }: { empresaId: string }) {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// CSF import row (autofill Datos tab from a Constancia)
+// ─────────────────────────────────────────────────────────────
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(
+      ...bytes.subarray(i, Math.min(i + chunk, bytes.length)),
+    );
+  }
+  return btoa(binary);
+}
+
+function CsfImportRow({
+  onExtracted,
+}: {
+  onExtracted: (x: any) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const parseCsf = useServerFn(parseCsfDocumentFn);
+
+  const handle = async (file: File) => {
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("El archivo excede 15 MB.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await parseCsf({
+        data: { filename: file.name, mime: file.type || "application/pdf", base64 },
+      });
+      if (!res.extracted) {
+        toast.error("No pude extraer datos del documento.");
+        return;
+      }
+      onExtracted(res.extracted);
+      toast.success(
+        `Datos extraídos${
+          res.extracted.confianza
+            ? ` (confianza ${Math.round(res.extracted.confianza * 100)}%)`
+            : ""
+        }. Revisa antes de guardar.`,
+      );
+    } catch (e) {
+      toast.error((e as Error).message || "Error al analizar el documento.");
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
+      <div className="flex items-start gap-3">
+        <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Importar desde Constancia de Situación Fiscal</p>
+          <p className="text-xs text-muted-foreground">
+            Sube el PDF (o foto) de la CSF y la IA autocompleta RFC, razón social,
+            régimen fiscal, dirección y más.
+          </p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handle(f);
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => inputRef.current?.click()}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analizando…
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-1" /> Subir CSF
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Documentos tab
+// ─────────────────────────────────────────────────────────────
+
+type EmpresaDoc = {
+  id: string;
+  empresa_id: string;
+  storage_path: string;
+  filename: string;
+  mime: string | null;
+  size_bytes: number | null;
+  categoria: string;
+  etiquetas: string[];
+  resumen: string | null;
+  ai_analyzed: boolean;
+  created_at: string;
+  signed_url: string | null;
+};
+
+const CAT_LABEL: Record<string, string> = {
+  logo: "Logo",
+  fuente: "Fuente",
+  csf: "CSF",
+  fiscal: "Fiscal",
+  legal: "Legal",
+  contrato: "Contrato",
+  branding: "Branding",
+  comprobante: "Comprobante",
+  general: "General",
+  otro: "Otro",
+};
+
+function CategoriaIcon({ categoria }: { categoria: string }) {
+  const cls = "h-4 w-4";
+  switch (categoria) {
+    case "logo": return <ImageIcon className={cls} />;
+    case "fuente": return <Type className={cls} />;
+    case "csf":
+    case "fiscal": return <Receipt className={cls} />;
+    case "legal":
+    case "contrato": return <FileSignature className={cls} />;
+    default: return <FileText className={cls} />;
+  }
+}
+
+function formatBytes(n: number | null) {
+  if (!n) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function EmpresaDocumentos({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const uploadDoc = useServerFn(uploadEmpresaDocFn);
+  const listDocs = useServerFn(listEmpresaDocsFn);
+  const deleteDoc = useServerFn(deleteEmpresaDocFn);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["empresa-docs", empresaId],
+    queryFn: async () => {
+      const res = await listDocs({ data: { empresa_id: empresaId } });
+      return res.documents as EmpresaDoc[];
+    },
+  });
+
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["empresa-docs", empresaId] });
+
+  const handleUpload = async (file: File) => {
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("El archivo excede 20 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await uploadDoc({
+        data: {
+          empresa_id: empresaId,
+          filename: file.name,
+          mime: file.type || "application/octet-stream",
+          base64,
+          size_bytes: file.size,
+        },
+      });
+      const cat = (res.document as any)?.categoria ?? "general";
+      toast.success(
+        `Documento subido${
+          (res.document as any)?.ai_analyzed
+            ? ` — categorizado como “${CAT_LABEL[cat] ?? cat}”`
+            : ""
+        }.`,
+      );
+      invalidate();
+    } catch (e) {
+      toast.error((e as Error).message || "Error al subir.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const onDelete = async (d: EmpresaDoc) => {
+    if (!confirm(`¿Eliminar ${d.filename}?`)) return;
+    try {
+      await deleteDoc({ data: { id: d.id } });
+      toast.success("Documento eliminado");
+      invalidate();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const groups = (data ?? []).reduce<Record<string, EmpresaDoc[]>>((acc, d) => {
+    (acc[d.categoria] ??= []).push(d);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center gap-3">
+        <Sparkles className="h-5 w-5 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Sube documentos de la empresa</p>
+          <p className="text-xs text-muted-foreground">
+            La IA los clasifica en logo, fuente, CSF, fiscal, legal, contrato,
+            branding, etc.
+          </p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleUpload(f);
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Subiendo…
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-1" /> Subir
+            </>
+          )}
+        </Button>
+      </div>
+
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">Cargando documentos…</p>
+      )}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
+      {data && data.length === 0 && !isLoading && (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          Aún no hay documentos.
+        </p>
+      )}
+
+      {Object.entries(groups).map(([cat, docs]) => (
+        <div key={cat} className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <CategoriaIcon categoria={cat} />
+            {CAT_LABEL[cat] ?? cat}
+            <span className="text-muted-foreground/60">({docs.length})</span>
+          </div>
+          <ul className="space-y-1.5">
+            {docs.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-start gap-3 rounded border border-border bg-card p-2.5"
+              >
+                {d.mime?.startsWith("image/") && d.signed_url ? (
+                  <img
+                    src={d.signed_url}
+                    alt={d.filename}
+                    className="h-12 w-12 rounded object-contain bg-muted shrink-0"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded bg-muted grid place-items-center shrink-0">
+                    <CategoriaIcon categoria={d.categoria} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium truncate">{d.filename}</span>
+                    {d.ai_analyzed && (
+                      <Badge variant="outline" className="h-4 px-1.5 text-[10px] gap-1">
+                        <Sparkles className="h-2.5 w-2.5" /> IA
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span>{formatBytes(d.size_bytes)}</span>
+                    <span>·</span>
+                    <span>{new Date(d.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {d.resumen && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {d.resumen}
+                    </p>
+                  )}
+                  {d.etiquetas?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {d.etiquetas.slice(0, 6).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {d.signed_url && (
+                    <a
+                      href={d.signed_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground"
+                      title="Abrir"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
+                  {d.signed_url && (
+                    <a
+                      href={d.signed_url}
+                      download={d.filename}
+                      className="p-1.5 rounded hover:bg-muted text-muted-foreground"
+                      title="Descargar"
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    className="p-1.5 rounded hover:bg-destructive/10 text-destructive"
+                    onClick={() => onDelete(d)}
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
