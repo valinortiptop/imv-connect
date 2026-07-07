@@ -1120,6 +1120,84 @@ export type Database = {
           },
         ]
       }
+      empresas: {
+        Row: {
+          active: boolean
+          cp_fiscal: string | null
+          created_at: string
+          direccion_fiscal: string | null
+          email_contacto: string | null
+          folio_next: number
+          id: string
+          is_default: boolean
+          iva_default: number
+          logo_url: string | null
+          lugar_expedicion: string | null
+          moneda_default: string
+          nombre_comercial: string | null
+          razon_social: string
+          regimen_fiscal: string | null
+          representante_legal: string | null
+          rfc: string
+          serie_factura_default: string | null
+          sitio_web: string | null
+          telefono: string | null
+          updated_at: string
+          updated_by: string | null
+          uso_cfdi_default: string | null
+        }
+        Insert: {
+          active?: boolean
+          cp_fiscal?: string | null
+          created_at?: string
+          direccion_fiscal?: string | null
+          email_contacto?: string | null
+          folio_next?: number
+          id?: string
+          is_default?: boolean
+          iva_default?: number
+          logo_url?: string | null
+          lugar_expedicion?: string | null
+          moneda_default?: string
+          nombre_comercial?: string | null
+          razon_social: string
+          regimen_fiscal?: string | null
+          representante_legal?: string | null
+          rfc: string
+          serie_factura_default?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          uso_cfdi_default?: string | null
+        }
+        Update: {
+          active?: boolean
+          cp_fiscal?: string | null
+          created_at?: string
+          direccion_fiscal?: string | null
+          email_contacto?: string | null
+          folio_next?: number
+          id?: string
+          is_default?: boolean
+          iva_default?: number
+          logo_url?: string | null
+          lugar_expedicion?: string | null
+          moneda_default?: string
+          nombre_comercial?: string | null
+          razon_social?: string
+          regimen_fiscal?: string | null
+          representante_legal?: string | null
+          rfc?: string
+          serie_factura_default?: string | null
+          sitio_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          uso_cfdi_default?: string | null
+        }
+        Relationships: []
+      }
       factura_items: {
         Row: {
           cantidad: number
@@ -1234,6 +1312,7 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          empresa_id: string | null
           estado: Database["public"]["Enums"]["factura_estado"]
           fecha_emision: string
           fecha_vencimiento: string
@@ -1252,6 +1331,7 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          empresa_id?: string | null
           estado?: Database["public"]["Enums"]["factura_estado"]
           fecha_emision?: string
           fecha_vencimiento?: string
@@ -1270,6 +1350,7 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          empresa_id?: string | null
           estado?: Database["public"]["Enums"]["factura_estado"]
           fecha_emision?: string
           fecha_vencimiento?: string
@@ -1313,6 +1394,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "facturas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "facturas_pedido_id_fkey"
