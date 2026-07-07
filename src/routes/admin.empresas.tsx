@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Building2, Plus, Star, Pencil, Trash2, Check, X,
   Mail, Phone, Globe, MapPin, Receipt, Warehouse,
+  Upload, FileText, Sparkles, Image as ImageIcon, Type,
+  FileSignature, Loader2, Download, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  parseCsfDocumentFn,
+  uploadEmpresaDocFn,
+  listEmpresaDocsFn,
+  deleteEmpresaDocFn,
+} from "@/lib/empresa-docs.functions";
+
 
 export const Route = createFileRoute("/admin/empresas")({
   head: () => ({
