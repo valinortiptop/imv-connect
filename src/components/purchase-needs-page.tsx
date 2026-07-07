@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertTriangle, Package, Search, ChevronDown, ChevronRight,
-  ShoppingCart, Truck, DollarSign, CalendarIcon, ExternalLink, Info, Download, FileSpreadsheet
+  ShoppingCart, Truck, DollarSign, CalendarIcon, ExternalLink, Info, Download, FileSpreadsheet, Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
