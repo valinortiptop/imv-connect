@@ -76,6 +76,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Configuración",
     items: [
+      { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: Building2 },
       { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: Activity },
       { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: Gauge },
       { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: Settings },
