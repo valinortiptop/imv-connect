@@ -108,7 +108,7 @@ const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   navInventario: { es: "Almacén", en: "Warehouse" },
   navKardex: { es: "Kardex", en: "Kardex" },
   navStock: { es: "Entradas", en: "Entries" },
-  navPurchaseNeeds: { es: "Necesidades de compra", en: "Purchase Needs" },
+  navPurchaseNeeds: { es: "Compras", en: "Purchases" },
   navDamaged: { es: "Dañados", en: "Damaged" },
   navDevoluciones: { es: "Devoluciones", en: "Returns" },
   // Operaciones
