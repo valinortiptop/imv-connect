@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertTriangle, Package, Search, ChevronDown, ChevronRight,
-  ShoppingCart, Truck, DollarSign, CalendarIcon, ExternalLink, Info, Download, FileSpreadsheet
+  ShoppingCart, Truck, DollarSign, CalendarIcon, ExternalLink, Info, Download, FileSpreadsheet, Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
@@ -20,6 +20,7 @@ import html2canvas from "html2canvas";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
 import { PurchaseOrderDialog } from "@/components/PurchaseOrderDialog";
+import { SuppliersImportDialog } from "@/components/SuppliersImportDialog";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { cn } from "@/lib/utils";
 
@@ -133,6 +134,7 @@ export default function PurchaseNeeds() {
   }, [allProducts]);
 
   const [poOpen, setPoOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   // The view (v_purchase_by_order) now does the chronological burn-down server-side,
   // accounting for incoming Programado entradas per delivery_date. Trust it as-is.
@@ -393,7 +395,7 @@ export default function PurchaseNeeds() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Necesidades de Compra</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Compras</h1>
           <p className="text-sm text-muted-foreground">
             Vista por pedido — stock disponible vs comprometido
           </p>
@@ -418,6 +420,14 @@ export default function PurchaseNeeds() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setImportOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importar proveedores
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleDownloadExcel}
             disabled={shortageRows.length === 0}
           >
@@ -435,6 +445,13 @@ export default function PurchaseNeeds() {
           </Button>
         </div>
       </div>
+
+      {importOpen && (
+        <SuppliersImportDialog
+          onClose={() => setImportOpen(false)}
+          onSaved={() => setImportOpen(false)}
+        />
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
