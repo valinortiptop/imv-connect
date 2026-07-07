@@ -779,20 +779,7 @@ export default function Facturacion() {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ["facturacion-clients"] })}
         />
 
-        {/* Billing Entity Dialog */}
-        <BillingEntityDialog
-          open={entityDialogOpen}
-          onOpenChange={setEntityDialogOpen}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ["billing-entities"] })}
-        />
-
-        {/* Billing Entity Manage Dialog */}
-        <EntityManageDialog
-          open={entityManageOpen}
-          onOpenChange={setEntityManageOpen}
-          entities={billingEntities}
-          onChanged={() => queryClient.invalidateQueries({ queryKey: ["billing-entities"] })}
-        />
+        {/* Billing entity management now lives at /admin/empresas */}
       </div>
     </div>
   );
