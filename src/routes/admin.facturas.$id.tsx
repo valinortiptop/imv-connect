@@ -50,6 +50,12 @@ type Factura = {
   estado: Estado;
   notas: string | null;
   pedido_id: string | null;
+  facturapi_id: string | null;
+  uuid_fiscal: string | null;
+  serie: string | null;
+  pdf_url: string | null;
+  xml_url: string | null;
+  cfdi_status: string | null;
   cliente: { id: string; razon_social: string; nombre_comercial: string | null; rfc: string | null; email: string | null } | null;
   representante: { nombre: string } | null;
   factura_items: Item[];
