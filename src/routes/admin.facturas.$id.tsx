@@ -138,6 +138,55 @@ function FacturaDetalle() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const stampFn = useServerFn(stampInvoiceFn);
+  const cancelCfdiFn = useServerFn(cancelInvoiceFn);
+  const downloadFn = useServerFn(downloadInvoiceFn);
+  const emailFn = useServerFn(sendInvoiceEmailFn);
+
+  const timbrar = useMutation({
+    mutationFn: () => stampFn({ data: { facturaId: id } }),
+    onSuccess: () => {
+      toast.success("CFDI timbrado");
+      qc.invalidateQueries({ queryKey: ["factura", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cancelarCfdi = useMutation({
+    mutationFn: (motivo: "01" | "02" | "03" | "04") =>
+      cancelCfdiFn({ data: { facturaId: id, motivo } }),
+    onSuccess: () => {
+      toast.success("CFDI cancelado ante SAT");
+      qc.invalidateQueries({ queryKey: ["factura", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const descargar = async (format: "pdf" | "xml" | "zip") => {
+    try {
+      const res = await downloadFn({ data: { facturaId: id, format } });
+      const blob = new Blob(
+        [Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0))],
+        { type: res.contentType },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const enviarCorreo = useMutation({
+    mutationFn: (email?: string) => emailFn({ data: { facturaId: id, email } }),
+    onSuccess: () => toast.success("Correo enviado"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Cargando…</p>;
   if (error) {
     return (
