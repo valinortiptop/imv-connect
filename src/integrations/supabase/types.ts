@@ -1252,6 +1252,72 @@ export type Database = {
           },
         ]
       }
+      empresa_documentos: {
+        Row: {
+          ai_analyzed: boolean
+          categoria: string
+          created_at: string
+          empresa_id: string
+          etiquetas: string[]
+          filename: string
+          id: string
+          mime: string | null
+          notas: string | null
+          resumen: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          ai_analyzed?: boolean
+          categoria?: string
+          created_at?: string
+          empresa_id: string
+          etiquetas?: string[]
+          filename: string
+          id?: string
+          mime?: string | null
+          notas?: string | null
+          resumen?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          ai_analyzed?: boolean
+          categoria?: string
+          created_at?: string
+          empresa_id?: string
+          etiquetas?: string[]
+          filename?: string
+          id?: string
+          mime?: string | null
+          notas?: string | null
+          resumen?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresa_documentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "empresa_documentos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           active: boolean
