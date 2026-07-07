@@ -23,7 +23,7 @@ const translations = {
   navProspects: { es: "Prospectos", en: "Prospects" },
   navLogistics: { es: "Logística", en: "Logistics" },
   navManiobra: { es: "Maniobra", en: "Maneuver" },
-  navPurchaseNeeds: { es: "Necesidades de Compra", en: "Purchase Needs" },
+  navPurchaseNeeds: { es: "Compras", en: "Purchases" },
   navDamaged: { es: "Dañados", en: "Damaged" },
   navDevoluciones: { es: "Devoluciones", en: "Returns" },
   navCatalogo: { es: "Catálogo", en: "Catalog" },
