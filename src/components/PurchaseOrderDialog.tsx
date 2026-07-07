@@ -435,23 +435,104 @@ Reglas:
           </div>
         </div>
 
-        {/* Add product dropdown — full width with images */}
-        <Select key={rows.length} value="" onValueChange={(v) => addProduct(v)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Agregar producto..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            {addableProducts.map(p => (
-              <SelectItem key={p.clave} value={p.clave}>
-                <div className="flex items-center gap-3">
-                  <ProductThumb src={p.image_url} size="sm" />
-                  <span className="font-mono text-xs text-muted-foreground">{p.clave}</span>
-                  <span className="text-sm">{p.product_name}</span>
+        {/* Add product multi-select + AI suggest */}
+        <div className="flex gap-2">
+          <Popover open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddSearch(""); setAddSelection(new Set()); } }}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-between font-normal">
+                <span className="text-muted-foreground">
+                  {addSelection.size > 0
+                    ? `${addSelection.size} seleccionados`
+                    : "Agregar productos..."}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <div className="p-2 border-b border-border">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    value={addSearch}
+                    onChange={(e) => setAddSearch(e.target.value)}
+                    placeholder="Buscar por clave o nombre…"
+                    className="pl-7 h-8"
+                  />
                 </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                <div className="flex items-center justify-between px-1 pt-2 text-xs text-muted-foreground">
+                  <button
+                    className="hover:text-foreground"
+                    onClick={() => setAddSelection(new Set(filteredAddable.map(p => p.clave)))}
+                  >
+                    Seleccionar todo ({filteredAddable.length})
+                  </button>
+                  {addSelection.size > 0 && (
+                    <button
+                      className="hover:text-foreground"
+                      onClick={() => setAddSelection(new Set())}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+              <ScrollArea className="max-h-[320px]">
+                <div className="p-1">
+                  {filteredAddable.length === 0 && (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                      Sin resultados
+                    </div>
+                  )}
+                  {filteredAddable.map((p) => {
+                    const checked = addSelection.has(p.clave);
+                    return (
+                      <label
+                        key={p.clave}
+                        className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            setAddSelection(prev => {
+                              const next = new Set(prev);
+                              if (v) next.add(p.clave);
+                              else next.delete(p.clave);
+                              return next;
+                            });
+                          }}
+                        />
+                        <ProductThumb src={p.image_url} size="sm" />
+                        <span className="font-mono text-xs text-muted-foreground shrink-0">{p.clave}</span>
+                        <span className="truncate">{p.product_name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              <div className="flex items-center justify-between p-2 border-t border-border gap-2">
+                {addSelection.size > 0 && (
+                  <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
+                )}
+                <div className="ml-auto flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={commitAddSelection} disabled={addSelection.size === 0}>
+                    Agregar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="outline"
+            onClick={suggestRepeat}
+            disabled={aiLoading}
+            title="Sugerir productos con base en compras anteriores al proveedor"
+          >
+            {aiLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Sugerir con IA
+          </Button>
+        </div>
 
         {/* Table */}
         <ScrollArea className="flex-1 min-h-0">
