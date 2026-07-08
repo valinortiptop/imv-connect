@@ -51,7 +51,7 @@ import {
   BarChart3, Package, Warehouse, Truck, ClipboardList, Route,
   BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus,
 } from "lucide-react";
-import { createUserFn } from "@/lib/admin-users.functions";
+import { createUserFn, updateUserFn } from "@/lib/admin-users.functions";
 
 /* ─── types ─── */
 interface UserRow {
