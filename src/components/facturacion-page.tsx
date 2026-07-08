@@ -169,6 +169,52 @@ export default function Facturacion() {
     },
   });
 
+  // Pedidos pendientes de facturar — feeds the "Pedidos por facturar" panel
+  // that closes the loop Pedidos → Facturación.
+  const { data: pedidosPorFacturar = [] } = useQuery({
+    queryKey: ["pedidos-por-facturar"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_pedidos_por_facturar");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        folio: string | null;
+        order_code: string | null;
+        cliente_id: string;
+        cliente: string | null;
+        rfc: string | null;
+        estado: string;
+        delivery_date: string | null;
+        subtotal: number;
+        iva: number;
+        total: number;
+      }>;
+    },
+    refetchInterval: 60_000,
+  });
+
+  const facturarPedidoMutation = useMutation({
+    mutationFn: async (pedidoId: string) => {
+      const { data, error } = await (supabase as any).rpc("facturar_pedido", { _pedido: pedidoId, _dias_credito: 30 });
+      if (error) throw error;
+      return data as { factura_id: string; folio: string; total: number };
+    },
+    onSuccess: (res) => {
+      toast({ title: "Factura creada", description: `Factura ${res.folio} generada correctamente` });
+      qc.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["facturas"] });
+      navigate(`/admin/facturas/${res.factura_id}`);
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error al facturar",
+        description: err?.message ?? "No se pudo crear la factura",
+        variant: "destructive",
+      });
+    },
+  });
+
+
   // Auto-select default entity
   const activeEntity = useMemo(() => {
     if (selectedEntityId) return billingEntities.find(e => e.id === selectedEntityId);
