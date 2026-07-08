@@ -1969,27 +1969,45 @@ export type Database = {
           activo: boolean
           created_at: string
           id: string
+          id_fiscal_extranjero: string | null
           logo_url: string | null
+          nacionalidad: string | null
           nombre: string
           orden: number
+          pais: string | null
+          rfc: string | null
+          tipo_operacion: string
+          tipo_tercero: string
           updated_at: string
         }
         Insert: {
           activo?: boolean
           created_at?: string
           id?: string
+          id_fiscal_extranjero?: string | null
           logo_url?: string | null
+          nacionalidad?: string | null
           nombre: string
           orden?: number
+          pais?: string | null
+          rfc?: string | null
+          tipo_operacion?: string
+          tipo_tercero?: string
           updated_at?: string
         }
         Update: {
           activo?: boolean
           created_at?: string
           id?: string
+          id_fiscal_extranjero?: string | null
           logo_url?: string | null
+          nacionalidad?: string | null
           nombre?: string
           orden?: number
+          pais?: string | null
+          rfc?: string | null
+          tipo_operacion?: string
+          tipo_tercero?: string
           updated_at?: string
         }
         Relationships: []
