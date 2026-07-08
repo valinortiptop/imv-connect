@@ -420,3 +420,187 @@ function CuentaDialog({
     </Dialog>
   );
 }
+
+// ---------- CSV Import ----------
+
+function parseCsv(text: string): Partial<Cuenta>[] {
+  // Split rows respecting quoted commas
+  const rows: string[][] = [];
+  let cur: string[] = [], field = "", inQ = false;
+  const src = text.replace(/\r\n?/g, "\n");
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else field += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ",") { cur.push(field); field = ""; }
+      else if (ch === "\n") { cur.push(field); rows.push(cur); cur = []; field = ""; }
+      else field += ch;
+    }
+  }
+  if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+  const nonEmpty = rows.filter((r) => r.some((c) => c.trim() !== ""));
+  if (nonEmpty.length === 0) return [];
+  const header = nonEmpty[0].map((h) => h.trim().toLowerCase());
+  const idx = (name: string, ...aliases: string[]) => {
+    const all = [name, ...aliases];
+    for (const a of all) { const i = header.indexOf(a); if (i >= 0) return i; }
+    return -1;
+  };
+  const iCod = idx("codigo", "código", "cuenta");
+  const iNom = idx("nombre", "descripcion", "descripción");
+  if (iCod < 0 || iNom < 0) throw new Error("El CSV debe incluir al menos las columnas 'codigo' y 'nombre'");
+  const iAgr = idx("codigo_agrupador", "agrupador", "sat", "codigo_sat");
+  const iNat = idx("naturaleza", "tipo");
+  const iNiv = idx("nivel");
+  const iMov = idx("permite_movimientos", "movimientos", "detalle");
+  const iMon = idx("moneda");
+  const iSal = idx("saldo_inicial", "saldo");
+
+  return nonEmpty.slice(1).map((r) => {
+    const codigo = (r[iCod] ?? "").trim();
+    const nombre = (r[iNom] ?? "").trim();
+    if (!codigo || !nombre) return null;
+    const natRaw = (iNat >= 0 ? r[iNat] : "").trim().toLowerCase();
+    const naturaleza: "deudora" | "acreedora" =
+      natRaw.startsWith("a") || natRaw === "c" || natRaw === "credito" || natRaw === "crédito" ? "acreedora" : "deudora";
+    const nivelParsed = iNiv >= 0 ? Number((r[iNiv] ?? "").trim()) : NaN;
+    const nivel = Number.isFinite(nivelParsed) && nivelParsed > 0 ? nivelParsed : Math.max(1, codigo.split(/[-.]/).length);
+    const movRaw = (iMov >= 0 ? r[iMov] : "").trim().toLowerCase();
+    const permite_movimientos = movRaw === "" ? nivel >= 3 : ["1","true","si","sí","x","y","yes"].includes(movRaw);
+    const saldo = iSal >= 0 ? Number((r[iSal] ?? "0").trim()) : 0;
+    return {
+      codigo,
+      nombre,
+      codigo_agrupador: iAgr >= 0 ? (r[iAgr] ?? "").trim() || null : null,
+      naturaleza,
+      nivel,
+      permite_movimientos,
+      moneda: iMon >= 0 ? ((r[iMon] ?? "MXN").trim() || "MXN") : "MXN",
+      saldo_inicial: Number.isFinite(saldo) ? saldo : 0,
+      activa: true,
+    } as Partial<Cuenta>;
+  }).filter((x): x is Partial<Cuenta> => x !== null);
+}
+
+function ImportCsvDialog({
+  onClose, onImport, hasExisting, importing,
+}: {
+  onClose: () => void;
+  onImport: (rows: Partial<Cuenta>[], replace: boolean) => void;
+  hasExisting: boolean;
+  importing: boolean;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Partial<Cuenta>[]>([]);
+  const [replace, setReplace] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFile = async (f: File) => {
+    setFile(f); setError(null);
+    try {
+      const text = await f.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) throw new Error("No se encontraron filas válidas");
+      setPreview(rows);
+    } catch (e: any) {
+      setError(e.message); setPreview([]);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Importar catálogo propio (CSV)</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 pt-2 text-sm">
+          <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Columnas esperadas:</p>
+            <code className="block font-mono text-[11px]">
+              codigo, nombre, codigo_agrupador, naturaleza, nivel, permite_movimientos, moneda, saldo_inicial
+            </code>
+            <p className="mt-2">Sólo <b>codigo</b> y <b>nombre</b> son obligatorios. Naturaleza acepta <i>deudora/acreedora</i>. Se hace upsert por código.</p>
+          </div>
+
+          <div>
+            <Label className="text-xs">Archivo CSV</Label>
+            <Input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-md border border-destructive bg-destructive/10 p-2 text-xs text-destructive">{error}</p>
+          )}
+
+          {preview.length > 0 && (
+            <div className="rounded-md border border-border overflow-hidden">
+              <div className="bg-muted/30 px-3 py-1.5 text-xs font-medium">
+                Vista previa — {preview.length} cuentas
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/20 text-[10px] uppercase text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-2 py-1">Código</th>
+                      <th className="text-left px-2 py-1">Agrupador</th>
+                      <th className="text-left px-2 py-1">Nombre</th>
+                      <th className="text-left px-2 py-1">Nat.</th>
+                      <th className="text-center px-2 py-1">Nivel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.slice(0, 50).map((c, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-2 py-1 font-mono">{c.codigo}</td>
+                        <td className="px-2 py-1 font-mono text-muted-foreground">{c.codigo_agrupador ?? "—"}</td>
+                        <td className="px-2 py-1">{c.nombre}</td>
+                        <td className="px-2 py-1">{c.naturaleza}</td>
+                        <td className="px-2 py-1 text-center">{c.nivel}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {preview.length > 50 && (
+                  <div className="px-2 py-1 text-[10px] text-muted-foreground bg-muted/10">
+                    …y {preview.length - 50} más
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {hasExisting && (
+            <label className="flex items-center gap-2 rounded-md border border-border bg-muted/10 p-2 text-xs">
+              <Switch checked={replace} onCheckedChange={setReplace} />
+              <span>
+                <b>Reemplazar catálogo actual</b> — borra todas las cuentas existentes de esta empresa antes de importar.
+                {replace && <span className="text-destructive"> Esta acción es destructiva.</span>}
+              </span>
+            </label>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button
+              disabled={!file || preview.length === 0 || importing}
+              onClick={() => {
+                if (replace && !confirm("Se eliminarán TODAS las cuentas actuales de esta empresa. ¿Continuar?")) return;
+                onImport(preview, replace);
+              }}
+            >
+              {importing ? "Importando…" : `Importar ${preview.length || ""}`}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
