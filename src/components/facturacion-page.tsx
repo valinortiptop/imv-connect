@@ -984,6 +984,12 @@ export default function Facturacion() {
 
         {/* Billing entity management now lives at /admin/empresas */}
       </div>
+
+      <OrderDetailSheet
+        orderId={detailOrderId}
+        open={!!detailOrderId}
+        onOpenChange={(o) => { if (!o) setDetailOrderId(null); }}
+      />
     </div>
   );
 }
