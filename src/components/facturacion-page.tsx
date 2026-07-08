@@ -118,6 +118,31 @@ export default function Facturacion() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const stampFn = useServerFn(stampInvoiceFn);
+  const downloadFn = useServerFn(downloadInvoiceFn);
+
+  const handleDownloadCfdi = async (facturaId: string, format: "pdf" | "xml") => {
+    try {
+      const res = await downloadFn({ data: { facturaId, format } });
+      const blob = new Blob(
+        [Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0))],
+        { type: res.contentType },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({
+        title: "No se pudo descargar",
+        description: e?.message ?? "La factura no está timbrada.",
+        variant: "destructive",
+      });
+    }
+  };
 
   /* ── state ── */
   // Mayoreo / Menudeo / Todos — filters the client picker dropdown.
