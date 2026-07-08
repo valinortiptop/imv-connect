@@ -484,7 +484,7 @@ Reglas:
                   )}
                 </div>
               </div>
-              <ScrollArea className="max-h-[320px]">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="p-1">
                   {filteredAddable.length === 0 && (
                     <div className="px-3 py-6 text-center text-sm text-muted-foreground">
