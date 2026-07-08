@@ -4,6 +4,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ROLES = ["admin", "ventas", "almacen", "logistica", "viewer"] as const;
 
+async function assertAdmin(context: any) {
+  const { data: isAdmin, error: roleErr } = await context.supabase.rpc(
+    "has_role",
+    { _user_id: context.userId, _role: "admin" },
+  );
+  if (roleErr) throw new Error(roleErr.message);
+  if (!isAdmin) throw new Error("Forbidden: admin role required");
+}
+
 export const createUserFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -18,13 +27,7 @@ export const createUserFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    // Verify caller is admin
-    const { data: isAdmin, error: roleErr } = await context.supabase.rpc(
-      "has_role",
-      { _user_id: context.userId, _role: "admin" },
-    );
-    if (roleErr) throw new Error(roleErr.message);
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await assertAdmin(context);
 
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -55,4 +58,43 @@ export const createUserFn = createServerFn({ method: "POST" })
     }
 
     return { user_id: newUserId, email: data.email };
+  });
+
+export const updateUserFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        email: z.string().email().optional(),
+        password: z.string().min(6).optional(),
+        full_name: z.string().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+
+    const attrs: Record<string, any> = {};
+    if (data.email) attrs.email = data.email;
+    if (data.password) attrs.password = data.password;
+    if (typeof data.full_name === "string") {
+      attrs.user_metadata = { full_name: data.full_name };
+    }
+
+    if (Object.keys(attrs).length === 0) {
+      return { user_id: data.user_id, updated: false };
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      data.user_id,
+      attrs,
+    );
+    if (error) throw new Error(error.message);
+
+    return { user_id: data.user_id, updated: true };
   });
