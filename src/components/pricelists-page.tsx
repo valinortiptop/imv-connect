@@ -684,11 +684,36 @@ export default function PriceLists() {
         <>
           {/* Description + search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{currentPL.description}</span>
               <Badge variant="secondary" className="text-xs">
                 {filtered.length} SKUs
               </Badge>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  {lang === "es" ? "Predeterminada para:" : "Default for:"}
+                </span>
+                <div className="inline-flex rounded-md border bg-muted p-0.5">
+                  {(["mayoreo", "menudeo"] as const).map((opt) => {
+                    const isActive = currentPL.default_for_client_type === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setListDefaultType(currentPL.id, isActive ? null : opt)}
+                        className={`px-2.5 py-1 text-xs font-semibold rounded transition capitalize ${
+                          isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        title={isActive
+                          ? (lang === "es" ? "Quitar predeterminado" : "Remove default")
+                          : (lang === "es" ? `Marcar como predeterminada para ${opt}` : `Set as default for ${opt}`)}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative w-full sm:w-64">
