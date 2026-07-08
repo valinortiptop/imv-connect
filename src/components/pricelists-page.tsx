@@ -239,6 +239,7 @@ export default function PriceLists() {
   const resetDialog = () => {
     setShowNewList(false);
     setNewName("");
+    setNewDefaultType(null);
     setParsedRows([]);
     setFileName("");
     setDragOver(false);
