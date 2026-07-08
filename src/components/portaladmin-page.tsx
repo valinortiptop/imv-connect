@@ -200,7 +200,7 @@ export default function PortalAdmin() {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead className="hidden sm:table-cell">Teléfono</TableHead>
+                <TableHead className="hidden sm:table-cell">Última venta</TableHead>
                 <TableHead>Portal</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
@@ -209,21 +209,39 @@ export default function PortalAdmin() {
               {filtered.map((client) => {
                 const hasToken = !!client.token_portal;
                 const isActive = !!client.portal_activo && hasToken;
+                const lastSaleDate = lastSaleByClient[client.id] || null;
+                const daysSince = lastSaleDate
+                  ? Math.floor((Date.now() - new Date(lastSaleDate).getTime()) / 86400000)
+                  : null;
 
                 return (
                   <TableRow key={client.id}>
                     <TableCell>
-                      <div>
+                      <button
+                        type="button"
+                        onClick={() => setDrawerClientId(client.id)}
+                        className="text-left hover:underline focus:outline-none focus:underline"
+                      >
                         <p className="font-medium">{client.name || "—"}</p>
                         {client.company && (
                           <p className="text-xs text-muted-foreground">{client.company}</p>
                         )}
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {client.phone || "—"}
-                      </span>
+                      {lastSaleDate ? (
+                        <div className="text-sm">
+                          <div>{new Date(lastSaleDate).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}</div>
+                          <div className={cn(
+                            "text-xs",
+                            daysSince !== null && daysSince > 60 ? "text-red-600" : daysSince !== null && daysSince > 30 ? "text-amber-600" : "text-muted-foreground"
+                          )}>
+                            {daysSince === 0 ? "hoy" : `hace ${daysSince} ${daysSince === 1 ? "día" : "días"}`}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sin ventas</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {hasToken ? (
