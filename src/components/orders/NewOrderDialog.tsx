@@ -72,7 +72,8 @@ const schema = z.object({
   delivery_date: z.string().optional(),
   payment_method: z.string().optional(),
   payment_terms: z.string().optional(),
-  requires_invoice: z.boolean().default(false),
+  // requires_invoice removed: SAT treatment is derived from the client
+  // (VM prefix / generic RFC → nota; otherwise factura). See isVmClient().
   notes: z.string().optional(),
 });
 
