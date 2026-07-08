@@ -716,8 +716,142 @@ export default function Facturacion() {
           </GlowCard>
         )}
 
+        {/* Pedidos facturados — histórico con enlaces al PDF y XML */}
+        {pedidosFacturados.length > 0 && (
+          <GlowCard>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Pedidos facturados
+                  </Label>
+                  <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
+                    {pedidosFacturados.length}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  Descarga o comparte el PDF y XML de cada CFDI.
+                </span>
+              </div>
+
+              <div className="rounded-lg border divide-y max-h-[320px] overflow-y-auto">
+                {pedidosFacturados.map((f) => {
+                  const statusLabel = f.cfdi_status || f.estado || "—";
+                  const isCanceled = (f.cfdi_status || "").toLowerCase() === "canceled" || (f.estado || "").toLowerCase() === "cancelada";
+                  return (
+                    <div
+                      key={f.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { if (f.pedido_id) setDetailOrderId(f.pedido_id); }}
+                      onKeyDown={(e) => {
+                        if ((e.key === "Enter" || e.key === " ") && f.pedido_id) {
+                          e.preventDefault();
+                          setDetailOrderId(f.pedido_id);
+                        }
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer focus:outline-none focus:bg-muted/40"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-semibold text-sm">
+                            {[f.serie, f.folio].filter(Boolean).join("-") || "—"}
+                          </span>
+                          {f.order_code && (
+                            <span className="rounded border px-1.5 py-0 text-[10px] text-muted-foreground font-mono">
+                              {f.order_code}
+                            </span>
+                          )}
+                          <span className={cn(
+                            "rounded border px-1.5 py-0 text-[10px] capitalize",
+                            isCanceled ? "text-destructive border-destructive/40" : "text-muted-foreground"
+                          )}>
+                            {statusLabel}
+                          </span>
+                          {f.rfc && (
+                            <span className="text-[10px] text-muted-foreground font-mono">{f.rfc}</span>
+                          )}
+                        </div>
+                        <div className="text-sm truncate font-medium">
+                          {f.cliente}
+                        </div>
+                        {f.uuid_fiscal && (
+                          <div className="text-[10px] text-muted-foreground font-mono truncate">
+                            UUID: {f.uuid_fiscal}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-semibold tabular-nums">
+                          ${f.total.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground tabular-nums">
+                          {f.fecha_emision ?? ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild={!!f.pdf_url}
+                                size="sm"
+                                variant="outline"
+                                className="gap-1"
+                                disabled={!f.pdf_url}
+                              >
+                                {f.pdf_url ? (
+                                  <a href={f.pdf_url} target="_blank" rel="noopener noreferrer">
+                                    <Download className="h-3.5 w-3.5" /> PDF
+                                  </a>
+                                ) : (
+                                  <span><Download className="h-3.5 w-3.5" /> PDF</span>
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{f.pdf_url ? "Ver / descargar PDF" : "PDF no disponible"}</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild={!!f.xml_url}
+                                size="sm"
+                                variant="outline"
+                                className="gap-1"
+                                disabled={!f.xml_url}
+                              >
+                                {f.xml_url ? (
+                                  <a href={f.xml_url} target="_blank" rel="noopener noreferrer" download>
+                                    <Download className="h-3.5 w-3.5" /> XML
+                                  </a>
+                                ) : (
+                                  <span><Download className="h-3.5 w-3.5" /> XML</span>
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{f.xml_url ? "Descargar XML" : "XML no disponible"}</TooltipContent>
+                          </Tooltip>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1"
+                            onClick={() => navigate(`/admin/facturas/${f.id}`)}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </GlowCard>
+        )}
 
         {/* Client + Order selectors */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Client selector */}
           <GlowCard>
