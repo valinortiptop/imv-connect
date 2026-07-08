@@ -852,8 +852,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar lote..." />
+                      <Command filter={substringFilter}>
+                        <CommandInput placeholder="Buscar lote..." value={damagedSearch} onValueChange={setDamagedSearch} />
                         <CommandList>
                           <CommandEmpty>Sin resultados.</CommandEmpty>
                           <CommandGroup>
@@ -868,8 +868,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
                                     {b.condition}
                                   </span>
-                                  <span className="font-mono text-xs">{b.clave}</span>
-                                  <span>{b.name}</span>
+                                  <span className="font-mono text-xs"><HighlightMatch text={b.clave} query={damagedSearch} /></span>
+                                  <span><HighlightMatch text={b.name} query={damagedSearch} /></span>
                                   <span className="text-xs text-muted-foreground">
                                     · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
                                   </span>
