@@ -2304,6 +2304,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           peso_kg: r.peso_kg,
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
+          sat_clave: r.sat_clave,
+          ...(r.iva_pct != null ? { iva_pct: r.iva_pct } : {}),
+          ...(r.ieps_pct != null ? { ieps_pct: r.ieps_pct } : {}),
           activo: true,
         }));
         const { error } = await supabase.from("productos").insert(payload);
@@ -2322,6 +2325,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         if (fields.has("peso")) patch.peso_kg = r.peso_kg;
         if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
         if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
+        if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
+        if (fields.has("iva")) patch.iva_pct = r.iva_pct;
+        if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
           .from("productos")
