@@ -199,16 +199,8 @@ export default function Kardex() {
       const haveRawText = !!resolvedSearch && resolvedSearch.q.length > 0;
 
       let q = (supabase as any)
-        .from("slot_movements")
-        .select(
-          // Disambiguate the warehouse_slots join — slot_movements has
-          // two FKs to warehouse_slots (slot_id + to_slot_id) so the
-          // implicit warehouse_slots(code) fails with relationship
-          // ambiguity. Force the slot_id FK explicitly.
-          "id, created_at, slot_id, product_id, description, lote, delta, reason, note, warehouse_slots!slot_movements_slot_id_fkey(code), products(clave, name, image_url)",
-          // estimated count → no full scan, totally fine for a paginated UI
-          { count: "estimated" },
-        )
+        .from("v_kardex_movements")
+        .select("*", { count: "estimated" })
         .order("created_at", { ascending: false });
       if (from) q = q.gte("created_at", startOfLocalDayUTC(from));
       if (to) q = q.lte("created_at", endOfLocalDayUTC(to));
