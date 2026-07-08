@@ -137,53 +137,26 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     enabled: !!orderId && open,
   });
 
-  // Gifted-first breakdown per line item (cortesía vs paid). Lets us
-  // render a small 🎁 chip and the implied 100 % profit on gifted units.
-  const { data: breakdown = [] } = useQuery({
-    queryKey: ["order-item-breakdown", orderId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("v_order_item_breakdown")
-        .select("order_item_id, gifted_used, paid_used, cost_without_iva, sale_price_with_iva, unit_price_override, quantity")
-        .eq("order_id", orderId!);
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        order_item_id: string;
-        gifted_used: number;
-        paid_used: number;
-        cost_without_iva: number | null;
-        sale_price_with_iva: number | null;
-        unit_price_override: number | null;
-        quantity: number;
-      }>;
-    },
-    enabled: !!orderId && open,
-  });
-
-  // Lookup: order_item_id → gifted breakdown
-  const breakdownByItemId = useMemo(() => {
-    const m: Record<string, typeof breakdown[number]> = {};
-    for (const b of breakdown) m[b.order_item_id] = b;
-    return m;
-  }, [breakdown]);
-
-  // Order-level gifted summary
+  // Order-level gifted summary. The old v_order_item_breakdown columns no
+  // longer exist, so keep this derived from the order item rows themselves.
   const giftedSummary = useMemo(() => {
     let giftedUnits = 0;
     let paidUnits = 0;
     let costNoIva = 0;
     let revenueNoIva = 0;
-    for (const b of breakdown) {
-      giftedUnits += Number(b.gifted_used ?? 0);
-      paidUnits += Number(b.paid_used ?? 0);
-      const unitPrice = b.unit_price_override ?? b.sale_price_with_iva ?? 0;
-      revenueNoIva += (Number(b.quantity ?? 0) * Number(unitPrice)) / 1.16;
-      costNoIva += Number(b.paid_used ?? 0) * Number(b.cost_without_iva ?? 0);
+    for (const item of items) {
+      const quantity = Number(item.quantity ?? 0);
+      const gifted = item.is_gifted ? quantity : 0;
+      const paid = Math.max(0, quantity - gifted);
+      const unitPrice = Number(item.unit_price_override ?? item.products?.sale_price_with_iva ?? 0);
+      giftedUnits += gifted;
+      paidUnits += paid;
+      revenueNoIva += (quantity * unitPrice) / 1.16;
     }
     const profit = revenueNoIva - costNoIva;
     const marginPct = revenueNoIva > 0 ? (profit / revenueNoIva) * 100 : 0;
     return { giftedUnits, paidUnits, costNoIva, revenueNoIva, profit, marginPct };
-  }, [breakdown]);
+  }, [items]);
 
   // Order adjustments (returns + faltantes)
   const { data: adjustments = [] } = useQuery({
@@ -334,7 +307,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
+                        onClick={() => { onOpenChange(false); navigate({ to: "/admin/facturas/$id", params: { id: existingFactura.id } }); }}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" /> Ver detalle de factura
                       </DropdownMenuItem>
@@ -541,9 +514,8 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                     const overridePrice = item.unit_price_override;
                     const isManualPrice = catalogPrice != null && overridePrice != null && Math.abs(overridePrice - catalogPrice) > 0.01;
                     const priceDiff = isManualPrice ? ((overridePrice - catalogPrice) / catalogPrice * 100) : 0;
-                    const lineBreak = breakdownByItemId[item.id];
-                    const lineGifted = Number(lineBreak?.gifted_used ?? 0);
-                    const linePaid = Number(lineBreak?.paid_used ?? 0);
+                    const lineGifted = item.is_gifted ? Number(item.quantity ?? 0) : 0;
+                    const linePaid = Math.max(0, Number(item.quantity ?? 0) - lineGifted);
                     const allGifted = lineGifted > 0 && linePaid === 0;
                     const mixedGifted = lineGifted > 0 && linePaid > 0;
                     return (
