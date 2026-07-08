@@ -569,8 +569,8 @@ Reglas:
                 </div>
               </div>
               <div
-                className="overscroll-contain"
-                style={{ maxHeight: "min(50vh, 360px)", overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+                className="overscroll-contain flex-1 min-h-0"
+                style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
                 onWheel={(e) => e.stopPropagation()}
               >
                 <div className="p-1">
