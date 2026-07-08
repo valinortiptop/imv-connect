@@ -1148,12 +1148,19 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       ⚠ Este cliente no tiene dirección. Ingresa una para la entrega o crea el pedido sin dirección.
                     </p>
                     <div className="flex gap-2">
-                      <Input
-                        placeholder="Escribe la dirección de entrega..."
-                        value={quickAddress}
-                        onChange={(e) => setQuickAddress(e.target.value)}
-                        className="flex-1"
-                      />
+                      <div className="flex-1">
+                        <AddressAutocomplete
+                          value={quickAddress}
+                          onChange={setQuickAddress}
+                          onSelect={(r) => {
+                            const addr = r.address?.trim();
+                            if (!addr) return;
+                            setQuickAddress(addr);
+                            setStops((prev) => prev.map((s) => s.address?.trim() ? s : { ...s, address: addr }));
+                          }}
+                          placeholder="Buscar dirección de entrega..."
+                        />
+                      </div>
                       <Button
                         type="button"
                         size="sm"
