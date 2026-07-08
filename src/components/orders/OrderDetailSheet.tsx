@@ -261,7 +261,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                     <span className="text-muted-foreground">Nombre</span>
                     <button
                       className="font-medium text-blue-400 hover:text-blue-300 hover:underline transition-colors cursor-pointer"
-                      onClick={() => { if (order?.client_id) { onOpenChange(false); navigate(`/clients?expandClient=${order.client_id}`); } }}
+                      onClick={() => { if (order?.client_id) { onOpenChange(false); navigate(`/admin/clientes?expandClient=${order.client_id}`); } }}
                     >
                       {client?.name ?? "\u2014"}
                     </button>
