@@ -368,28 +368,41 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   };
 
   const selectClient = (clientId: string) => {
-    const c = clients.find(x => x.id === clientId);
-    if (!c) return;
-    setSelectedClientId(clientId);
-    form.setValue("client_name", c.name ?? "");
-    form.setValue("phone", c.phone ?? "");
-    form.setValue("rfc", c.rfc ?? "");
-    form.setValue("shipping_address", c.address ?? "");
-    form.setValue("payment_method", c.payment_method ?? "Transferencia");
+    try {
+      const c = clients.find((x) => x.id === clientId);
+      if (!c) return;
+      setSelectedClientId(clientId);
+      form.setValue("client_name", c.name ?? "");
+      form.setValue("phone", c.phone ?? "");
+      form.setValue("rfc", c.rfc ?? "");
+      form.setValue("shipping_address", c.address ?? "");
+      // payment_method Select only has 4 known items — coerce anything
+      // else (e.g. "contado" from legacy data) to "Otro" so Radix Select
+      // gets a value that matches one of its <SelectItem>s. Without this
+      // an unknown value can throw when switching between clients whose
+      // stored payment_methods differ.
+      const KNOWN_PMS = new Set(["Transferencia", "Depósito", "Efectivo", "Otro"]);
+      const rawPm = c.payment_method ?? "Transferencia";
+      form.setValue("payment_method", KNOWN_PMS.has(rawPm) ? rawPm : "Otro");
 
-    // Auto-apply the client's default price list (editable below)
-    const defaultPlId = (c as any).price_list_id ?? null;
-    if (defaultPlId) {
-      const pl = priceLists.find((p) => p.id === defaultPlId);
-      if (pl) {
-        setAppliedPriceList(pl);
-        applyPriceListToLines(pl.id);
+      // Auto-apply the client's default price list (editable below)
+      const defaultPlId = (c as any).price_list_id ?? null;
+      if (defaultPlId) {
+        const pl = priceLists.find((p) => p.id === defaultPlId);
+        if (pl) {
+          setAppliedPriceList(pl);
+          applyPriceListToLines(pl.id);
+        } else {
+          setAppliedPriceList(null);
+          applyPriceListToLines(null);
+        }
       } else {
         setAppliedPriceList(null);
+        applyPriceListToLines(null);
       }
-    } else {
-      setAppliedPriceList(null);
-      applyPriceListToLines(null);
+    } catch (err) {
+      console.error("selectClient failed", err);
+      toast.error("No se pudo seleccionar el cliente");
     }
   };
 
