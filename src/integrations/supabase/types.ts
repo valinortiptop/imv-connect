@@ -1178,6 +1178,72 @@ export type Database = {
         }
         Relationships: []
       }
+      empresa_csd: {
+        Row: {
+          cer_path: string
+          cer_pem: string
+          created_at: string
+          empresa_id: string
+          id: string
+          is_active: boolean
+          key_path: string
+          no_certificado: string
+          rfc: string
+          tipo: string
+          updated_at: string
+          uploaded_by: string | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          cer_path: string
+          cer_pem: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          is_active?: boolean
+          key_path: string
+          no_certificado: string
+          rfc: string
+          tipo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          cer_path?: string
+          cer_pem?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          is_active?: boolean
+          key_path?: string
+          no_certificado?: string
+          rfc?: string
+          tipo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresa_csd_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "empresa_csd_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       empresa_datos: {
         Row: {
           cp_fiscal: string | null
