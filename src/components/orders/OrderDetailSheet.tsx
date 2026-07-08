@@ -25,6 +25,7 @@ import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/lib/date-utils";
 import { RegistrarAjusteDialog } from "./RegistrarAjusteDialog";
 import { useDeleteAdjustment } from "@/hooks/use-delete-adjustment";
+import { downloadLocalInvoicePdf, downloadLocalInvoiceXml } from "@/lib/local-invoice-downloads";
 
 interface OrderDetailSheetProps {
   orderId: string | null;
@@ -55,7 +56,13 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
       a.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error(e?.message ?? "La factura no está timbrada.");
+      try {
+        if (format === "pdf") await downloadLocalInvoicePdf(facturaId);
+        else await downloadLocalInvoiceXml(facturaId);
+        toast.success("Documento interno descargado");
+      } catch (fallbackError) {
+        toast.error(fallbackError?.message ?? e?.message ?? "La factura no está timbrada.");
+      }
     }
   };
   const [ajusteDialogOpen, setAjusteDialogOpen] = useState(false);
