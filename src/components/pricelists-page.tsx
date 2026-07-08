@@ -127,6 +127,7 @@ interface PriceList {
   description: string | null;
   active: boolean;
   markup_pct: number | null;
+  default_for_client_type: "mayoreo" | "menudeo" | null;
 }
 
 interface PriceListItem {
