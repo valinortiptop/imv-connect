@@ -269,7 +269,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { client_name: "", requires_invoice: false },
+    defaultValues: { client_name: "" },
   });
 
   useEffect(() => {
