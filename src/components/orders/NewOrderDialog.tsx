@@ -915,7 +915,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               <CommandItem
                                 key={`normal-${p.id}`}
                                 value={`${p.clave} ${p.name}`}
-                                onSelect={() => addProduct(`normal:${p.id}`)}
+                                onSelect={() => { addProduct(`normal:${p.id}`); setProductPickerOpen(false); setProductSearch(""); }}
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={p.image_url} size="xs" />
