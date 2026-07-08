@@ -405,8 +405,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       return;
     }
 
-    // Normal product: ensure not already added as normal (damaged lines allowed alongside)
-    if (lines.some(l => l.product_id === id && !l.is_damaged)) { toast.error("Producto ya agregado"); return; }
+    // Normal product: allow duplicates so a client can order the same SKU
+    // multiple times (e.g. different price negotiations or split lines).
     const p = products.find(x => x.id === id);
     if (!p) return;
     // Apply the active price list price (if any) to the new line
