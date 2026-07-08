@@ -104,21 +104,23 @@ export function PurchaseOrderDialog({
     if (!includeFaltantes) return [];
     const bySku = new Map<string, PORow>();
     for (const l of rawLines) {
-      if (l.product_units_short <= 0) continue;
+      if (!l?.clave) continue;
+      const short = Number(l.product_units_short);
+      if (!Number.isFinite(short) || short <= 0) continue;
       if (poSupplier !== "all" && l.supplier !== poSupplier) continue;
       if (poDayFilter !== "all" && l.delivery_date !== poDayFilter) continue;
       const existing = bySku.get(l.clave);
-      const kg = productWeights[l.clave] ?? 0;
+      const kg = Number(productWeights[l.clave]) || 0;
       if (existing) {
-        existing.bultos += l.product_units_short;
+        existing.bultos += short;
         existing.tons = (existing.bultos * kg) / 1000;
       } else {
         bySku.set(l.clave, {
           clave: l.clave,
-          product_name: l.product_name,
+          product_name: l.product_name ?? "",
           image_url: imageMap[l.clave] ?? null,
-          bultos: l.product_units_short,
-          tons: (l.product_units_short * kg) / 1000,
+          bultos: short,
+          tons: (short * kg) / 1000,
           weight_kg: kg,
         });
       }
