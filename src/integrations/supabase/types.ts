@@ -4485,6 +4485,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          default_for_client_type: string | null
           description: string | null
           id: string
           markup_pct: number
@@ -4493,6 +4494,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          default_for_client_type?: string | null
           description?: string | null
           id?: string
           markup_pct?: number
@@ -4501,6 +4503,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          default_for_client_type?: string | null
           description?: string | null
           id?: string
           markup_pct?: number
