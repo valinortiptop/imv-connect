@@ -421,6 +421,7 @@ export default function Facturacion() {
     onSuccess: (facturaId) => {
       toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
       queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      queryClient.invalidateQueries({ queryKey: ["pedidos-facturados"] });
       navigate(`/admin/facturas/${facturaId}`);
     },
     onError: (err: any) => {
