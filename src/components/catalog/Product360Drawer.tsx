@@ -50,7 +50,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
         supabase
           .from("productos")
           .select(
-            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
+            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, ieps_pct, tax_regime, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
           )
           .eq("id", productId)
           .maybeSingle(),
