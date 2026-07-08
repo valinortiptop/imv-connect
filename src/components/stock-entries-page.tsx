@@ -406,16 +406,40 @@ export default function StockEntries() {
     return groups;
   }, [productsBySupplier, productSearch]);
 
+  // Enrich deliveries with derived counts (line_items, total_bultos,
+  // top_product_name) from allStockEntries — the previous view supplied
+  // these aggregates server-side; we now compute them here.
+  const enrichedDeliveries = useMemo(() => {
+    if (!deliveries) return deliveries;
+    if (!allStockEntries) return deliveries;
+    const byDelivery = new Map<string, { line_items: number; total_bultos: number; top: { name: string; qty: number } | null }>();
+    for (const e of allStockEntries) {
+      const cur = byDelivery.get(e.delivery_id) ?? { line_items: 0, total_bultos: 0, top: null };
+      cur.line_items += 1;
+      cur.total_bultos += e.quantity ?? 0;
+      const name = e.products?.name ?? "";
+      const qty = e.quantity ?? 0;
+      if (!cur.top || qty > cur.top.qty) cur.top = { name, qty };
+      byDelivery.set(e.delivery_id, cur);
+    }
+    return deliveries.map((d) => {
+      const agg = byDelivery.get(d.id);
+      if (!agg) return d;
+      return { ...d, line_items: agg.line_items, total_bultos: agg.total_bultos, top_product_name: agg.top?.name ?? null };
+    });
+  }, [deliveries, allStockEntries]);
+
   // Filtered deliveries
   const filtered = useMemo(() => {
-    if (!deliveries) return [];
-    return deliveries.filter(d => {
+    if (!enrichedDeliveries) return [];
+    return enrichedDeliveries.filter(d => {
       if (statusFilter !== "all" && d.delivery_status !== statusFilter) return false;
       if (dateFrom && d.delivery_date < dateFrom) return false;
       if (dateTo && d.delivery_date > dateTo) return false;
       return true;
     });
-  }, [deliveries, statusFilter, dateFrom, dateTo]);
+  }, [enrichedDeliveries, statusFilter, dateFrom, dateTo]);
+
 
   // Dashboard stats — derived from filtered deliveries
   const dashboardStats = useMemo(() => {
