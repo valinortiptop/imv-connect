@@ -2236,10 +2236,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         }
       }
 
-      }
-
       setRows(parsed);
-      if (aiRows) toast.success("Excel analizado con IA");
+      if (!isNetSuite) toast.success("Excel analizado con IA");
+      else toast.success("Excel de NetSuite detectado y mapeado");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
