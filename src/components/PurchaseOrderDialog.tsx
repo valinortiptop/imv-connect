@@ -683,16 +683,32 @@ Reglas:
           </div>
         </ScrollArea>
 
-        {/* Export buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-          <Button variant="outline" size="sm" onClick={handleExcel} disabled={rows.length === 0}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Excel
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePDF} disabled={rows.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar PDF
-          </Button>
+        {/* Footer actions */}
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExcel} disabled={rows.length === 0}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePDF} disabled={rows.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Descargar PDF
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={creating}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateOrden}
+              disabled={creating || rows.length === 0 || poSupplier === "all" || rows.every(r => r.bultos <= 0)}
+              title={poSupplier === "all" ? "Selecciona un proveedor para crear la orden" : ""}
+            >
+              {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Crear Orden de Compra
+            </Button>
+          </div>
         </div>
       </DialogContent>
 
