@@ -46,7 +46,7 @@ export function ClientTypeBadge({ type, size = "sm", invisible = false, classNam
         className,
       )}
     >
-      {isMayoreo ? "Mayoreo" : "Menudeo"}
+      {isMayoreo ? "Lista 3" : "Lista 2"}
     </span>
   );
 }
