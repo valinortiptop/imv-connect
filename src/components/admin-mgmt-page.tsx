@@ -442,6 +442,7 @@ function UserTableRow({
 }) {
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <>
