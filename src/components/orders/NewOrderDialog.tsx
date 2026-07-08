@@ -32,6 +32,38 @@ const emptyToNull = (v: string | undefined) => {
   return v.trim();
 };
 
+/** Case-insensitive strict substring filter for cmdk <Command />.
+ *  Prevents fuzzy matches like "marisol" -> "MARICELA". */
+const substringFilter = (value: string, search: string) => {
+  if (!search) return 1;
+  return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+};
+
+/** Highlights every case-insensitive occurrence of `query` inside `text`. */
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const needle = q.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let i = 0;
+  let idx = lower.indexOf(needle, i);
+  let key = 0;
+  while (idx !== -1) {
+    if (idx > i) parts.push(<span key={key++}>{text.slice(i, idx)}</span>);
+    parts.push(
+      <mark key={key++} className="bg-primary/25 text-foreground rounded-sm px-0.5">
+        {text.slice(idx, idx + needle.length)}
+      </mark>
+    );
+    i = idx + needle.length;
+    idx = lower.indexOf(needle, i);
+  }
+  if (i < text.length) parts.push(<span key={key++}>{text.slice(i)}</span>);
+  return <>{parts}</>;
+}
+
 const schema = z.object({
   client_name: z.string().trim().min(1, "Requerido").max(200),
   phone: z.string().optional(),
