@@ -87,7 +87,8 @@ function formatPrice(n: number) {
 /* ── PDF generation ────────────────────────────── */
 async function generateCatalogPDF(
   products: Product[],
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  priceListLabel?: string
 ) {
   onProgress?.("Cargando imágenes...");
 
@@ -175,10 +176,13 @@ async function generateCatalogPDF(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
     doc.text("Alimentos para mascotas · Precios con IVA incluido", 12, 24);
-    // Download date (top-right)
+    // Download date + price list (top-right)
     const downloadDate = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
     doc.setFontSize(9);
-    doc.text(`Descargado: ${downloadDate}`, W - 12, 24, { align: "right" });
+    doc.text(`Descargado: ${downloadDate}`, W - 12, 18, { align: "right" });
+    if (priceListLabel) {
+      doc.text(`Lista: ${priceListLabel}`, W - 12, 24, { align: "right" });
+    }
 
     // Products for this page
     const pageProducts = products.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -307,7 +311,7 @@ async function generateCatalogPDF(
 }
 
 /* ── Price list PDF ────────────────────────────── */
-async function generatePriceListPDF(products: Product[]) {
+async function generatePriceListPDF(products: Product[], priceListLabel?: string) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const W = 215.9;
   const H = 279.4;
@@ -342,7 +346,7 @@ async function generatePriceListPDF(products: Product[]) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     const today = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
-    doc.text(`Precios con IVA · ${today}`, MARGIN_X, 20);
+    doc.text(`Precios con IVA · ${today}${priceListLabel ? ` · Lista: ${priceListLabel}` : ""}`, MARGIN_X, 20);
 
     // Column headers
     const hy = HEADER_H + 9;
@@ -767,10 +771,10 @@ export default function Catalogo() {
     setGenerating(true);
     try {
       if (which === "pricelist") {
-        await generatePriceListPDF(selectedProducts);
+        await generatePriceListPDF(selectedProducts, activeListName);
         toast({ title: "Lista de precios descargada" });
       } else {
-        await generateCatalogPDF(selectedProducts, setProgress);
+        await generateCatalogPDF(selectedProducts, setProgress, activeListName);
         toast({ title: "Catálogo descargado" });
       }
     } catch (e: any) {
