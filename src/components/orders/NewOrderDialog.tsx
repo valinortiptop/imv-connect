@@ -129,6 +129,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // Stop allocation is keyed by product_id (lines have stable ids only
   // after save, so product_id is the cross-phase key).
   const [stops, setStops] = useState<StopValue[]>([]);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [damagedPickerOpen, setDamagedPickerOpen] = useState(false);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list"],
@@ -401,8 +405,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       return;
     }
 
-    // Normal product: ensure not already added as normal (damaged lines allowed alongside)
-    if (lines.some(l => l.product_id === id && !l.is_damaged)) { toast.error("Producto ya agregado"); return; }
+    // Normal product: allow duplicates so a client can order the same SKU
+    // multiple times (e.g. different price negotiations or split lines).
     const p = products.find(x => x.id === id);
     if (!p) return;
     // Apply the active price list price (if any) to the new line
@@ -432,7 +436,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const totalOrder = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
   const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 0 }).format(n);
-  const availableProducts = sortProducts(products.filter(p => !lines.some(l => l.product_id === p.id && !l.is_damaged)));
+  const availableProducts = sortProducts(products);
   const availableDamaged = damagedBatches.filter(b => !lines.some(l => l.damaged_batch_id === b.id));
 
   const hasInvalidLines = lines.some(l => !Number(l.quantity) || Number(l.quantity) <= 0);
@@ -652,7 +656,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                   </TabsList>
 
                   <TabsContent value="existing" className="mt-3 space-y-3">
-                    <Popover>
+                    <Popover open={clientPickerOpen} onOpenChange={setClientPickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           type="button"
@@ -681,7 +685,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                 <CommandItem
                                   key={c.id}
                                   value={`${c.name} ${c.company ?? ""} ${(c as any).rfc ?? ""}`}
-                                  onSelect={() => selectClient(c.id)}
+                                  onSelect={() => { selectClient(c.id); setClientPickerOpen(false); }}
                                 >
                                   <span className="inline-flex items-center gap-2">
                                     <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
@@ -732,7 +736,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 <FormField control={form.control} name="delivery_date" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fecha de entrega</FormLabel>
-                    <Popover>
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9", !field.value && "text-muted-foreground")}>
@@ -745,7 +749,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value + "T12:00:00") : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                          onSelect={(date) => { field.onChange(date ? format(date, "yyyy-MM-dd") : ""); setDatePickerOpen(false); }}
                           locale={es}
                           initialFocus
                         />
@@ -850,7 +854,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {pickerMode === "damaged" ? (
                 availableDamaged.length > 0 ? (
-                  <Popover>
+                  <Popover open={damagedPickerOpen} onOpenChange={setDamagedPickerOpen}>
                     <PopoverTrigger asChild>
                       <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal border-orange-500/40">
                         <span className="text-muted-foreground">Seleccionar lote dañado...</span>
@@ -867,7 +871,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               <CommandItem
                                 key={`damaged-${b.id}`}
                                 value={`${b.clave} ${b.name} ${b.condition}`}
-                                onSelect={() => addProduct(`damaged:${b.id}`)}
+                                onSelect={() => { addProduct(`damaged:${b.id}`); setDamagedPickerOpen(false); setDamagedSearch(""); }}
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={b.image_url} size="xs" />
@@ -894,7 +898,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 )
               ) : (
                 availableProducts.length > 0 && (
-                  <Popover>
+                  <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                     <PopoverTrigger asChild>
                       <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal">
                         <span className="text-muted-foreground">Seleccionar producto...</span>
@@ -911,7 +915,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               <CommandItem
                                 key={`normal-${p.id}`}
                                 value={`${p.clave} ${p.name}`}
-                                onSelect={() => addProduct(`normal:${p.id}`)}
+                                onSelect={() => { addProduct(`normal:${p.id}`); setProductPickerOpen(false); setProductSearch(""); }}
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={p.image_url} size="xs" />
