@@ -60,7 +60,7 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
     const { data: factura, error } = await supabaseAdmin
       .from("facturas")
       .select(
-        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, address, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, ieps_pct, importe)",
+        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, address, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, ieps_pct, importe, producto:productos(sat_clave))",
       )
       .eq("id", data.facturaId)
       .single();
@@ -102,11 +102,13 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
           { type: "IVA", rate: ivaRate },
         ];
         if (iepsRate > 0) taxes.unshift({ type: "IEPS", rate: iepsRate });
+        const satClave = (it as any).producto?.sat_clave;
+        const productKey = (typeof satClave === "string" && satClave.trim()) ? satClave.trim() : "01010101";
         return {
           quantity: Number(it.cantidad),
           product: {
             description: it.nombre_snapshot,
-            product_key: "01010101", // default genérico SAT — override desde producto en fase posterior
+            product_key: productKey, // ClaveProdServ SAT desde productos.sat_clave (fallback 01010101 genérico)
             price: Number(it.precio_unitario),
             sku: it.sku_snapshot || undefined,
             unit_name: it.unidad_snapshot || "Pieza",
