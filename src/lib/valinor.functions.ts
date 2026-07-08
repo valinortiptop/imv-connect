@@ -194,7 +194,7 @@ export const analyzeOnboardingDocFn = createServerFn({ method: "POST" })
     }
 
     const res = await geminiGenerateInline({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       parts,
       jsonMode: true,
     });
