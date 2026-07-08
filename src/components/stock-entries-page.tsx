@@ -114,6 +114,11 @@ type ParsedRow = {
   found: boolean;
 };
 
+const normalizeDeliveryCode = (code: unknown, index: number) => {
+  const value = typeof code === "string" ? code.trim() : "";
+  return value || `E-${String(index + 1).padStart(4, "0")}`;
+};
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -229,8 +234,11 @@ export default function StockEntries() {
       // adm_proof_path is populated from stock_delivery_documents in a
       // separate query further down (kept null here — code that reads it
       // already treats it as optional).
-      return (data ?? []).map((d: any) => ({
+      return (data ?? []).filter(Boolean).map((d: any, index: number) => ({
         ...d,
+        delivery_code: normalizeDeliveryCode(d.delivery_code, index),
+        delivery_date: d.delivery_date || todayMx(),
+        delivery_status: d.delivery_status || "Recibido",
         line_items: 0,
         total_bultos: 0,
         top_product_name: null,
