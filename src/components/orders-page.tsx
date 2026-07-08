@@ -1177,54 +1177,43 @@ export default function Orders() {
                     </TableCell>
                     <TableCell onClick={e => e.stopPropagation()} className="w-[120px]">
                       <div className="flex items-center gap-1">
-                      {(() => {
-                        const url = o.id ? knownSignatureUrl(o.id) : null;
-                        return (
-                          <>
-                            {url ? (
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                                title="Ver/firmar entrega"
-                                aria-label="Ver/firmar entrega"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </a>
-                            ) : (
-                              <button
-                                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                                onClick={() => o.id && handlePreviewSignature(o.id)}
-                                title="Ver/firmar entrega"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </button>
-                            )}
-                            <button
-                              className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                              onClick={() => {
-                                if (!o.id) return;
-                                if (url) copyTextSync(url);
-                                else handleCopySignatureLink(o.id);
-                              }}
-                              title="Copiar link de firma"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </button>
-                          </>
-                        );
-                      })()}
-                      <button
-                        className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
-                        onClick={() => { console.log("[pedidos] Download click", o.id); o.id && exportOrderAsImage(o.id); }}
-                        title={o.id && signedOrderIds.has(o.id) ? "Descargar comprobante firmado" : "Descargar PDF"}
-                      >
-                        <Download className="h-4 w-4" />
-                        {o.id && signedOrderIds.has(o.id) && (
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500 absolute -bottom-0.5 -right-0.5 bg-background rounded-full" />
-                        )}
-                      </button>
+                        <button
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                          onClick={() => o.id && setSelectedOrderId(o.id)}
+                          title="Ver pedido"
+                          aria-label="Ver pedido"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                          onClick={async () => {
+                            if (!o.id) return;
+                            const link = `${window.location.origin}/admin/pedidos/${o.id}`;
+                            try {
+                              await navigator.clipboard.writeText(link);
+                              const { toast } = await import("sonner");
+                              toast.success("Link copiado");
+                            } catch {
+                              copyTextSync(link);
+                            }
+                          }}
+                          title="Copiar link del pedido"
+                          aria-label="Copiar link del pedido"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
+                          onClick={() => { o.id && exportOrderAsPdf(o.id); }}
+                          title={o.id && signedOrderIds.has(o.id) ? "Descargar PDF firmado" : "Descargar PDF"}
+                          aria-label="Descargar PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                          {o.id && signedOrderIds.has(o.id) && (
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500 absolute -bottom-0.5 -right-0.5 bg-background rounded-full" />
+                          )}
+                        </button>
                       </div>
                     </TableCell>
                     <TableCell>
