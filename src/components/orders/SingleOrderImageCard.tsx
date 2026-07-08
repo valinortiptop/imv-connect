@@ -624,6 +624,8 @@ export async function exportOrderAsPdf(orderId: string, opts?: { hideMoney?: boo
     console.error(err);
     toast("Error al generar PDF");
   }
+}
+
 
 /**
  * Generate the signed comprobante snapshot, upload it to storage, and
