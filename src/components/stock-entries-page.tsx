@@ -213,17 +213,32 @@ export default function StockEntries() {
   /*  Queries                                                          */
   /* ---------------------------------------------------------------- */
 
+  // Base delivery list — query stock_deliveries directly. The previous
+  // `delivery_summary` view was repurposed for a per-product summary and
+  // no longer exposes the aggregated columns this page expects; we now
+  // read the raw table and derive line_items / total_bultos / top_product
+  // client-side from `allStockEntries` below.
   const { data: deliveries, isLoading: deliveriesLoading } = useQuery({
     queryKey: ["delivery-summary"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("delivery_summary")
-        .select("*")
+        .from("stock_deliveries")
+        .select("id, delivery_code, delivery_date, supplier, reference, notes, delivery_status, created_at")
         .order("delivery_code", { ascending: false });
       if (error) throw error;
-      return data as DeliverySummary[];
+      // adm_proof_path is populated from stock_delivery_documents in a
+      // separate query further down (kept null here — code that reads it
+      // already treats it as optional).
+      return (data ?? []).map((d: any) => ({
+        ...d,
+        line_items: 0,
+        total_bultos: 0,
+        top_product_name: null,
+        adm_proof_path: null,
+      })) as DeliverySummary[];
     },
   });
+
 
   const { data: products } = useQuery({
     queryKey: ["products-for-stock"],
@@ -324,10 +339,12 @@ export default function StockEntries() {
   // Compute next E-code preview from latest delivery
   const nextDeliveryCode = useMemo(() => {
     if (!deliveries || deliveries.length === 0) return "E-0001";
-    const latest = deliveries[0].delivery_code; // sorted DESC
+    const latest = deliveries[0]?.delivery_code;
+    if (!latest || typeof latest !== "string") return "E-0001";
     const num = parseInt(latest.replace("E-", "")) || 0;
     return `E-${String(num + 1).padStart(4, "0")}`;
   }, [deliveries]);
+
 
   // Derive unique suppliers from products (ADM and Malta Cleyton first)
   const suppliers = useMemo(() => {
@@ -389,16 +406,40 @@ export default function StockEntries() {
     return groups;
   }, [productsBySupplier, productSearch]);
 
+  // Enrich deliveries with derived counts (line_items, total_bultos,
+  // top_product_name) from allStockEntries — the previous view supplied
+  // these aggregates server-side; we now compute them here.
+  const enrichedDeliveries = useMemo(() => {
+    if (!deliveries) return deliveries;
+    if (!allStockEntries) return deliveries;
+    const byDelivery = new Map<string, { line_items: number; total_bultos: number; top: { name: string; qty: number } | null }>();
+    for (const e of allStockEntries) {
+      const cur = byDelivery.get(e.delivery_id) ?? { line_items: 0, total_bultos: 0, top: null };
+      cur.line_items += 1;
+      cur.total_bultos += e.quantity ?? 0;
+      const name = e.products?.name ?? "";
+      const qty = e.quantity ?? 0;
+      if (!cur.top || qty > cur.top.qty) cur.top = { name, qty };
+      byDelivery.set(e.delivery_id, cur);
+    }
+    return deliveries.map((d) => {
+      const agg = byDelivery.get(d.id);
+      if (!agg) return d;
+      return { ...d, line_items: agg.line_items, total_bultos: agg.total_bultos, top_product_name: agg.top?.name ?? null };
+    });
+  }, [deliveries, allStockEntries]);
+
   // Filtered deliveries
   const filtered = useMemo(() => {
-    if (!deliveries) return [];
-    return deliveries.filter(d => {
+    if (!enrichedDeliveries) return [];
+    return enrichedDeliveries.filter(d => {
       if (statusFilter !== "all" && d.delivery_status !== statusFilter) return false;
       if (dateFrom && d.delivery_date < dateFrom) return false;
       if (dateTo && d.delivery_date > dateTo) return false;
       return true;
     });
-  }, [deliveries, statusFilter, dateFrom, dateTo]);
+  }, [enrichedDeliveries, statusFilter, dateFrom, dateTo]);
+
 
   // Dashboard stats — derived from filtered deliveries
   const dashboardStats = useMemo(() => {
