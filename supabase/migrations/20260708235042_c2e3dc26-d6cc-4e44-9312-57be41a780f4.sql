@@ -1,0 +1,1 @@
+GRANT SELECT ON public.v_products_with_stock TO authenticated; GRANT SELECT ON public.v_products_with_stock TO anon;
