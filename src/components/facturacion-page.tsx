@@ -127,6 +127,7 @@ export default function Facturacion() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   
   const [cfdiEditOpen, setCfdiEditOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
