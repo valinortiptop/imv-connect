@@ -2606,8 +2606,29 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             </>
           )}
 
+          {progress && (
+            <div className="rounded-md border border-border bg-muted/50 p-3 text-sm">
+              <div className="flex justify-between mb-1">
+                <span>{progress.label}</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {progress.done}/{progress.total}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-background">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: progress.total > 0
+                      ? `${Math.min(100, (progress.done / progress.total) * 100)}%`
+                      : "0%",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>
             <Button
@@ -2619,6 +2640,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 : `Aplicar (${counts.new} nuevos · ${counts.update} actualizar)`}
             </Button>
           </div>
+
         </div>
       </DialogContent>
     </Dialog>
