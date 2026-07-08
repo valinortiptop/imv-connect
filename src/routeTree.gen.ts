@@ -58,6 +58,7 @@ import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as AdminContabilidadIndexRouteImport } from './routes/admin.contabilidad.index'
+import { Route as AdminBancosIndexRouteImport } from './routes/admin.bancos.index'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
@@ -76,6 +77,10 @@ import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.con
 import { Route as AdminContabilidadAgrupadoresRouteImport } from './routes/admin.contabilidad.agrupadores'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
+import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.traspasos'
+import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nomina'
+import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
+import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
@@ -324,6 +329,11 @@ const AdminContabilidadIndexRoute = AdminContabilidadIndexRouteImport.update({
   path: '/contabilidad/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBancosIndexRoute = AdminBancosIndexRouteImport.update({
+  id: '/bancos/',
+  path: '/bancos/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -422,6 +432,26 @@ const AdminClientesIdRoute = AdminClientesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminClientesRoute,
 } as any)
+const AdminBancosTraspasosRoute = AdminBancosTraspasosRouteImport.update({
+  id: '/bancos/traspasos',
+  path: '/bancos/traspasos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBancosNominaRoute = AdminBancosNominaRouteImport.update({
+  id: '/bancos/nomina',
+  path: '/bancos/nomina',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBancosMovimientosRoute = AdminBancosMovimientosRouteImport.update({
+  id: '/bancos/movimientos',
+  path: '/bancos/movimientos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBancosEstadosRoute = AdminBancosEstadosRouteImport.update({
+  id: '/bancos/estados',
+  path: '/bancos/estados',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContabilidadPolizasIdRoute =
   AdminContabilidadPolizasIdRouteImport.update({
     id: '/$id',
@@ -483,6 +513,10 @@ export interface FileRoutesByFullPath {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/bancos/estados': typeof AdminBancosEstadosRoute
+  '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
+  '/admin/bancos/nomina': typeof AdminBancosNominaRoute
+  '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
@@ -501,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
@@ -553,6 +588,10 @@ export interface FileRoutesByTo {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/bancos/estados': typeof AdminBancosEstadosRoute
+  '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
+  '/admin/bancos/nomina': typeof AdminBancosNominaRoute
+  '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
@@ -571,6 +610,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/bancos': typeof AdminBancosIndexRoute
   '/admin/contabilidad': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
@@ -625,6 +665,10 @@ export interface FileRoutesById {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/bancos/estados': typeof AdminBancosEstadosRoute
+  '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
+  '/admin/bancos/nomina': typeof AdminBancosNominaRoute
+  '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
@@ -643,6 +687,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
@@ -698,6 +743,10 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/bancos/estados'
+    | '/admin/bancos/movimientos'
+    | '/admin/bancos/nomina'
+    | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/contabilidad/agrupadores'
@@ -716,6 +765,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/bancos/'
     | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
@@ -768,6 +818,10 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin'
+    | '/admin/bancos/estados'
+    | '/admin/bancos/movimientos'
+    | '/admin/bancos/nomina'
+    | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/contabilidad/agrupadores'
@@ -786,6 +840,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/bancos'
     | '/admin/contabilidad'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
@@ -839,6 +894,10 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin/'
+    | '/admin/bancos/estados'
+    | '/admin/bancos/movimientos'
+    | '/admin/bancos/nomina'
+    | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/contabilidad/agrupadores'
@@ -857,6 +916,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/admin/bancos/'
     | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
@@ -1216,6 +1276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bancos/': {
+      id: '/admin/bancos/'
+      path: '/bancos'
+      fullPath: '/admin/bancos/'
+      preLoaderRoute: typeof AdminBancosIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/pedidos/$id': {
       id: '/admin/pedidos/$id'
       path: '/$id'
@@ -1341,6 +1408,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/clientes/$id'
       preLoaderRoute: typeof AdminClientesIdRouteImport
       parentRoute: typeof AdminClientesRoute
+    }
+    '/admin/bancos/traspasos': {
+      id: '/admin/bancos/traspasos'
+      path: '/bancos/traspasos'
+      fullPath: '/admin/bancos/traspasos'
+      preLoaderRoute: typeof AdminBancosTraspasosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bancos/nomina': {
+      id: '/admin/bancos/nomina'
+      path: '/bancos/nomina'
+      fullPath: '/admin/bancos/nomina'
+      preLoaderRoute: typeof AdminBancosNominaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bancos/movimientos': {
+      id: '/admin/bancos/movimientos'
+      path: '/bancos/movimientos'
+      fullPath: '/admin/bancos/movimientos'
+      preLoaderRoute: typeof AdminBancosMovimientosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bancos/estados': {
+      id: '/admin/bancos/estados'
+      path: '/bancos/estados'
+      fullPath: '/admin/bancos/estados'
+      preLoaderRoute: typeof AdminBancosEstadosRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/contabilidad/polizas/$id': {
       id: '/admin/contabilidad/polizas/$id'
@@ -1491,6 +1586,10 @@ interface AdminRouteChildren {
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVentasRoute: typeof AdminVentasRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminBancosEstadosRoute: typeof AdminBancosEstadosRoute
+  AdminBancosMovimientosRoute: typeof AdminBancosMovimientosRoute
+  AdminBancosNominaRoute: typeof AdminBancosNominaRoute
+  AdminBancosTraspasosRoute: typeof AdminBancosTraspasosRoute
   AdminContabilidadAgrupadoresRoute: typeof AdminContabilidadAgrupadoresRoute
   AdminContabilidadBalanzaRoute: typeof AdminContabilidadBalanzaRoute
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
@@ -1502,6 +1601,7 @@ interface AdminRouteChildren {
   AdminContabilidadMayorRoute: typeof AdminContabilidadMayorRoute
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
   AdminContabilidadSatRoute: typeof AdminContabilidadSatRoute
+  AdminBancosIndexRoute: typeof AdminBancosIndexRoute
   AdminContabilidadIndexRoute: typeof AdminContabilidadIndexRoute
 }
 
@@ -1548,6 +1648,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVentasRoute: AdminVentasRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminBancosEstadosRoute: AdminBancosEstadosRoute,
+  AdminBancosMovimientosRoute: AdminBancosMovimientosRoute,
+  AdminBancosNominaRoute: AdminBancosNominaRoute,
+  AdminBancosTraspasosRoute: AdminBancosTraspasosRoute,
   AdminContabilidadAgrupadoresRoute: AdminContabilidadAgrupadoresRoute,
   AdminContabilidadBalanzaRoute: AdminContabilidadBalanzaRoute,
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
@@ -1559,6 +1663,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadMayorRoute: AdminContabilidadMayorRoute,
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
   AdminContabilidadSatRoute: AdminContabilidadSatRoute,
+  AdminBancosIndexRoute: AdminBancosIndexRoute,
   AdminContabilidadIndexRoute: AdminContabilidadIndexRoute,
 }
 
