@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { ClientTypeBadge } from "@/components/ui/client-type-badge";
 import * as XLSX from "xlsx-js-style";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
+import { downloadLocalInvoicePdf, downloadLocalInvoiceXml } from "@/lib/local-invoice-downloads";
 
 /* ── types ── */
 interface ClientRow {
@@ -136,11 +137,20 @@ export default function Facturacion() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (e: any) {
-      toast({
-        title: "No se pudo descargar",
-        description: e?.message ?? "La factura no está timbrada.",
-        variant: "destructive",
-      });
+      try {
+        if (format === "pdf") await downloadLocalInvoicePdf(facturaId);
+        else await downloadLocalInvoiceXml(facturaId);
+        toast({
+          title: "Descarga generada",
+          description: "La factura aún no está timbrada; se descargó el documento interno.",
+        });
+      } catch (fallbackError: any) {
+        toast({
+          title: "No se pudo descargar",
+          description: fallbackError?.message ?? e?.message ?? "La factura no está timbrada.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
