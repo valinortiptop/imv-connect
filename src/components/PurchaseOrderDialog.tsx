@@ -517,7 +517,7 @@ Reglas:
                   })}
                 </div>
               </ScrollArea>
-              <div className="flex items-center justify-between p-2 border-t border-border gap-2">
+              <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
                 {addSelection.size > 0 && (
                   <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
                 )}
