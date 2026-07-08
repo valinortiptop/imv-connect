@@ -14,6 +14,12 @@ type Lab = {
   logo_url: string | null;
   orden: number;
   activo: boolean;
+  rfc: string | null;
+  tipo_tercero: string;
+  tipo_operacion: string;
+  pais: string | null;
+  nacionalidad: string | null;
+  id_fiscal_extranjero: string | null;
 };
 
 function LaboratoriosPage() {
