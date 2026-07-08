@@ -1883,6 +1883,7 @@ function ImportExcelDialog({
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null);
   const [labId, setLabId] = useState("");
   const [creatingLab, setCreatingLab] = useState(false);
   const [newLabName, setNewLabName] = useState("");
