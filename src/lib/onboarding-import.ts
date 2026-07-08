@@ -254,6 +254,8 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
       costo_siva: p.costo ?? null,
       costo_civa: p.costo_civa ?? null,
       iva_pct: p.iva_pct ?? 16,
+      ieps_pct: p.ieps_pct ?? 0,
+      tax_regime: p.tax_regime ?? null,
       peso_kg: p.peso_kg ?? null,
       proveedor: p.proveedor ?? null,
       unidad: p.unidad ?? "pieza",
