@@ -109,15 +109,96 @@ function ContabilidadElectronicaPage() {
     return buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
   };
 
-  const buildDiotData = async (): Promise<string> => {
-    const { data, error } = await supabase
-      .from("poliza_impuestos" as any)
-      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
-      .eq("polizas.empresa_id", empresaId!)
-      .eq("polizas.estado", "asentada")
-      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
-    if (error) throw new Error(error.message);
-    return buildDiotTxt((data ?? []) as any[]);
+  const buildDiotData = async (): Promise<{ txt: string; warn?: string }> => {
+    // 1) Pólizas asentadas del periodo con sus impuestos acreditables
+    const { data: polizas, error: eP } = await supabase
+      .from("polizas" as any)
+      .select("id, poliza_impuestos(tipo, tasa, base, monto)")
+      .eq("empresa_id", empresaId!)
+      .eq("estado", "asentada")
+      .gte("fecha", desde).lte("fecha", hasta);
+    if (eP) throw new Error(eP.message);
+    const polizaIds = (polizas ?? []).map((p: any) => p.id);
+    if (polizaIds.length === 0) return { txt: "", warn: "Sin pólizas en el periodo" };
+
+    // 2) Ligar cada póliza a un proveedor vía poliza_movimientos.oc_id
+    const { data: movs, error: eM } = await supabase
+      .from("poliza_movimientos" as any)
+      .select("poliza_id, oc_id")
+      .in("poliza_id", polizaIds).not("oc_id", "is", null);
+    if (eM) throw new Error(eM.message);
+    const ocIds = Array.from(new Set((movs ?? []).map((m: any) => m.oc_id).filter(Boolean)));
+
+    let ocMap = new Map<string, string>(); // oc_id -> laboratorio_id
+    let provMap = new Map<string, any>(); // laboratorio_id -> proveedor row
+    if (ocIds.length) {
+      const { data: ocs, error: eO } = await supabase
+        .from("ordenes_compra" as any).select("id, laboratorio_id").in("id", ocIds);
+      if (eO) throw new Error(eO.message);
+      (ocs ?? []).forEach((o: any) => o.laboratorio_id && ocMap.set(o.id, o.laboratorio_id));
+      const labIds = Array.from(new Set([...ocMap.values()]));
+      if (labIds.length) {
+        const { data: labs, error: eL } = await supabase
+          .from("laboratorios" as any)
+          .select("id, nombre, rfc, tipo_tercero, tipo_operacion, pais, nacionalidad, id_fiscal_extranjero")
+          .in("id", labIds);
+        if (eL) throw new Error(eL.message);
+        (labs ?? []).forEach((l: any) => provMap.set(l.id, l));
+      }
+    }
+
+    // poliza_id -> laboratorio_id (primera OC encontrada)
+    const polToLab = new Map<string, string>();
+    (movs ?? []).forEach((m: any) => {
+      if (polToLab.has(m.poliza_id)) return;
+      const lab = ocMap.get(m.oc_id);
+      if (lab) polToLab.set(m.poliza_id, lab);
+    });
+
+    // 3) Agregar por proveedor (con RFC) — sin proveedor va a "PROVEEDOR GLOBAL" (15)
+    type Agg = { base16: number; base8: number; base0: number; retIva: number };
+    const perProv = new Map<string, Agg>(); // key = laboratorio_id | "__global__"
+    for (const p of (polizas ?? []) as any[]) {
+      const key = polToLab.get(p.id) ?? "__global__";
+      const a = perProv.get(key) ?? { base16: 0, base8: 0, base0: 0, retIva: 0 };
+      for (const t of (p.poliza_impuestos ?? [])) {
+        const tasa = Number(t.tasa);
+        const base = Number(t.base) || 0;
+        const monto = Number(t.monto) || 0;
+        if (t.tipo === "iva_acreditable") {
+          if (tasa === 16) a.base16 += base;
+          else if (tasa === 8) a.base8 += base;
+          else if (tasa === 0) a.base0 += base;
+        } else if (t.tipo === "iva_retenido") {
+          a.retIva += monto;
+        }
+      }
+      perProv.set(key, a);
+    }
+
+    // 4) Emitir renglones DIOT
+    const lines: string[] = [];
+    let missingRfc = 0;
+    for (const [labId, a] of perProv) {
+      if (a.base16 === 0 && a.base8 === 0 && a.base0 === 0 && a.retIva === 0) continue;
+      const prov = labId === "__global__" ? null : provMap.get(labId);
+      const rfc = (prov?.rfc ?? "").trim().toUpperCase();
+      if (!rfc && labId !== "__global__") missingRfc++;
+      lines.push(diotLine({
+        tipoTercero: rfc ? (prov?.tipo_tercero ?? "04") : "15",
+        tipoOperacion: prov?.tipo_operacion ?? "85",
+        rfc,
+        idFiscal: prov?.id_fiscal_extranjero ?? "",
+        nombre: prov?.nombre ?? "",
+        pais: prov?.pais ?? "",
+        nacionalidad: prov?.nacionalidad ?? "",
+        base16: a.base16, base8: a.base8, base0: a.base0, retIva: a.retIva,
+      }));
+    }
+    const warn = missingRfc > 0
+      ? `${missingRfc} proveedor(es) sin RFC — captúralos en Proveedores > Datos fiscales`
+      : undefined;
+    return { txt: lines.join("\r\n") + (lines.length ? "\r\n" : ""), warn };
   };
 
   // ------- Download (sin sello) -------
