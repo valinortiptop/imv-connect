@@ -528,11 +528,17 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           product_id: l.product_id,
           quantity: l.quantity,
           unit_price_override: l.unit_price,
+          // pedido_items.nombre_snapshot is NOT NULL — the order_items view
+          // aliases it as name_snapshot. Without this the insert throws and
+          // the pedido ends up with no items (and $0.00 totals).
+          name_snapshot: l.name,
+          clave_snapshot: l.clave ?? null,
           damaged_batch_id: l.damaged_batch_id ?? null,
           is_damaged: l.is_damaged ?? false,
         }));
         const { error: itemsError } = await supabase.from("order_items").insert(items as any);
         if (itemsError) throw itemsError;
+
 
         // Decrement remaining_quantity for each damaged batch used
         for (const line of lines) {

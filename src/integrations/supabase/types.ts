@@ -7342,6 +7342,10 @@ export type Database = {
         }[]
       }
       oc_recalc_totales: { Args: { _oc: string }; Returns: undefined }
+      pedidos_recalc_totals: {
+        Args: { p_pedido_id: string }
+        Returns: undefined
+      }
       polizas_recalc: { Args: { _poliza: string }; Returns: undefined }
       recibir_oc: { Args: { _items: Json; _oc: string }; Returns: undefined }
       remover_rol: {
