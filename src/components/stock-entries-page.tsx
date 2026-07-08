@@ -347,8 +347,7 @@ export default function StockEntries() {
   // Compute next E-code preview from latest delivery
   const nextDeliveryCode = useMemo(() => {
     if (!deliveries || deliveries.length === 0) return "E-0001";
-    const latest = deliveries[0]?.delivery_code;
-    if (!latest || typeof latest !== "string") return "E-0001";
+    const latest = normalizeDeliveryCode(deliveries[0]?.delivery_code, 0);
     const num = parseInt(latest.replace("E-", "")) || 0;
     return `E-${String(num + 1).padStart(4, "0")}`;
   }, [deliveries]);
