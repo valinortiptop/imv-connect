@@ -35,10 +35,14 @@ const defaultMonth = today.getMonth() + 1;
 function ContabilidadElectronicaPage() {
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
+  const qc = useQueryClient();
   const [year, setYear] = useState<number>(defaultYear);
   const [month, setMonth] = useState<number>(defaultMonth);
-  const [tipoEnvio, setTipoEnvio] = useState<"N" | "C">("N"); // Normal / Complementaria
+  const [tipoEnvio, setTipoEnvio] = useState<"N" | "C">("N");
   const [tipoSolicitud, setTipoSolicitud] = useState<"AF" | "FC" | "DE" | "CO">("AF");
+  const [signOpen, setSignOpen] = useState<null | "cat" | "bal" | "pol" | "zip">(null);
+  const [passphrase, setPassphrase] = useState("");
+  const [signing, setSigning] = useState(false);
 
   const desde = `${year}-${String(month).padStart(2, "0")}-01`;
   const hastaDate = new Date(year, month, 0);
@@ -58,75 +62,171 @@ function ContabilidadElectronicaPage() {
   const mesStr = String(month).padStart(2, "0");
   const yearStr = String(year);
 
-  const genCatalogo = async () => {
-    if (!empresaId) return toast.error("Selecciona empresa");
-    if (!rfc) return toast.error("La empresa no tiene RFC");
+  // ------- CSD info -------
+  const getCsdInfoFn = useServerFn(getCsdInfo);
+  const signFn = useServerFn(signContabilidadXml);
+  const { data: csdInfo } = useQuery({
+    queryKey: ["csd-info", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => (empresaId ? await getCsdInfoFn({ data: { empresaId } }) : null),
+  });
+
+  // ------- Build XML helpers (data-driven, no side effects) -------
+  const buildCatalogoData = async (): Promise<string> => {
     const { data, error } = await supabase
       .from("cuentas_contables" as any)
       .select("codigo, codigo_agrupador, nombre, nivel, naturaleza, padre_id, permite_movimientos, activa")
-      .eq("empresa_id", empresaId).eq("activa", true).order("codigo");
-    if (error) return toast.error(error.message);
+      .eq("empresa_id", empresaId!).eq("activa", true).order("codigo");
+    if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
     const missing = rows.filter((r) => r.permite_movimientos && !r.codigo_agrupador);
-    if (missing.length > 0) {
-      toast.warning(`${missing.length} cuentas de movimiento no tienen código agrupador SAT`);
-    }
-    const xml = buildCatalogoXml(rfc, yearStr, mesStr, rows);
-    download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, xml, "application/xml");
-    toast.success("Catálogo de cuentas generado");
+    if (missing.length > 0) toast.warning(`${missing.length} cuentas de movimiento no tienen código agrupador SAT`);
+    return buildCatalogoXml(rfc, yearStr, mesStr, rows);
+  };
+
+  const buildBalanzaData = async (): Promise<string> => {
+    const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
+      _empresa: empresaId!, _desde: desde, _hasta: hasta,
+    });
+    if (error) throw new Error(error.message);
+    return buildBalanzaXml(rfc, yearStr, mesStr, tipoEnvio, (data ?? []) as any[]);
+  };
+
+  const buildPolizasData = async (): Promise<string | null> => {
+    const { data: polizas, error: e1 } = await supabase
+      .from("polizas" as any)
+      .select("id, folio, tipo, fecha, concepto, estado")
+      .eq("empresa_id", empresaId!).eq("estado", "asentada")
+      .gte("fecha", desde).lte("fecha", hasta).order("fecha").order("folio");
+    if (e1) throw new Error(e1.message);
+    const ids = (polizas ?? []).map((p: any) => p.id);
+    if (ids.length === 0) return null;
+    const { data: movs, error: e2 } = await supabase
+      .from("poliza_movimientos" as any)
+      .select("poliza_id, cargo, abono, concepto, uuid_cfdi, cuentas_contables!inner(codigo)")
+      .in("poliza_id", ids).order("orden");
+    if (e2) throw new Error(e2.message);
+    return buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
+  };
+
+  const buildDiotData = async (): Promise<string> => {
+    const { data, error } = await supabase
+      .from("poliza_impuestos" as any)
+      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
+      .eq("polizas.empresa_id", empresaId!)
+      .eq("polizas.estado", "asentada")
+      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
+    if (error) throw new Error(error.message);
+    return buildDiotTxt((data ?? []) as any[]);
+  };
+
+  // ------- Download (sin sello) -------
+  const genCatalogo = async () => {
+    if (!empresaId) return toast.error("Selecciona empresa");
+    if (!rfc) return toast.error("La empresa no tiene RFC");
+    try {
+      const xml = await buildCatalogoData();
+      download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, xml, "application/xml");
+      toast.success("Catálogo de cuentas generado (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genBalanza = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     if (!rfc) return toast.error("La empresa no tiene RFC");
-    const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
-      _empresa: empresaId, _desde: desde, _hasta: hasta,
-    });
-    if (error) return toast.error(error.message);
-    const rows = (data ?? []) as any[];
-    const xml = buildBalanzaXml(rfc, yearStr, mesStr, tipoEnvio, rows);
-    download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, xml, "application/xml");
-    toast.success("Balanza de comprobación generada");
+    try {
+      const xml = await buildBalanzaData();
+      download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, xml, "application/xml");
+      toast.success("Balanza generada (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genPolizas = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     if (!rfc) return toast.error("La empresa no tiene RFC");
-    const { data: polizas, error: e1 } = await supabase
-      .from("polizas" as any)
-      .select("id, folio, tipo, fecha, concepto, estado")
-      .eq("empresa_id", empresaId).eq("estado", "asentada")
-      .gte("fecha", desde).lte("fecha", hasta).order("fecha").order("folio");
-    if (e1) return toast.error(e1.message);
-    const ids = (polizas ?? []).map((p: any) => p.id);
-    if (ids.length === 0) {
-      toast.warning("No hay pólizas asentadas en el periodo");
-      return;
-    }
-    const { data: movs, error: e2 } = await supabase
-      .from("poliza_movimientos" as any)
-      .select("poliza_id, cargo, abono, concepto, uuid_cfdi, cuentas_contables!inner(codigo)")
-      .in("poliza_id", ids).order("orden");
-    if (e2) return toast.error(e2.message);
-    const xml = buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
-    download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, xml, "application/xml");
-    toast.success(`Pólizas del periodo generadas (${ids.length})`);
+    try {
+      const xml = await buildPolizasData();
+      if (!xml) return toast.warning("No hay pólizas asentadas en el periodo");
+      download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, xml, "application/xml");
+      toast.success("Pólizas generadas (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genDiot = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
-    const { data, error } = await supabase
-      .from("poliza_impuestos" as any)
-      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
-      .eq("polizas.empresa_id", empresaId)
-      .eq("polizas.estado", "asentada")
-      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
-    if (error) return toast.error(error.message);
-    const rows = (data ?? []) as any[];
-    const txt = buildDiotTxt(rows);
-    download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
-    toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+    try {
+      const txt = await buildDiotData();
+      download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
+      toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+    } catch (e: any) { toast.error(e.message); }
   };
+
+  // ------- Sign flow -------
+  const openSign = (which: "cat" | "bal" | "pol" | "zip") => {
+    if (!empresaId) return toast.error("Selecciona empresa");
+    if (!csdInfo) return toast.error("Sube primero el CSD de la empresa");
+    setPassphrase("");
+    setSignOpen(which);
+  };
+
+  const doSign = async () => {
+    if (!signOpen || !empresaId) return;
+    if (!passphrase.trim()) return toast.error("Captura la contraseña del .key");
+    setSigning(true);
+    try {
+      if (signOpen === "cat") {
+        const xml = await buildCatalogoData();
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, r.xml, "application/xml");
+        toast.success("Catálogo sellado ✓");
+      } else if (signOpen === "bal") {
+        const xml = await buildBalanzaData();
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, r.xml, "application/xml");
+        toast.success("Balanza sellada ✓");
+      } else if (signOpen === "pol") {
+        const xml = await buildPolizasData();
+        if (!xml) { toast.warning("Sin pólizas asentadas"); setSigning(false); setSignOpen(null); return; }
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, r.xml, "application/xml");
+        toast.success("Pólizas selladas ✓");
+      } else if (signOpen === "zip") {
+        // Empaqueta Catálogo + Balanza (y Pólizas si hay), todos sellados
+        const zip = new JSZip();
+        const [catXml, balXml, polXml] = await Promise.all([
+          buildCatalogoData(),
+          buildBalanzaData(),
+          buildPolizasData().catch(() => null),
+        ]);
+        const catSigned = await signFn({ data: { empresaId, xml: catXml, passphrase } });
+        zip.file(`${rfc}${yearStr}${mesStr}CT.xml`, catSigned.xml);
+        const balSigned = await signFn({ data: { empresaId, xml: balXml, passphrase } });
+        zip.file(`${rfc}${yearStr}${mesStr}B${tipoEnvio}.xml`, balSigned.xml);
+        if (polXml) {
+          const polSigned = await signFn({ data: { empresaId, xml: polXml, passphrase } });
+          zip.file(`${rfc}${yearStr}${mesStr}PL.xml`, polSigned.xml);
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `ContabilidadElectronica_${rfc}_${yearStr}${mesStr}.zip`;
+        a.click(); URL.revokeObjectURL(url);
+        toast.success("ZIP para SAT generado — abre el Buzón Tributario para subirlo");
+      }
+      setSignOpen(null);
+      setPassphrase("");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al sellar");
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  const openBuzon = () => {
+    window.open("https://contabilidadelectronica.sat.gob.mx/", "_blank", "noopener,noreferrer");
+  };
+
+
 
   const meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
