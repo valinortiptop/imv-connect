@@ -594,6 +594,39 @@ export async function exportOrderAsImage(orderId: string, opts?: { hideMoney?: b
   }
 }
 
+/* Shared export helper: fetches order details on-demand and exports as PDF. */
+export async function exportOrderAsPdf(orderId: string, opts?: { hideMoney?: boolean }) {
+  const { toast } = await import("sonner");
+  try {
+    const result = await renderOrderSnapshotBlob(orderId, !!opts?.hideMoney);
+    if (!result) throw new Error("No se pudo generar el PDF");
+    const { default: jsPDF } = await import("jspdf");
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(result.blob);
+    });
+    // Get image dimensions to size the PDF page proportionally.
+    const dims: { w: number; h: number } = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    const pageW = 210; // A4 width in mm
+    const pageH = (dims.h / dims.w) * pageW;
+    const pdf = new jsPDF({ orientation: pageH > pageW ? "portrait" : "landscape", unit: "mm", format: [pageW, pageH] });
+    pdf.addImage(dataUrl, "PNG", 0, 0, pageW, pageH);
+    const filename = result.filename.replace(/\.png$/i, ".pdf");
+    pdf.save(filename);
+  } catch (err) {
+    console.error(err);
+    toast("Error al generar PDF");
+  }
+}
+
+
 /**
  * Generate the signed comprobante snapshot, upload it to storage, and
  * register it in order_documents with category 'comprobante_entrega'.
