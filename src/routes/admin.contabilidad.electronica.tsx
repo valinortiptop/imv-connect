@@ -236,9 +236,11 @@ function ContabilidadElectronicaPage() {
   const genDiot = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     try {
-      const txt = await buildDiotData();
+      const { txt, warn } = await buildDiotData();
+      if (!txt) return toast.warning(warn ?? "No hay operaciones acreditables en el periodo");
       download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
-      toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+      if (warn) toast.warning(`DIOT generado. ${warn}`);
+      else toast.success("DIOT TXT generado (formato pipe listo para DEM)");
     } catch (e: any) { toast.error(e.message); }
   };
 
