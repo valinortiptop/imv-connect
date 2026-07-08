@@ -281,13 +281,18 @@ function ContabilidadElectronicaPage() {
             </div>
           </div>
 
+          {/* Sección CSD */}
+          <CsdSection empresaId={empresaId} csdInfo={csdInfo} onChanged={() => qc.invalidateQueries({ queryKey: ["csd-info", empresaId] })} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ExportCard
               icon={<FileCode2 className="h-5 w-5 text-primary" />}
               title="Catálogo de cuentas (XML)"
               desc="Anexo 24 §I — Estructura del catálogo con código agrupador SAT."
               norma="Anexo 24 v1.3"
-              onClick={genCatalogo}
+              onDownload={genCatalogo}
+              onSign={() => openSign("cat")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -307,7 +312,9 @@ function ContabilidadElectronicaPage() {
                   </Select>
                 </div>
               }
-              onClick={genBalanza}
+              onDownload={genBalanza}
+              onSign={() => openSign("bal")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -329,7 +336,9 @@ function ContabilidadElectronicaPage() {
                   </Select>
                 </div>
               }
-              onClick={genPolizas}
+              onDownload={genPolizas}
+              onSign={() => openSign("pol")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -337,23 +346,194 @@ function ContabilidadElectronicaPage() {
               title="DIOT (TXT)"
               desc="Declaración informativa de operaciones con terceros. Formato pipe (|) para el DEM DIOT."
               norma="Art. 32 LIVA"
-              onClick={genDiot}
+              onDownload={genDiot}
             />
           </div>
 
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-            <p className="font-medium mb-1">Antes de enviar</p>
-            <ul className="text-muted-foreground text-xs space-y-1 list-disc list-inside">
-              <li>Verifica que todas las cuentas de movimiento tengan código agrupador SAT.</li>
-              <li>El SAT valida XSD y firma con e.firma o CSD antes de aceptar el archivo.</li>
-              <li>El sellado con e.firma/CSD se realiza fuera del sistema o con el próximo módulo de sellado.</li>
-              <li>DIOT genera un borrador para revisión; asegúrate que los RFC de proveedores estén completos.</li>
+          {/* Envío al Buzón Tributario */}
+          <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-primary/10 p-2"><Archive className="h-5 w-5 text-primary" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold">Enviar al Buzón Tributario</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sellamos Catálogo + Balanza (+ Pólizas si hay) con tu CSD y armamos un ZIP con los nombres de archivo exigidos por el SAT
+                  (<span className="font-mono">RFC+AAAAMM+Tipo.xml</span>). Después abrimos el portal oficial para que subas el ZIP.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  El SAT no ofrece un API público para envío directo — la carga se hace en su portal autenticado con RFC+contraseña o e.firma.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button onClick={() => openSign("zip")} disabled={!csdInfo}>
+                <ShieldCheck className="h-4 w-4 mr-1" /> Sellar y armar ZIP
+              </Button>
+              <Button variant="outline" onClick={openBuzon}>
+                <ExternalLink className="h-4 w-4 mr-1" /> Abrir portal SAT
+              </Button>
+            </div>
+            {!csdInfo && (
+              <p className="text-xs text-destructive mt-2">Sube el CSD arriba para habilitar el sellado.</p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border p-4 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground text-sm mb-1">Notas</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Verifica que todas las cuentas de movimiento tengan código agrupador SAT antes de sellar.</li>
+              <li>El sellado usa el <strong>CSD</strong> (no la e.firma) — es lo que exige el Anexo 24.</li>
+              <li>La contraseña del <span className="font-mono">.key</span> no se guarda: se pide cada vez que sellas.</li>
+              <li>DIOT genera un borrador — completa los RFC de proveedores antes de enviarla.</li>
             </ul>
           </div>
         </>
       )}
+
+      {/* Modal de contraseña para sellar */}
+      <Dialog open={!!signOpen} onOpenChange={(o) => { if (!o) { setSignOpen(null); setPassphrase(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Contraseña del CSD</DialogTitle>
+            <DialogDescription>
+              Captura la contraseña de la llave privada (.key) del CSD. La contraseña no se guarda — solo se usa para esta operación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs">Contraseña del .key</Label>
+            <Input
+              type="password"
+              value={passphrase}
+              onChange={(e) => setPassphrase(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && !signing) doSign(); }}
+              placeholder="••••••••"
+            />
+            {csdInfo && (
+              <div className="text-xs text-muted-foreground pt-1">
+                CSD activo: <span className="font-mono">{csdInfo.no_certificado}</span> ·
+                RFC <span className="font-mono">{csdInfo.rfc}</span> ·
+                vence {new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignOpen(null)} disabled={signing}>Cancelar</Button>
+            <Button onClick={doSign} disabled={signing || !passphrase.trim()}>
+              {signing ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Sellando…</> : <><ShieldCheck className="h-4 w-4 mr-1" /> Sellar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
+}
+
+/* --------------- CSD Section --------------- */
+
+function CsdSection({
+  empresaId, csdInfo, onChanged,
+}: {
+  empresaId: string;
+  csdInfo: any;
+  onChanged: () => void;
+}) {
+  const [cerFile, setCerFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
+  const [pw, setPw] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const uploadFn = useServerFn(uploadCsd);
+  const deleteFn = useServerFn(deleteCsd);
+
+  const onUpload = async () => {
+    if (!cerFile || !keyFile) return toast.error("Selecciona .cer y .key");
+    if (!pw.trim()) return toast.error("Captura la contraseña del .key");
+    setUploading(true);
+    try {
+      const cerB64 = await fileToBase64(cerFile);
+      const keyB64 = await fileToBase64(keyFile);
+      const r = await uploadFn({ data: { empresaId, cerBase64: cerB64, keyBase64: keyB64, passphrase: pw } });
+      toast.success(`CSD registrado (${r.rfc} · ${r.noCertificado})`);
+      setCerFile(null); setKeyFile(null); setPw("");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo registrar el CSD");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!confirm("¿Quitar el CSD de esta empresa?")) return;
+    try {
+      await deleteFn({ data: { empresaId } });
+      toast.success("CSD eliminado");
+      onChanged();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const vencido = csdInfo && new Date(csdInfo.valid_to) < new Date();
+
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldCheck className={`h-5 w-5 ${csdInfo ? (vencido ? "text-destructive" : "text-emerald-600") : "text-muted-foreground"}`} />
+        <h2 className="font-semibold">Certificado de Sello Digital (CSD)</h2>
+        {csdInfo && !vencido && <Badge variant="outline" className="text-emerald-700 border-emerald-500/30">Activo</Badge>}
+        {vencido && <Badge variant="destructive">Vencido</Badge>}
+      </div>
+
+      {csdInfo ? (
+        <div className="space-y-2 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div><Label className="text-[10px] uppercase text-muted-foreground">RFC</Label><div className="font-mono">{csdInfo.rfc}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">No. certificado</Label><div className="font-mono truncate">{csdInfo.no_certificado}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vigente desde</Label><div>{new Date(csdInfo.valid_from).toLocaleDateString("es-MX")}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vence</Label><div className={vencido ? "text-destructive font-medium" : ""}>{new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}</div></div>
+          </div>
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-1" /> Quitar CSD
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sube el .cer y .key de tu CSD (no e.firma). Se guardan cifrados en storage privado. La contraseña del .key no se guarda.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Archivo .cer</Label>
+              <Input type="file" accept=".cer" onChange={(e) => setCerFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Archivo .key</Label>
+              <Input type="file" accept=".key" onChange={(e) => setKeyFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Contraseña del .key</Label>
+              <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
+            </div>
+          </div>
+          <Button onClick={onUpload} disabled={uploading || !cerFile || !keyFile || !pw}>
+            {uploading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Validando…</> : <><Upload className="h-4 w-4 mr-1" /> Registrar CSD</>}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }
 
 function ExportCard({
