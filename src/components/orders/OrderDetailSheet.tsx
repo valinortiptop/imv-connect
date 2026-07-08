@@ -33,9 +33,11 @@ interface OrderDetailSheetProps {
 
 export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete }: OrderDetailSheetProps) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [ajusteDialogOpen, setAjusteDialogOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<any | null>(null);
   const [deletingAdjustment, setDeletingAdjustment] = useState<any | null>(null);
+  const [invoicing, setInvoicing] = useState(false);
   const deleteMutation = useDeleteAdjustment();
   const { data: order, isLoading: orderLoading } = useQuery({
     queryKey: ["order-detail", orderId],
