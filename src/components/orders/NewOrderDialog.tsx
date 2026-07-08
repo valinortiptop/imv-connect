@@ -291,6 +291,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       setPickerMode("normal");
       setAppliedPriceList(null);
       setStops([]);
+      setCreatedOrderId(null);
+      setSignedUrl(null);
+      setUploading(null);
       form.reset();
     }
   }, [open, form]);
