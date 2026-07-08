@@ -433,7 +433,35 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines(prev => [...prev, {
       product_id: p.id, clave: p.clave, name: p.name, image_url: p.image_url,
       quantity: "" as any, unit_price: unitPrice,
+      price_list_id: appliedPriceList?.id ?? null,
     }]);
+  };
+
+  /** Change the price list assigned to a single line and recompute its price
+   *  accordingly. Passing "__custom__" switches the line to Personalizar
+   *  mode — the current price is preserved and the user can freely edit it. */
+  const setLinePriceList = (idx: number, value: string) => {
+    setLines((prev) => prev.map((l, i) => {
+      if (i !== idx) return l;
+      if (l.is_damaged) return l;
+      if (value === "__custom__") {
+        return { ...l, price_list_id: "__custom__" };
+      }
+      const plId = value === "__mayoreo__" ? null : value;
+      const p = products.find((x) => x.id === l.product_id);
+      const catalog = p?.sale_price_with_iva ?? l.unit_price;
+      const clientOverride = clientOverrides.find((r) => r.product_id === l.product_id);
+      if (clientOverride) {
+        return { ...l, price_list_id: plId, unit_price: Number(clientOverride.price_with_iva) };
+      }
+      if (!plId) return { ...l, price_list_id: null, unit_price: catalog };
+      const list = priceLists.find((x) => x.id === plId) ?? null;
+      const overrides = new Map<string, number>();
+      for (const r of allPriceListItems) {
+        if (r.price_list_id === plId) overrides.set(r.product_id, Number(r.price_with_iva));
+      }
+      return { ...l, price_list_id: plId, unit_price: resolveListPrice(l.product_id, catalog, list, overrides) };
+    }));
   };
 
   const updateLine = (idx: number, field: "quantity" | "unit_price", value: string) => {
