@@ -898,7 +898,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 )
               ) : (
                 availableProducts.length > 0 && (
-                  <Popover>
+                  <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                     <PopoverTrigger asChild>
                       <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal">
                         <span className="text-muted-foreground">Seleccionar producto...</span>
