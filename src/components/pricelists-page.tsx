@@ -257,6 +257,7 @@ export default function PriceLists() {
       const { data, error } = await supabase.from("price_lists").insert({
         name: newName.trim(),
         description: `Importado desde ${fileName}`,
+        default_for_client_type: newDefaultType,
       } as any).select("id").single();
       if (error) throw error;
 
