@@ -31,7 +31,7 @@ function LaboratoriosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("laboratorios")
-        .select("id, nombre, logo_url, orden, activo")
+        .select("id, nombre, logo_url, orden, activo, rfc, tipo_tercero, tipo_operacion, pais, nacionalidad, id_fiscal_extranjero")
         .order("orden")
         .order("nombre");
       if (error) throw error;
