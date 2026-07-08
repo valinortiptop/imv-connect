@@ -1,66 +1,69 @@
-# IVA + IEPS en importación de catálogo
+## Goal
+Close the loop **Pedidos → Almacén → Facturación → Contabilidad** so a pedido created in `/pedidos` shows up automatically as an "Orden por surtir" on `/almacen`, moves through picking/dispatch, becomes an invoice on `/facturacion`, and posts a póliza in `/contabilidad`.
 
-Hoy `productos` guarda solo `iva_pct` (por defecto 16%) y la importación no reconoce IEPS ni la etiqueta "ITEM NORMAL". Con esta actualización el catálogo interpretará las 4 clasificaciones de SuiteTax y calculará precios y facturas con los impuestos correctos.
+## Current state (what I found)
 
-## Clasificaciones a soportar
+- `pedidos` table has 8 real rows (folios `p-1`…`p-8`), all with `estado = 'Nuevo'`.
+- `/almacen` shows "No hay órdenes por surtir" because the RPC `list_orders_to_fulfill` (and ~5 other RPCs the panel uses) **do not exist in the database**. All the buttons on `OrdersToFulfillPanel` + `FulfillOrderDialog` are wired to functions that were never created.
+- `crear_factura_desde_pedido(uuid)` already exists — it copies items and creates a `facturas` row. Not called anywhere from the UI right now.
+- `polizas` / `poliza_movimientos` tables exist with recalc triggers, but nothing auto-creates a póliza when a factura is issued.
+- Estados in `pedidos_stock_trigger` are lowercase (`confirmado`, `enviado`, `entregado`, `cancelado`) but the app writes `'Nuevo'`. Needs unification.
 
-Vienen en la columna "Código de artículo de SuiteTax Latam Engine":
+## Plan
 
-| Etiqueta SuiteTax | IVA | IEPS |
-|---|---|---|
-| ITEM NORMAL | 16% | 0% |
-| ITEM IVA 0% | 0% | 0% |
-| ITEM IEPS 6% + IVA 0% | 0% | 6% |
-| ITEM IEPS 6% + IVA 16% | 16% | 6% |
+### 1. Unify pedido lifecycle (single source of truth)
+Introduce the canonical state machine on `pedidos.estado`:
 
-Fórmula estándar SAT: primero se suma IEPS al precio y sobre esa base se calcula IVA — `precio_final = precio_lista × (1 + IEPS) × (1 + IVA)`.
+```text
+Nuevo → Surtiendo → Surtido → EnRuta ─┐
+                              Entregado ─┼→ Facturado → Pagado
+                              (Pickup)  ─┘
+Cancelado (from any pre-invoice state)
+```
 
-## Base de datos
+- `Nuevo` = created in /pedidos, appears in /almacen as "por surtir".
+- `Surtiendo` = at least 1 bulto picked to embarque.
+- `Surtido` = all bultos picked, awaiting despacho / pickup.
+- `EnRuta` / `Entregado` = physically left warehouse.
+- `Facturado` = CFDI emitted (or draft factura created).
 
-Migración con dos columnas nuevas en `productos`:
+### 2. DB migration — Almacén RPCs
+Create the missing functions the frontend already calls:
 
-- `ieps_pct numeric NOT NULL DEFAULT 0` — tasa IEPS del producto (0 o 6).
-- `tax_regime text` — etiqueta original ("ITEM NORMAL", etc.) para trazabilidad y para poder re-importar sin ambigüedad.
+- `list_orders_to_fulfill(p_horizon_days int)` – returns pedidos in `Nuevo|Surtiendo|Surtido` with `delivery_date <= today + horizon`, joins `clientes`, aggregates bultos needed from `pedido_items` and picked from `slot_contents` where `kind='embarque'` and `pedido_id=`.
+- `get_order_fulfillment_state(p_order_id uuid)` – per-line: needed vs in-embarque vs remaining.
+- `suggest_source_slots_for_picking(...)` – FIFO by caducidad, smallest pile first, from `slot_contents`.
+- `pick_order_item_to_embarque(...)` – moves qty from a source slot to the order's embarque slot, writes `slot_movements` (kardex), advances estado to `Surtiendo`.
+- `dispatch_order(p_order_id uuid)` – flips estado to `EnRuta`, deletes embarque slot rows, writes final kardex "salida por pedido".
+- `mark_pickup_delivered(p_order_id uuid)` – same but flips to `Entregado`.
 
-Retro-relleno: los productos existentes quedan con `ieps_pct = 0` y `tax_regime = NULL` hasta que se re-suba el catálogo.
+### 3. DB migration — Facturación wiring
+- Add helper `list_pedidos_por_facturar()` (returns pedidos in `Entregado`/`EnRuta` without an existing factura).
+- Reuse existing `crear_factura_desde_pedido`; after success, flip `pedidos.estado='Facturado'`.
+- Add trigger `facturas_after_stamp` → when `facturas.cfdi_status='timbrada'` (or `uuid_fiscal` fills), auto-create a póliza header + `poliza_movimientos` from a mapping table (fallback: hard-coded 105 Clientes / 401 Ventas / 208 IVA cuentas contables lookup by `codigo`).
 
-## Importación (`src/lib/onboarding-import.ts`)
+### 4. Frontend wiring
+- `/pedidos` order-detail sheet: add "Facturar" button (visible only when `estado in (Entregado,EnRuta)` and no factura exists).
+- `/facturacion` page: add "Pedidos por facturar" tab using `list_pedidos_por_facturar`; clicking "Timbrar" calls `crear_factura_desde_pedido` → then existing timbrado flow.
+- `/almacen` panel: works automatically once RPCs exist. No component changes needed.
+- `/contabilidad`: no UI change — pólizas appear via the new trigger. Add a "origen: factura F-123" link in the póliza detail already shown.
 
-`mapProductRow` ampliada:
+### 5. Backfill
+One-off SQL: keep the 8 existing pedidos as `Nuevo` so they immediately appear in /almacen.
 
-1. Lee la columna SuiteTax normalizada (`codigo_de_articulo_de_suitetax_latam_engine`).
-2. Detecta el régimen con regex sobre la etiqueta completa:
-   - "ITEM NORMAL" → IVA 16, IEPS 0
-   - "IVA 0%" sin IEPS → IVA 0, IEPS 0
-   - "IEPS 6% + IVA 0%" → IVA 0, IEPS 6
-   - "IEPS 6% + IVA 16%" → IVA 16, IEPS 6
-3. Si la fila trae `iva` / `ieps` explícitos, esos ganan sobre la etiqueta.
-4. Guarda `iva_pct`, `ieps_pct` y `tax_regime` en el upsert.
+## Technical notes
 
-Fallback: si no viene columna SuiteTax ni columnas explícitas, mantiene el comportamiento actual (IVA 16, IEPS 0).
+- All RPCs `SECURITY DEFINER`, `SET search_path=public`, `GRANT EXECUTE TO authenticated`.
+- Kardex uses the existing `slot_contents` + `slot_movements` tables (already present with 12/10 columns). Embarque = a virtual slot per order, or `slot_contents` rows tagged `kind='embarque'` — I will confirm by reading the current slot_contents schema before writing SQL.
+- No schema changes to `facturas`; only a new trigger.
+- Cuentas contables lookup: read from `cuentas_contables` by SAT `codigo_agrupador` prefix. If a company hasn't seeded their catálogo, the trigger skips póliza creation instead of failing the timbrado.
 
-## UI del catálogo
+## Out of scope for this pass
+- Real CFDI/PAC integration (already exists via Facturapi fields on `facturas`).
+- Pagos automáticos → póliza de ingreso (can be a follow-up).
+- Partial invoicing (one factura per pedido for now).
 
-- **`admin.productos.tsx`**: agregar columna/filtro por régimen fiscal ("Normal", "IVA 0%", "IEPS 6%+IVA 0%", "IEPS 6%+IVA 16%") y mostrar el precio con impuestos usando la nueva fórmula.
-- **`Product360Drawer.tsx`**: además del badge "IVA %", agregar badge "IEPS %" cuando `ieps_pct > 0`, y mostrar el desglose (subtotal → +IEPS → +IVA → total) en la sección de precios.
-- **Portal cliente (`portal.$token.tsx`)**: mismo desglose en el detalle del producto y en el carrito.
-
-## Facturación
-
-- **`facturacion-page.tsx`** y `facturapi.functions.ts`: al armar los items de la factura, si el producto tiene `ieps_pct > 0`, añadir un `tax` adicional `{ type: "IEPS", rate: ieps_pct/100 }` al lado del IVA. La base del IEPS es el subtotal del renglón; el IVA se calcula sobre `subtotal + IEPS`.
-- Preservar el comportamiento actual (IVA 16%) para productos sin IEPS.
-
-## Verificación
-
-1. Re-importar el catálogo adjunto y confirmar en `productos` que las 4 etiquetas quedan clasificadas correctamente (query de conteo por `tax_regime`).
-2. Abrir un producto ITEM NORMAL, uno IVA 0%, y uno IEPS 6% + IVA 16% en el 360 drawer y verificar que el desglose de precio coincide.
-3. Emitir una factura de prueba con un producto IEPS 6% + IVA 16% y confirmar que Facturapi recibe ambos impuestos con la base correcta.
-
-## Archivos afectados
-
-- Migración: `ALTER TABLE productos ADD COLUMN ieps_pct`, `tax_regime`.
-- `src/lib/onboarding-import.ts` — parseo del régimen.
-- `src/routes/admin.productos.tsx` — columna/filtro/desglose.
-- `src/components/catalog/Product360Drawer.tsx` — badges y desglose.
-- `src/routes/portal.$token.tsx` — desglose visible al cliente.
-- `src/components/facturacion-page.tsx` + `src/lib/facturapi.functions.ts` — IEPS en la factura.
+## Rollout order (single approval → 2 migrations + 3-4 file edits)
+1. Migration A: almacén RPCs + state machine.
+2. Migration B: facturación helper + póliza trigger.
+3. UI edits: OrderDetailSheet "Facturar" button, Facturación page "Pedidos por facturar" tab.
