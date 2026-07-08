@@ -325,6 +325,12 @@ export default function PortalAdmin() {
           </Table>
         </div>
       )}
+
+      <Client360Drawer
+        clientId={drawerClientId}
+        open={!!drawerClientId}
+        onOpenChange={(o) => { if (!o) setDrawerClientId(null); }}
+      />
     </div>
   );
 }
