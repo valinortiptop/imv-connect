@@ -172,7 +172,7 @@ export function OrdersToFulfillPanel({
   };
 
   const headerLabel = useMemo(() => {
-    if (view === "all" && !specificDate) return "Todos · próximos 7 días";
+    if (view === "all" && !specificDate) return `Todos · próximos ${HORIZON_DAYS} días`;
     if (targetDate) return fmtDayLabel(targetDate);
     return "Selecciona un día";
   }, [view, specificDate, targetDate]);
