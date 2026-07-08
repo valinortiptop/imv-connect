@@ -72,6 +72,7 @@ import { Route as AdminContabilidadEstadosRouteImport } from './routes/admin.con
 import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.contabilidad.diario'
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
 import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.contabilidad.balanza'
+import { Route as AdminContabilidadAgrupadoresRouteImport } from './routes/admin.contabilidad.agrupadores'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
@@ -398,6 +399,12 @@ const AdminContabilidadBalanzaRoute =
     path: '/contabilidad/balanza',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminContabilidadAgrupadoresRoute =
+  AdminContabilidadAgrupadoresRouteImport.update({
+    id: '/contabilidad/agrupadores',
+    path: '/contabilidad/agrupadores',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -471,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
@@ -539,6 +547,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
@@ -609,6 +618,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
@@ -680,6 +690,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
@@ -748,6 +759,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
@@ -817,6 +829,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
@@ -1288,6 +1301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadBalanzaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/agrupadores': {
+      id: '/admin/contabilidad/agrupadores'
+      path: '/contabilidad/agrupadores'
+      fullPath: '/admin/contabilidad/agrupadores'
+      preLoaderRoute: typeof AdminContabilidadAgrupadoresRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/compras/$id': {
       id: '/admin/compras/$id'
       path: '/$id'
@@ -1451,6 +1471,7 @@ interface AdminRouteChildren {
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVentasRoute: typeof AdminVentasRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminContabilidadAgrupadoresRoute: typeof AdminContabilidadAgrupadoresRoute
   AdminContabilidadBalanzaRoute: typeof AdminContabilidadBalanzaRoute
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
   AdminContabilidadDiarioRoute: typeof AdminContabilidadDiarioRoute
@@ -1506,6 +1527,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVentasRoute: AdminVentasRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminContabilidadAgrupadoresRoute: AdminContabilidadAgrupadoresRoute,
   AdminContabilidadBalanzaRoute: AdminContabilidadBalanzaRoute,
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
   AdminContabilidadDiarioRoute: AdminContabilidadDiarioRoute,
