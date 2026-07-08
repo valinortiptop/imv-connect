@@ -586,6 +586,73 @@ export default function Facturacion() {
           </div>
         </div>
 
+        {/* Pedidos por facturar — closes the loop Pedidos → Facturación.
+            Any pedido without a linked factura shows here with a 1-click CTA. */}
+        {pedidosPorFacturar.length > 0 && (
+          <GlowCard>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-emerald-500" />
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Pedidos por facturar
+                  </Label>
+                  <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
+                    {pedidosPorFacturar.length}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  Al facturar se genera automáticamente la póliza en contabilidad.
+                </span>
+              </div>
+
+              <div className="rounded-lg border divide-y max-h-[280px] overflow-y-auto">
+                {pedidosPorFacturar.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-semibold text-sm">
+                          {p.order_code ?? p.folio ?? "—"}
+                        </span>
+                        <span className="rounded border px-1.5 py-0 text-[10px] text-muted-foreground">
+                          {p.estado}
+                        </span>
+                        {p.rfc && (
+                          <span className="text-[10px] text-muted-foreground font-mono">{p.rfc}</span>
+                        )}
+                      </div>
+                      <div className="text-sm truncate font-medium">
+                        {p.cliente ?? "—"}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-semibold tabular-nums">
+                        ${Number(p.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground tabular-nums">
+                        subt. ${Number(p.subtotal ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="gap-1 shrink-0"
+                      onClick={() => facturarPedidoMutation.mutate(p.id)}
+                      disabled={facturarPedidoMutation.isPending}
+                    >
+                      <Stamp className="h-3.5 w-3.5" />
+                      Facturar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GlowCard>
+        )}
+
+
         {/* Client + Order selectors */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Client selector */}
