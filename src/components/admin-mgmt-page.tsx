@@ -116,6 +116,12 @@ const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   navManiobra: { es: "Maniobra", en: "Maneuver" },
   navCatalogo: { es: "Catálogo", en: "Catalog" },
   navDocuments: { es: "Documentos", en: "Documents" },
+  // Bancos
+  navBancosCuentas: { es: "Cuentas bancarias", en: "Bank accounts" },
+  navBancosEstados: { es: "Estados bancarios", en: "Bank statements" },
+  navBancosMov: { es: "Entradas y salidas", en: "Money in/out" },
+  navBancosTraspasos: { es: "Traspasos", en: "Transfers" },
+  navBancosNomina: { es: "Pago de nómina", en: "Payroll payment" },
   // Configuración
   navPortalAdmin: { es: "Portal Clientes", en: "Client Portal" },
   navAdmin: { es: "Administración", en: "Administration" },
@@ -134,6 +140,7 @@ const GROUP_LABELS: Record<string, { es: string; en: string }> = {
   Ventas: { es: "Ventas", en: "Sales" },
   Inventario: { es: "Inventario", en: "Inventory" },
   Operaciones: { es: "Operaciones", en: "Operations" },
+  Bancos: { es: "Bancos", en: "Banking" },
   Configuración: { es: "Configuración", en: "Settings" },
   // Legacy aliases — kept so older rows still render with the right label
   Sales: { es: "Ventas", en: "Sales" },
