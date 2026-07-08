@@ -448,7 +448,14 @@ Reglas:
                 <ChevronDown className="h-4 w-4 opacity-60" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] p-0 flex flex-col max-h-[min(70vh,var(--radix-popover-content-available-height))]"
+              align="start"
+              side="bottom"
+              sideOffset={4}
+              avoidCollisions
+              collisionPadding={16}
+            >
               <div className="p-2 border-b border-border">
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
