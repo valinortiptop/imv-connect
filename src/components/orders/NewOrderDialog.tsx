@@ -1067,6 +1067,26 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                           <span className="font-mono text-xs text-primary">{line.clave}</span>
                           <span className="truncate">{line.name}</span>
+                          {!line.is_damaged && line.product_id && (() => {
+                            const s = stockByProduct[line.product_id];
+                            if (s === undefined) return null;
+                            const tone = s <= 0
+                              ? "bg-red-500/15 text-red-600 border-red-500/30"
+                              : s < (Number(line.quantity) || 0)
+                                ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+                            return (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap",
+                                  tone,
+                                )}
+                                title="Existencias en inventario"
+                              >
+                                Inv: {s}
+                              </span>
+                            );
+                          })()}
                           {line.is_damaged && (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
                               <AlertOctagon className="h-2.5 w-2.5" />
