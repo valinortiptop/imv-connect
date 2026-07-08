@@ -9,6 +9,8 @@ import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { ProductImagesOneDriveDialog } from "@/components/catalog/ProductImagesOneDriveDialog";
 import { ProductImagesZipDialog } from "@/components/catalog/ProductImagesZipDialog";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
