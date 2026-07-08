@@ -274,7 +274,7 @@ export function OrdersToFulfillPanel({
             active={view === "all" && !specificDate}
             onClick={() => { setView("all"); setSpecificDate(null); }}
           >
-            Todos (7 días)
+            Todos ({HORIZON_DAYS} días)
           </FilterChip>
         </div>
       </div>
