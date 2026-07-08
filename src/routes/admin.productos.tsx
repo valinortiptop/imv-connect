@@ -140,6 +140,9 @@ function ProductosPage() {
   const [lineaFilter, setLineaFilter] = useState("all");
   const [grupoFilter, setGrupoFilter] = useState("all");
   const [tipoFilter, setTipoFilter] = useState("all");
+  const [taxFilter, setTaxFilter] = useState<
+    "all" | "normal" | "iva0" | "ieps_iva0" | "ieps_iva16"
+  >("all");
   const [estadoFilter, setEstadoFilter] = useState<
     "todos" | "activos" | "inactivos" | "comprometidos" | "promo"
   >("todos");
