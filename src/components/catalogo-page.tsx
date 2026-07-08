@@ -771,10 +771,10 @@ export default function Catalogo() {
     setGenerating(true);
     try {
       if (which === "pricelist") {
-        await generatePriceListPDF(selectedProducts);
+        await generatePriceListPDF(selectedProducts, activeListName);
         toast({ title: "Lista de precios descargada" });
       } else {
-        await generateCatalogPDF(selectedProducts, setProgress);
+        await generateCatalogPDF(selectedProducts, setProgress, activeListName);
         toast({ title: "Catálogo descargado" });
       }
     } catch (e: any) {
