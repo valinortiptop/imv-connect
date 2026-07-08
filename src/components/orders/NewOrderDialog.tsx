@@ -749,7 +749,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <Calendar
                           mode="single"
                           selected={field.value ? new Date(field.value + "T12:00:00") : undefined}
-                          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                          onSelect={(date) => { field.onChange(date ? format(date, "yyyy-MM-dd") : ""); setDatePickerOpen(false); }}
                           locale={es}
                           initialFocus
                         />
