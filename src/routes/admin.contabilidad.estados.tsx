@@ -105,6 +105,7 @@ function EstadosPage() {
           <TabsList>
             <TabsTrigger value="balance">Balance general</TabsTrigger>
             <TabsTrigger value="resultados">Estado de resultados</TabsTrigger>
+            <TabsTrigger value="balanza"><Scale className="h-4 w-4 mr-1" />Balanza de comprobación</TabsTrigger>
             <TabsTrigger value="custom">Reportes personalizados</TabsTrigger>
           </TabsList>
 
