@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { useToast } from "@/hooks/use-toast";
-import { stampInvoiceFn } from "@/lib/facturapi.functions";
+import { stampInvoiceFn, downloadInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
   Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp,
