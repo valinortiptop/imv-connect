@@ -2249,43 +2249,38 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
   };
 
   const save = async () => {
-    const toInsert = rows.filter((r) => r.status === "new");
-    const toUpdate = rows.filter((r) => r.status === "update");
-    console.log("[ImportExcel] Aplicar clicked", {
-      new: toInsert.length,
-      update: toUpdate.length,
-      overrideLab: labId || null,
-    });
-    if (toInsert.length === 0 && toUpdate.length === 0)
-      return toast.info("No hay cambios por aplicar");
-
-    // Laboratorio resolution: prefer per-row id → AI-detected new lab name →
-    // default override. When none of those exist we now proceed with a null
-    // laboratorio (the column is nullable) and just warn the user, instead
-    // of silently blocking the whole import.
-    const overrideLab = labId || null;
-    const missingLab = toInsert.filter(
-      (r) => !r.laboratorio_id && !r.laboratorio_nombre.trim() && !overrideLab,
-    );
-    if (missingLab.length > 0) {
-      toast.warning(
-        `${missingLab.length} producto(s) nuevo(s) se importarán sin laboratorio. Puedes asignarles uno después o elegir un laboratorio por defecto.`,
-      );
-    }
-
-
+    console.log("[ImportExcel] Aplicar clicked");
     setSaving(true);
+    setProgress({ done: 0, total: 0, label: "Preparando…" });
     try {
-      // Create any new labs found by AI (distinct, not matching existing) across both insert+update.
+      const toInsert = rows.filter((r) => r.status === "new");
+      const toUpdate = rows.filter((r) => r.status === "update");
+      if (toInsert.length === 0 && toUpdate.length === 0) {
+        toast.info("No hay cambios por aplicar");
+        return;
+      }
+
+      const overrideLab = labId || null;
+      const missingLab = toInsert.filter(
+        (r) => !r.laboratorio_id && !(r.laboratorio_nombre ?? "").trim() && !overrideLab,
+      );
+      if (missingLab.length > 0) {
+        toast.warning(
+          `${missingLab.length} producto(s) nuevo(s) se importarán sin laboratorio.`,
+        );
+      }
+
+      // Create any new labs found by AI (distinct, not matching existing).
       const newLabNames = Array.from(
         new Set(
           [...toInsert, ...toUpdate]
-            .filter((r) => !r.laboratorio_id && r.laboratorio_nombre.trim())
+            .filter((r) => !r.laboratorio_id && (r.laboratorio_nombre ?? "").trim())
             .map((r) => r.laboratorio_nombre.trim()),
         ),
       );
-      const newLabMap = new Map<string, string>(); // nombre lower -> id
+      const newLabMap = new Map<string, string>();
       if (newLabNames.length > 0) {
+        setProgress({ done: 0, total: newLabNames.length, label: "Creando laboratorios…" });
         const { data: created, error: labErr } = await supabase
           .from("laboratorios")
           .insert(newLabNames.map((nombre) => ({ nombre })))
@@ -2304,10 +2299,11 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         return r.laboratorio_id ?? labFromName ?? overrideLab ?? null;
       };
 
-
-      // INSERT new
+      // INSERT new in batches of 500
+      let inserted = 0;
       if (toInsert.length > 0) {
-        const payload = toInsert.map((r) => ({
+        const BATCH = 500;
+        const payloadAll = toInsert.map((r) => ({
           sku: r.sku || null,
           nombre: r.nombre,
           marca: r.marca || null,
@@ -2320,44 +2316,65 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           ...(r.ieps_pct != null ? { ieps_pct: r.ieps_pct } : {}),
           activo: true,
         }));
-        const { error } = await supabase.from("productos").insert(payload);
-        if (error) throw error;
+        setProgress({ done: 0, total: payloadAll.length, label: "Insertando productos nuevos…" });
+        for (let i = 0; i < payloadAll.length; i += BATCH) {
+          const chunk = payloadAll.slice(i, i + BATCH);
+          const { error } = await supabase.from("productos").insert(chunk);
+          if (error) throw error;
+          inserted += chunk.length;
+          setProgress({ done: inserted, total: payloadAll.length, label: "Insertando productos nuevos…" });
+        }
       }
 
-      // UPDATE changed (one row per update to scope to diff fields only)
+      // UPDATE changed — parallelize in waves of 25 requests
       let updated = 0;
-      for (const r of toUpdate) {
-        if (!r.existing_id) continue;
-        const fields = new Set(r.diff_fields ?? []);
-        const patch: Record<string, unknown> = {};
-        if (fields.has("nombre")) patch.nombre = r.nombre;
-        if (fields.has("marca")) patch.marca = r.marca || null;
-        if (fields.has("proveedor")) patch.proveedor = r.proveedor || null;
-        if (fields.has("peso")) patch.peso_kg = r.peso_kg;
-        if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
-        if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
-        if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
-        if (fields.has("iva")) patch.iva_pct = r.iva_pct;
-        if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
-        if (Object.keys(patch).length === 0) continue;
-        const { error } = await supabase
-          .from("productos")
-          .update(patch)
-          .eq("id", r.existing_id);
-        if (error) throw error;
-        updated++;
+      if (toUpdate.length > 0) {
+        setProgress({ done: 0, total: toUpdate.length, label: "Actualizando productos…" });
+        const CONCURRENCY = 25;
+        const tasks = toUpdate
+          .filter((r) => r.existing_id)
+          .map((r) => {
+            const fields = new Set(r.diff_fields ?? []);
+            const patch: Record<string, unknown> = {};
+            if (fields.has("nombre")) patch.nombre = r.nombre;
+            if (fields.has("marca")) patch.marca = r.marca || null;
+            if (fields.has("proveedor")) patch.proveedor = r.proveedor || null;
+            if (fields.has("peso")) patch.peso_kg = r.peso_kg;
+            if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
+            if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
+            if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
+            if (fields.has("iva")) patch.iva_pct = r.iva_pct;
+            if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
+            return { id: r.existing_id!, patch };
+          })
+          .filter((t) => Object.keys(t.patch).length > 0);
+
+        for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+          const wave = tasks.slice(i, i + CONCURRENCY);
+          const results = await Promise.all(
+            wave.map((t) =>
+              supabase.from("productos").update(t.patch).eq("id", t.id),
+            ),
+          );
+          const firstErr = results.find((r) => r.error)?.error;
+          if (firstErr) throw firstErr;
+          updated += wave.length;
+          setProgress({ done: updated, total: tasks.length, label: "Actualizando productos…" });
+        }
       }
 
       toast.success(
-        `${toInsert.length} nuevo(s) · ${updated} actualizado(s)${
+        `${inserted} nuevo(s) · ${updated} actualizado(s)${
           newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
         }`,
       );
       onSaved();
     } catch (e) {
-      toast.error((e as Error).message);
+      console.error("[ImportExcel] save error", e);
+      toast.error((e as Error).message ?? "Error al aplicar cambios");
     } finally {
       setSaving(false);
+      setProgress(null);
     }
   };
 
