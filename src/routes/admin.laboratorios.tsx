@@ -46,6 +46,12 @@ function LaboratoriosPage() {
         logo_url: l.logo_url || null,
         orden: l.orden ?? 0,
         activo: l.activo ?? true,
+        rfc: l.rfc ? l.rfc.trim().toUpperCase() : null,
+        tipo_tercero: l.tipo_tercero || "04",
+        tipo_operacion: l.tipo_operacion || "85",
+        pais: l.pais || null,
+        nacionalidad: l.nacionalidad || null,
+        id_fiscal_extranjero: l.id_fiscal_extranjero || null,
       };
       if (l.id) {
         const { error } = await supabase.from("laboratorios").update(payload).eq("id", l.id);
