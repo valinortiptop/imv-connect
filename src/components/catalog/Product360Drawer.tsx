@@ -370,3 +370,59 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-muted-foreground italic px-1">{children}</p>;
 }
+
+/**
+ * Desglose fiscal. Recibe el precio final CON impuestos (como lo guarda `productos.precio_lista`)
+ * y muestra: Subtotal → +IEPS → +IVA → Total. Fórmula:
+ *   subtotal = precio / ((1 + iva) * (1 + ieps))
+ *   ieps_amt = subtotal * ieps
+ *   iva_amt  = (subtotal + ieps_amt) * iva
+ */
+function TaxBreakdown({
+  precioConImpuestos,
+  ivaPct,
+  iepsPct,
+  regimen,
+}: {
+  precioConImpuestos: number;
+  ivaPct: number;
+  iepsPct: number;
+  regimen: string | null;
+}) {
+  const iva = ivaPct / 100;
+  const ieps = iepsPct / 100;
+  const denom = (1 + iva) * (1 + ieps);
+  const subtotal = denom > 0 ? precioConImpuestos / denom : precioConImpuestos;
+  const iepsAmt = subtotal * ieps;
+  const ivaAmt = (subtotal + iepsAmt) * iva;
+  const total = subtotal + iepsAmt + ivaAmt;
+
+  return (
+    <div className="rounded-md border divide-y text-sm">
+      {regimen && (
+        <div className="px-3 py-2 flex justify-between bg-muted/40">
+          <span className="text-muted-foreground">Régimen SuiteTax</span>
+          <span className="font-medium">{regimen}</span>
+        </div>
+      )}
+      <div className="px-3 py-2 flex justify-between">
+        <span className="text-muted-foreground">Subtotal</span>
+        <span className="tabular-nums">{fmt(subtotal)}</span>
+      </div>
+      {iepsPct > 0 && (
+        <div className="px-3 py-2 flex justify-between">
+          <span className="text-muted-foreground">IEPS ({iepsPct}%)</span>
+          <span className="tabular-nums">{fmt(iepsAmt)}</span>
+        </div>
+      )}
+      <div className="px-3 py-2 flex justify-between">
+        <span className="text-muted-foreground">IVA ({ivaPct}%)</span>
+        <span className="tabular-nums">{fmt(ivaAmt)}</span>
+      </div>
+      <div className="px-3 py-2 flex justify-between font-semibold bg-muted/30">
+        <span>Total c/impuestos</span>
+        <span className="tabular-nums text-primary">{fmt(total)}</span>
+      </div>
+    </div>
+  );
+}
