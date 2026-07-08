@@ -139,6 +139,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [damagedPickerOpen, setDamagedPickerOpen] = useState(false);
+  // Success banner state — after "Crear Pedido" we swap the dialog body
+  // for a summary card with email/copy-image/copy-link actions.
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const [uploading, setUploading] = useState<"image" | "link" | null>(null);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list"],
