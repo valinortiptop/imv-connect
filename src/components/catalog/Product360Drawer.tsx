@@ -200,6 +200,14 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
               </TabsContent>
 
               <TabsContent value="precios" className="space-y-4 pt-4">
+                <Section icon={<Tag className="size-4" />} title="Impuestos aplicables">
+                  <TaxBreakdown
+                    precioConImpuestos={Number(p.precio_lista ?? 0)}
+                    ivaPct={Number(p.iva_pct ?? 0)}
+                    iepsPct={Number(p.ieps_pct ?? 0)}
+                    regimen={p.tax_regime ?? null}
+                  />
+                </Section>
                 <Section icon={<Tag className="size-4" />} title="Listas de precios">
                   {q.data!.listItems.length === 0 ? (
                     <Empty>Solo precio Mayoreo ({fmt(p.precio_lista)}).</Empty>
