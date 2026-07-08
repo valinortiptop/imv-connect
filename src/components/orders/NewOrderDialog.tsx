@@ -436,7 +436,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const totalOrder = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
   const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 0 }).format(n);
-  const availableProducts = sortProducts(products.filter(p => !lines.some(l => l.product_id === p.id && !l.is_damaged)));
+  const availableProducts = sortProducts(products);
   const availableDamaged = damagedBatches.filter(b => !lines.some(l => l.damaged_batch_id === b.id));
 
   const hasInvalidLines = lines.some(l => !Number(l.quantity) || Number(l.quantity) <= 0);
