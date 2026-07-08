@@ -329,12 +329,22 @@ function ProductosPage() {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar Excel
           </Button>
-          <Button variant="outline" onClick={() => setImagesZipOpen(true)}>
-            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (ZIP)
-          </Button>
-          <Button variant="outline" onClick={() => setImagesImportOpen(true)}>
-            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (OneDrive)
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes
+                <ChevronDown className="ml-1.5 h-4 w-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImagesZipOpen(true)}>
+                Desde ZIP
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImagesImportOpen(true)}>
+                Desde OneDrive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setNewOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Nuevo producto
           </Button>
