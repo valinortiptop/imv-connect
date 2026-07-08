@@ -67,6 +67,39 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     enabled: !!order?.client_id,
   });
 
+  const { data: existingFactura } = useQuery({
+    queryKey: ["order-factura", orderId],
+    enabled: !!orderId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("facturas")
+        .select("id, folio, estado, total")
+        .eq("pedido_id", orderId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleFacturar = async () => {
+    if (!orderId) return;
+    setInvoicing(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("facturar_pedido", { _pedido: orderId, _dias_credito: 30 });
+      if (error) throw error;
+      toast.success(`Factura ${data?.folio ?? ""} creada · $${Number(data?.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`);
+      qc.invalidateQueries({ queryKey: ["order-factura", orderId] });
+      qc.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["facturas"] });
+      onOpenChange(false);
+      navigate(`/admin/facturas/${data?.factura_id}`);
+    } catch (err: any) {
+      toast.error("No se pudo crear la factura: " + (err?.message ?? "desconocido"));
+    } finally {
+      setInvoicing(false);
+    }
+  };
+
   const { data: items = [] } = useQuery({
     queryKey: ["order-items", orderId],
     queryFn: async () => {
