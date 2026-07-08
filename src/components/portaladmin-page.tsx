@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Search, Link2, Copy, Check, Eye, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Client360Drawer } from "@/components/clients/Client360Drawer";
 
 interface ClientRow {
   id: string;
@@ -40,6 +41,7 @@ export default function PortalAdmin() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [drawerClientId, setDrawerClientId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ["portal-admin-clients"],
@@ -52,6 +54,26 @@ export default function PortalAdmin() {
       return (data || []) as ClientRow[];
     },
   });
+
+  // Last sale per client (from orders)
+  const { data: lastSaleByClient = {} } = useQuery({
+    queryKey: ["portal-admin-last-sale"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("client_id, order_date")
+        .not("status", "eq", "Cancelado")
+        .order("order_date", { ascending: false })
+        .limit(5000);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (r.client_id && !map[r.client_id]) map[r.client_id] = r.order_date;
+      }
+      return map;
+    },
+  });
+
 
   const generateToken = useMutation({
     mutationFn: async (client: ClientRow) => {
