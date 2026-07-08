@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Download, FileCode2, FileSpreadsheet } from "lucide-react";
+import { FileText, Download, FileCode2, FileSpreadsheet, ShieldCheck, KeyRound, Trash2, Upload, ExternalLink, Archive, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ import {
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadCsd, getCsdInfo, deleteCsd, signContabilidadXml } from "@/lib/csd.functions";
+import JSZip from "jszip";
 
 export const Route = createFileRoute("/admin/contabilidad/electronica")({
   head: () => ({
@@ -31,10 +35,14 @@ const defaultMonth = today.getMonth() + 1;
 function ContabilidadElectronicaPage() {
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
+  const qc = useQueryClient();
   const [year, setYear] = useState<number>(defaultYear);
   const [month, setMonth] = useState<number>(defaultMonth);
-  const [tipoEnvio, setTipoEnvio] = useState<"N" | "C">("N"); // Normal / Complementaria
+  const [tipoEnvio, setTipoEnvio] = useState<"N" | "C">("N");
   const [tipoSolicitud, setTipoSolicitud] = useState<"AF" | "FC" | "DE" | "CO">("AF");
+  const [signOpen, setSignOpen] = useState<null | "cat" | "bal" | "pol" | "zip">(null);
+  const [passphrase, setPassphrase] = useState("");
+  const [signing, setSigning] = useState(false);
 
   const desde = `${year}-${String(month).padStart(2, "0")}-01`;
   const hastaDate = new Date(year, month, 0);
@@ -54,75 +62,171 @@ function ContabilidadElectronicaPage() {
   const mesStr = String(month).padStart(2, "0");
   const yearStr = String(year);
 
-  const genCatalogo = async () => {
-    if (!empresaId) return toast.error("Selecciona empresa");
-    if (!rfc) return toast.error("La empresa no tiene RFC");
+  // ------- CSD info -------
+  const getCsdInfoFn = useServerFn(getCsdInfo);
+  const signFn = useServerFn(signContabilidadXml);
+  const { data: csdInfo } = useQuery({
+    queryKey: ["csd-info", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => (empresaId ? await getCsdInfoFn({ data: { empresaId } }) : null),
+  });
+
+  // ------- Build XML helpers (data-driven, no side effects) -------
+  const buildCatalogoData = async (): Promise<string> => {
     const { data, error } = await supabase
       .from("cuentas_contables" as any)
       .select("codigo, codigo_agrupador, nombre, nivel, naturaleza, padre_id, permite_movimientos, activa")
-      .eq("empresa_id", empresaId).eq("activa", true).order("codigo");
-    if (error) return toast.error(error.message);
+      .eq("empresa_id", empresaId!).eq("activa", true).order("codigo");
+    if (error) throw new Error(error.message);
     const rows = (data ?? []) as any[];
     const missing = rows.filter((r) => r.permite_movimientos && !r.codigo_agrupador);
-    if (missing.length > 0) {
-      toast.warning(`${missing.length} cuentas de movimiento no tienen código agrupador SAT`);
-    }
-    const xml = buildCatalogoXml(rfc, yearStr, mesStr, rows);
-    download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, xml, "application/xml");
-    toast.success("Catálogo de cuentas generado");
+    if (missing.length > 0) toast.warning(`${missing.length} cuentas de movimiento no tienen código agrupador SAT`);
+    return buildCatalogoXml(rfc, yearStr, mesStr, rows);
+  };
+
+  const buildBalanzaData = async (): Promise<string> => {
+    const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
+      _empresa: empresaId!, _desde: desde, _hasta: hasta,
+    });
+    if (error) throw new Error(error.message);
+    return buildBalanzaXml(rfc, yearStr, mesStr, tipoEnvio, (data ?? []) as any[]);
+  };
+
+  const buildPolizasData = async (): Promise<string | null> => {
+    const { data: polizas, error: e1 } = await supabase
+      .from("polizas" as any)
+      .select("id, folio, tipo, fecha, concepto, estado")
+      .eq("empresa_id", empresaId!).eq("estado", "asentada")
+      .gte("fecha", desde).lte("fecha", hasta).order("fecha").order("folio");
+    if (e1) throw new Error(e1.message);
+    const ids = (polizas ?? []).map((p: any) => p.id);
+    if (ids.length === 0) return null;
+    const { data: movs, error: e2 } = await supabase
+      .from("poliza_movimientos" as any)
+      .select("poliza_id, cargo, abono, concepto, uuid_cfdi, cuentas_contables!inner(codigo)")
+      .in("poliza_id", ids).order("orden");
+    if (e2) throw new Error(e2.message);
+    return buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
+  };
+
+  const buildDiotData = async (): Promise<string> => {
+    const { data, error } = await supabase
+      .from("poliza_impuestos" as any)
+      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
+      .eq("polizas.empresa_id", empresaId!)
+      .eq("polizas.estado", "asentada")
+      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
+    if (error) throw new Error(error.message);
+    return buildDiotTxt((data ?? []) as any[]);
+  };
+
+  // ------- Download (sin sello) -------
+  const genCatalogo = async () => {
+    if (!empresaId) return toast.error("Selecciona empresa");
+    if (!rfc) return toast.error("La empresa no tiene RFC");
+    try {
+      const xml = await buildCatalogoData();
+      download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, xml, "application/xml");
+      toast.success("Catálogo de cuentas generado (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genBalanza = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     if (!rfc) return toast.error("La empresa no tiene RFC");
-    const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
-      _empresa: empresaId, _desde: desde, _hasta: hasta,
-    });
-    if (error) return toast.error(error.message);
-    const rows = (data ?? []) as any[];
-    const xml = buildBalanzaXml(rfc, yearStr, mesStr, tipoEnvio, rows);
-    download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, xml, "application/xml");
-    toast.success("Balanza de comprobación generada");
+    try {
+      const xml = await buildBalanzaData();
+      download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, xml, "application/xml");
+      toast.success("Balanza generada (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genPolizas = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     if (!rfc) return toast.error("La empresa no tiene RFC");
-    const { data: polizas, error: e1 } = await supabase
-      .from("polizas" as any)
-      .select("id, folio, tipo, fecha, concepto, estado")
-      .eq("empresa_id", empresaId).eq("estado", "asentada")
-      .gte("fecha", desde).lte("fecha", hasta).order("fecha").order("folio");
-    if (e1) return toast.error(e1.message);
-    const ids = (polizas ?? []).map((p: any) => p.id);
-    if (ids.length === 0) {
-      toast.warning("No hay pólizas asentadas en el periodo");
-      return;
-    }
-    const { data: movs, error: e2 } = await supabase
-      .from("poliza_movimientos" as any)
-      .select("poliza_id, cargo, abono, concepto, uuid_cfdi, cuentas_contables!inner(codigo)")
-      .in("poliza_id", ids).order("orden");
-    if (e2) return toast.error(e2.message);
-    const xml = buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
-    download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, xml, "application/xml");
-    toast.success(`Pólizas del periodo generadas (${ids.length})`);
+    try {
+      const xml = await buildPolizasData();
+      if (!xml) return toast.warning("No hay pólizas asentadas en el periodo");
+      download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, xml, "application/xml");
+      toast.success("Pólizas generadas (sin sello)");
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const genDiot = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
-    const { data, error } = await supabase
-      .from("poliza_impuestos" as any)
-      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
-      .eq("polizas.empresa_id", empresaId)
-      .eq("polizas.estado", "asentada")
-      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
-    if (error) return toast.error(error.message);
-    const rows = (data ?? []) as any[];
-    const txt = buildDiotTxt(rows);
-    download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
-    toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+    try {
+      const txt = await buildDiotData();
+      download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
+      toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+    } catch (e: any) { toast.error(e.message); }
   };
+
+  // ------- Sign flow -------
+  const openSign = (which: "cat" | "bal" | "pol" | "zip") => {
+    if (!empresaId) return toast.error("Selecciona empresa");
+    if (!csdInfo) return toast.error("Sube primero el CSD de la empresa");
+    setPassphrase("");
+    setSignOpen(which);
+  };
+
+  const doSign = async () => {
+    if (!signOpen || !empresaId) return;
+    if (!passphrase.trim()) return toast.error("Captura la contraseña del .key");
+    setSigning(true);
+    try {
+      if (signOpen === "cat") {
+        const xml = await buildCatalogoData();
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`CatalogoCuentas_${rfc}_${yearStr}${mesStr}.xml`, r.xml, "application/xml");
+        toast.success("Catálogo sellado ✓");
+      } else if (signOpen === "bal") {
+        const xml = await buildBalanzaData();
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`Balanza_${rfc}_${yearStr}${mesStr}_${tipoEnvio}.xml`, r.xml, "application/xml");
+        toast.success("Balanza sellada ✓");
+      } else if (signOpen === "pol") {
+        const xml = await buildPolizasData();
+        if (!xml) { toast.warning("Sin pólizas asentadas"); setSigning(false); setSignOpen(null); return; }
+        const r = await signFn({ data: { empresaId, xml, passphrase } });
+        download(`Polizas_${rfc}_${yearStr}${mesStr}_${tipoSolicitud}.xml`, r.xml, "application/xml");
+        toast.success("Pólizas selladas ✓");
+      } else if (signOpen === "zip") {
+        // Empaqueta Catálogo + Balanza (y Pólizas si hay), todos sellados
+        const zip = new JSZip();
+        const [catXml, balXml, polXml] = await Promise.all([
+          buildCatalogoData(),
+          buildBalanzaData(),
+          buildPolizasData().catch(() => null),
+        ]);
+        const catSigned = await signFn({ data: { empresaId, xml: catXml, passphrase } });
+        zip.file(`${rfc}${yearStr}${mesStr}CT.xml`, catSigned.xml);
+        const balSigned = await signFn({ data: { empresaId, xml: balXml, passphrase } });
+        zip.file(`${rfc}${yearStr}${mesStr}B${tipoEnvio}.xml`, balSigned.xml);
+        if (polXml) {
+          const polSigned = await signFn({ data: { empresaId, xml: polXml, passphrase } });
+          zip.file(`${rfc}${yearStr}${mesStr}PL.xml`, polSigned.xml);
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `ContabilidadElectronica_${rfc}_${yearStr}${mesStr}.zip`;
+        a.click(); URL.revokeObjectURL(url);
+        toast.success("ZIP para SAT generado — abre el Buzón Tributario para subirlo");
+      }
+      setSignOpen(null);
+      setPassphrase("");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al sellar");
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  const openBuzon = () => {
+    window.open("https://contabilidadelectronica.sat.gob.mx/", "_blank", "noopener,noreferrer");
+  };
+
+
 
   const meses = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -177,13 +281,18 @@ function ContabilidadElectronicaPage() {
             </div>
           </div>
 
+          {/* Sección CSD */}
+          <CsdSection empresaId={empresaId} csdInfo={csdInfo} onChanged={() => qc.invalidateQueries({ queryKey: ["csd-info", empresaId] })} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <ExportCard
               icon={<FileCode2 className="h-5 w-5 text-primary" />}
               title="Catálogo de cuentas (XML)"
               desc="Anexo 24 §I — Estructura del catálogo con código agrupador SAT."
               norma="Anexo 24 v1.3"
-              onClick={genCatalogo}
+              onDownload={genCatalogo}
+              onSign={() => openSign("cat")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -203,7 +312,9 @@ function ContabilidadElectronicaPage() {
                   </Select>
                 </div>
               }
-              onClick={genBalanza}
+              onDownload={genBalanza}
+              onSign={() => openSign("bal")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -225,7 +336,9 @@ function ContabilidadElectronicaPage() {
                   </Select>
                 </div>
               }
-              onClick={genPolizas}
+              onDownload={genPolizas}
+              onSign={() => openSign("pol")}
+              canSign={!!csdInfo}
             />
 
             <ExportCard
@@ -233,30 +346,204 @@ function ContabilidadElectronicaPage() {
               title="DIOT (TXT)"
               desc="Declaración informativa de operaciones con terceros. Formato pipe (|) para el DEM DIOT."
               norma="Art. 32 LIVA"
-              onClick={genDiot}
+              onDownload={genDiot}
             />
           </div>
 
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
-            <p className="font-medium mb-1">Antes de enviar</p>
-            <ul className="text-muted-foreground text-xs space-y-1 list-disc list-inside">
-              <li>Verifica que todas las cuentas de movimiento tengan código agrupador SAT.</li>
-              <li>El SAT valida XSD y firma con e.firma o CSD antes de aceptar el archivo.</li>
-              <li>El sellado con e.firma/CSD se realiza fuera del sistema o con el próximo módulo de sellado.</li>
-              <li>DIOT genera un borrador para revisión; asegúrate que los RFC de proveedores estén completos.</li>
+          {/* Envío al Buzón Tributario */}
+          <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-primary/10 p-2"><Archive className="h-5 w-5 text-primary" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold">Enviar al Buzón Tributario</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sellamos Catálogo + Balanza (+ Pólizas si hay) con tu CSD y armamos un ZIP con los nombres de archivo exigidos por el SAT
+                  (<span className="font-mono">RFC+AAAAMM+Tipo.xml</span>). Después abrimos el portal oficial para que subas el ZIP.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  El SAT no ofrece un API público para envío directo — la carga se hace en su portal autenticado con RFC+contraseña o e.firma.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button onClick={() => openSign("zip")} disabled={!csdInfo}>
+                <ShieldCheck className="h-4 w-4 mr-1" /> Sellar y armar ZIP
+              </Button>
+              <Button variant="outline" onClick={openBuzon}>
+                <ExternalLink className="h-4 w-4 mr-1" /> Abrir portal SAT
+              </Button>
+            </div>
+            {!csdInfo && (
+              <p className="text-xs text-destructive mt-2">Sube el CSD arriba para habilitar el sellado.</p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border p-4 text-xs text-muted-foreground space-y-1">
+            <p className="font-medium text-foreground text-sm mb-1">Notas</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Verifica que todas las cuentas de movimiento tengan código agrupador SAT antes de sellar.</li>
+              <li>El sellado usa el <strong>CSD</strong> (no la e.firma) — es lo que exige el Anexo 24.</li>
+              <li>La contraseña del <span className="font-mono">.key</span> no se guarda: se pide cada vez que sellas.</li>
+              <li>DIOT genera un borrador — completa los RFC de proveedores antes de enviarla.</li>
             </ul>
           </div>
         </>
       )}
+
+      {/* Modal de contraseña para sellar */}
+      <Dialog open={!!signOpen} onOpenChange={(o) => { if (!o) { setSignOpen(null); setPassphrase(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Contraseña del CSD</DialogTitle>
+            <DialogDescription>
+              Captura la contraseña de la llave privada (.key) del CSD. La contraseña no se guarda — solo se usa para esta operación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs">Contraseña del .key</Label>
+            <Input
+              type="password"
+              value={passphrase}
+              onChange={(e) => setPassphrase(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && !signing) doSign(); }}
+              placeholder="••••••••"
+            />
+            {csdInfo && (
+              <div className="text-xs text-muted-foreground pt-1">
+                CSD activo: <span className="font-mono">{csdInfo.no_certificado}</span> ·
+                RFC <span className="font-mono">{csdInfo.rfc}</span> ·
+                vence {new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignOpen(null)} disabled={signing}>Cancelar</Button>
+            <Button onClick={doSign} disabled={signing || !passphrase.trim()}>
+              {signing ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Sellando…</> : <><ShieldCheck className="h-4 w-4 mr-1" /> Sellar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
+/* --------------- CSD Section --------------- */
+
+function CsdSection({
+  empresaId, csdInfo, onChanged,
+}: {
+  empresaId: string;
+  csdInfo: any;
+  onChanged: () => void;
+}) {
+  const [cerFile, setCerFile] = useState<File | null>(null);
+  const [keyFile, setKeyFile] = useState<File | null>(null);
+  const [pw, setPw] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const uploadFn = useServerFn(uploadCsd);
+  const deleteFn = useServerFn(deleteCsd);
+
+  const onUpload = async () => {
+    if (!cerFile || !keyFile) return toast.error("Selecciona .cer y .key");
+    if (!pw.trim()) return toast.error("Captura la contraseña del .key");
+    setUploading(true);
+    try {
+      const cerB64 = await fileToBase64(cerFile);
+      const keyB64 = await fileToBase64(keyFile);
+      const r = await uploadFn({ data: { empresaId, cerBase64: cerB64, keyBase64: keyB64, passphrase: pw } });
+      toast.success(`CSD registrado (${r.rfc} · ${r.noCertificado})`);
+      setCerFile(null); setKeyFile(null); setPw("");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo registrar el CSD");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!confirm("¿Quitar el CSD de esta empresa?")) return;
+    try {
+      await deleteFn({ data: { empresaId } });
+      toast.success("CSD eliminado");
+      onChanged();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const vencido = csdInfo && new Date(csdInfo.valid_to) < new Date();
+
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldCheck className={`h-5 w-5 ${csdInfo ? (vencido ? "text-destructive" : "text-emerald-600") : "text-muted-foreground"}`} />
+        <h2 className="font-semibold">Certificado de Sello Digital (CSD)</h2>
+        {csdInfo && !vencido && <Badge variant="outline" className="text-emerald-700 border-emerald-500/30">Activo</Badge>}
+        {vencido && <Badge variant="destructive">Vencido</Badge>}
+      </div>
+
+      {csdInfo ? (
+        <div className="space-y-2 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div><Label className="text-[10px] uppercase text-muted-foreground">RFC</Label><div className="font-mono">{csdInfo.rfc}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">No. certificado</Label><div className="font-mono truncate">{csdInfo.no_certificado}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vigente desde</Label><div>{new Date(csdInfo.valid_from).toLocaleDateString("es-MX")}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vence</Label><div className={vencido ? "text-destructive font-medium" : ""}>{new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}</div></div>
+          </div>
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-1" /> Quitar CSD
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sube el .cer y .key de tu CSD (no e.firma). Se guardan cifrados en storage privado. La contraseña del .key no se guarda.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Archivo .cer</Label>
+              <Input type="file" accept=".cer" onChange={(e) => setCerFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Archivo .key</Label>
+              <Input type="file" accept=".key" onChange={(e) => setKeyFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Contraseña del .key</Label>
+              <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
+            </div>
+          </div>
+          <Button onClick={onUpload} disabled={uploading || !cerFile || !keyFile || !pw}>
+            {uploading ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Validando…</> : <><Upload className="h-4 w-4 mr-1" /> Registrar CSD</>}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 function ExportCard({
-  icon, title, desc, norma, extra, onClick,
+  icon, title, desc, norma, extra, onDownload, onSign, canSign,
 }: {
   icon: React.ReactNode; title: string; desc: string; norma: string;
-  extra?: React.ReactNode; onClick: () => void;
+  extra?: React.ReactNode;
+  onDownload: () => void | Promise<unknown>;
+  onSign?: () => void;
+  canSign?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border p-4 flex flex-col">
@@ -269,10 +556,15 @@ function ExportCard({
         </div>
       </div>
       {extra}
-      <div className="mt-4">
-        <Button onClick={onClick} className="w-full">
-          <Download className="h-4 w-4 mr-1" /> Descargar
+      <div className="mt-4 flex gap-2">
+        <Button variant="outline" onClick={() => onDownload()} className="flex-1">
+          <Download className="h-4 w-4 mr-1" /> Sin sellar
         </Button>
+        {onSign && (
+          <Button onClick={onSign} disabled={!canSign} className="flex-1">
+            <ShieldCheck className="h-4 w-4 mr-1" /> Sellar
+          </Button>
+        )}
       </div>
     </div>
   );
