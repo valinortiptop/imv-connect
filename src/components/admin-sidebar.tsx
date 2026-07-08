@@ -79,6 +79,8 @@ const navGroups: NavGroup[] = [
     items: [
       { key: "navContaDash",    label: "Dashboard fiscal",    url: "/admin/contabilidad",              icon: Landmark, exact: true },
       { key: "navContaCuentas", label: "Catálogo de cuentas", url: "/admin/contabilidad/cuentas",      icon: BookText },
+      { key: "navContaAgrup",   label: "Códigos agrupadores", url: "/admin/contabilidad/agrupadores",  icon: BookText },
+      { key: "navContaElec",    label: "Contabilidad electrónica", url: "/admin/contabilidad/electronica", icon: FileText },
       { key: "navContaPolizas", label: "Pólizas",             url: "/admin/contabilidad/polizas",      icon: ScrollText },
       { key: "navContaDiario",  label: "Libro diario",        url: "/admin/contabilidad/diario",       icon: BookOpen },
       { key: "navContaMayor",   label: "Libro mayor",         url: "/admin/contabilidad/mayor",        icon: BookText },
