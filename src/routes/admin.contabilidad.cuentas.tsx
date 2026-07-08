@@ -137,6 +137,62 @@ function CuentasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const importCsv = useMutation({
+    mutationFn: async ({ rows, replace }: { rows: Partial<Cuenta>[]; replace: boolean }) => {
+      if (!empresaId) throw new Error("Selecciona una empresa");
+      if (rows.length === 0) throw new Error("El archivo no contiene filas válidas");
+      if (replace) {
+        const { error: eDel } = await supabase
+          .from("cuentas_contables" as any).delete().eq("empresa_id", empresaId);
+        if (eDel) throw eDel;
+      }
+      // Insert padres antes que hijos: ordenar por longitud de código
+      const sorted = [...rows].sort((a, b) => (a.codigo?.length ?? 0) - (b.codigo?.length ?? 0));
+      const payload = sorted.map((c) => ({
+        empresa_id: empresaId,
+        codigo: c.codigo,
+        codigo_agrupador: c.codigo_agrupador || null,
+        nombre: c.nombre,
+        naturaleza: c.naturaleza ?? "deudora",
+        nivel: c.nivel ?? Math.min(6, Math.max(1, (c.codigo ?? "").replace(/[^0-9]/g, "").length <= 3 ? ((c.codigo?.split("-").length ?? 1) + ((c.codigo ?? "").length >= 3 ? 1 : 0)) : 3)),
+        permite_movimientos: c.permite_movimientos ?? true,
+        moneda: c.moneda || "MXN",
+        activa: c.activa ?? true,
+        saldo_inicial: c.saldo_inicial ?? 0,
+      }));
+      // Insertar en lotes
+      const chunk = 200;
+      for (let i = 0; i < payload.length; i += chunk) {
+        const { error } = await supabase
+          .from("cuentas_contables" as any)
+          .upsert(payload.slice(i, i + chunk), { onConflict: "empresa_id,codigo" });
+        if (error) throw error;
+      }
+      return payload.length;
+    },
+    onSuccess: (n) => { toast.success(`${n} cuentas importadas`); qc.invalidateQueries({ queryKey: ["cuentas"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [importOpen, setImportOpen] = useState(false);
+
+  const exportCsv = () => {
+    const header = "codigo,codigo_agrupador,nombre,naturaleza,nivel,permite_movimientos,moneda,saldo_inicial";
+    const esc = (s: any) => {
+      const str = s == null ? "" : String(s);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const body = cuentas.map((c) => [
+      c.codigo, c.codigo_agrupador ?? "", c.nombre, c.naturaleza, c.nivel,
+      c.permite_movimientos ? "1" : "0", c.moneda ?? "MXN", c.saldo_inicial ?? 0,
+    ].map(esc).join(",")).join("\n");
+    const blob = new Blob([header + "\n" + body], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `catalogo_cuentas_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
