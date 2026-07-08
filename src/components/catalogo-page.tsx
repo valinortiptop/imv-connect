@@ -175,6 +175,10 @@ async function generateCatalogPDF(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
     doc.text("Alimentos para mascotas · Precios con IVA incluido", 12, 24);
+    // Download date (top-right)
+    const downloadDate = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+    doc.setFontSize(9);
+    doc.text(`Descargado: ${downloadDate}`, W - 12, 24, { align: "right" });
 
     // Products for this page
     const pageProducts = products.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
