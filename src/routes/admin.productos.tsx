@@ -9,6 +9,8 @@ import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { ProductImagesOneDriveDialog } from "@/components/catalog/ProductImagesOneDriveDialog";
 import { ProductImagesZipDialog } from "@/components/catalog/ProductImagesZipDialog";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -329,12 +331,22 @@ function ProductosPage() {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="mr-1.5 h-4 w-4" /> Importar Excel
           </Button>
-          <Button variant="outline" onClick={() => setImagesZipOpen(true)}>
-            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (ZIP)
-          </Button>
-          <Button variant="outline" onClick={() => setImagesImportOpen(true)}>
-            <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes (OneDrive)
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Upload className="mr-1.5 h-4 w-4" /> Importar imágenes
+                <ChevronDown className="ml-1.5 h-4 w-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImagesZipOpen(true)}>
+                Desde ZIP
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImagesImportOpen(true)}>
+                Desde OneDrive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setNewOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Nuevo producto
           </Button>
