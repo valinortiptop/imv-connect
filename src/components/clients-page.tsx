@@ -800,6 +800,20 @@ export default function Clients() {
     }
     setSaving(true);
     try {
+      // Auto-resolve default price list for this client_type when the
+      // user did not manually pick one — matches whichever list is marked
+      // `default_for_client_type` in price_lists.
+      let resolvedPriceListId = form.price_list_id;
+      if (!resolvedPriceListId) {
+        const { data: defList } = await (supabase as any)
+          .from("price_lists")
+          .select("id")
+          .eq("default_for_client_type", form.client_type)
+          .eq("active", true)
+          .maybeSingle();
+        if (defList?.id) resolvedPriceListId = defList.id;
+      }
+
       const payload = {
         name: form.name.trim(),
         company: form.company.trim() || null,
@@ -813,7 +827,7 @@ export default function Clients() {
         nombre_cfdi: form.nombre_cfdi.trim() || null,
         payment_method: form.payment_method.trim() || "Transferencia",
         active: form.active,
-        price_list_id: form.price_list_id,
+        price_list_id: resolvedPriceListId,
         client_type: form.client_type,
         // Delivery reception window — empty inputs → NULL, which the
         // app reads as "no capturado" + renders the dashed warning chip.
