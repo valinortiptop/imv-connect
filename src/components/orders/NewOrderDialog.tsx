@@ -330,13 +330,16 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     if (!plId) {
       // Restore catalog prices on existing lines — but still respect
       // per-client overrides which sit ABOVE the tier in the layering.
+      // Personalizar lines are left untouched.
       setLines((prev) =>
         prev.map((l) => {
           if (l.is_damaged) return l;
+          if (l.price_list_id === "__custom__") return l;
           const p = products.find((x) => x.id === l.product_id);
           const overridePrice = clientOverrideMap.get(l.product_id);
           return {
             ...l,
+            price_list_id: null,
             unit_price: overridePrice ?? p?.sale_price_with_iva ?? l.unit_price,
           };
         })
@@ -351,11 +354,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines((prev) =>
       prev.map((l) => {
         if (l.is_damaged) return l;
+        if (l.price_list_id === "__custom__") return l;
         const p = products.find((x) => x.id === l.product_id);
         const overridePrice = clientOverrideMap.get(l.product_id);
-        if (overridePrice != null) return { ...l, unit_price: overridePrice };
+        if (overridePrice != null) return { ...l, price_list_id: plId, unit_price: overridePrice };
         const mayoreo = p?.sale_price_with_iva ?? l.unit_price;
-        return { ...l, unit_price: resolveListPrice(l.product_id, mayoreo, list, overrides) };
+        return { ...l, price_list_id: plId, unit_price: resolveListPrice(l.product_id, mayoreo, list, overrides) };
       })
     );
   };
