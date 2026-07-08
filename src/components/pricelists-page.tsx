@@ -394,6 +394,32 @@ export default function PriceLists() {
     }
   };
 
+  const setListDefaultType = async (listId: string, value: "mayoreo" | "menudeo" | null) => {
+    try {
+      if (value) {
+        // Clear any other list currently holding this default
+        await (supabase as any)
+          .from("price_lists")
+          .update({ default_for_client_type: null })
+          .eq("default_for_client_type", value)
+          .neq("id", listId);
+      }
+      const { error } = await (supabase as any)
+        .from("price_lists")
+        .update({ default_for_client_type: value })
+        .eq("id", listId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["price-lists"] });
+      toast({
+        title: value
+          ? (lang === "es" ? `Lista predeterminada para ${value}` : `Default list for ${value}`)
+          : (lang === "es" ? "Predeterminado removido" : "Default removed"),
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message });
+    }
+  };
+
   // Group by brand and filter
   const filtered = items.filter((item) => {
     if (!search) return true;
