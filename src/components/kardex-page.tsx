@@ -79,15 +79,18 @@ const PAGE_SIZE = 50;
 interface MovementRow {
   id: string;
   created_at: string;
-  slot_id: string;
+  slot_id: string | null;
+  slot_code: string | null;
   product_id: string | null;
   description: string | null;
   lote: string | null;
   delta: number;
   reason: string;
   note: string | null;
-  warehouse_slots: { code: string } | null;
-  products: { clave: string; name: string; image_url: string | null } | null;
+  product_clave: string | null;
+  product_name: string | null;
+  product_image_url: string | null;
+  source: string;
 }
 
 /** Browser-local YYYY-MM-DD → UTC ISO at start-of-day */
