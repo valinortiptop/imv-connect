@@ -88,6 +88,9 @@ interface OrderLine {
   image_url: string | null;
   quantity: number;
   unit_price: number;
+  // Per-line price list selection. null = Mayoreo (catalog), string = price_list.id,
+  // "__custom__" = Personalizar (user-entered price, do not auto-recompute).
+  price_list_id?: string | null | "__custom__";
   // Damaged batch tracking (only set for damaged lines)
   damaged_batch_id?: string;
   is_damaged?: boolean;
