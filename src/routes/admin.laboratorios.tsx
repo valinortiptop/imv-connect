@@ -14,6 +14,12 @@ type Lab = {
   logo_url: string | null;
   orden: number;
   activo: boolean;
+  rfc: string | null;
+  tipo_tercero: string;
+  tipo_operacion: string;
+  pais: string | null;
+  nacionalidad: string | null;
+  id_fiscal_extranjero: string | null;
 };
 
 function LaboratoriosPage() {
@@ -25,7 +31,7 @@ function LaboratoriosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("laboratorios")
-        .select("id, nombre, logo_url, orden, activo")
+        .select("id, nombre, logo_url, orden, activo, rfc, tipo_tercero, tipo_operacion, pais, nacionalidad, id_fiscal_extranjero")
         .order("orden")
         .order("nombre");
       if (error) throw error;
@@ -40,6 +46,12 @@ function LaboratoriosPage() {
         logo_url: l.logo_url || null,
         orden: l.orden ?? 0,
         activo: l.activo ?? true,
+        rfc: l.rfc ? l.rfc.trim().toUpperCase() : null,
+        tipo_tercero: l.tipo_tercero || "04",
+        tipo_operacion: l.tipo_operacion || "85",
+        pais: l.pais || null,
+        nacionalidad: l.nacionalidad || null,
+        id_fiscal_extranjero: l.id_fiscal_extranjero || null,
       };
       if (l.id) {
         const { error } = await supabase.from("laboratorios").update(payload).eq("id", l.id);
@@ -214,6 +226,65 @@ function LabModal({
               className="input"
             />
           </Field>
+
+          <div className="rounded-md border border-border/60 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Datos fiscales (DIOT)</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="RFC">
+                <input
+                  value={v.rfc ?? ""}
+                  onChange={(e) => setV({ ...v, rfc: e.target.value.toUpperCase() })}
+                  placeholder="XAXX010101000"
+                  className="input"
+                />
+              </Field>
+              <Field label="Tipo tercero">
+                <select
+                  value={v.tipo_tercero ?? "04"}
+                  onChange={(e) => setV({ ...v, tipo_tercero: e.target.value })}
+                  className="input"
+                >
+                  <option value="04">04 — Proveedor nacional</option>
+                  <option value="05">05 — Proveedor extranjero</option>
+                  <option value="15">15 — Proveedor global</option>
+                </select>
+              </Field>
+              <Field label="Tipo operación">
+                <select
+                  value={v.tipo_operacion ?? "85"}
+                  onChange={(e) => setV({ ...v, tipo_operacion: e.target.value })}
+                  className="input"
+                >
+                  <option value="03">03 — Prestación de servicios</option>
+                  <option value="06">06 — Arrendamiento</option>
+                  <option value="85">85 — Otros</option>
+                </select>
+              </Field>
+              <Field label="Id fiscal (extranjero)">
+                <input
+                  value={v.id_fiscal_extranjero ?? ""}
+                  onChange={(e) => setV({ ...v, id_fiscal_extranjero: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <Field label="País">
+                <input
+                  value={v.pais ?? ""}
+                  onChange={(e) => setV({ ...v, pais: e.target.value })}
+                  placeholder="MEX"
+                  className="input"
+                />
+              </Field>
+              <Field label="Nacionalidad">
+                <input
+                  value={v.nacionalidad ?? ""}
+                  onChange={(e) => setV({ ...v, nacionalidad: e.target.value })}
+                  className="input"
+                />
+              </Field>
+            </div>
+          </div>
+
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"

@@ -109,15 +109,96 @@ function ContabilidadElectronicaPage() {
     return buildPolizasXml(rfc, yearStr, mesStr, tipoSolicitud, polizas ?? [], movs ?? []);
   };
 
-  const buildDiotData = async (): Promise<string> => {
-    const { data, error } = await supabase
-      .from("poliza_impuestos" as any)
-      .select("tipo, tasa, base, monto, polizas!inner(empresa_id, estado, fecha)")
-      .eq("polizas.empresa_id", empresaId!)
-      .eq("polizas.estado", "asentada")
-      .gte("polizas.fecha", desde).lte("polizas.fecha", hasta);
-    if (error) throw new Error(error.message);
-    return buildDiotTxt((data ?? []) as any[]);
+  const buildDiotData = async (): Promise<{ txt: string; warn?: string }> => {
+    // 1) Pólizas asentadas del periodo con sus impuestos acreditables
+    const { data: polizas, error: eP } = await supabase
+      .from("polizas" as any)
+      .select("id, poliza_impuestos(tipo, tasa, base, monto)")
+      .eq("empresa_id", empresaId!)
+      .eq("estado", "asentada")
+      .gte("fecha", desde).lte("fecha", hasta);
+    if (eP) throw new Error(eP.message);
+    const polizaIds = (polizas ?? []).map((p: any) => p.id);
+    if (polizaIds.length === 0) return { txt: "", warn: "Sin pólizas en el periodo" };
+
+    // 2) Ligar cada póliza a un proveedor vía poliza_movimientos.oc_id
+    const { data: movs, error: eM } = await supabase
+      .from("poliza_movimientos" as any)
+      .select("poliza_id, oc_id")
+      .in("poliza_id", polizaIds).not("oc_id", "is", null);
+    if (eM) throw new Error(eM.message);
+    const ocIds = Array.from(new Set((movs ?? []).map((m: any) => m.oc_id).filter(Boolean)));
+
+    let ocMap = new Map<string, string>(); // oc_id -> laboratorio_id
+    let provMap = new Map<string, any>(); // laboratorio_id -> proveedor row
+    if (ocIds.length) {
+      const { data: ocs, error: eO } = await supabase
+        .from("ordenes_compra" as any).select("id, laboratorio_id").in("id", ocIds);
+      if (eO) throw new Error(eO.message);
+      (ocs ?? []).forEach((o: any) => o.laboratorio_id && ocMap.set(o.id, o.laboratorio_id));
+      const labIds = Array.from(new Set([...ocMap.values()]));
+      if (labIds.length) {
+        const { data: labs, error: eL } = await supabase
+          .from("laboratorios" as any)
+          .select("id, nombre, rfc, tipo_tercero, tipo_operacion, pais, nacionalidad, id_fiscal_extranjero")
+          .in("id", labIds);
+        if (eL) throw new Error(eL.message);
+        (labs ?? []).forEach((l: any) => provMap.set(l.id, l));
+      }
+    }
+
+    // poliza_id -> laboratorio_id (primera OC encontrada)
+    const polToLab = new Map<string, string>();
+    (movs ?? []).forEach((m: any) => {
+      if (polToLab.has(m.poliza_id)) return;
+      const lab = ocMap.get(m.oc_id);
+      if (lab) polToLab.set(m.poliza_id, lab);
+    });
+
+    // 3) Agregar por proveedor (con RFC) — sin proveedor va a "PROVEEDOR GLOBAL" (15)
+    type Agg = { base16: number; base8: number; base0: number; retIva: number };
+    const perProv = new Map<string, Agg>(); // key = laboratorio_id | "__global__"
+    for (const p of (polizas ?? []) as any[]) {
+      const key = polToLab.get(p.id) ?? "__global__";
+      const a = perProv.get(key) ?? { base16: 0, base8: 0, base0: 0, retIva: 0 };
+      for (const t of (p.poliza_impuestos ?? [])) {
+        const tasa = Number(t.tasa);
+        const base = Number(t.base) || 0;
+        const monto = Number(t.monto) || 0;
+        if (t.tipo === "iva_acreditable") {
+          if (tasa === 16) a.base16 += base;
+          else if (tasa === 8) a.base8 += base;
+          else if (tasa === 0) a.base0 += base;
+        } else if (t.tipo === "iva_retenido") {
+          a.retIva += monto;
+        }
+      }
+      perProv.set(key, a);
+    }
+
+    // 4) Emitir renglones DIOT
+    const lines: string[] = [];
+    let missingRfc = 0;
+    for (const [labId, a] of perProv) {
+      if (a.base16 === 0 && a.base8 === 0 && a.base0 === 0 && a.retIva === 0) continue;
+      const prov = labId === "__global__" ? null : provMap.get(labId);
+      const rfc = (prov?.rfc ?? "").trim().toUpperCase();
+      if (!rfc && labId !== "__global__") missingRfc++;
+      lines.push(diotLine({
+        tipoTercero: rfc ? (prov?.tipo_tercero ?? "04") : "15",
+        tipoOperacion: prov?.tipo_operacion ?? "85",
+        rfc,
+        idFiscal: prov?.id_fiscal_extranjero ?? "",
+        nombre: prov?.nombre ?? "",
+        pais: prov?.pais ?? "",
+        nacionalidad: prov?.nacionalidad ?? "",
+        base16: a.base16, base8: a.base8, base0: a.base0, retIva: a.retIva,
+      }));
+    }
+    const warn = missingRfc > 0
+      ? `${missingRfc} proveedor(es) sin RFC — captúralos en Proveedores > Datos fiscales`
+      : undefined;
+    return { txt: lines.join("\r\n") + (lines.length ? "\r\n" : ""), warn };
   };
 
   // ------- Download (sin sello) -------
@@ -155,9 +236,11 @@ function ContabilidadElectronicaPage() {
   const genDiot = async () => {
     if (!empresaId) return toast.error("Selecciona empresa");
     try {
-      const txt = await buildDiotData();
+      const { txt, warn } = await buildDiotData();
+      if (!txt) return toast.warning(warn ?? "No hay operaciones acreditables en el periodo");
       download(`DIOT_${rfc || "SIN_RFC"}_${yearStr}${mesStr}.txt`, txt, "text/plain");
-      toast.success("DIOT TXT generado (borrador — revisar RFC de proveedores)");
+      if (warn) toast.warning(`DIOT generado. ${warn}`);
+      else toast.success("DIOT TXT generado (formato pipe listo para DEM)");
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -690,42 +773,43 @@ function buildPolizasXml(
   return lines.join("\n");
 }
 
-function buildDiotTxt(rows: any[]): string {
-  // Aggregated by tasa — DIOT proper needs per-proveedor RFC rows.
-  // Formato pipe: TipoTercero|TipoOperacion|RFC|IdFiscal|Nombre|Pais|Nacionalidad|IVA16|IVA16NoAcred|IVA8|IVA8NoAcred|IVA0|Exentos|Retenciones|...
-  // Emitimos una fila resumen por tasa marcada como "05" (Global) — el usuario debe complementar con RFC por proveedor.
-  const iva16 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 16)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva8 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 8)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva0 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 0)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva16Monto = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 16)
-    .reduce((s, r) => s + Number(r.monto), 0);
-  const iva8Monto = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 8)
-    .reduce((s, r) => s + Number(r.monto), 0);
-
-  // Row layout (DIOT 2024 pipe):
-  // 04 = Proveedor global, 85 = Otros
-  const line = [
-    "04",             // Tipo de tercero (proveedor nacional)
-    "85",             // Tipo de operación (otros)
-    "",               // RFC proveedor (a completar por usuario)
-    "",               // Número Id fiscal (extranjero)
-    "PROVEEDOR GLOBAL",
-    "",               // País
-    "",               // Nacionalidad
-    Math.round(iva16).toString(),          // Valor actos 15/16% IVA acreditable
-    "0",                                    // Actos 15/16% no acreditable
-    Math.round(iva8).toString(),           // Actos 8/11% IVA fronteriza
-    "0",
-    Math.round(iva0).toString(),           // Actos tasa 0
-    "0",                                    // Actos exentos
-    "0",                                    // Importación 15/16%
-    "0", "0", "0", "0", "0", "0",
-    Math.round(iva16Monto + iva8Monto).toString(), // IVA retenido
-    "0",
-  ].join("|");
-
-  return line + "\r\n";
+// DIOT 2024 — layout pipe (26 campos) por proveedor.
+// Ref: Anexo A DEM-DIOT (SAT). Bases en pesos redondeadas; IVA retenido en pesos.
+function diotLine(p: {
+  tipoTercero: string; tipoOperacion: string;
+  rfc: string; idFiscal: string; nombre: string; pais: string; nacionalidad: string;
+  base16: number; base8: number; base0: number; retIva: number;
+}): string {
+  const r = (n: number) => Math.round(n || 0).toString();
+  const clean = (s: string) => (s ?? "").replace(/[|\r\n]/g, " ").trim();
+  const cols = [
+    p.tipoTercero,                    // 1  Tipo tercero (04/05/15)
+    p.tipoOperacion,                  // 2  Tipo operación (03/06/85)
+    clean(p.rfc),                     // 3  RFC proveedor nacional
+    clean(p.idFiscal),                // 4  Núm. Id fiscal (extranjero)
+    clean(p.nombre),                  // 5  Nombre extranjero
+    clean(p.pais),                    // 6  País
+    clean(p.nacionalidad),            // 7  Nacionalidad
+    r(p.base16),                      // 8  Actos 15/16% IVA acreditable
+    "0",                              // 9  Actos 15/16% importación bienes/servicios
+    "0",                              // 10 Actos 15/16% importación intangibles
+    "0",                              // 11 Actos 15/16% NO acreditable
+    "0",                              // 12 Actos 15/16% importación NO acreditable
+    r(p.base8),                       // 13 Actos 8/11% IVA acreditable (frontera)
+    "0",                              // 14 Actos 8/11% NO acreditable
+    r(p.base0),                       // 15 Actos tasa 0%
+    "0",                              // 16 Actos exentos
+    "0",                              // 17 Importación tasa 0% / exentos
+    r(p.retIva),                      // 18 IVA retenido por el contribuyente
+    "0",                              // 19 IVA devoluciones/descuentos/bonificaciones
+    "0",                              // 20 (reservado)
+    "0",                              // 21 (reservado)
+    "0",                              // 22 (reservado)
+    "0",                              // 23 (reservado)
+    "0",                              // 24 (reservado)
+    "0",                              // 25 (reservado)
+    "0",                              // 26 (reservado)
+  ];
+  return cols.join("|");
 }
+
