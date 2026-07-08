@@ -686,6 +686,23 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           <DialogTitle className="text-xl">{isQuote ? "Nueva Cotización" : "Nuevo Pedido"}</DialogTitle>
         </DialogHeader>
 
+        {createdOrderId ? (
+          <SuccessBanner
+            orderId={createdOrderId}
+            clientName={form.getValues("client_name") || ""}
+            deliveryDate={form.getValues("delivery_date") || ""}
+            listName={appliedPriceList?.name ?? "Mayoreo"}
+            lines={lines}
+            total={totalOrder}
+            fmtMXN={fmtMXN}
+            summaryRef={summaryRef}
+            signedUrl={signedUrl}
+            setSignedUrl={setSignedUrl}
+            uploading={uploading}
+            setUploading={setUploading}
+            onClose={() => onOpenChange(false)}
+          />
+        ) : (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
