@@ -871,7 +871,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               <CommandItem
                                 key={`damaged-${b.id}`}
                                 value={`${b.clave} ${b.name} ${b.condition}`}
-                                onSelect={() => addProduct(`damaged:${b.id}`)}
+                                onSelect={() => { addProduct(`damaged:${b.id}`); setDamagedPickerOpen(false); setDamagedSearch(""); }}
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={b.image_url} size="xs" />
