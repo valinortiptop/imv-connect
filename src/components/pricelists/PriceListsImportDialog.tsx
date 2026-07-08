@@ -376,7 +376,7 @@ export function PriceListsImportDialog({
             <input
               ref={inputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv,.tsv,.txt"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
