@@ -132,6 +132,16 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                 {p.grupo && <Badge variant="secondary">{p.grupo}</Badge>}
                 {p.tipo_producto && <Badge>{p.tipo_producto}</Badge>}
                 <Badge variant="outline">IVA {Number(p.iva_pct ?? 0)}%</Badge>
+                {Number(p.ieps_pct ?? 0) > 0 && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-400">
+                    IEPS {Number(p.ieps_pct)}%
+                  </Badge>
+                )}
+                {p.tax_regime && (
+                  <Badge variant="secondary" className="font-normal">
+                    {p.tax_regime}
+                  </Badge>
+                )}
                 {!p.activo && <Badge variant="destructive">Inactivo</Badge>}
               </div>
             </SheetHeader>
