@@ -568,6 +568,37 @@ export default function PriceLists() {
               className="text-base h-11"
             />
 
+            {/* Default client type */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                {lang === "es" ? "Predeterminada para:" : "Default for:"}
+              </span>
+              <div className="inline-flex rounded-md border bg-muted p-0.5">
+                {([
+                  { v: null, label: lang === "es" ? "Ninguno" : "None" },
+                  { v: "mayoreo" as const, label: "Mayoreo" },
+                  { v: "menudeo" as const, label: "Menudeo" },
+                ]).map((opt) => (
+                  <button
+                    key={String(opt.v)}
+                    type="button"
+                    onClick={() => setNewDefaultType(opt.v)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded transition ${
+                      newDefaultType === opt.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {lang === "es"
+                  ? "Se asignará automáticamente a nuevos clientes de ese tipo."
+                  : "Auto-assigned to new clients of that type."}
+              </p>
+            </div>
+
+
             {/* Drop zone */}
             {parsedRows.length === 0 ? (
               <div
