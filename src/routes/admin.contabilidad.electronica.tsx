@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Download, FileCode2, FileSpreadsheet } from "lucide-react";
+import { FileText, Download, FileCode2, FileSpreadsheet, ShieldCheck, KeyRound, Trash2, Upload, ExternalLink, Archive, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,10 @@ import {
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadCsd, getCsdInfo, deleteCsd, signContabilidadXml } from "@/lib/csd.functions";
+import JSZip from "jszip";
 
 export const Route = createFileRoute("/admin/contabilidad/electronica")({
   head: () => ({
