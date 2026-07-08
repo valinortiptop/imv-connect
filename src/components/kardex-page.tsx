@@ -151,13 +151,13 @@ export default function Kardex() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("products")
-        .select("id, clave, name, barcode, case_barcode")
+        .select("id, clave, name")
         .eq("active", true)
         .order("clave");
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; clave: string; name: string;
-        barcode: string | null; case_barcode: string | null;
+        barcode?: string | null; case_barcode?: string | null;
       }>;
     },
     staleTime: 5 * 60 * 1000,
