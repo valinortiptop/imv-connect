@@ -1209,6 +1209,24 @@ function DeliverySignatureSection({
   }
 
   // No token yet (eager creation hasn't resolved or failed)
+  const handleGenerateAndCopy = async () => {
+    const token = await ensureToken();
+    if (!token) return;
+    setResolvedToken(token);
+    const url = `${window.location.origin}/entrega/${token}`;
+    const { toast } = await import("sonner");
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link generado y copiado");
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    toast.success("Link generado — cópialo abajo");
+  };
+
   return (
     <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
       <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -1217,7 +1235,7 @@ function DeliverySignatureSection({
       <p className="text-xs text-muted-foreground">
         Genera un link para que el cliente firme la entrega desde el celular del repartidor.
       </p>
-      <Button variant="outline" size="sm" onClick={copyLink} className="gap-1.5">
+      <Button variant="outline" size="sm" onClick={handleGenerateAndCopy} className="gap-1.5">
         Generar y copiar link
       </Button>
     </div>
