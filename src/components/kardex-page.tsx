@@ -267,10 +267,8 @@ export default function Kardex() {
       // Same filter pipeline as the paginated query, but pull the full set
       // (capped at 10k rows so we don't melt the browser if no filters are set)
       let q = (supabase as any)
-        .from("slot_movements")
-        .select(
-          "id, created_at, slot_id, product_id, description, lote, delta, reason, note, warehouse_slots!slot_movements_slot_id_fkey(code), products(clave, name)",
-        )
+        .from("v_kardex_movements")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(10000);
       if (from) q = q.gte("created_at", startOfLocalDayUTC(from));
