@@ -41,28 +41,31 @@ const substringFilter = (value: string, search: string) => {
   return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
 };
 
-/** Highlights every case-insensitive occurrence of `query` inside `text`. */
-function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query) return <>{text}</>;
+/** Highlights every case-insensitive occurrence of `query` inside `text`.
+ *  Null/undefined-safe: some view rows can have null `name`/`company` and
+ *  the raw `.toLowerCase()` used to throw and crash the dialog. */
+function HighlightMatch({ text, query }: { text: string | null | undefined; query: string }) {
+  const safe = text == null ? "" : String(text);
+  if (!query) return <>{safe}</>;
   const q = query.trim();
-  if (!q) return <>{text}</>;
-  const lower = text.toLowerCase();
+  if (!q) return <>{safe}</>;
+  const lower = safe.toLowerCase();
   const needle = q.toLowerCase();
   const parts: React.ReactNode[] = [];
   let i = 0;
   let idx = lower.indexOf(needle, i);
   let key = 0;
   while (idx !== -1) {
-    if (idx > i) parts.push(<span key={key++}>{text.slice(i, idx)}</span>);
+    if (idx > i) parts.push(<span key={key++}>{safe.slice(i, idx)}</span>);
     parts.push(
       <mark key={key++} className="bg-primary/25 text-foreground rounded-sm px-0.5">
-        {text.slice(idx, idx + needle.length)}
+        {safe.slice(idx, idx + needle.length)}
       </mark>
     );
     i = idx + needle.length;
     idx = lower.indexOf(needle, i);
   }
-  if (i < text.length) parts.push(<span key={key++}>{text.slice(i)}</span>);
+  if (i < safe.length) parts.push(<span key={key++}>{safe.slice(i)}</span>);
   return <>{parts}</>;
 }
 
@@ -365,28 +368,41 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   };
 
   const selectClient = (clientId: string) => {
-    const c = clients.find(x => x.id === clientId);
-    if (!c) return;
-    setSelectedClientId(clientId);
-    form.setValue("client_name", c.name ?? "");
-    form.setValue("phone", c.phone ?? "");
-    form.setValue("rfc", c.rfc ?? "");
-    form.setValue("shipping_address", c.address ?? "");
-    form.setValue("payment_method", c.payment_method ?? "Transferencia");
+    try {
+      const c = clients.find((x) => x.id === clientId);
+      if (!c) return;
+      setSelectedClientId(clientId);
+      form.setValue("client_name", c.name ?? "");
+      form.setValue("phone", c.phone ?? "");
+      form.setValue("rfc", c.rfc ?? "");
+      form.setValue("shipping_address", c.address ?? "");
+      // payment_method Select only has 4 known items — coerce anything
+      // else (e.g. "contado" from legacy data) to "Otro" so Radix Select
+      // gets a value that matches one of its <SelectItem>s. Without this
+      // an unknown value can throw when switching between clients whose
+      // stored payment_methods differ.
+      const KNOWN_PMS = new Set(["Transferencia", "Depósito", "Efectivo", "Otro"]);
+      const rawPm = c.payment_method ?? "Transferencia";
+      form.setValue("payment_method", KNOWN_PMS.has(rawPm) ? rawPm : "Otro");
 
-    // Auto-apply the client's default price list (editable below)
-    const defaultPlId = (c as any).price_list_id ?? null;
-    if (defaultPlId) {
-      const pl = priceLists.find((p) => p.id === defaultPlId);
-      if (pl) {
-        setAppliedPriceList(pl);
-        applyPriceListToLines(pl.id);
+      // Auto-apply the client's default price list (editable below)
+      const defaultPlId = (c as any).price_list_id ?? null;
+      if (defaultPlId) {
+        const pl = priceLists.find((p) => p.id === defaultPlId);
+        if (pl) {
+          setAppliedPriceList(pl);
+          applyPriceListToLines(pl.id);
+        } else {
+          setAppliedPriceList(null);
+          applyPriceListToLines(null);
+        }
       } else {
         setAppliedPriceList(null);
+        applyPriceListToLines(null);
       }
-    } else {
-      setAppliedPriceList(null);
-      applyPriceListToLines(null);
+    } catch (err) {
+      console.error("selectClient failed", err);
+      toast.error("No se pudo seleccionar el cliente");
     }
   };
 
