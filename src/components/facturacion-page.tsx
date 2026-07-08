@@ -736,7 +736,7 @@ export default function Facturacion() {
               </div>
 
               <div className="rounded-lg border divide-y max-h-[320px] overflow-y-auto">
-                {pedidosFacturados.map((f) => {
+                {pedidosFacturados.map((f: any) => {
                   const statusLabel = f.cfdi_status || f.estado || "—";
                   const isCanceled = (f.cfdi_status || "").toLowerCase() === "canceled" || (f.estado || "").toLowerCase() === "cancelada";
                   return (
