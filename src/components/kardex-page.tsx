@@ -300,9 +300,9 @@ export default function Kardex() {
       if (error) throw error;
       const exportRows = (data ?? []).map((r: any) => ({
         FECHA: format(new Date(r.created_at), "yyyy-MM-dd HH:mm"),
-        POSICION: r.warehouse_slots?.code ?? "—",
-        SKU: r.products?.clave ?? "",
-        PRODUCTO: r.products?.name ?? r.description ?? "",
+        POSICION: r.slot_code ?? "—",
+        SKU: r.product_clave ?? "",
+        PRODUCTO: r.product_name ?? r.description ?? "",
         LOTE: r.lote ?? "",
         DELTA: r.delta,
         RAZON: REASON_LABELS[r.reason] ?? r.reason,
