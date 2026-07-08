@@ -591,11 +591,11 @@ export default function Clients() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("price_lists")
-        .select("id, name")
+        .select("id, name, default_for_client_type")
         .eq("active", true)
         .order("name") as any;
       if (error) throw error;
-      return (data ?? []) as { id: string; name: string }[];
+      return (data ?? []) as { id: string; name: string; default_for_client_type: "mayoreo" | "menudeo" | null }[];
     },
     staleTime: 5 * 60 * 1000,
   });
