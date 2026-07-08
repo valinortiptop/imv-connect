@@ -1184,3 +1184,174 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     </Dialog>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// Success banner shown after creating a pedido. Renders a
+// summary card that can be exported as a PNG (via html-to-image)
+// then shared via email, WhatsApp (clipboard image), or a signed
+// link uploaded to the `order-summaries` storage bucket.
+// ─────────────────────────────────────────────────────────────
+interface SuccessBannerProps {
+  orderId: string;
+  clientName: string;
+  deliveryDate: string;
+  listName: string;
+  lines: OrderLine[];
+  total: number;
+  fmtMXN: (n: number) => string;
+  summaryRef: React.MutableRefObject<HTMLDivElement | null>;
+  signedUrl: string | null;
+  setSignedUrl: (v: string | null) => void;
+  uploading: "image" | "link" | null;
+  setUploading: (v: "image" | "link" | null) => void;
+  onClose: () => void;
+}
+
+function SuccessBanner({
+  orderId, clientName, deliveryDate, listName, lines, total, fmtMXN,
+  summaryRef, signedUrl, setSignedUrl, uploading, setUploading, onClose,
+}: SuccessBannerProps) {
+  const renderPng = async (): Promise<Blob> => {
+    if (!summaryRef.current) throw new Error("Resumen no disponible");
+    const dataUrl = await toPng(summaryRef.current, {
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      cacheBust: true,
+    });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const uploadAndSign = async (): Promise<string> => {
+    const blob = await renderPng();
+    const path = `${orderId}-${Date.now()}.png`;
+    const { error: upErr } = await supabase.storage
+      .from("order-summaries")
+      .upload(path, blob, { contentType: "image/png", upsert: true });
+    if (upErr) throw upErr;
+    const { data, error: signErr } = await supabase.storage
+      .from("order-summaries")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    if (signErr) throw signErr;
+    return data.signedUrl;
+  };
+
+  const handleEmail = () => {
+    const rows = lines.map((l) => `• ${l.clave} ${l.name} — ${l.quantity} × ${fmtMXN(Number(l.unit_price) || 0)} = ${fmtMXN((Number(l.quantity) || 0) * (Number(l.unit_price) || 0))}`).join("\n");
+    const body = `Pedido creado para ${clientName}\nLista: ${listName}\n${deliveryDate ? `Entrega: ${deliveryDate}\n` : ""}\n${rows}\n\nTotal: ${fmtMXN(total)}`;
+    const url = `mailto:?subject=${encodeURIComponent(`Pedido — ${clientName}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+  };
+
+  const handleCopyImage = async () => {
+    try {
+      setUploading("image");
+      const blob = await renderPng();
+      // ClipboardItem requires https/localhost; supported in modern browsers.
+      // @ts-ignore
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast.success("Imagen copiada — pégala en WhatsApp");
+    } catch (e: any) {
+      toast.error("No se pudo copiar la imagen: " + (e?.message ?? "error"));
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      setUploading("link");
+      const url = signedUrl ?? (await uploadAndSign());
+      setSignedUrl(url);
+      await navigator.clipboard.writeText(url);
+      toast.success("Enlace copiado");
+    } catch (e: any) {
+      toast.error("No se pudo generar el enlace: " + (e?.message ?? "error"));
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 className="h-6 w-6" />
+        <div>
+          <div className="text-lg font-semibold">Pedido creado</div>
+          <div className="text-xs text-muted-foreground">Comparte el resumen con el cliente</div>
+        </div>
+      </div>
+
+      {/* Rendered-to-image summary */}
+      <div
+        ref={summaryRef}
+        className="rounded-lg border border-border bg-white text-slate-900 p-5 space-y-3"
+        style={{ colorScheme: "light" }}
+      >
+        <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-slate-500">Pedido</div>
+            <div className="text-lg font-semibold">{clientName}</div>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            <div>Lista: <span className="font-medium text-slate-800">{listName}</span></div>
+            {deliveryDate && <div>Entrega: <span className="font-medium text-slate-800">{deliveryDate}</span></div>}
+          </div>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="text-[11px] uppercase tracking-wide text-slate-500 border-b">
+            <tr>
+              <th className="text-left py-1 font-medium">Producto</th>
+              <th className="text-center py-1 font-medium">Bultos</th>
+              <th className="text-right py-1 font-medium">Precio/u</th>
+              <th className="text-right py-1 font-medium">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={i} className="border-b last:border-0">
+                <td className="py-1.5">
+                  <div className="font-mono text-[11px] text-slate-500">{l.clave}</div>
+                  <div>{l.name}</div>
+                </td>
+                <td className="py-1.5 text-center">{Number(l.quantity) || 0}</td>
+                <td className="py-1.5 text-right">{fmtMXN(Number(l.unit_price) || 0)}</td>
+                <td className="py-1.5 text-right font-medium">{fmtMXN((Number(l.quantity) || 0) * (Number(l.unit_price) || 0))}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t">
+              <td className="pt-2 font-semibold" colSpan={3}>Total</td>
+              <td className="pt-2 text-right font-bold">{fmtMXN(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <Button type="button" variant="outline" onClick={handleEmail}>
+          <Mail className="h-4 w-4 mr-2" /> Enviar por correo
+        </Button>
+        <Button type="button" variant="outline" onClick={handleCopyImage} disabled={uploading === "image"}>
+          {uploading === "image" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Copy className="h-4 w-4 mr-2" />}
+          Copiar imagen
+        </Button>
+        <Button type="button" variant="outline" onClick={handleCopyLink} disabled={uploading === "link"}>
+          {uploading === "link" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <LinkIcon className="h-4 w-4 mr-2" />}
+          Copiar enlace
+        </Button>
+      </div>
+
+      {signedUrl && (
+        <div className="text-xs text-muted-foreground break-all border rounded p-2 bg-muted/30">
+          {signedUrl}
+        </div>
+      )}
+
+      <div className="pt-2">
+        <Button type="button" className="w-full" onClick={onClose}>Cerrar</Button>
+      </div>
+    </div>
+  );
+}
