@@ -20,7 +20,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { Trash2, CalendarIcon, AlertOctagon, ChevronsUpDown } from "lucide-react";
+import { Trash2, CalendarIcon, AlertOctagon, ChevronsUpDown, CheckCircle2, Mail, Copy, LinkIcon, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
+import { useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -86,6 +88,9 @@ interface OrderLine {
   image_url: string | null;
   quantity: number;
   unit_price: number;
+  // Per-line price list selection. null = Mayoreo (catalog), string = price_list.id,
+  // "__custom__" = Personalizar (user-entered price, do not auto-recompute).
+  price_list_id?: string | null | "__custom__";
   // Damaged batch tracking (only set for damaged lines)
   damaged_batch_id?: string;
   is_damaged?: boolean;
@@ -134,6 +139,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [damagedPickerOpen, setDamagedPickerOpen] = useState(false);
+  // Success banner state — after "Crear Pedido" we swap the dialog body
+  // for a summary card with email/copy-image/copy-link actions.
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const [uploading, setUploading] = useState<"image" | "link" | null>(null);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list"],
@@ -280,6 +291,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       setPickerMode("normal");
       setAppliedPriceList(null);
       setStops([]);
+      setCreatedOrderId(null);
+      setSignedUrl(null);
+      setUploading(null);
       form.reset();
     }
   }, [open, form]);
@@ -316,13 +330,16 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     if (!plId) {
       // Restore catalog prices on existing lines — but still respect
       // per-client overrides which sit ABOVE the tier in the layering.
+      // Personalizar lines are left untouched.
       setLines((prev) =>
         prev.map((l) => {
           if (l.is_damaged) return l;
+          if (l.price_list_id === "__custom__") return l;
           const p = products.find((x) => x.id === l.product_id);
           const overridePrice = clientOverrideMap.get(l.product_id);
           return {
             ...l,
+            price_list_id: null,
             unit_price: overridePrice ?? p?.sale_price_with_iva ?? l.unit_price,
           };
         })
@@ -337,11 +354,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines((prev) =>
       prev.map((l) => {
         if (l.is_damaged) return l;
+        if (l.price_list_id === "__custom__") return l;
         const p = products.find((x) => x.id === l.product_id);
         const overridePrice = clientOverrideMap.get(l.product_id);
-        if (overridePrice != null) return { ...l, unit_price: overridePrice };
+        if (overridePrice != null) return { ...l, price_list_id: plId, unit_price: overridePrice };
         const mayoreo = p?.sale_price_with_iva ?? l.unit_price;
-        return { ...l, unit_price: resolveListPrice(l.product_id, mayoreo, list, overrides) };
+        return { ...l, price_list_id: plId, unit_price: resolveListPrice(l.product_id, mayoreo, list, overrides) };
       })
     );
   };
@@ -415,7 +433,35 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines(prev => [...prev, {
       product_id: p.id, clave: p.clave, name: p.name, image_url: p.image_url,
       quantity: "" as any, unit_price: unitPrice,
+      price_list_id: appliedPriceList?.id ?? null,
     }]);
+  };
+
+  /** Change the price list assigned to a single line and recompute its price
+   *  accordingly. Passing "__custom__" switches the line to Personalizar
+   *  mode — the current price is preserved and the user can freely edit it. */
+  const setLinePriceList = (idx: number, value: string) => {
+    setLines((prev) => prev.map((l, i) => {
+      if (i !== idx) return l;
+      if (l.is_damaged) return l;
+      if (value === "__custom__") {
+        return { ...l, price_list_id: "__custom__" };
+      }
+      const plId = value === "__mayoreo__" ? null : value;
+      const p = products.find((x) => x.id === l.product_id);
+      const catalog = p?.sale_price_with_iva ?? l.unit_price;
+      const clientOverride = clientOverrides.find((r) => r.product_id === l.product_id);
+      if (clientOverride) {
+        return { ...l, price_list_id: plId, unit_price: Number(clientOverride.price_with_iva) };
+      }
+      if (!plId) return { ...l, price_list_id: null, unit_price: catalog };
+      const list = priceLists.find((x) => x.id === plId) ?? null;
+      const overrides = new Map<string, number>();
+      for (const r of allPriceListItems) {
+        if (r.price_list_id === plId) overrides.set(r.product_id, Number(r.price_with_iva));
+      }
+      return { ...l, price_list_id: plId, unit_price: resolveListPrice(l.product_id, catalog, list, overrides) };
+    }));
   };
 
   const updateLine = (idx: number, field: "quantity" | "unit_price", value: string) => {
@@ -610,19 +656,23 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       return orderId as string;
     },
     onSuccess: (newId) => {
-      onOpenChange(false);
       if (isQuote) {
         queryClient.invalidateQueries({ queryKey: ["quotes"] });
         toast.success("Cotización creada");
+        onOpenChange(false);
+        onOrderCreated(newId);
       } else {
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["clients-list"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-batches"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-by-product"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-available-for-order"] });
-        toast.success("Pedido creado");
+        // Swap the dialog body to the success banner. The parent is notified
+        // now (list refreshes), but the dialog stays open so the user can
+        // share the pedido summary via email / image / link.
+        setCreatedOrderId(newId);
+        onOrderCreated(newId);
       }
-      onOrderCreated(newId);
     },
     onError: (err: Error) => {
       toast.error(`Error al crear ${isQuote ? "cotización" : "pedido"}: ` + err.message);
@@ -636,6 +686,23 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           <DialogTitle className="text-xl">{isQuote ? "Nueva Cotización" : "Nuevo Pedido"}</DialogTitle>
         </DialogHeader>
 
+        {createdOrderId ? (
+          <SuccessBanner
+            orderId={createdOrderId}
+            clientName={form.getValues("client_name") || ""}
+            deliveryDate={form.getValues("delivery_date") || ""}
+            listName={appliedPriceList?.name ?? "Mayoreo"}
+            lines={lines}
+            total={totalOrder}
+            fmtMXN={fmtMXN}
+            summaryRef={summaryRef}
+            signedUrl={signedUrl}
+            setSignedUrl={setSignedUrl}
+            uploading={uploading}
+            setUploading={setUploading}
+            onClose={() => onOpenChange(false)}
+          />
+        ) : (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
@@ -932,18 +999,25 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {lines.length > 0 ? (
                 <div className="space-y-0">
-                  <div className="grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 text-xs text-muted-foreground font-medium py-1 border-b border-border">
+                  <div className="grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 text-xs text-muted-foreground font-medium py-1 border-b border-border">
                     <div>Producto</div>
                     <div className="text-center">Bultos</div>
+                    <div className="text-center">Lista</div>
                     <div className="text-center">Precio/u</div>
                     <div className="text-right">Subtotal</div>
                     <div />
                   </div>
-                  {lines.map((line, idx) => (
+                  {lines.map((line, idx) => {
+                    const lineListValue = line.is_damaged
+                      ? "__mayoreo__"
+                      : line.price_list_id === "__custom__"
+                        ? "__custom__"
+                        : line.price_list_id ?? "__mayoreo__";
+                    return (
                     <div
-                      key={line.is_damaged ? `d-${line.damaged_batch_id}` : line.product_id}
+                      key={line.is_damaged ? `d-${line.damaged_batch_id}` : `${line.product_id}-${idx}`}
                       className={cn(
-                        "grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 items-center py-2 border-b border-border/50",
+                        "grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 items-center py-2 border-b border-border/50",
                         line.is_damaged && "bg-orange-500/5"
                       )}
                     >
@@ -969,6 +1043,22 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         className="h-8 text-center"
                         placeholder=""
                       />
+                      <Select
+                        value={lineListValue}
+                        onValueChange={(v) => setLinePriceList(idx, v)}
+                        disabled={line.is_damaged}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__mayoreo__">Mayoreo</SelectItem>
+                          {priceLists.map((pl) => (
+                            <SelectItem key={pl.id} value={pl.id}>{pl.name}</SelectItem>
+                          ))}
+                          <SelectItem value="__custom__">Personalizar</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <div className="space-y-0.5">
                         {isClientOverridePrice(line.product_id) && (
                           <div
@@ -986,15 +1076,18 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                           onChange={e => updateLine(idx, "unit_price", e.target.value)}
                           className={cn(
                             "h-8 text-center",
-                            // Amber border when this line's price came from a
-                            // per-client override. Matches the existing "this
-                            // value was overridden" amber language elsewhere.
                             isClientOverridePrice(line.product_id) &&
                               "border-amber-500/60 focus-visible:ring-amber-500/60",
+                            line.price_list_id === "__custom__" &&
+                              "border-blue-500/60 focus-visible:ring-blue-500/60",
                           )}
-                          title={isClientOverridePrice(line.product_id)
-                            ? "Precio acordado con este cliente"
-                            : undefined}
+                          title={
+                            line.price_list_id === "__custom__"
+                              ? "Precio personalizado"
+                              : isClientOverridePrice(line.product_id)
+                                ? "Precio acordado con este cliente"
+                                : undefined
+                          }
                         />
                       </div>
                       <div className="text-sm text-right font-medium">{fmtMXN((Number(line.quantity) || 0) * (Number(line.unit_price) || 0))}</div>
@@ -1002,10 +1095,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  ))}
-                  <div className="grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 py-2">
+                    );
+                  })}
+                  <div className="grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 py-2">
                     <div className="text-sm font-semibold">Total</div>
                     <div className="text-center text-sm font-medium">{lines.reduce((s, l) => s + (Number(l.quantity) || 0), 0)} bultos</div>
+                    <div />
                     <div />
                     <div className="text-right text-sm font-bold text-primary">{fmtMXN(totalOrder)}</div>
                     <div />
@@ -1084,7 +1179,179 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
             </div>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Success banner shown after creating a pedido. Renders a
+// summary card that can be exported as a PNG (via html-to-image)
+// then shared via email, WhatsApp (clipboard image), or a signed
+// link uploaded to the `order-summaries` storage bucket.
+// ─────────────────────────────────────────────────────────────
+interface SuccessBannerProps {
+  orderId: string;
+  clientName: string;
+  deliveryDate: string;
+  listName: string;
+  lines: OrderLine[];
+  total: number;
+  fmtMXN: (n: number) => string;
+  summaryRef: React.MutableRefObject<HTMLDivElement | null>;
+  signedUrl: string | null;
+  setSignedUrl: (v: string | null) => void;
+  uploading: "image" | "link" | null;
+  setUploading: (v: "image" | "link" | null) => void;
+  onClose: () => void;
+}
+
+function SuccessBanner({
+  orderId, clientName, deliveryDate, listName, lines, total, fmtMXN,
+  summaryRef, signedUrl, setSignedUrl, uploading, setUploading, onClose,
+}: SuccessBannerProps) {
+  const renderPng = async (): Promise<Blob> => {
+    if (!summaryRef.current) throw new Error("Resumen no disponible");
+    const dataUrl = await toPng(summaryRef.current, {
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      cacheBust: true,
+    });
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  };
+
+  const uploadAndSign = async (): Promise<string> => {
+    const blob = await renderPng();
+    const path = `${orderId}-${Date.now()}.png`;
+    const { error: upErr } = await supabase.storage
+      .from("order-summaries")
+      .upload(path, blob, { contentType: "image/png", upsert: true });
+    if (upErr) throw upErr;
+    const { data, error: signErr } = await supabase.storage
+      .from("order-summaries")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    if (signErr) throw signErr;
+    return data.signedUrl;
+  };
+
+  const handleEmail = () => {
+    const rows = lines.map((l) => `• ${l.clave} ${l.name} — ${l.quantity} × ${fmtMXN(Number(l.unit_price) || 0)} = ${fmtMXN((Number(l.quantity) || 0) * (Number(l.unit_price) || 0))}`).join("\n");
+    const body = `Pedido creado para ${clientName}\nLista: ${listName}\n${deliveryDate ? `Entrega: ${deliveryDate}\n` : ""}\n${rows}\n\nTotal: ${fmtMXN(total)}`;
+    const url = `mailto:?subject=${encodeURIComponent(`Pedido — ${clientName}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+  };
+
+  const handleCopyImage = async () => {
+    try {
+      setUploading("image");
+      const blob = await renderPng();
+      // ClipboardItem requires https/localhost; supported in modern browsers.
+      // @ts-ignore
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast.success("Imagen copiada — pégala en WhatsApp");
+    } catch (e: any) {
+      toast.error("No se pudo copiar la imagen: " + (e?.message ?? "error"));
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      setUploading("link");
+      const url = signedUrl ?? (await uploadAndSign());
+      setSignedUrl(url);
+      await navigator.clipboard.writeText(url);
+      toast.success("Enlace copiado");
+    } catch (e: any) {
+      toast.error("No se pudo generar el enlace: " + (e?.message ?? "error"));
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+        <CheckCircle2 className="h-6 w-6" />
+        <div>
+          <div className="text-lg font-semibold">Pedido creado</div>
+          <div className="text-xs text-muted-foreground">Comparte el resumen con el cliente</div>
+        </div>
+      </div>
+
+      {/* Rendered-to-image summary */}
+      <div
+        ref={summaryRef}
+        className="rounded-lg border border-border bg-white text-slate-900 p-5 space-y-3"
+        style={{ colorScheme: "light" }}
+      >
+        <div className="flex items-baseline justify-between gap-3 border-b pb-2">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-slate-500">Pedido</div>
+            <div className="text-lg font-semibold">{clientName}</div>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            <div>Lista: <span className="font-medium text-slate-800">{listName}</span></div>
+            {deliveryDate && <div>Entrega: <span className="font-medium text-slate-800">{deliveryDate}</span></div>}
+          </div>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="text-[11px] uppercase tracking-wide text-slate-500 border-b">
+            <tr>
+              <th className="text-left py-1 font-medium">Producto</th>
+              <th className="text-center py-1 font-medium">Bultos</th>
+              <th className="text-right py-1 font-medium">Precio/u</th>
+              <th className="text-right py-1 font-medium">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={i} className="border-b last:border-0">
+                <td className="py-1.5">
+                  <div className="font-mono text-[11px] text-slate-500">{l.clave}</div>
+                  <div>{l.name}</div>
+                </td>
+                <td className="py-1.5 text-center">{Number(l.quantity) || 0}</td>
+                <td className="py-1.5 text-right">{fmtMXN(Number(l.unit_price) || 0)}</td>
+                <td className="py-1.5 text-right font-medium">{fmtMXN((Number(l.quantity) || 0) * (Number(l.unit_price) || 0))}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t">
+              <td className="pt-2 font-semibold" colSpan={3}>Total</td>
+              <td className="pt-2 text-right font-bold">{fmtMXN(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <Button type="button" variant="outline" onClick={handleEmail}>
+          <Mail className="h-4 w-4 mr-2" /> Enviar por correo
+        </Button>
+        <Button type="button" variant="outline" onClick={handleCopyImage} disabled={uploading === "image"}>
+          {uploading === "image" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Copy className="h-4 w-4 mr-2" />}
+          Copiar imagen
+        </Button>
+        <Button type="button" variant="outline" onClick={handleCopyLink} disabled={uploading === "link"}>
+          {uploading === "link" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <LinkIcon className="h-4 w-4 mr-2" />}
+          Copiar enlace
+        </Button>
+      </div>
+
+      {signedUrl && (
+        <div className="text-xs text-muted-foreground break-all border rounded p-2 bg-muted/30">
+          {signedUrl}
+        </div>
+      )}
+
+      <div className="pt-2">
+        <Button type="button" className="w-full" onClick={onClose}>Cerrar</Button>
+      </div>
+    </div>
   );
 }
