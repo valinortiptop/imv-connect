@@ -5,6 +5,7 @@ import {
   Bot, FileText, Link2, BarChart3, ChevronDown, LogOut, CheckSquare,
   AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
   Calculator as CalcIcon, BookText, Scale, Receipt, Landmark, ShieldCheck, PieChart, ScrollText,
+  Banknote, ArrowLeftRight, ArrowDownUp, Wallet, FileSpreadsheet,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -89,6 +90,16 @@ const navGroups: NavGroup[] = [
       { key: "navContaIVA",     label: "IVA / IEPS",          url: "/admin/contabilidad/impuestos",    icon: Receipt },
       { key: "navContaFact",    label: "Facturas contables",  url: "/admin/contabilidad/facturas",     icon: FileText },
       { key: "navContaSAT",     label: "Cumplimiento SAT",    url: "/admin/contabilidad/sat",          icon: ShieldCheck },
+    ],
+  },
+  {
+    label: "Bancos",
+    items: [
+      { key: "navBancosCuentas",   label: "Cuentas bancarias",  url: "/admin/bancos",                icon: Banknote, exact: true },
+      { key: "navBancosEstados",   label: "Estados bancarios",  url: "/admin/bancos/estados",        icon: FileSpreadsheet },
+      { key: "navBancosMov",       label: "Entradas y salidas", url: "/admin/bancos/movimientos",    icon: ArrowDownUp },
+      { key: "navBancosTraspasos", label: "Traspasos",          url: "/admin/bancos/traspasos",      icon: ArrowLeftRight },
+      { key: "navBancosNomina",    label: "Pago de nómina",     url: "/admin/bancos/nomina",         icon: Wallet },
     ],
   },
   {
