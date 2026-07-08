@@ -79,15 +79,18 @@ const PAGE_SIZE = 50;
 interface MovementRow {
   id: string;
   created_at: string;
-  slot_id: string;
+  slot_id: string | null;
+  slot_code: string | null;
   product_id: string | null;
   description: string | null;
   lote: string | null;
   delta: number;
   reason: string;
   note: string | null;
-  warehouse_slots: { code: string } | null;
-  products: { clave: string; name: string; image_url: string | null } | null;
+  product_clave: string | null;
+  product_name: string | null;
+  product_image_url: string | null;
+  source: string;
 }
 
 /** Browser-local YYYY-MM-DD → UTC ISO at start-of-day */
@@ -148,13 +151,13 @@ export default function Kardex() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("products")
-        .select("id, clave, name, barcode, case_barcode")
+        .select("id, clave, name")
         .eq("active", true)
         .order("clave");
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; clave: string; name: string;
-        barcode: string | null; case_barcode: string | null;
+        barcode?: string | null; case_barcode?: string | null;
       }>;
     },
     staleTime: 5 * 60 * 1000,
@@ -196,16 +199,8 @@ export default function Kardex() {
       const haveRawText = !!resolvedSearch && resolvedSearch.q.length > 0;
 
       let q = (supabase as any)
-        .from("slot_movements")
-        .select(
-          // Disambiguate the warehouse_slots join — slot_movements has
-          // two FKs to warehouse_slots (slot_id + to_slot_id) so the
-          // implicit warehouse_slots(code) fails with relationship
-          // ambiguity. Force the slot_id FK explicitly.
-          "id, created_at, slot_id, product_id, description, lote, delta, reason, note, warehouse_slots!slot_movements_slot_id_fkey(code), products(clave, name, image_url)",
-          // estimated count → no full scan, totally fine for a paginated UI
-          { count: "estimated" },
-        )
+        .from("v_kardex_movements")
+        .select("*", { count: "estimated" })
         .order("created_at", { ascending: false });
       if (from) q = q.gte("created_at", startOfLocalDayUTC(from));
       if (to) q = q.lte("created_at", endOfLocalDayUTC(to));
@@ -272,10 +267,8 @@ export default function Kardex() {
       // Same filter pipeline as the paginated query, but pull the full set
       // (capped at 10k rows so we don't melt the browser if no filters are set)
       let q = (supabase as any)
-        .from("slot_movements")
-        .select(
-          "id, created_at, slot_id, product_id, description, lote, delta, reason, note, warehouse_slots!slot_movements_slot_id_fkey(code), products(clave, name)",
-        )
+        .from("v_kardex_movements")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(10000);
       if (from) q = q.gte("created_at", startOfLocalDayUTC(from));
@@ -307,9 +300,9 @@ export default function Kardex() {
       if (error) throw error;
       const exportRows = (data ?? []).map((r: any) => ({
         FECHA: format(new Date(r.created_at), "yyyy-MM-dd HH:mm"),
-        POSICION: r.warehouse_slots?.code ?? "—",
-        SKU: r.products?.clave ?? "",
-        PRODUCTO: r.products?.name ?? r.description ?? "",
+        POSICION: r.slot_code ?? "—",
+        SKU: r.product_clave ?? "",
+        PRODUCTO: r.product_name ?? r.description ?? "",
         LOTE: r.lote ?? "",
         DELTA: r.delta,
         RAZON: REASON_LABELS[r.reason] ?? r.reason,
@@ -546,19 +539,19 @@ export default function Kardex() {
                         })}
                       </td>
                       <td className="py-2 px-3 font-mono text-xs whitespace-nowrap">
-                        {m.warehouse_slots?.code ?? "—"}
+                        {m.slot_code ?? "—"}
                       </td>
                       <td className="py-2 px-3">
                         <ProductThumb
-                          src={m.products?.image_url ?? null}
+                          src={m.product_image_url ?? null}
                           size="sm"
                         />
                       </td>
                       <td className="py-2 px-3 font-mono text-xs text-primary whitespace-nowrap">
-                        {m.products?.clave ?? "—"}
+                        {m.product_clave ?? "—"}
                       </td>
                       <td className="py-2 px-3 truncate max-w-[260px]">
-                        {m.products?.name ?? m.description ?? "—"}
+                        {m.product_name ?? m.description ?? "—"}
                       </td>
                       <td className="py-2 px-3 font-mono text-xs whitespace-nowrap">
                         {m.lote ?? "—"}
