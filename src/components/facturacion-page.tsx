@@ -201,8 +201,8 @@ export default function Facturacion() {
     },
     onSuccess: (res) => {
       toast({ title: "Factura creada", description: `Factura ${res.folio} generada correctamente` });
-      qc.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
-      qc.invalidateQueries({ queryKey: ["facturas"] });
+      queryClient.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
+      queryClient.invalidateQueries({ queryKey: ["facturas"] });
       navigate(`/admin/facturas/${res.factura_id}`);
     },
     onError: (err: any) => {
