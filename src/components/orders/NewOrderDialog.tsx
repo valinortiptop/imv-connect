@@ -138,6 +138,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // Stop allocation is keyed by product_id (lines have stable ids only
   // after save, so product_id is the cross-phase key).
   const [stops, setStops] = useState<StopValue[]>([]);
+  const [allowNoAddress, setAllowNoAddress] = useState(false);
+  const [quickAddress, setQuickAddress] = useState("");
   const [clientPickerOpen, setClientPickerOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
