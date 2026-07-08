@@ -483,13 +483,25 @@ export default function PriceLists() {
           <button
             key={pl.id}
             onClick={() => { setViewMode("tier"); setActivePL(pl.id); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
               viewMode === "tier" && pl.id === plId
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted hover:bg-muted/80 text-foreground"
             }`}
           >
             {pl.name}
+            {pl.default_for_client_type && (
+              <span
+                className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                  viewMode === "tier" && pl.id === plId
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                }`}
+                title={lang === "es" ? `Predeterminada para clientes de ${pl.default_for_client_type}` : `Default for ${pl.default_for_client_type} clients`}
+              >
+                {pl.default_for_client_type}
+              </span>
+            )}
           </button>
         ))}
         <button
