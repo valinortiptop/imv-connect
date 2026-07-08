@@ -982,18 +982,25 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {lines.length > 0 ? (
                 <div className="space-y-0">
-                  <div className="grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 text-xs text-muted-foreground font-medium py-1 border-b border-border">
+                  <div className="grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 text-xs text-muted-foreground font-medium py-1 border-b border-border">
                     <div>Producto</div>
                     <div className="text-center">Bultos</div>
+                    <div className="text-center">Lista</div>
                     <div className="text-center">Precio/u</div>
                     <div className="text-right">Subtotal</div>
                     <div />
                   </div>
-                  {lines.map((line, idx) => (
+                  {lines.map((line, idx) => {
+                    const lineListValue = line.is_damaged
+                      ? "__mayoreo__"
+                      : line.price_list_id === "__custom__"
+                        ? "__custom__"
+                        : line.price_list_id ?? "__mayoreo__";
+                    return (
                     <div
-                      key={line.is_damaged ? `d-${line.damaged_batch_id}` : line.product_id}
+                      key={line.is_damaged ? `d-${line.damaged_batch_id}` : `${line.product_id}-${idx}`}
                       className={cn(
-                        "grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 items-center py-2 border-b border-border/50",
+                        "grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 items-center py-2 border-b border-border/50",
                         line.is_damaged && "bg-orange-500/5"
                       )}
                     >
@@ -1019,6 +1026,22 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         className="h-8 text-center"
                         placeholder=""
                       />
+                      <Select
+                        value={lineListValue}
+                        onValueChange={(v) => setLinePriceList(idx, v)}
+                        disabled={line.is_damaged}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__mayoreo__">Mayoreo</SelectItem>
+                          {priceLists.map((pl) => (
+                            <SelectItem key={pl.id} value={pl.id}>{pl.name}</SelectItem>
+                          ))}
+                          <SelectItem value="__custom__">Personalizar</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <div className="space-y-0.5">
                         {isClientOverridePrice(line.product_id) && (
                           <div
@@ -1036,15 +1059,18 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                           onChange={e => updateLine(idx, "unit_price", e.target.value)}
                           className={cn(
                             "h-8 text-center",
-                            // Amber border when this line's price came from a
-                            // per-client override. Matches the existing "this
-                            // value was overridden" amber language elsewhere.
                             isClientOverridePrice(line.product_id) &&
                               "border-amber-500/60 focus-visible:ring-amber-500/60",
+                            line.price_list_id === "__custom__" &&
+                              "border-blue-500/60 focus-visible:ring-blue-500/60",
                           )}
-                          title={isClientOverridePrice(line.product_id)
-                            ? "Precio acordado con este cliente"
-                            : undefined}
+                          title={
+                            line.price_list_id === "__custom__"
+                              ? "Precio personalizado"
+                              : isClientOverridePrice(line.product_id)
+                                ? "Precio acordado con este cliente"
+                                : undefined
+                          }
                         />
                       </div>
                       <div className="text-sm text-right font-medium">{fmtMXN((Number(line.quantity) || 0) * (Number(line.unit_price) || 0))}</div>
@@ -1052,10 +1078,12 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  ))}
-                  <div className="grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 py-2">
+                    );
+                  })}
+                  <div className="grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 py-2">
                     <div className="text-sm font-semibold">Total</div>
                     <div className="text-center text-sm font-medium">{lines.reduce((s, l) => s + (Number(l.quantity) || 0), 0)} bultos</div>
+                    <div />
                     <div />
                     <div className="text-right text-sm font-bold text-primary">{fmtMXN(totalOrder)}</div>
                     <div />
