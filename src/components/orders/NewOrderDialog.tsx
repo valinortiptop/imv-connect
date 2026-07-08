@@ -896,8 +896,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar producto por clave o nombre..." />
+                      <Command filter={substringFilter}>
+                        <CommandInput placeholder="Buscar producto por clave o nombre..." value={productSearch} onValueChange={setProductSearch} />
                         <CommandList>
                           <CommandEmpty>Sin resultados.</CommandEmpty>
                           <CommandGroup>
@@ -909,8 +909,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={p.image_url} size="xs" />
-                                  <span className="font-mono text-xs">{p.clave}</span>
-                                  <span>{p.name}</span>
+                                  <span className="font-mono text-xs"><HighlightMatch text={p.clave} query={productSearch} /></span>
+                                  <span><HighlightMatch text={p.name} query={productSearch} /></span>
                                   {promoProductIds.has(p.id) && (
                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
                                   )}
