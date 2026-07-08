@@ -213,17 +213,32 @@ export default function StockEntries() {
   /*  Queries                                                          */
   /* ---------------------------------------------------------------- */
 
+  // Base delivery list — query stock_deliveries directly. The previous
+  // `delivery_summary` view was repurposed for a per-product summary and
+  // no longer exposes the aggregated columns this page expects; we now
+  // read the raw table and derive line_items / total_bultos / top_product
+  // client-side from `allStockEntries` below.
   const { data: deliveries, isLoading: deliveriesLoading } = useQuery({
     queryKey: ["delivery-summary"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("delivery_summary")
-        .select("*")
+        .from("stock_deliveries")
+        .select("id, delivery_code, delivery_date, supplier, reference, notes, delivery_status, created_at")
         .order("delivery_code", { ascending: false });
       if (error) throw error;
-      return data as DeliverySummary[];
+      // adm_proof_path is populated from stock_delivery_documents in a
+      // separate query further down (kept null here — code that reads it
+      // already treats it as optional).
+      return (data ?? []).map((d: any) => ({
+        ...d,
+        line_items: 0,
+        total_bultos: 0,
+        top_product_name: null,
+        adm_proof_path: null,
+      })) as DeliverySummary[];
     },
   });
+
 
   const { data: products } = useQuery({
     queryKey: ["products-for-stock"],
