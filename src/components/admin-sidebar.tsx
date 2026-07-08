@@ -93,6 +93,16 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Bancos",
+    items: [
+      { key: "navBancosCuentas",   label: "Cuentas bancarias",  url: "/admin/bancos",                icon: Banknote, exact: true },
+      { key: "navBancosEstados",   label: "Estados bancarios",  url: "/admin/bancos/estados",        icon: FileSpreadsheet },
+      { key: "navBancosMov",       label: "Entradas y salidas", url: "/admin/bancos/movimientos",    icon: ArrowDownUp },
+      { key: "navBancosTraspasos", label: "Traspasos",          url: "/admin/bancos/traspasos",      icon: ArrowLeftRight },
+      { key: "navBancosNomina",    label: "Pago de nómina",     url: "/admin/bancos/nomina",         icon: Wallet },
+    ],
+  },
+  {
     label: "Configuración",
     items: [
       { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: Building2 },
