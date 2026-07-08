@@ -78,6 +78,8 @@ type Producto = {
   precio_lista: number;
   unidad: string;
   iva_pct: number;
+  ieps_pct: number | null;
+  tax_regime: string | null;
   activo: boolean;
   promo: boolean;
   marca: string | null;
