@@ -158,6 +158,7 @@ export default function PriceLists() {
   const [showNewList, setShowNewList] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newDefaultType, setNewDefaultType] = useState<"mayoreo" | "menudeo" | null>(null);
   const [creating, setCreating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [parsedRows, setParsedRows] = useState<{ clave: string; price: number; name?: string; matched?: boolean; productId?: string }[]>([]);
