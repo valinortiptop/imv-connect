@@ -14,7 +14,8 @@ import { ProductThumb } from "@/components/ui/product-thumb";
 import { StatusBadge } from "./StatusBadge";
 import { DeliveryWindowChip } from "@/components/clients/DeliveryWindowChip";
 import { format } from "date-fns";
-import { Pencil, Trash2, Truck, CheckCircle2, Clock, MapPin, Undo2, AlertTriangle, XCircle, TrendingDown, Plus, Gift, Receipt, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Truck, CheckCircle2, Clock, MapPin, Undo2, AlertTriangle, XCircle, TrendingDown, Plus, Gift, Receipt, Loader2, Download, Mail, ExternalLink, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("facturas")
-        .select("id, folio, estado, total")
+        .select("id, folio, serie, estado, total, pdf_url, xml_url, uuid_fiscal, cfdi_status")
         .eq("pedido_id", orderId!)
         .maybeSingle();
       if (error) throw error;
@@ -265,16 +266,63 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
             {order && (
               <div className="flex items-center gap-2 mr-6">
                 {existingFactura ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
-                    onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
-                    title={`Factura ${existingFactura.folio}`}
-                  >
-                    <Receipt className="h-4 w-4" />
-                    Factura {existingFactura.folio}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
+                        title={`Factura ${existingFactura.folio}`}
+                      >
+                        <Receipt className="h-4 w-4" />
+                        Factura {[existingFactura.serie, existingFactura.folio].filter(Boolean).join("-")}
+                        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem
+                        disabled={!existingFactura.pdf_url}
+                        onClick={() => existingFactura.pdf_url && window.open(existingFactura.pdf_url, "_blank", "noopener,noreferrer")}
+                      >
+                        <Download className="h-4 w-4 mr-2" /> Descargar PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={!existingFactura.xml_url}
+                        onClick={() => existingFactura.xml_url && window.open(existingFactura.xml_url, "_blank", "noopener,noreferrer")}
+                      >
+                        <Download className="h-4 w-4 mr-2" /> Descargar XML
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        disabled={!existingFactura.pdf_url && !existingFactura.xml_url}
+                        onClick={() => {
+                          const to = (client as any)?.email ?? "";
+                          const folio = [existingFactura.serie, existingFactura.folio].filter(Boolean).join("-");
+                          const subject = `Factura ${folio}`;
+                          const bodyLines = [
+                            `Estimado(a) cliente,`,
+                            ``,
+                            `Adjuntamos los enlaces de su factura ${folio}:`,
+                            existingFactura.pdf_url ? `PDF: ${existingFactura.pdf_url}` : null,
+                            existingFactura.xml_url ? `XML: ${existingFactura.xml_url}` : null,
+                            existingFactura.uuid_fiscal ? `UUID: ${existingFactura.uuid_fiscal}` : null,
+                            ``,
+                            `Saludos.`,
+                          ].filter(Boolean).join("\n");
+                          const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines)}`;
+                          window.location.href = href;
+                        }}
+                      >
+                        <Mail className="h-4 w-4 mr-2" /> Enviar por email
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" /> Ver detalle de factura
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <Button
                     variant="outline"
