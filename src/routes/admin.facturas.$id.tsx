@@ -10,6 +10,7 @@ import {
   downloadInvoiceFn,
   sendInvoiceEmailFn,
 } from "@/lib/facturapi.functions";
+import { downloadLocalInvoicePdf, downloadLocalInvoiceXml } from "@/lib/local-invoice-downloads";
 
 export const Route = createFileRoute("/admin/facturas/$id")({
   component: FacturaDetalle,
@@ -176,7 +177,14 @@ function FacturaDetalle() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error((e as Error).message);
+      try {
+        if (format === "pdf") await downloadLocalInvoicePdf(id);
+        else if (format === "xml") await downloadLocalInvoiceXml(id);
+        else throw e;
+        toast.success("Documento interno descargado");
+      } catch (fallbackError) {
+        toast.error((fallbackError as Error).message || (e as Error).message);
+      }
     }
   };
 
