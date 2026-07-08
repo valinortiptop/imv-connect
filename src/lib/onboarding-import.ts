@@ -62,6 +62,8 @@ export type ProductMapped = {
   costo?: number | null;
   costo_civa?: number | null;
   iva_pct?: number | null;
+  ieps_pct?: number | null;
+  tax_regime?: string | null;
   peso_kg?: number | null;
   proveedor?: string;
   unidad?: string;
@@ -70,6 +72,48 @@ export type ProductMapped = {
   tipo_producto?: string;
   sat_clave?: string;
 };
+
+/**
+ * Interpreta la columna "Código de artículo de SuiteTax Latam Engine".
+ * Reglas:
+ *   ITEM NORMAL              → IVA 16%, IEPS 0%
+ *   ITEM IVA 0%              → IVA 0%,  IEPS 0%
+ *   ITEM IEPS 6% + IVA 0%    → IVA 0%,  IEPS 6%
+ *   ITEM IEPS 6% + IVA 16%   → IVA 16%, IEPS 6%
+ * Cualquier otra etiqueta con "IEPS X%" o "IVA Y%" también se parsea numéricamente.
+ */
+export function parseSuiteTaxLabel(
+  label: string | undefined,
+): { iva_pct: number | null; ieps_pct: number | null; tax_regime: string | null } {
+  if (!label) return { iva_pct: null, ieps_pct: null, tax_regime: null };
+  const s = String(label).trim();
+  const upper = s.toUpperCase();
+
+  // ITEM NORMAL = 16% IVA sin IEPS
+  if (/^ITEM\s+NORMAL$/i.test(s.trim())) {
+    return { iva_pct: 16, ieps_pct: 0, tax_regime: "ITEM NORMAL" };
+  }
+
+  // Extraer números explícitos
+  const iepsMatch = upper.match(/IEPS\s*([\d.]+)\s*%/);
+  const ivaMatch = upper.match(/IVA\s*([\d.]+)\s*%/);
+
+  let iva: number | null = null;
+  let ieps: number | null = null;
+  if (ivaMatch) iva = Number(ivaMatch[1]);
+  if (iepsMatch) ieps = Number(iepsMatch[1]);
+
+  // Si menciona IEPS pero no IVA, asumimos IVA 0% (regla común SAT alimentos c/IEPS).
+  if (ieps !== null && iva === null) iva = 0;
+  // Si menciona IVA sin IEPS, IEPS = 0.
+  if (iva !== null && ieps === null) ieps = 0;
+
+  if (iva === null && ieps === null) {
+    return { iva_pct: null, ieps_pct: null, tax_regime: s };
+  }
+
+  return { iva_pct: iva, ieps_pct: ieps, tax_regime: s };
+}
 
 export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: string }) | null {
   // Heurística para el formato "BG Cat productos":
@@ -98,17 +142,19 @@ export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: strin
   const descripcion =
     [descripcionBase, grupo].filter(Boolean).join(" — ") || undefined;
 
-  // Derivar IVA desde el código SuiteTax si está disponible.
+  // Derivar IVA / IEPS desde el código SuiteTax si está disponible.
   const sat = pick(row, [
     "codigo_de_articulo_de_suitetax_latam_engine",
     "suitetax",
     "iva_label",
+    "regimen_fiscal",
+    "tax_regime",
   ]);
-  let ivaPct = num(pick(row, ["iva", "iva_pct"]));
-  if (ivaPct === null && sat) {
-    if (/iva\s*0/i.test(sat)) ivaPct = 0;
-    else if (/iva\s*16/i.test(sat)) ivaPct = 16;
-  }
+  const parsed = parseSuiteTaxLabel(sat);
+  const ivaExplicit = num(pick(row, ["iva", "iva_pct"]));
+  const iepsExplicit = num(pick(row, ["ieps", "ieps_pct"]));
+  const ivaPct = ivaExplicit !== null ? ivaExplicit : parsed.iva_pct;
+  const iepsPct = iepsExplicit !== null ? iepsExplicit : parsed.ieps_pct;
 
   return {
     sku,
@@ -121,6 +167,8 @@ export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: strin
     costo: num(pick(row, ["costo", "costo_sin_iva", "costo_siva", "cost"])),
     costo_civa: num(pick(row, ["costo_con_iva", "costo_civa"])),
     iva_pct: ivaPct,
+    ieps_pct: iepsPct,
+    tax_regime: parsed.tax_regime,
     peso_kg: num(pick(row, ["peso", "peso_kg", "weight_kg"])),
     proveedor: pick(row, ["proveedor", "supplier"]),
     unidad: pick(row, ["unidad", "unit"]),
@@ -206,6 +254,8 @@ export async function importProductos(rows: RawRow[]): Promise<ImportResult> {
       costo_siva: p.costo ?? null,
       costo_civa: p.costo_civa ?? null,
       iva_pct: p.iva_pct ?? 16,
+      ieps_pct: p.ieps_pct ?? 0,
+      tax_regime: p.tax_regime ?? null,
       peso_kg: p.peso_kg ?? null,
       proveedor: p.proveedor ?? null,
       unidad: p.unidad ?? "pieza",

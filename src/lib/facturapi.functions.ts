@@ -60,7 +60,7 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
     const { data: factura, error } = await supabaseAdmin
       .from("facturas")
       .select(
-        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, address, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe)",
+        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, address, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, ieps_pct, importe)",
       )
       .eq("id", data.facturaId)
       .single();
@@ -89,18 +89,32 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
             email: cliente.email || undefined,
             address: { zip: String(cliente.codigo_postal) },
           },
-      items: items.map((it) => ({
-        quantity: Number(it.cantidad),
-        product: {
-          description: it.nombre_snapshot,
-          product_key: "01010101", // default genérico SAT — override desde producto en fase posterior
-          price: Number(it.precio_unitario),
-          sku: it.sku_snapshot || undefined,
-          unit_name: it.unidad_snapshot || "Pieza",
-          tax_included: false,
-          taxes: [{ type: "IVA", rate: Number(it.iva_pct ?? 0.16) }],
-        },
-      })),
+      items: items.map((it) => {
+        // Facturapi espera tasas como fracción (0.16, 0.06). Los valores en DB pueden estar en % (16, 6)
+        // o ya como fracción (0.16). Normalizamos: si > 1, dividimos entre 100.
+        const rate = (v: unknown) => {
+          const n = Number(v ?? 0);
+          return n > 1 ? n / 100 : n;
+        };
+        const ivaRate = rate((it as any).iva_pct ?? 0.16);
+        const iepsRate = rate((it as any).ieps_pct ?? 0);
+        const taxes: Array<{ type: "IVA" | "IEPS"; rate: number }> = [
+          { type: "IVA", rate: ivaRate },
+        ];
+        if (iepsRate > 0) taxes.unshift({ type: "IEPS", rate: iepsRate });
+        return {
+          quantity: Number(it.cantidad),
+          product: {
+            description: it.nombre_snapshot,
+            product_key: "01010101", // default genérico SAT — override desde producto en fase posterior
+            price: Number(it.precio_unitario),
+            sku: it.sku_snapshot || undefined,
+            unit_name: it.unidad_snapshot || "Pieza",
+            tax_included: false,
+            taxes,
+          },
+        };
+      }),
       use: uso,
       payment_form: forma,
       payment_method: metodo,

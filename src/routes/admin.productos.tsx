@@ -78,6 +78,8 @@ type Producto = {
   precio_lista: number;
   unidad: string;
   iva_pct: number;
+  ieps_pct: number | null;
+  tax_regime: string | null;
   activo: boolean;
   promo: boolean;
   marca: string | null;
@@ -138,6 +140,9 @@ function ProductosPage() {
   const [lineaFilter, setLineaFilter] = useState("all");
   const [grupoFilter, setGrupoFilter] = useState("all");
   const [tipoFilter, setTipoFilter] = useState("all");
+  const [taxFilter, setTaxFilter] = useState<
+    "all" | "normal" | "iva0" | "ieps_iva0" | "ieps_iva16"
+  >("all");
   const [estadoFilter, setEstadoFilter] = useState<
     "todos" | "activos" | "inactivos" | "comprometidos" | "promo"
   >("todos");
@@ -217,6 +222,14 @@ function ProductosPage() {
       if (lineaFilter !== "all" && p.linea !== lineaFilter) return false;
       if (grupoFilter !== "all" && p.grupo !== grupoFilter) return false;
       if (tipoFilter !== "all" && p.tipo_producto !== tipoFilter) return false;
+      if (taxFilter !== "all") {
+        const iva = Number(p.iva_pct ?? 0);
+        const ieps = Number(p.ieps_pct ?? 0);
+        if (taxFilter === "normal" && !(iva === 16 && ieps === 0)) return false;
+        if (taxFilter === "iva0" && !(iva === 0 && ieps === 0)) return false;
+        if (taxFilter === "ieps_iva0" && !(iva === 0 && ieps > 0)) return false;
+        if (taxFilter === "ieps_iva16" && !(iva === 16 && ieps > 0)) return false;
+      }
       if (estadoFilter === "activos" && !p.activo) return false;
       if (estadoFilter === "inactivos" && p.activo) return false;
       if (estadoFilter === "comprometidos" && (p.stock_comprometido ?? 0) <= 0)
@@ -224,7 +237,7 @@ function ProductosPage() {
       if (estadoFilter === "promo" && !p.promo) return false;
       return true;
     });
-  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, estadoFilter]);
+  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, taxFilter, estadoFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -487,6 +500,16 @@ function ProductosPage() {
           <SelectContent>
             <SelectItem value="all">Todos los tipos</SelectItem>
             {tipos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={taxFilter} onValueChange={(v) => setTaxFilter(v as typeof taxFilter)}>
+          <SelectTrigger className="w-[190px]"><SelectValue placeholder="Régimen fiscal" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los regímenes</SelectItem>
+            <SelectItem value="normal">Normal (IVA 16%)</SelectItem>
+            <SelectItem value="iva0">IVA 0%</SelectItem>
+            <SelectItem value="ieps_iva0">IEPS 6% + IVA 0%</SelectItem>
+            <SelectItem value="ieps_iva16">IEPS 6% + IVA 16%</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex rounded-md border border-border bg-muted/30 p-0.5">

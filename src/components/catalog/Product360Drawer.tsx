@@ -50,7 +50,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
         supabase
           .from("productos")
           .select(
-            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
+            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, ieps_pct, tax_regime, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
           )
           .eq("id", productId)
           .maybeSingle(),
@@ -132,6 +132,16 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                 {p.grupo && <Badge variant="secondary">{p.grupo}</Badge>}
                 {p.tipo_producto && <Badge>{p.tipo_producto}</Badge>}
                 <Badge variant="outline">IVA {Number(p.iva_pct ?? 0)}%</Badge>
+                {Number(p.ieps_pct ?? 0) > 0 && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-400">
+                    IEPS {Number(p.ieps_pct)}%
+                  </Badge>
+                )}
+                {p.tax_regime && (
+                  <Badge variant="secondary" className="font-normal">
+                    {p.tax_regime}
+                  </Badge>
+                )}
                 {!p.activo && <Badge variant="destructive">Inactivo</Badge>}
               </div>
             </SheetHeader>
@@ -190,6 +200,14 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
               </TabsContent>
 
               <TabsContent value="precios" className="space-y-4 pt-4">
+                <Section icon={<Tag className="size-4" />} title="Impuestos aplicables">
+                  <TaxBreakdown
+                    precioConImpuestos={Number(p.precio_lista ?? 0)}
+                    ivaPct={Number(p.iva_pct ?? 0)}
+                    iepsPct={Number(p.ieps_pct ?? 0)}
+                    regimen={p.tax_regime ?? null}
+                  />
+                </Section>
                 <Section icon={<Tag className="size-4" />} title="Listas de precios">
                   {q.data!.listItems.length === 0 ? (
                     <Empty>Solo precio Mayoreo ({fmt(p.precio_lista)}).</Empty>
@@ -351,4 +369,60 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-xs text-muted-foreground italic px-1">{children}</p>;
+}
+
+/**
+ * Desglose fiscal. Recibe el precio final CON impuestos (como lo guarda `productos.precio_lista`)
+ * y muestra: Subtotal → +IEPS → +IVA → Total. Fórmula:
+ *   subtotal = precio / ((1 + iva) * (1 + ieps))
+ *   ieps_amt = subtotal * ieps
+ *   iva_amt  = (subtotal + ieps_amt) * iva
+ */
+function TaxBreakdown({
+  precioConImpuestos,
+  ivaPct,
+  iepsPct,
+  regimen,
+}: {
+  precioConImpuestos: number;
+  ivaPct: number;
+  iepsPct: number;
+  regimen: string | null;
+}) {
+  const iva = ivaPct / 100;
+  const ieps = iepsPct / 100;
+  const denom = (1 + iva) * (1 + ieps);
+  const subtotal = denom > 0 ? precioConImpuestos / denom : precioConImpuestos;
+  const iepsAmt = subtotal * ieps;
+  const ivaAmt = (subtotal + iepsAmt) * iva;
+  const total = subtotal + iepsAmt + ivaAmt;
+
+  return (
+    <div className="rounded-md border divide-y text-sm">
+      {regimen && (
+        <div className="px-3 py-2 flex justify-between bg-muted/40">
+          <span className="text-muted-foreground">Régimen SuiteTax</span>
+          <span className="font-medium">{regimen}</span>
+        </div>
+      )}
+      <div className="px-3 py-2 flex justify-between">
+        <span className="text-muted-foreground">Subtotal</span>
+        <span className="tabular-nums">{fmt(subtotal)}</span>
+      </div>
+      {iepsPct > 0 && (
+        <div className="px-3 py-2 flex justify-between">
+          <span className="text-muted-foreground">IEPS ({iepsPct}%)</span>
+          <span className="tabular-nums">{fmt(iepsAmt)}</span>
+        </div>
+      )}
+      <div className="px-3 py-2 flex justify-between">
+        <span className="text-muted-foreground">IVA ({ivaPct}%)</span>
+        <span className="tabular-nums">{fmt(ivaAmt)}</span>
+      </div>
+      <div className="px-3 py-2 flex justify-between font-semibold bg-muted/30">
+        <span>Total c/impuestos</span>
+        <span className="tabular-nums text-primary">{fmt(total)}</span>
+      </div>
+    </div>
+  );
 }
