@@ -2296,12 +2296,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         await labsQ.refetch();
       }
 
-      const resolveLab = (r: ImportRow) => {
+      const resolveLab = (r: ImportRow): string | null => {
         const labFromName =
           r.laboratorio_nombre &&
           newLabMap.get(r.laboratorio_nombre.toLowerCase());
-        return r.laboratorio_id ?? labFromName ?? overrideLab;
+        return r.laboratorio_id ?? labFromName ?? overrideLab ?? null;
       };
+
 
       // INSERT new
       if (toInsert.length > 0) {
