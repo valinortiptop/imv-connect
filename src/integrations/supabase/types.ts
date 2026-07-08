@@ -70,6 +70,391 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          activa: boolean
+          alias: string
+          banco: string
+          clabe: string | null
+          created_at: string
+          created_by: string | null
+          cuenta_contable_id: string | null
+          empresa_id: string
+          id: string
+          moneda: string
+          notas: string | null
+          numero_cuenta: string | null
+          saldo_inicial: number
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          alias: string
+          banco: string
+          clabe?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_contable_id?: string | null
+          empresa_id: string
+          id?: string
+          moneda?: string
+          notas?: string | null
+          numero_cuenta?: string | null
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          alias?: string
+          banco?: string
+          clabe?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_contable_id?: string | null
+          empresa_id?: string
+          id?: string
+          moneda?: string
+          notas?: string | null
+          numero_cuenta?: string | null
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_cuenta_contable_id_fkey"
+            columns: ["cuenta_contable_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas_contables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_movements: {
+        Row: {
+          ai_categoria: string | null
+          ai_confianza: number | null
+          categoria: string | null
+          conciliado: boolean
+          conciliado_at: string | null
+          conciliado_by: string | null
+          contraparte: string | null
+          created_at: string
+          created_by: string | null
+          cuenta_id: string
+          descripcion: string | null
+          empresa_id: string
+          fecha: string
+          id: string
+          monto: number
+          notas: string | null
+          payroll_payment_id: string | null
+          referencia: string | null
+          statement_id: string | null
+          tipo: Database["public"]["Enums"]["bank_movement_kind"]
+          transfer_id: string | null
+          updated_at: string
+          uuid_cfdi: string | null
+        }
+        Insert: {
+          ai_categoria?: string | null
+          ai_confianza?: number | null
+          categoria?: string | null
+          conciliado?: boolean
+          conciliado_at?: string | null
+          conciliado_by?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_id: string
+          descripcion?: string | null
+          empresa_id: string
+          fecha: string
+          id?: string
+          monto: number
+          notas?: string | null
+          payroll_payment_id?: string | null
+          referencia?: string | null
+          statement_id?: string | null
+          tipo: Database["public"]["Enums"]["bank_movement_kind"]
+          transfer_id?: string | null
+          updated_at?: string
+          uuid_cfdi?: string | null
+        }
+        Update: {
+          ai_categoria?: string | null
+          ai_confianza?: number | null
+          categoria?: string | null
+          conciliado?: boolean
+          conciliado_at?: string | null
+          conciliado_by?: string | null
+          contraparte?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_id?: string
+          descripcion?: string | null
+          empresa_id?: string
+          fecha?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          payroll_payment_id?: string | null
+          referencia?: string | null
+          statement_id?: string | null
+          tipo?: Database["public"]["Enums"]["bank_movement_kind"]
+          transfer_id?: string | null
+          updated_at?: string
+          uuid_cfdi?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_movements_conciliado_by_fkey"
+            columns: ["conciliado_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bank_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bank_movements_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_balances"
+            referencedColumns: ["cuenta_id"]
+          },
+          {
+            foreignKeyName: "bank_movements_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_movements_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_movements_payroll_payment_id_fkey"
+            columns: ["payroll_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_movements_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_movements_transfer_fk"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statements: {
+        Row: {
+          bank_name: string | null
+          created_at: string
+          cuenta_id: string | null
+          empresa_id: string
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          periodo: string | null
+          raw_data: Json | null
+          saldo_final: number | null
+          saldo_inicial: number | null
+          status: string
+          total_credits: number | null
+          total_debits: number | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bank_name?: string | null
+          created_at?: string
+          cuenta_id?: string | null
+          empresa_id: string
+          error_message?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          periodo?: string | null
+          raw_data?: Json | null
+          saldo_final?: number | null
+          saldo_inicial?: number | null
+          status?: string
+          total_credits?: number | null
+          total_debits?: number | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bank_name?: string | null
+          created_at?: string
+          cuenta_id?: string | null
+          empresa_id?: string
+          error_message?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          periodo?: string | null
+          raw_data?: Json | null
+          saldo_final?: number | null
+          saldo_inicial?: number | null
+          status?: string
+          total_credits?: number | null
+          total_debits?: number | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statements_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_balances"
+            referencedColumns: ["cuenta_id"]
+          },
+          {
+            foreignKeyName: "bank_statements_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statements_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statements_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      bank_transfers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cuenta_destino_id: string
+          cuenta_origen_id: string
+          empresa_id: string
+          fecha: string
+          id: string
+          monto: number
+          notas: string | null
+          referencia: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cuenta_destino_id: string
+          cuenta_origen_id: string
+          empresa_id: string
+          fecha: string
+          id?: string
+          monto: number
+          notas?: string | null
+          referencia?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cuenta_destino_id?: string
+          cuenta_origen_id?: string
+          empresa_id?: string
+          fecha?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          referencia?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transfers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_cuenta_destino_id_fkey"
+            columns: ["cuenta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_balances"
+            referencedColumns: ["cuenta_id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_cuenta_destino_id_fkey"
+            columns: ["cuenta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_cuenta_origen_id_fkey"
+            columns: ["cuenta_origen_id"]
+            isOneToOne: false
+            referencedRelation: "bank_account_balances"
+            referencedColumns: ["cuenta_id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_cuenta_origen_id_fkey"
+            columns: ["cuenta_origen_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transfers_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bonifications_received: {
         Row: {
           amount: number
@@ -5658,6 +6043,25 @@ export type Database = {
       }
     }
     Views: {
+      bank_account_balances: {
+        Row: {
+          cuenta_id: string | null
+          empresa_id: string | null
+          movimientos: number | null
+          saldo_actual: number | null
+          total_entradas: number | null
+          total_salidas: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           active: boolean | null
@@ -6957,6 +7361,15 @@ export type Database = {
         | "logistica"
         | "contabilidad"
         | "viewer"
+      bank_movement_kind:
+        | "entrada"
+        | "salida"
+        | "traspaso_in"
+        | "traspaso_out"
+        | "nomina"
+        | "comision"
+        | "interes"
+        | "ajuste"
       cta_naturaleza: "deudora" | "acreedora"
       devolucion_estado: "borrador" | "aplicada" | "cancelada"
       factura_estado:
@@ -7143,6 +7556,16 @@ export const Constants = {
         "logistica",
         "contabilidad",
         "viewer",
+      ],
+      bank_movement_kind: [
+        "entrada",
+        "salida",
+        "traspaso_in",
+        "traspaso_out",
+        "nomina",
+        "comision",
+        "interes",
+        "ajuste",
       ],
       cta_naturaleza: ["deudora", "acreedora"],
       devolucion_estado: ["borrador", "aplicada", "cancelada"],
