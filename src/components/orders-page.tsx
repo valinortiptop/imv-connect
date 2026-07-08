@@ -26,7 +26,7 @@ import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/lib/date-utils";
 import { useNavigate } from "@/lib/router-compat";
 import { Plus, Search, ShoppingCart, DollarSign, TruckIcon, Clock, Download, AlertOctagon, Eye, Copy, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown, RotateCcw, Pin } from "lucide-react";
-import { exportOrderAsImage } from "@/components/orders/SingleOrderImageCard";
+import { exportOrderAsImage, exportOrderAsPdf } from "@/components/orders/SingleOrderImageCard";
 import { ChronoBar } from "@/components/ChronoBar";
 import { toast } from "sonner";
 import { useLanguage } from "@/hooks/use-language";
