@@ -537,10 +537,13 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 function ExportCard({
-  icon, title, desc, norma, extra, onClick,
+  icon, title, desc, norma, extra, onDownload, onSign, canSign,
 }: {
   icon: React.ReactNode; title: string; desc: string; norma: string;
-  extra?: React.ReactNode; onClick: () => void;
+  extra?: React.ReactNode;
+  onDownload: () => void | Promise<unknown>;
+  onSign?: () => void;
+  canSign?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border p-4 flex flex-col">
@@ -553,10 +556,15 @@ function ExportCard({
         </div>
       </div>
       {extra}
-      <div className="mt-4">
-        <Button onClick={onClick} className="w-full">
-          <Download className="h-4 w-4 mr-1" /> Descargar
+      <div className="mt-4 flex gap-2">
+        <Button variant="outline" onClick={() => onDownload()} className="flex-1">
+          <Download className="h-4 w-4 mr-1" /> Sin sellar
         </Button>
+        {onSign && (
+          <Button onClick={onSign} disabled={!canSign} className="flex-1">
+            <ShieldCheck className="h-4 w-4 mr-1" /> Sellar
+          </Button>
+        )}
       </div>
     </div>
   );
