@@ -303,16 +303,10 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem
-                        disabled={!existingFactura.pdf_url}
-                        onClick={() => existingFactura.pdf_url && window.open(existingFactura.pdf_url, "_blank", "noopener,noreferrer")}
-                      >
+                      <DropdownMenuItem onClick={() => downloadCfdi(existingFactura.id, "pdf")}>
                         <Download className="h-4 w-4 mr-2" /> Descargar PDF
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={!existingFactura.xml_url}
-                        onClick={() => existingFactura.xml_url && window.open(existingFactura.xml_url, "_blank", "noopener,noreferrer")}
-                      >
+                      <DropdownMenuItem onClick={() => downloadCfdi(existingFactura.id, "xml")}>
                         <Download className="h-4 w-4 mr-2" /> Descargar XML
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
