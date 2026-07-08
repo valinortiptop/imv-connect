@@ -685,7 +685,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                 <CommandItem
                                   key={c.id}
                                   value={`${c.name} ${c.company ?? ""} ${(c as any).rfc ?? ""}`}
-                                  onSelect={() => selectClient(c.id)}
+                                  onSelect={() => { selectClient(c.id); setClientPickerOpen(false); }}
                                 >
                                   <span className="inline-flex items-center gap-2">
                                     <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
