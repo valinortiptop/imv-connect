@@ -736,7 +736,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                 <FormField control={form.control} name="delivery_date" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fecha de entrega</FormLabel>
-                    <Popover>
+                    <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9", !field.value && "text-muted-foreground")}>
