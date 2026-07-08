@@ -656,7 +656,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                   </TabsList>
 
                   <TabsContent value="existing" className="mt-3 space-y-3">
-                    <Popover>
+                    <Popover open={clientPickerOpen} onOpenChange={setClientPickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           type="button"
