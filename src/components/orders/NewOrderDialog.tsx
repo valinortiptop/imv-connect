@@ -1179,6 +1179,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
             </div>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
