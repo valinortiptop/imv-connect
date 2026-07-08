@@ -41,28 +41,31 @@ const substringFilter = (value: string, search: string) => {
   return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
 };
 
-/** Highlights every case-insensitive occurrence of `query` inside `text`. */
-function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query) return <>{text}</>;
+/** Highlights every case-insensitive occurrence of `query` inside `text`.
+ *  Null/undefined-safe: some view rows can have null `name`/`company` and
+ *  the raw `.toLowerCase()` used to throw and crash the dialog. */
+function HighlightMatch({ text, query }: { text: string | null | undefined; query: string }) {
+  const safe = text == null ? "" : String(text);
+  if (!query) return <>{safe}</>;
   const q = query.trim();
-  if (!q) return <>{text}</>;
-  const lower = text.toLowerCase();
+  if (!q) return <>{safe}</>;
+  const lower = safe.toLowerCase();
   const needle = q.toLowerCase();
   const parts: React.ReactNode[] = [];
   let i = 0;
   let idx = lower.indexOf(needle, i);
   let key = 0;
   while (idx !== -1) {
-    if (idx > i) parts.push(<span key={key++}>{text.slice(i, idx)}</span>);
+    if (idx > i) parts.push(<span key={key++}>{safe.slice(i, idx)}</span>);
     parts.push(
       <mark key={key++} className="bg-primary/25 text-foreground rounded-sm px-0.5">
-        {text.slice(idx, idx + needle.length)}
+        {safe.slice(idx, idx + needle.length)}
       </mark>
     );
     i = idx + needle.length;
     idx = lower.indexOf(needle, i);
   }
-  if (i < text.length) parts.push(<span key={key++}>{text.slice(i)}</span>);
+  if (i < safe.length) parts.push(<span key={key++}>{safe.slice(i)}</span>);
   return <>{parts}</>;
 }
 
