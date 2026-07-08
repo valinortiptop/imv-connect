@@ -2250,19 +2250,28 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
   const save = async () => {
     const toInsert = rows.filter((r) => r.status === "new");
     const toUpdate = rows.filter((r) => r.status === "update");
+    console.log("[ImportExcel] Aplicar clicked", {
+      new: toInsert.length,
+      update: toUpdate.length,
+      overrideLab: labId || null,
+    });
     if (toInsert.length === 0 && toUpdate.length === 0)
       return toast.info("No hay cambios por aplicar");
 
-    // Determine lab per row: prefer per-row resolved id; else use new-lab name; else override dropdown.
+    // Laboratorio resolution: prefer per-row id → AI-detected new lab name →
+    // default override. When none of those exist we now proceed with a null
+    // laboratorio (the column is nullable) and just warn the user, instead
+    // of silently blocking the whole import.
     const overrideLab = labId || null;
     const missingLab = toInsert.filter(
       (r) => !r.laboratorio_id && !r.laboratorio_nombre.trim() && !overrideLab,
     );
     if (missingLab.length > 0) {
-      return toast.error(
-        `Hay ${missingLab.length} producto(s) nuevo(s) sin laboratorio. Selecciona un laboratorio por defecto.`,
+      toast.warning(
+        `${missingLab.length} producto(s) nuevo(s) se importarán sin laboratorio. Puedes asignarles uno después o elegir un laboratorio por defecto.`,
       );
     }
+
 
     setSaving(true);
     try {
