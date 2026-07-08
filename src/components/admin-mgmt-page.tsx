@@ -708,6 +708,15 @@ function UserMobileCard({
             <Button
               variant="outline"
               size="sm"
+              className="h-9 px-3"
+              onClick={() => setEditOpen(true)}
+              title={lang === "es" ? "Editar" : "Edit"}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               className="h-9 px-3 text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/30"
               onClick={() => setDeleteOpen(true)}
               disabled={saving === u.user_id}
