@@ -386,6 +386,86 @@ Reglas:
     }
   }
 
+  const [creating, setCreating] = useState(false);
+  async function handleCreateOrden() {
+    if (poSupplier === "all") { toast.error("Selecciona un proveedor"); return; }
+    const validRows = rows.filter(r => r.bultos > 0);
+    if (validRows.length === 0) { toast.error("Agrega al menos un producto con bultos > 0"); return; }
+    setCreating(true);
+    try {
+      // Resolve laboratorio by name
+      const { data: lab, error: labErr } = await supabase
+        .from("laboratorios")
+        .select("id, nombre")
+        .ilike("nombre", poSupplier)
+        .maybeSingle();
+      if (labErr) throw labErr;
+      if (!lab) throw new Error(`No se encontró el laboratorio "${poSupplier}"`);
+
+      // Default almacen
+      const { data: alm, error: almErr } = await supabase
+        .from("almacenes").select("id").limit(1).maybeSingle();
+      if (almErr) throw almErr;
+      if (!alm) throw new Error("No hay almacenes configurados");
+
+      // Resolve products by clave
+      const claves = validRows.map(r => r.clave);
+      const { data: prods, error: prodErr } = await supabase
+        .from("productos")
+        .select("id, clave, costo_civa, costo")
+        .in("clave", claves);
+      if (prodErr) throw prodErr;
+      const byClave = new Map((prods ?? []).map((p: any) => [p.clave, p]));
+      const missing = claves.filter(c => !byClave.has(c));
+      if (missing.length) throw new Error(`Productos no encontrados: ${missing.join(", ")}`);
+
+      const items = validRows.map(r => {
+        const p: any = byClave.get(r.clave);
+        const costo = Number(p.costo_civa ?? p.costo ?? 0);
+        return {
+          producto_id: p.id,
+          cantidad: r.bultos,
+          costo_unitario: costo,
+          subtotal: costo * r.bultos,
+        };
+      });
+      const subtotal = items.reduce((s, i) => s + Number(i.subtotal || 0), 0);
+      const iva = 0;
+      const total = subtotal + iva;
+
+      const folio = `OC-${Date.now().toString(36).toUpperCase()}`;
+      const fechaEsperada = poDayFilter !== "all" ? poDayFilter : null;
+
+      const { data: oc, error: ocErr } = await supabase
+        .from("ordenes_compra")
+        .insert({
+          folio,
+          laboratorio_id: lab.id,
+          almacen_id: alm.id,
+          estado: "borrador",
+          fecha_emision: new Date().toISOString().slice(0, 10),
+          fecha_esperada: fechaEsperada,
+          subtotal, iva, total,
+        } as any)
+        .select("id")
+        .single();
+      if (ocErr) throw ocErr;
+
+      const { error: itemsErr } = await supabase
+        .from("oc_items")
+        .insert(items.map(i => ({ ...i, oc_id: oc.id })) as any);
+      if (itemsErr) throw itemsErr;
+
+      toast.success(`Orden de compra ${folio} creada`);
+      onOpenChange(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Error al crear la orden de compra");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
