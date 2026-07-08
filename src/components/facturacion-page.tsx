@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ClientTypeBadge } from "@/components/ui/client-type-badge";
 import * as XLSX from "xlsx-js-style";
+import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 
 /* ── types ── */
 interface ClientRow {
