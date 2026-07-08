@@ -7210,6 +7210,7 @@ export type Database = {
           saldo_inicial: number
         }[]
       }
+      bank_account_saldo: { Args: { _cuenta: string }; Returns: number }
       bootstrap_admin: { Args: never; Returns: undefined }
       crear_factura_desde_pedido: {
         Args: {
