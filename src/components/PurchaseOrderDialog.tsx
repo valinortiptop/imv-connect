@@ -531,7 +531,7 @@ Reglas:
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[--radix-popover-trigger-width] p-0"
+              className="w-[--radix-popover-trigger-width] p-0 flex flex-col max-h-[min(70vh,480px)]"
               align="start"
               side="bottom"
               sideOffset={4}
