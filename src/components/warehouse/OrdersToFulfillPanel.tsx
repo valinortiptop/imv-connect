@@ -105,14 +105,16 @@ export function OrdersToFulfillPanel({
   const [specificDate, setSpecificDate] = useState<Date | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  // Always fetch a 7-day horizon so chevrons + the picker can jump
-  // around without re-fetching. The RPC already orders by
+  // Always fetch a 30-day horizon so chevrons + the picker can jump
+  // around without re-fetching, and pedidos scheduled a couple of
+  // weeks out still show up. The RPC already orders by
   // delivery_date so we trust its sequencing.
+  const HORIZON_DAYS = 30;
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["orders-to-fulfill", 7],
+    queryKey: ["orders-to-fulfill", HORIZON_DAYS],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("list_orders_to_fulfill", {
-        p_horizon_days: 7,
+        p_horizon_days: HORIZON_DAYS,
       });
       if (error) throw error;
       return (data ?? []) as OrderToFulfill[];
@@ -170,7 +172,7 @@ export function OrdersToFulfillPanel({
   };
 
   const headerLabel = useMemo(() => {
-    if (view === "all" && !specificDate) return "Todos · próximos 7 días";
+    if (view === "all" && !specificDate) return `Todos · próximos ${HORIZON_DAYS} días`;
     if (targetDate) return fmtDayLabel(targetDate);
     return "Selecciona un día";
   }, [view, specificDate, targetDate]);
@@ -272,7 +274,7 @@ export function OrdersToFulfillPanel({
             active={view === "all" && !specificDate}
             onClick={() => { setView("all"); setSpecificDate(null); }}
           >
-            Todos (7 días)
+            Todos ({HORIZON_DAYS} días)
           </FilterChip>
         </div>
       </div>
