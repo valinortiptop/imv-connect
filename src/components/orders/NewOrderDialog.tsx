@@ -1138,8 +1138,45 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
             {/* Multi-stop delivery editor — only when there are items to
                 allocate. Defaults to 1 stop seeded from the chosen
                 client. Skip in quote mode. */}
-            {!isQuote && lines.length > 0 && (
-              <div className="border rounded-lg p-4 bg-card">
+            {!isQuote && lines.length > 0 && (() => {
+              const missingAddress = stops.some((s) => !s.address?.trim());
+              return (
+              <div className="border rounded-lg p-4 bg-card space-y-3">
+                {missingAddress && !allowNoAddress && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-2">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                      ⚠ Este cliente no tiene dirección. Ingresa una para la entrega o crea el pedido sin dirección.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Escribe la dirección de entrega..."
+                        value={quickAddress}
+                        onChange={(e) => setQuickAddress(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const addr = quickAddress.trim();
+                          if (!addr) return;
+                          setStops((prev) => prev.map((s) => s.address?.trim() ? s : { ...s, address: addr }));
+                        }}
+                        disabled={!quickAddress.trim()}
+                      >
+                        Aplicar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAllowNoAddress(true)}
+                      >
+                        Crear sin dirección
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <DeliveryStopsEditor
                   lines={lines.map((l) => ({
                     lineKey: l.product_id,
@@ -1171,7 +1208,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                   onChange={setStops}
                 />
               </div>
-            )}
+              );
+            })()}
+
 
             </div>{/* end scrollable body */}
 
