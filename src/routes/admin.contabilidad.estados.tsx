@@ -23,8 +23,9 @@ function EstadosPage() {
   const empresaId = selected?.id;
   const [desde, setDesde] = useState(firstOfYear());
   const [hasta, setHasta] = useState(today());
+  const [nivelMax, setNivelMax] = useState(6);
 
-  const { data: rows = [] } = useQuery({
+  const { data: rows = [], isLoading } = useQuery({
     queryKey: ["balanza-para-estados", empresaId, desde, hasta],
     enabled: !!empresaId,
     queryFn: async () => {
@@ -35,6 +36,26 @@ function EstadosPage() {
       return (data ?? []) as any[];
     },
   });
+
+  const filteredBalanza = useMemo(() => rows.filter((r) => r.nivel <= nivelMax), [rows, nivelMax]);
+  const totalesBalanza = useMemo(() => {
+    let si = 0, c = 0, a = 0, sf = 0;
+    for (const r of filteredBalanza.filter((x) => x.nivel === 1)) {
+      si += Number(r.saldo_inicial); c += Number(r.cargos); a += Number(r.abonos); sf += Number(r.saldo_final);
+    }
+    return { si, c, a, sf };
+  }, [filteredBalanza]);
+
+  const exportBalanzaCSV = () => {
+    const header = "Código,Nombre,Agrupador,Naturaleza,Nivel,Saldo inicial,Cargos,Abonos,Saldo final\n";
+    const body = filteredBalanza.map((r) =>
+      [r.codigo, JSON.stringify(r.nombre), r.codigo_agrupador ?? "", r.naturaleza, r.nivel, r.saldo_inicial, r.cargos, r.abonos, r.saldo_final].join(",")
+    ).join("\n");
+    const blob = new Blob([header + body], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `balanza-${desde}-${hasta}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Group by first digit of código agrupador
   const bloques = useMemo(() => {
