@@ -1861,6 +1861,7 @@ export type Database = {
           cantidad: number
           factura_id: string
           id: string
+          ieps_pct: number
           importe: number | null
           iva_pct: number
           nombre_snapshot: string
@@ -1873,6 +1874,7 @@ export type Database = {
           cantidad: number
           factura_id: string
           id?: string
+          ieps_pct?: number
           importe?: number | null
           iva_pct?: number
           nombre_snapshot: string
@@ -1885,6 +1887,7 @@ export type Database = {
           cantidad?: number
           factura_id?: string
           id?: string
+          ieps_pct?: number
           importe?: number | null
           iva_pct?: number
           nombre_snapshot?: string
