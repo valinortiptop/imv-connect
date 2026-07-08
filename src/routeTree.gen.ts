@@ -69,6 +69,7 @@ import { Route as AdminContabilidadMayorRouteImport } from './routes/admin.conta
 import { Route as AdminContabilidadImpuestosRouteImport } from './routes/admin.contabilidad.impuestos'
 import { Route as AdminContabilidadFacturasRouteImport } from './routes/admin.contabilidad.facturas'
 import { Route as AdminContabilidadEstadosRouteImport } from './routes/admin.contabilidad.estados'
+import { Route as AdminContabilidadElectronicaRouteImport } from './routes/admin.contabilidad.electronica'
 import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.contabilidad.diario'
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
 import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.contabilidad.balanza'
@@ -382,6 +383,12 @@ const AdminContabilidadEstadosRoute =
     path: '/contabilidad/estados',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminContabilidadElectronicaRoute =
+  AdminContabilidadElectronicaRouteImport.update({
+    id: '/contabilidad/electronica',
+    path: '/contabilidad/electronica',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminContabilidadDiarioRoute = AdminContabilidadDiarioRouteImport.update({
   id: '/contabilidad/diario',
   path: '/contabilidad/diario',
@@ -482,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
+  '/admin/contabilidad/electronica': typeof AdminContabilidadElectronicaRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
   '/admin/contabilidad/facturas': typeof AdminContabilidadFacturasRoute
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
@@ -551,6 +559,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
+  '/admin/contabilidad/electronica': typeof AdminContabilidadElectronicaRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
   '/admin/contabilidad/facturas': typeof AdminContabilidadFacturasRoute
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
@@ -622,6 +631,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
   '/admin/contabilidad/diario': typeof AdminContabilidadDiarioRoute
+  '/admin/contabilidad/electronica': typeof AdminContabilidadElectronicaRoute
   '/admin/contabilidad/estados': typeof AdminContabilidadEstadosRoute
   '/admin/contabilidad/facturas': typeof AdminContabilidadFacturasRoute
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
@@ -694,6 +704,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
+    | '/admin/contabilidad/electronica'
     | '/admin/contabilidad/estados'
     | '/admin/contabilidad/facturas'
     | '/admin/contabilidad/impuestos'
@@ -763,6 +774,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
+    | '/admin/contabilidad/electronica'
     | '/admin/contabilidad/estados'
     | '/admin/contabilidad/facturas'
     | '/admin/contabilidad/impuestos'
@@ -833,6 +845,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
     | '/admin/contabilidad/diario'
+    | '/admin/contabilidad/electronica'
     | '/admin/contabilidad/estados'
     | '/admin/contabilidad/facturas'
     | '/admin/contabilidad/impuestos'
@@ -1280,6 +1293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadEstadosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/electronica': {
+      id: '/admin/contabilidad/electronica'
+      path: '/contabilidad/electronica'
+      fullPath: '/admin/contabilidad/electronica'
+      preLoaderRoute: typeof AdminContabilidadElectronicaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contabilidad/diario': {
       id: '/admin/contabilidad/diario'
       path: '/contabilidad/diario'
@@ -1475,6 +1495,7 @@ interface AdminRouteChildren {
   AdminContabilidadBalanzaRoute: typeof AdminContabilidadBalanzaRoute
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
   AdminContabilidadDiarioRoute: typeof AdminContabilidadDiarioRoute
+  AdminContabilidadElectronicaRoute: typeof AdminContabilidadElectronicaRoute
   AdminContabilidadEstadosRoute: typeof AdminContabilidadEstadosRoute
   AdminContabilidadFacturasRoute: typeof AdminContabilidadFacturasRoute
   AdminContabilidadImpuestosRoute: typeof AdminContabilidadImpuestosRoute
@@ -1531,6 +1552,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadBalanzaRoute: AdminContabilidadBalanzaRoute,
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
   AdminContabilidadDiarioRoute: AdminContabilidadDiarioRoute,
+  AdminContabilidadElectronicaRoute: AdminContabilidadElectronicaRoute,
   AdminContabilidadEstadosRoute: AdminContabilidadEstadosRoute,
   AdminContabilidadFacturasRoute: AdminContabilidadFacturasRoute,
   AdminContabilidadImpuestosRoute: AdminContabilidadImpuestosRoute,
