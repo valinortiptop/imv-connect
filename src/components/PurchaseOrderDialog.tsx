@@ -386,6 +386,86 @@ Reglas:
     }
   }
 
+  const [creating, setCreating] = useState(false);
+  async function handleCreateOrden() {
+    if (poSupplier === "all") { toast.error("Selecciona un proveedor"); return; }
+    const validRows = rows.filter(r => r.bultos > 0);
+    if (validRows.length === 0) { toast.error("Agrega al menos un producto con bultos > 0"); return; }
+    setCreating(true);
+    try {
+      // Resolve laboratorio by name
+      const { data: lab, error: labErr } = await supabase
+        .from("laboratorios")
+        .select("id, nombre")
+        .ilike("nombre", poSupplier)
+        .maybeSingle();
+      if (labErr) throw labErr;
+      if (!lab) throw new Error(`No se encontró el laboratorio "${poSupplier}"`);
+
+      // Default almacen
+      const { data: alm, error: almErr } = await supabase
+        .from("almacenes").select("id").limit(1).maybeSingle();
+      if (almErr) throw almErr;
+      if (!alm) throw new Error("No hay almacenes configurados");
+
+      // Resolve products by clave
+      const claves = validRows.map(r => r.clave);
+      const { data: prods, error: prodErr } = await supabase
+        .from("productos")
+        .select("id, clave, costo_civa, costo")
+        .in("clave", claves);
+      if (prodErr) throw prodErr;
+      const byClave = new Map((prods ?? []).map((p: any) => [p.clave, p]));
+      const missing = claves.filter(c => !byClave.has(c));
+      if (missing.length) throw new Error(`Productos no encontrados: ${missing.join(", ")}`);
+
+      const items = validRows.map(r => {
+        const p: any = byClave.get(r.clave);
+        const costo = Number(p.costo_civa ?? p.costo ?? 0);
+        return {
+          producto_id: p.id,
+          cantidad: r.bultos,
+          costo_unitario: costo,
+          subtotal: costo * r.bultos,
+        };
+      });
+      const subtotal = items.reduce((s, i) => s + Number(i.subtotal || 0), 0);
+      const iva = 0;
+      const total = subtotal + iva;
+
+      const folio = `OC-${Date.now().toString(36).toUpperCase()}`;
+      const fechaEsperada = poDayFilter !== "all" ? poDayFilter : null;
+
+      const { data: oc, error: ocErr } = await supabase
+        .from("ordenes_compra")
+        .insert({
+          folio,
+          laboratorio_id: lab.id,
+          almacen_id: alm.id,
+          estado: "borrador",
+          fecha_emision: new Date().toISOString().slice(0, 10),
+          fecha_esperada: fechaEsperada,
+          subtotal, iva, total,
+        } as any)
+        .select("id")
+        .single();
+      if (ocErr) throw ocErr;
+
+      const { error: itemsErr } = await supabase
+        .from("oc_items")
+        .insert(items.map(i => ({ ...i, oc_id: oc.id })) as any);
+      if (itemsErr) throw itemsErr;
+
+      toast.success(`Orden de compra ${folio} creada`);
+      onOpenChange(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Error al crear la orden de compra");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
@@ -484,7 +564,7 @@ Reglas:
                   )}
                 </div>
               </div>
-              <ScrollArea className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 <div className="p-1">
                   {filteredAddable.length === 0 && (
                     <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -516,7 +596,7 @@ Reglas:
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
               <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
                 {addSelection.size > 0 && (
                   <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
@@ -603,16 +683,32 @@ Reglas:
           </div>
         </ScrollArea>
 
-        {/* Export buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-          <Button variant="outline" size="sm" onClick={handleExcel} disabled={rows.length === 0}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Excel
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePDF} disabled={rows.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar PDF
-          </Button>
+        {/* Footer actions */}
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExcel} disabled={rows.length === 0}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePDF} disabled={rows.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Descargar PDF
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={creating}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateOrden}
+              disabled={creating || rows.length === 0 || poSupplier === "all" || rows.every(r => r.bultos <= 0)}
+              title={poSupplier === "all" ? "Selecciona un proveedor para crear la orden" : ""}
+            >
+              {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Crear Orden de Compra
+            </Button>
+          </div>
         </div>
       </DialogContent>
 
