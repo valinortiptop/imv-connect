@@ -532,7 +532,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           // aliases it as name_snapshot. Without this the insert throws and
           // the pedido ends up with no items (and $0.00 totals).
           name_snapshot: l.name,
-          clave_snapshot: l.sku ?? null,
+          clave_snapshot: l.clave ?? null,
           damaged_batch_id: l.damaged_batch_id ?? null,
           is_damaged: l.is_damaged ?? false,
         }));
