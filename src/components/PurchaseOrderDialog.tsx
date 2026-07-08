@@ -484,7 +484,7 @@ Reglas:
                   )}
                 </div>
               </div>
-              <ScrollArea className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 <div className="p-1">
                   {filteredAddable.length === 0 && (
                     <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -516,7 +516,7 @@ Reglas:
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
               <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
                 {addSelection.size > 0 && (
                   <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
