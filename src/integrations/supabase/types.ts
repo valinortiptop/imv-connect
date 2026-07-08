@@ -6691,6 +6691,25 @@ export type Database = {
           },
         ]
       }
+      v_kardex_movements: {
+        Row: {
+          created_at: string | null
+          delta: number | null
+          description: string | null
+          id: string | null
+          lote: string | null
+          note: string | null
+          product_clave: string | null
+          product_id: string | null
+          product_image_url: string | null
+          product_name: string | null
+          reason: string | null
+          slot_code: string | null
+          slot_id: string | null
+          source: string | null
+        }
+        Relationships: []
+      }
       v_margen_productos: {
         Row: {
           costo: number | null
