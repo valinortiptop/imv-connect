@@ -1217,7 +1217,7 @@ export default function Orders() {
                       })()}
                       <button
                         className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
-                        onClick={() => o.id && exportOrderAsImage(o.id)}
+                        onClick={() => { console.log("[pedidos] Download click", o.id); o.id && exportOrderAsImage(o.id); }}
                         title={o.id && signedOrderIds.has(o.id) ? "Descargar comprobante firmado" : "Descargar PDF"}
                       >
                         <Download className="h-4 w-4" />
