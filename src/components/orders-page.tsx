@@ -1075,7 +1075,7 @@ export default function Orders() {
                     <TableCell>
                       <button
                         className="text-foreground hover:text-blue-400 hover:underline transition-colors"
-                        onClick={(e) => { e.stopPropagation(); if (o.client_id) navigate(`/clients?expandClient=${o.client_id}`); }}
+                        onClick={(e) => { e.stopPropagation(); if (o.client_id) navigate(`/admin/clientes?expandClient=${o.client_id}`); }}
                       >
                         {o.client_name ?? "—"}
                       </button>
