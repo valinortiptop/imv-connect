@@ -140,12 +140,27 @@ export default function Facturacion() {
     queryKey: ["facturacion-clients"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("clients")
-        .select("id, name, rfc, razon_social, nombre_cfdi, address, codigo_postal, regimen_fiscal, uso_cfdi, payment_method, metodo_pago, cfdi_pdf_path, active, client_type")
+        .from("clientes")
+        .select("id, nombre_comercial, razon_social, nickname, rfc, nombre_cfdi, direccion, codigo_postal, regimen_fiscal, uso_cfdi_default, payment_method, cfdi_pdf_path, active, client_type")
         .eq("active", true)
-        .order("name");
+        .order("nombre_comercial", { nullsFirst: false });
       if (error) throw error;
-      return (data ?? []) as ClientRow[];
+      return (data ?? []).map((r: any): ClientRow => ({
+        id: r.id,
+        name: r.nombre_comercial || r.razon_social || r.nickname || "Sin nombre",
+        rfc: r.rfc,
+        razon_social: r.razon_social,
+        nombre_cfdi: r.nombre_cfdi,
+        address: r.direccion,
+        codigo_postal: r.codigo_postal,
+        regimen_fiscal: r.regimen_fiscal,
+        uso_cfdi: r.uso_cfdi_default,
+        payment_method: r.payment_method,
+        metodo_pago: null,
+        cfdi_pdf_path: r.cfdi_pdf_path,
+        active: r.active,
+        client_type: (r.client_type as "mayoreo" | "menudeo") ?? "mayoreo",
+      }));
     },
   });
 
