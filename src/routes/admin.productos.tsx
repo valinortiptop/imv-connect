@@ -1839,13 +1839,39 @@ type ImportRow = {
   proveedor: string;
   peso_kg: number | null;
   precio_lista: number | null;
-  laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
-  laboratorio_id: string | null; // matched existing id (if any)
+  sat_clave: string | null;
+  iva_pct: number | null;
+  ieps_pct: number | null;
+  laboratorio_nombre: string;
+  laboratorio_id: string | null;
   status: "new" | "update" | "unchanged" | "error";
-  existing_id?: string | null; // id of matched existing product (for updates)
-  diff_fields?: string[]; // list of changed field labels
+  existing_id?: string | null;
+  diff_fields?: string[];
   errorMsg?: string;
 };
+
+// Parse a NetSuite / SuiteTax tax code label like:
+//   "ITEM IVA 0%", "ITEM IVA 16%", "ITEM IEPS 6% IVA 0%", "ITEM IEPS 6% IVA 16%"
+function parseTaxCode(raw: string): { iva_pct: number; ieps_pct: number } | null {
+  if (!raw) return null;
+  const s = String(raw).toUpperCase();
+  const ivaMatch = s.match(/IVA\s*(\d+(?:\.\d+)?)\s*%/);
+  const iepsMatch = s.match(/IEPS\s*(\d+(?:\.\d+)?)\s*%/);
+  if (!ivaMatch && !iepsMatch) return null;
+  return {
+    iva_pct: ivaMatch ? Number(ivaMatch[1]) : 0,
+    ieps_pct: iepsMatch ? Number(iepsMatch[1]) : 0,
+  };
+}
+
+// Extract the leading numeric SAT code from strings like "42121600 - Productos veterinarios".
+function parseSatClave(raw: string): string | null {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const m = trimmed.match(/^(\d{6,10})/);
+  return m ? m[1] : trimmed;
+}
 
 function ImportExcelDialog({
   onClose,
@@ -1914,7 +1940,7 @@ function ImportExcelDialog({
       const { data: existing } = await supabase
         .from("productos")
         .select(
-          "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id",
+          "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id, sat_clave, iva_pct, ieps_pct",
         );
       type ExistingProd = {
         id: string;
@@ -1925,6 +1951,9 @@ function ImportExcelDialog({
         peso_kg: number | null;
         precio_lista: number | null;
         laboratorio_id: string | null;
+        sat_clave: string | null;
+        iva_pct: number | null;
+        ieps_pct: number | null;
       };
       const existingList = (existing ?? []) as ExistingProd[];
       const existingBySku = new Map<string, ExistingProd>();
@@ -1939,9 +1968,10 @@ function ImportExcelDialog({
       ): { status: ImportRow["status"]; existing_id?: string; diff_fields?: string[] } => {
         const key = row.sku.toLowerCase().trim();
         const nameKey = row.nombre.toLowerCase().trim();
+        // SKU is the primary key. Only fall back to name when SKU is empty.
         const match =
           (key && existingBySku.get(key)) ||
-          (nameKey && existingByName.get(nameKey)) ||
+          (!key && nameKey ? existingByName.get(nameKey) : null) ||
           null;
         if (!match) return { status: "new" };
         const diff: string[] = [];
@@ -1966,14 +1996,40 @@ function ImportExcelDialog({
           row.laboratorio_id !== (match.laboratorio_id ?? null)
         )
           diff.push("laboratorio");
+        if (
+          row.sat_clave &&
+          String(row.sat_clave).trim() !== String(match.sat_clave ?? "").trim()
+        )
+          diff.push("sat_clave");
+        if (
+          row.iva_pct != null &&
+          Number(row.iva_pct) !== Number(match.iva_pct ?? NaN)
+        )
+          diff.push("iva");
+        if (
+          row.ieps_pct != null &&
+          Number(row.ieps_pct) !== Number(match.ieps_pct ?? NaN)
+        )
+          diff.push("ieps");
         return diff.length > 0
           ? { status: "update", existing_id: match.id, diff_fields: diff }
           : { status: "unchanged", existing_id: match.id };
       };
 
-      // Heuristic mapping as a fallback / starting point.
+      const labs = labsQ.data ?? [];
+      const labByNameLower = new Map(labs.map((l) => [l.nombre.toLowerCase(), l]));
+      const headers = Object.keys(json[0] ?? {});
+      const headerSet = new Set(headers.map((h) => h.toLowerCase().trim()));
+
+      // NetSuite export detection: the export uses "Nombre" for the SKU/clave
+      // and "Nombre para mostrar" for the human-readable name. When we see this
+      // pair we map columns explicitly and skip the AI (which historically
+      // confused them and marked every row as new).
+      const isNetSuite =
+        headerSet.has("nombre") && headerSet.has("nombre para mostrar");
+
       const heuristicParse = (): ImportRow[] =>
-        json.map((r) => {
+        json.map((r, i) => {
           const get = (...keys: string[]) => {
             for (const k of keys) {
               for (const real of Object.keys(r)) {
@@ -1983,149 +2039,206 @@ function ImportExcelDialog({
             }
             return "";
           };
-          const sku = get("clave", "sku", "codigo", "código");
-          const nombre = get("nombre", "producto", "descripcion", "descripción", "name");
-          const marca = get("marca", "brand");
+
+          let sku: string;
+          let nombre: string;
+          let marca: string;
+          let labNombre: string;
+          let precio: string;
+
+          if (isNetSuite) {
+            sku = get("nombre"); // NetSuite: "Nombre" column holds the clave
+            nombre = get("nombre para mostrar", "display name");
+            marca = get("clase"); // treat class as marca / laboratorio
+            labNombre = get("clase");
+            precio = get("precio base", "precio", "base price");
+          } else {
+            sku = get("clave", "sku", "codigo", "código");
+            nombre = get(
+              "nombre",
+              "producto",
+              "descripcion",
+              "descripción",
+              "name",
+              "nombre para mostrar",
+            );
+            marca = get("marca", "brand", "clase");
+            labNombre = get("laboratorio", "lab", "laboratory", "clase");
+            precio = get(
+              "precio",
+              "precio_civa",
+              "precio c/iva",
+              "price",
+              "precio lista",
+              "precio base",
+            );
+          }
+
           const proveedor = get("proveedor", "supplier");
           const peso = get("peso", "peso_kg", "weight_kg", "kg");
-          const precio = get("precio", "precio_civa", "precio c/iva", "price", "precio lista");
-          const labNombre = get("laboratorio", "lab", "laboratory");
-          const base = { sku, nombre, marca, proveedor, laboratorio_nombre: labNombre, laboratorio_id: null as string | null };
-          if (!nombre) {
-            return {
-              ...base,
-              peso_kg: null,
-              precio_lista: null,
-              status: "error" as const,
-              errorMsg: "Falta nombre",
-            };
-          }
-          const row = {
-            ...base,
-            peso_kg: peso ? Number(peso) || null : null,
-            precio_lista: precio ? Number(precio) || null : null,
-          };
-          return { ...row, ...diffRow(row) } as ImportRow;
-        });
+          const satRaw = get(
+            "sat clave producto servicio",
+            "sat_clave",
+            "clave sat",
+            "clave producto servicio",
+            "sat",
+          );
+          const taxRaw = get(
+            "código de artículo de suitetax latam engine",
+            "codigo de articulo de suitetax latam engine",
+            "codigo de articulo suitetax",
+            "codigo suitetax",
+            "clave impuestos",
+            "tax code",
+          );
+          const parsedTax = parseTaxCode(taxRaw);
 
-      // Ask the AI to map columns and infer laboratorio per row.
-      setAnalyzing(true);
-      const labs = labsQ.data ?? [];
-      const sampleRows = json.slice(0, 800); // cap tokens
-      const headers = Object.keys(json[0] ?? {});
-      const system = `Eres un asistente que normaliza datos de productos farmacéuticos veterinarios desde Excel.
-Devuelves SOLO JSON válido, sin markdown ni texto extra.
-Tarea: para cada fila del Excel, identifica los campos canónicos y el laboratorio.
-Campos canónicos:
-- sku (clave/código del producto, string corto o vacío)
-- nombre (descripción del producto)
-- marca
-- proveedor
-- peso_kg (número en kg; convierte gramos a kg si aplica; null si no se sabe)
-- precio_lista (número, precio de lista en MXN; null si no se sabe)
-- laboratorio (nombre del laboratorio; intenta hacer match con la lista existente, si no, sugiere el nombre limpio tal como aparece)
-Las columnas del Excel pueden tener cualquier nombre o idioma. Detecta por contenido.
-Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"laboratorio":""}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
-      const userMsg = JSON.stringify({
-        laboratorios_existentes: labs.map((l) => l.nombre),
-        headers,
-        rows: sampleRows,
-      });
+          const matchedLab = labNombre
+            ? labByNameLower.get(labNombre.toLowerCase())
+            : undefined;
 
-      let aiRows: Array<{
-        sku?: string;
-        nombre?: string;
-        marca?: string;
-        proveedor?: string;
-        peso_kg?: number | null;
-        precio_lista?: number | null;
-        laboratorio?: string;
-      }> | null = null;
-
-      try {
-        const resp = await aiChatFn({
-          data: {
-            model: "gpt-4o-mini",
-            temperature: 0,
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ],
-          },
-        });
-        const content =
-          (resp as { content?: string; choices?: Array<{ message?: { content?: string } }> })
-            ?.content ??
-          (resp as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]
-            ?.message?.content ??
-          "";
-        const cleaned = String(content)
-          .replace(/^```json\s*/i, "")
-          .replace(/^```\s*/i, "")
-          .replace(/```$/i, "")
-          .trim();
-        const parsedJson = JSON.parse(cleaned);
-        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
-      } catch (e) {
-        console.warn("AI mapping failed, using heuristic", e);
-      }
-
-      const labByNameLower = new Map(labs.map((l) => [l.nombre.toLowerCase(), l]));
-
-      let parsed: ImportRow[];
-      if (aiRows && aiRows.length > 0) {
-        parsed = aiRows.map((r, i) => {
-          const sku = String(r.sku ?? "").trim();
-          const nombre = String(r.nombre ?? "").trim();
-          const marca = String(r.marca ?? "").trim();
-          const proveedor = String(r.proveedor ?? "").trim();
-          const labNombre = String(r.laboratorio ?? "").trim();
-          const matchedLab = labNombre ? labByNameLower.get(labNombre.toLowerCase()) : undefined;
-          const peso_kg =
-            r.peso_kg == null || String(r.peso_kg) === "" ? null : Number(r.peso_kg) || null;
-          const precio_lista =
-            r.precio_lista == null || String(r.precio_lista) === ""
-              ? null
-              : Number(r.precio_lista) || null;
-          if (!nombre) {
-            return {
-              sku,
-              nombre,
-              marca,
-              proveedor,
-              peso_kg: null,
-              precio_lista: null,
-              laboratorio_nombre: labNombre,
-              laboratorio_id: matchedLab?.id ?? null,
-              status: "error",
-              errorMsg: `Fila ${i + 2}: falta nombre`,
-            };
-          }
-          const baseRow = {
+          const base: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg"> = {
             sku,
             nombre,
             marca,
             proveedor,
-            peso_kg,
-            precio_lista,
+            peso_kg: peso ? Number(peso) || null : null,
+            precio_lista: precio ? Number(precio) || null : null,
+            sat_clave: parseSatClave(satRaw),
+            iva_pct: parsedTax ? parsedTax.iva_pct : null,
+            ieps_pct: parsedTax ? parsedTax.ieps_pct : null,
             laboratorio_nombre: labNombre,
             laboratorio_id: matchedLab?.id ?? null,
           };
-          return { ...baseRow, ...diffRow(baseRow) } as ImportRow;
+          if (!nombre) {
+            return {
+              ...base,
+              status: "error" as const,
+              errorMsg: `Fila ${i + 2}: falta nombre`,
+            };
+          }
+          return { ...base, ...diffRow(base) } as ImportRow;
         });
+
+      // If it's a recognised NetSuite export the heuristic is authoritative;
+      // otherwise ask the AI to map free-form columns.
+      let parsed: ImportRow[];
+
+      if (isNetSuite) {
+        parsed = heuristicParse();
       } else {
-        parsed = heuristicParse().map((r) => {
-          if (r.status === "error") return r;
-          const matched = r.laboratorio_nombre
-            ? labByNameLower.get(r.laboratorio_nombre.toLowerCase())
-            : undefined;
-          const withLab = { ...r, laboratorio_id: matched?.id ?? null };
-          return { ...withLab, ...diffRow(withLab) } as ImportRow;
+        setAnalyzing(true);
+        const sampleRows = json.slice(0, 800);
+        const system = `Eres un asistente que normaliza datos de productos farmacéuticos veterinarios desde Excel.
+Devuelves SOLO JSON válido, sin markdown ni texto extra.
+Tarea: para cada fila del Excel, identifica los campos canónicos y el laboratorio.
+Campos canónicos:
+- sku (clave/código del producto — puede llamarse "Nombre" en exports de NetSuite)
+- nombre (descripción legible del producto — en NetSuite es "Nombre para mostrar")
+- marca
+- proveedor
+- peso_kg (número en kg; null si no se sabe)
+- precio_lista (número en MXN; en NetSuite es "Precio base"; null si no se sabe)
+- sat_clave (código numérico SAT de "SAT Clave Producto Servicio"; solo los dígitos; null si no aplica)
+- tax_code (texto crudo tipo "ITEM IVA 16%" o "ITEM IEPS 6% IVA 0%"; null si no aplica)
+- laboratorio (nombre del laboratorio; en NetSuite suele ser "Clase")
+IMPORTANTE: NUNCA uses la clave/SKU como nombre. Si sólo hay una columna con códigos, deja nombre vacío.
+Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"sat_clave":null,"tax_code":null,"laboratorio":""}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
+        const userMsg = JSON.stringify({
+          laboratorios_existentes: labs.map((l) => l.nombre),
+          headers,
+          rows: sampleRows,
         });
+
+        let aiRows: Array<{
+          sku?: string;
+          nombre?: string;
+          marca?: string;
+          proveedor?: string;
+          peso_kg?: number | null;
+          precio_lista?: number | null;
+          sat_clave?: string | null;
+          tax_code?: string | null;
+          laboratorio?: string;
+        }> | null = null;
+
+        try {
+          const resp = await aiChatFn({
+            data: {
+              model: "gpt-4o-mini",
+              temperature: 0,
+              messages: [
+                { role: "system", content: system },
+                { role: "user", content: userMsg },
+              ],
+            },
+          });
+          const content =
+            (resp as { content?: string; choices?: Array<{ message?: { content?: string } }> })
+              ?.content ??
+            (resp as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]
+              ?.message?.content ??
+            "";
+          const cleaned = String(content)
+            .replace(/^```json\s*/i, "")
+            .replace(/^```\s*/i, "")
+            .replace(/```$/i, "")
+            .trim();
+          const parsedJson = JSON.parse(cleaned);
+          aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+        } catch (e) {
+          console.warn("AI mapping failed, using heuristic", e);
+        }
+
+        if (aiRows && aiRows.length > 0) {
+          parsed = aiRows.map((r, i) => {
+            const sku = String(r.sku ?? "").trim();
+            const nombre = String(r.nombre ?? "").trim();
+            const marca = String(r.marca ?? "").trim();
+            const proveedor = String(r.proveedor ?? "").trim();
+            const labNombre = String(r.laboratorio ?? "").trim();
+            const matchedLab = labNombre
+              ? labByNameLower.get(labNombre.toLowerCase())
+              : undefined;
+            const peso_kg =
+              r.peso_kg == null || String(r.peso_kg) === ""
+                ? null
+                : Number(r.peso_kg) || null;
+            const precio_lista =
+              r.precio_lista == null || String(r.precio_lista) === ""
+                ? null
+                : Number(r.precio_lista) || null;
+            const parsedTax = r.tax_code ? parseTaxCode(String(r.tax_code)) : null;
+            const base: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg"> = {
+              sku,
+              nombre,
+              marca,
+              proveedor,
+              peso_kg,
+              precio_lista,
+              sat_clave: r.sat_clave ? parseSatClave(String(r.sat_clave)) : null,
+              iva_pct: parsedTax ? parsedTax.iva_pct : null,
+              ieps_pct: parsedTax ? parsedTax.ieps_pct : null,
+              laboratorio_nombre: labNombre,
+              laboratorio_id: matchedLab?.id ?? null,
+            };
+            if (!nombre) {
+              return {
+                ...base,
+                status: "error" as const,
+                errorMsg: `Fila ${i + 2}: falta nombre`,
+              };
+            }
+            return { ...base, ...diffRow(base) } as ImportRow;
+          });
+        } else {
+          parsed = heuristicParse();
+        }
       }
 
       setRows(parsed);
-      if (aiRows) toast.success("Excel analizado con IA");
+      if (!isNetSuite) toast.success("Excel analizado con IA");
+      else toast.success("Excel de NetSuite detectado y mapeado");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -2191,6 +2304,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           peso_kg: r.peso_kg,
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
+          sat_clave: r.sat_clave,
+          ...(r.iva_pct != null ? { iva_pct: r.iva_pct } : {}),
+          ...(r.ieps_pct != null ? { ieps_pct: r.ieps_pct } : {}),
           activo: true,
         }));
         const { error } = await supabase.from("productos").insert(payload);
@@ -2209,6 +2325,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         if (fields.has("peso")) patch.peso_kg = r.peso_kg;
         if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
         if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
+        if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
+        if (fields.has("iva")) patch.iva_pct = r.iva_pct;
+        if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
           .from("productos")
