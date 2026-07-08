@@ -4615,6 +4615,7 @@ export type Database = {
           facturapi_id: string | null
           grupo: string | null
           id: string
+          ieps_pct: number
           imagen_url: string | null
           iva_pct: number
           laboratorio_id: string | null
@@ -4637,6 +4638,7 @@ export type Database = {
           stock_disponible: number
           stock_en_camino: number
           stock_minimo: number
+          tax_regime: string | null
           tipo_producto: string | null
           unidad: string
           updated_at: string
@@ -4654,6 +4656,7 @@ export type Database = {
           facturapi_id?: string | null
           grupo?: string | null
           id?: string
+          ieps_pct?: number
           imagen_url?: string | null
           iva_pct?: number
           laboratorio_id?: string | null
@@ -4676,6 +4679,7 @@ export type Database = {
           stock_disponible?: number
           stock_en_camino?: number
           stock_minimo?: number
+          tax_regime?: string | null
           tipo_producto?: string | null
           unidad?: string
           updated_at?: string
@@ -4693,6 +4697,7 @@ export type Database = {
           facturapi_id?: string | null
           grupo?: string | null
           id?: string
+          ieps_pct?: number
           imagen_url?: string | null
           iva_pct?: number
           laboratorio_id?: string | null
@@ -4715,6 +4720,7 @@ export type Database = {
           stock_disponible?: number
           stock_en_camino?: number
           stock_minimo?: number
+          tax_regime?: string | null
           tipo_producto?: string | null
           unidad?: string
           updated_at?: string
