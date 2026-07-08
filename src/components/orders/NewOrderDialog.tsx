@@ -1224,7 +1224,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       totalQuantity: Number(l.quantity) || 0,
                     })))
                   : { valid: true };
-                const stopsBlock = !stopsValidation.valid;
+                const stopsBlock = !stopsValidation.valid && !allowNoAddress;
                 return (
                   <>
                     {stopsBlock && stopsValidation.reason && (
