@@ -529,12 +529,14 @@ Reglas:
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[--radix-popover-trigger-width] p-0 flex flex-col max-h-[min(70vh,var(--radix-popover-content-available-height))]"
+              className="w-[--radix-popover-trigger-width] p-0"
               align="start"
               side="bottom"
               sideOffset={4}
               avoidCollisions
               collisionPadding={16}
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
             >
               <div className="p-2 border-b border-border shrink-0">
                 <div className="relative">
@@ -564,7 +566,11 @@ Reglas:
                   )}
                 </div>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              <div
+                className="overscroll-contain"
+                style={{ maxHeight: "min(50vh, 360px)", overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+                onWheel={(e) => e.stopPropagation()}
+              >
                 <div className="p-1">
                   {filteredAddable.length === 0 && (
                     <div className="px-3 py-6 text-center text-sm text-muted-foreground">
