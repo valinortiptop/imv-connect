@@ -72,7 +72,8 @@ const schema = z.object({
   delivery_date: z.string().optional(),
   payment_method: z.string().optional(),
   payment_terms: z.string().optional(),
-  requires_invoice: z.boolean().default(false),
+  // requires_invoice removed: SAT treatment is derived from the client
+  // (VM prefix / generic RFC → nota; otherwise factura). See isVmClient().
   notes: z.string().optional(),
 });
 
@@ -268,7 +269,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { client_name: "", requires_invoice: false },
+    defaultValues: { client_name: "" },
   });
 
   useEffect(() => {
@@ -776,12 +777,6 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                     <FormItem><FormLabel>Términos de pago</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </div>
-                <FormField control={form.control} name="requires_invoice" render={({ field }) => (
-                  <FormItem className="flex items-center gap-3">
-                    <FormLabel>Requiere factura</FormLabel>
-                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                  </FormItem>
-                )} />
                 <FormField control={form.control} name="notes" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                 )} />
