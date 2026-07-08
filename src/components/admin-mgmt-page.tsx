@@ -761,6 +761,14 @@ function UserMobileCard({
           onClose={() => setOverrideOpen(false)}
         />
       )}
+
+      <EditUserDialog
+        user={u}
+        lang={lang}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
+
     </>
   );
 }
