@@ -119,6 +119,11 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [lines, setLines] = useState<OrderLine[]>([]);
   const [pickerMode, setPickerMode] = useState<"normal" | "damaged">("normal");
+  // Search strings for the three combobox pickers (client, damaged lot,
+  // normal product) — controlled so we can highlight matches in items.
+  const [clientSearch, setClientSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [damagedSearch, setDamagedSearch] = useState("");
   // Multi-stop delivery state. Default = single stop seeded by the
   // chosen client's address (see seeding effect after client load).
   // Stop allocation is keyed by product_id (lines have stable ids only
