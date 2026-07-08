@@ -777,12 +777,6 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                     <FormItem><FormLabel>Términos de pago</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                   )} />
                 </div>
-                <FormField control={form.control} name="requires_invoice" render={({ field }) => (
-                  <FormItem className="flex items-center gap-3">
-                    <FormLabel>Requiere factura</FormLabel>
-                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                  </FormItem>
-                )} />
                 <FormField control={form.control} name="notes" render={({ field }) => (
                   <FormItem><FormLabel>Notas</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                 )} />
