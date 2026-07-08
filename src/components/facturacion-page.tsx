@@ -612,7 +612,16 @@ export default function Facturacion() {
                 {pedidosPorFacturar.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 transition-colors"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDetailOrderId(p.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDetailOrderId(p.id);
+                      }
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer focus:outline-none focus:bg-muted/40"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -641,7 +650,10 @@ export default function Facturacion() {
                     <Button
                       size="sm"
                       className="gap-1 shrink-0"
-                      onClick={() => facturarPedidoMutation.mutate(p.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        facturarPedidoMutation.mutate(p.id);
+                      }}
                       disabled={facturarPedidoMutation.isPending}
                     >
                       <Stamp className="h-3.5 w-3.5" />
