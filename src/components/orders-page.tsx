@@ -432,12 +432,16 @@ export default function Orders() {
   };
 
   const handlePreviewSignature = async (orderId: string) => {
+    console.log("[pedidos] Eye click (async fallback)", orderId);
     const url = await getSignatureUrl(orderId);
+    console.log("[pedidos] Eye url =", url);
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCopySignatureLink = async (orderId: string) => {
+    console.log("[pedidos] Copy click (async fallback)", orderId);
     const url = await getSignatureUrl(orderId);
+    console.log("[pedidos] Copy url =", url);
     if (!url) return;
     copyTextSync(url);
   };
