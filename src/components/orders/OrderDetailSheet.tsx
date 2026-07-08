@@ -74,7 +74,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("facturas")
-        .select("id, folio, estado, total")
+        .select("id, folio, serie, estado, total, pdf_url, xml_url, uuid_fiscal, cfdi_status")
         .eq("pedido_id", orderId!)
         .maybeSingle();
       if (error) throw error;
