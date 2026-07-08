@@ -502,6 +502,16 @@ function ProductosPage() {
             {tipos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={taxFilter} onValueChange={(v) => setTaxFilter(v as typeof taxFilter)}>
+          <SelectTrigger className="w-[190px]"><SelectValue placeholder="Régimen fiscal" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los regímenes</SelectItem>
+            <SelectItem value="normal">Normal (IVA 16%)</SelectItem>
+            <SelectItem value="iva0">IVA 0%</SelectItem>
+            <SelectItem value="ieps_iva0">IEPS 6% + IVA 0%</SelectItem>
+            <SelectItem value="ieps_iva16">IEPS 6% + IVA 16%</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex rounded-md border border-border bg-muted/30 p-0.5">
           {(["todos", "activos", "inactivos", "comprometidos", "promo"] as const).map(
             (k) => (
