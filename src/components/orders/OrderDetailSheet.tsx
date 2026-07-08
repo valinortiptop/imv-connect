@@ -14,7 +14,8 @@ import { ProductThumb } from "@/components/ui/product-thumb";
 import { StatusBadge } from "./StatusBadge";
 import { DeliveryWindowChip } from "@/components/clients/DeliveryWindowChip";
 import { format } from "date-fns";
-import { Pencil, Trash2, Truck, CheckCircle2, Clock, MapPin, Undo2, AlertTriangle, XCircle, TrendingDown, Plus, Gift } from "lucide-react";
+import { Pencil, Trash2, Truck, CheckCircle2, Clock, MapPin, Undo2, AlertTriangle, XCircle, TrendingDown, Plus, Gift, Receipt, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
@@ -32,9 +33,11 @@ interface OrderDetailSheetProps {
 
 export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete }: OrderDetailSheetProps) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [ajusteDialogOpen, setAjusteDialogOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<any | null>(null);
   const [deletingAdjustment, setDeletingAdjustment] = useState<any | null>(null);
+  const [invoicing, setInvoicing] = useState(false);
   const deleteMutation = useDeleteAdjustment();
   const { data: order, isLoading: orderLoading } = useQuery({
     queryKey: ["order-detail", orderId],
@@ -63,6 +66,39 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     },
     enabled: !!order?.client_id,
   });
+
+  const { data: existingFactura } = useQuery({
+    queryKey: ["order-factura", orderId],
+    enabled: !!orderId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("facturas")
+        .select("id, folio, estado, total")
+        .eq("pedido_id", orderId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleFacturar = async () => {
+    if (!orderId) return;
+    setInvoicing(true);
+    try {
+      const { data, error } = await (supabase as any).rpc("facturar_pedido", { _pedido: orderId, _dias_credito: 30 });
+      if (error) throw error;
+      toast.success(`Factura ${data?.folio ?? ""} creada · $${Number(data?.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`);
+      qc.invalidateQueries({ queryKey: ["order-factura", orderId] });
+      qc.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["facturas"] });
+      onOpenChange(false);
+      navigate(`/admin/facturas/${data?.factura_id}`);
+    } catch (err: any) {
+      toast.error("No se pudo crear la factura: " + (err?.message ?? "desconocido"));
+    } finally {
+      setInvoicing(false);
+    }
+  };
 
   const { data: items = [] } = useQuery({
     queryKey: ["order-items", orderId],
@@ -228,6 +264,29 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
             </DialogTitle>
             {order && (
               <div className="flex items-center gap-2 mr-6">
+                {existingFactura ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
+                    onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
+                    title={`Factura ${existingFactura.folio}`}
+                  >
+                    <Receipt className="h-4 w-4" />
+                    Factura {existingFactura.folio}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5"
+                    onClick={handleFacturar}
+                    disabled={invoicing || (order?.status ?? "").toLowerCase() === "cancelado"}
+                  >
+                    {invoicing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
+                    Facturar
+                  </Button>
+                )}
                 {onEdit && (
                   <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onEdit(orderId!)}>
                     <Pencil className="h-4 w-4" />

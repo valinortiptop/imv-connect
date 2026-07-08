@@ -7156,6 +7156,10 @@ export type Database = {
         Args: { _almacen: string; _delta: number; _producto: string }
         Returns: undefined
       }
+      _find_cuenta: {
+        Args: { _agrupador: string; _empresa: string }
+        Returns: string
+      }
       admin_list_all_routes: {
         Args: never
         Returns: {
@@ -7259,6 +7263,10 @@ export type Database = {
         Returns: undefined
       }
       dev_recalc: { Args: { _dev: string }; Returns: undefined }
+      facturar_pedido: {
+        Args: { _dias_credito?: number; _pedido: string }
+        Returns: Json
+      }
       facturas_recalc: { Args: { _factura: string }; Returns: undefined }
       fmt_month: { Args: { d: string }; Returns: string }
       get_all_users_for_admin: {
@@ -7330,6 +7338,43 @@ export type Database = {
           saldo: number
           tipo: Database["public"]["Enums"]["poliza_tipo"]
           uuid_cfdi: string
+        }[]
+      }
+      list_orders_to_fulfill: {
+        Args: { p_horizon_days?: number }
+        Returns: {
+          client_id: string
+          client_name: string
+          delivery_date: string
+          delivery_notes: string
+          delivery_offset_days: number
+          delivery_window_from: string
+          delivery_window_until: string
+          fulfillment_method: string
+          id: string
+          item_count: number
+          order_code: string
+          status: string
+          total_bultos_in_embarque: number
+          total_bultos_needed: number
+          urgency: boolean
+        }[]
+      }
+      list_pedidos_por_facturar: {
+        Args: never
+        Returns: {
+          cliente: string
+          cliente_id: string
+          created_at: string
+          delivery_date: string
+          estado: string
+          folio: string
+          id: string
+          iva: number
+          order_code: string
+          rfc: string
+          subtotal: number
+          total: number
         }[]
       }
       listar_usuarios: {
