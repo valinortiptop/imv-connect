@@ -310,6 +310,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // from the current `lines` automatically by the editor's self-heal.
   useEffect(() => {
     setStops([]);
+    setAllowNoAddress(false);
+    setQuickAddress("");
   }, [selectedClientId, clientTab]);
 
   // The client_price_overrides query is async — when the user picks a
