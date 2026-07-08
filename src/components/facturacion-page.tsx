@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { useToast } from "@/hooks/use-toast";
-import { stampInvoiceFn } from "@/lib/facturapi.functions";
+import { stampInvoiceFn, downloadInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
   Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp,
@@ -118,6 +118,31 @@ export default function Facturacion() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const stampFn = useServerFn(stampInvoiceFn);
+  const downloadFn = useServerFn(downloadInvoiceFn);
+
+  const handleDownloadCfdi = async (facturaId: string, format: "pdf" | "xml") => {
+    try {
+      const res = await downloadFn({ data: { facturaId, format } });
+      const blob = new Blob(
+        [Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0))],
+        { type: res.contentType },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({
+        title: "No se pudo descargar",
+        description: e?.message ?? "La factura no está timbrada.",
+        variant: "destructive",
+      });
+    }
+  };
 
   /* ── state ── */
   // Mayoreo / Menudeo / Todos — filters the client picker dropdown.
@@ -795,50 +820,33 @@ export default function Facturacion() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                asChild={!!f.pdf_url}
                                 size="sm"
                                 variant="outline"
                                 className="gap-1"
-                                disabled={!f.pdf_url}
+                                onClick={() => handleDownloadCfdi(f.id, "pdf")}
                               >
-                                {f.pdf_url ? (
-                                  <a href={f.pdf_url} target="_blank" rel="noopener noreferrer">
-                                    <Download className="h-3.5 w-3.5" /> PDF
-                                  </a>
-                                ) : (
-                                  <span><Download className="h-3.5 w-3.5" /> PDF</span>
-                                )}
+                                <Download className="h-3.5 w-3.5" /> PDF
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>{f.pdf_url ? "Ver / descargar PDF" : "PDF no disponible"}</TooltipContent>
+                            <TooltipContent>Descargar PDF (requiere timbrado)</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                asChild={!!f.xml_url}
                                 size="sm"
                                 variant="outline"
                                 className="gap-1"
-                                disabled={!f.xml_url}
+                                onClick={() => handleDownloadCfdi(f.id, "xml")}
                               >
-                                {f.xml_url ? (
-                                  <a href={f.xml_url} target="_blank" rel="noopener noreferrer" download>
-                                    <Download className="h-3.5 w-3.5" /> XML
-                                  </a>
-                                ) : (
-                                  <span><Download className="h-3.5 w-3.5" /> XML</span>
-                                )}
+                                <Download className="h-3.5 w-3.5" /> XML
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>{f.xml_url ? "Descargar XML" : "XML no disponible"}</TooltipContent>
+                            <TooltipContent>Descargar XML (requiere timbrado)</TooltipContent>
                           </Tooltip>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="gap-1"
-                            onClick={() => navigate(`/admin/facturas/${f.id}`)}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
+                          <Button size="sm" variant="ghost" className="gap-1" asChild>
+                            <Link to={`/admin/facturas/${f.id}`}>
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Link>
                           </Button>
                         </TooltipProvider>
                       </div>
