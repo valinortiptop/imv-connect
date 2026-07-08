@@ -311,7 +311,7 @@ async function generateCatalogPDF(
 }
 
 /* ── Price list PDF ────────────────────────────── */
-async function generatePriceListPDF(products: Product[]) {
+async function generatePriceListPDF(products: Product[], priceListLabel?: string) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
   const W = 215.9;
   const H = 279.4;
