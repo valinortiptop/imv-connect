@@ -7285,6 +7285,7 @@ export type Database = {
         Returns: undefined
       }
       dev_recalc: { Args: { _dev: string }; Returns: undefined }
+      dispatch_order: { Args: { p_order_id: string }; Returns: Json }
       facturar_pedido: {
         Args: { _dias_credito?: number; _pedido: string }
         Returns: Json
@@ -7314,6 +7315,21 @@ export type Database = {
           group_label: string
           route_key: string
           route_path: string
+        }[]
+      }
+      get_or_create_embarque_slot: { Args: never; Returns: string }
+      get_order_fulfillment_state: {
+        Args: { p_order_id: string }
+        Returns: {
+          embarque_slots: Json
+          order_item_id: string
+          product_clave: string
+          product_id: string
+          product_image_url: string
+          product_name: string
+          qty_in_embarque: number
+          qty_needed: number
+          qty_remaining: number
         }[]
       }
       get_role_permissions: {
@@ -7409,10 +7425,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      mark_pickup_delivered: { Args: { p_order_id: string }; Returns: Json }
       oc_recalc_totales: { Args: { _oc: string }; Returns: undefined }
       pedidos_recalc_totals: {
         Args: { p_pedido_id: string }
         Returns: undefined
+      }
+      pick_order_item_to_embarque: {
+        Args: {
+          p_note?: string
+          p_order_item_id: string
+          p_quantity: number
+          p_source_content_id: string
+        }
+        Returns: Json
       }
       polizas_recalc: { Args: { _poliza: string }; Returns: undefined }
       recibir_oc: { Args: { _items: Json; _oc: string }; Returns: undefined }
@@ -7432,6 +7458,19 @@ export type Database = {
         }[]
       }
       seed_cuentas_empresa: { Args: { _empresa: string }; Returns: undefined }
+      suggest_source_slots_for_picking: {
+        Args: { p_product_id: string; p_quantity?: number }
+        Returns: {
+          expiration_date: string
+          lote: string
+          quantity: number
+          rank: number
+          reason_text: string
+          slot_code: string
+          slot_content_id: string
+          slot_id: string
+        }[]
+      }
     }
     Enums: {
       app_role:
