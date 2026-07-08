@@ -62,6 +62,8 @@ export type ProductMapped = {
   costo?: number | null;
   costo_civa?: number | null;
   iva_pct?: number | null;
+  ieps_pct?: number | null;
+  tax_regime?: string | null;
   peso_kg?: number | null;
   proveedor?: string;
   unidad?: string;
@@ -70,6 +72,48 @@ export type ProductMapped = {
   tipo_producto?: string;
   sat_clave?: string;
 };
+
+/**
+ * Interpreta la columna "Código de artículo de SuiteTax Latam Engine".
+ * Reglas:
+ *   ITEM NORMAL              → IVA 16%, IEPS 0%
+ *   ITEM IVA 0%              → IVA 0%,  IEPS 0%
+ *   ITEM IEPS 6% + IVA 0%    → IVA 0%,  IEPS 6%
+ *   ITEM IEPS 6% + IVA 16%   → IVA 16%, IEPS 6%
+ * Cualquier otra etiqueta con "IEPS X%" o "IVA Y%" también se parsea numéricamente.
+ */
+export function parseSuiteTaxLabel(
+  label: string | undefined,
+): { iva_pct: number | null; ieps_pct: number | null; tax_regime: string | null } {
+  if (!label) return { iva_pct: null, ieps_pct: null, tax_regime: null };
+  const s = String(label).trim();
+  const upper = s.toUpperCase();
+
+  // ITEM NORMAL = 16% IVA sin IEPS
+  if (/^ITEM\s+NORMAL$/i.test(s.trim())) {
+    return { iva_pct: 16, ieps_pct: 0, tax_regime: "ITEM NORMAL" };
+  }
+
+  // Extraer números explícitos
+  const iepsMatch = upper.match(/IEPS\s*([\d.]+)\s*%/);
+  const ivaMatch = upper.match(/IVA\s*([\d.]+)\s*%/);
+
+  let iva: number | null = null;
+  let ieps: number | null = null;
+  if (ivaMatch) iva = Number(ivaMatch[1]);
+  if (iepsMatch) ieps = Number(iepsMatch[1]);
+
+  // Si menciona IEPS pero no IVA, asumimos IVA 0% (regla común SAT alimentos c/IEPS).
+  if (ieps !== null && iva === null) iva = 0;
+  // Si menciona IVA sin IEPS, IEPS = 0.
+  if (iva !== null && ieps === null) ieps = 0;
+
+  if (iva === null && ieps === null) {
+    return { iva_pct: null, ieps_pct: null, tax_regime: s };
+  }
+
+  return { iva_pct: iva, ieps_pct: ieps, tax_regime: s };
+}
 
 export function mapProductRow(row: RawRow): (ProductMapped & { categoria?: string }) | null {
   // Heurística para el formato "BG Cat productos":
