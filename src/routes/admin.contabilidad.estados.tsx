@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PieChart } from "lucide-react";
+import { PieChart, Scale, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
@@ -23,8 +24,9 @@ function EstadosPage() {
   const empresaId = selected?.id;
   const [desde, setDesde] = useState(firstOfYear());
   const [hasta, setHasta] = useState(today());
+  const [nivelMax, setNivelMax] = useState(6);
 
-  const { data: rows = [] } = useQuery({
+  const { data: rows = [], isLoading } = useQuery({
     queryKey: ["balanza-para-estados", empresaId, desde, hasta],
     enabled: !!empresaId,
     queryFn: async () => {
@@ -35,6 +37,26 @@ function EstadosPage() {
       return (data ?? []) as any[];
     },
   });
+
+  const filteredBalanza = useMemo(() => rows.filter((r) => r.nivel <= nivelMax), [rows, nivelMax]);
+  const totalesBalanza = useMemo(() => {
+    let si = 0, c = 0, a = 0, sf = 0;
+    for (const r of filteredBalanza.filter((x) => x.nivel === 1)) {
+      si += Number(r.saldo_inicial); c += Number(r.cargos); a += Number(r.abonos); sf += Number(r.saldo_final);
+    }
+    return { si, c, a, sf };
+  }, [filteredBalanza]);
+
+  const exportBalanzaCSV = () => {
+    const header = "Código,Nombre,Agrupador,Naturaleza,Nivel,Saldo inicial,Cargos,Abonos,Saldo final\n";
+    const body = filteredBalanza.map((r) =>
+      [r.codigo, JSON.stringify(r.nombre), r.codigo_agrupador ?? "", r.naturaleza, r.nivel, r.saldo_inicial, r.cargos, r.abonos, r.saldo_final].join(",")
+    ).join("\n");
+    const blob = new Blob([header + body], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `balanza-${desde}-${hasta}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Group by first digit of código agrupador
   const bloques = useMemo(() => {
@@ -83,6 +105,7 @@ function EstadosPage() {
           <TabsList>
             <TabsTrigger value="balance">Balance general</TabsTrigger>
             <TabsTrigger value="resultados">Estado de resultados</TabsTrigger>
+            <TabsTrigger value="balanza"><Scale className="h-4 w-4 mr-1" />Balanza de comprobación</TabsTrigger>
             <TabsTrigger value="custom">Reportes personalizados</TabsTrigger>
           </TabsList>
 
@@ -120,6 +143,59 @@ function EstadosPage() {
             <div className="rounded-lg border-2 border-primary/50 bg-primary/5 p-4 flex justify-between text-xl">
               <span className="font-bold">Utilidad neta del periodo</span>
               <span className={`font-mono font-bold ${utilidad >= 0 ? "text-emerald-600" : "text-destructive"}`}>{mxn.format(utilidad)}</span>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="balanza" className="space-y-3 pt-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label className="text-xs">Nivel máx.</Label>
+                <Input type="number" min={1} max={6} value={nivelMax} onChange={(e) => setNivelMax(Number(e.target.value))} className="w-24" />
+              </div>
+              <Button variant="outline" size="sm" onClick={exportBalanzaCSV} disabled={filteredBalanza.length === 0}>
+                <Download className="h-4 w-4 mr-1" /> CSV
+              </Button>
+            </div>
+            <div className="rounded-lg border border-border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-2 w-24">Código</th>
+                    <th className="text-left px-2 py-2">Nombre</th>
+                    <th className="text-left px-2 py-2 w-20">Agrup.</th>
+                    <th className="text-right px-2 py-2 w-32">Saldo inicial</th>
+                    <th className="text-right px-2 py-2 w-28">Cargos</th>
+                    <th className="text-right px-2 py-2 w-28">Abonos</th>
+                    <th className="text-right px-2 py-2 w-32">Saldo final</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                  ) : filteredBalanza.length === 0 ? (
+                    <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sin cuentas.</td></tr>
+                  ) : filteredBalanza.map((r) => (
+                    <tr key={r.cuenta_id} className={`border-t border-border ${r.nivel === 1 ? "bg-muted/30 font-semibold" : ""}`}>
+                      <td className="px-2 py-1.5 font-mono text-xs" style={{ paddingLeft: `${8 + (r.nivel - 1) * 16}px` }}>{r.codigo}</td>
+                      <td className="px-2 py-1.5">{r.nombre}</td>
+                      <td className="px-2 py-1.5 font-mono text-xs text-muted-foreground">{r.codigo_agrupador ?? ""}</td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs">{mxn.format(Number(r.saldo_inicial))}</td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs">{mxn.format(Number(r.cargos))}</td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs">{mxn.format(Number(r.abonos))}</td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs font-semibold">{mxn.format(Number(r.saldo_final))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-muted/40">
+                  <tr className="border-t border-border">
+                    <td colSpan={3} className="px-2 py-2 text-right text-xs uppercase tracking-wider">Totales nivel 1</td>
+                    <td className="px-2 py-2 text-right font-mono">{mxn.format(totalesBalanza.si)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{mxn.format(totalesBalanza.c)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{mxn.format(totalesBalanza.a)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{mxn.format(totalesBalanza.sf)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </TabsContent>
 
