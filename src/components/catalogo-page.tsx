@@ -346,7 +346,7 @@ async function generatePriceListPDF(products: Product[], priceListLabel?: string
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     const today = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
-    doc.text(`Precios con IVA · ${today}`, MARGIN_X, 20);
+    doc.text(`Precios con IVA · ${today}${priceListLabel ? ` · Lista: ${priceListLabel}` : ""}`, MARGIN_X, 20);
 
     // Column headers
     const hy = HEADER_H + 9;
