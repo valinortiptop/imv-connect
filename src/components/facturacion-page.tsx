@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ClientTypeBadge } from "@/components/ui/client-type-badge";
 import * as XLSX from "xlsx-js-style";
+import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 
 /* ── types ── */
 interface ClientRow {
@@ -126,6 +127,7 @@ export default function Facturacion() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [selectedEntityId, setSelectedEntityId] = useState<string>("");
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   
   const [cfdiEditOpen, setCfdiEditOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
@@ -610,7 +612,16 @@ export default function Facturacion() {
                 {pedidosPorFacturar.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/30 transition-colors"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDetailOrderId(p.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDetailOrderId(p.id);
+                      }
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer focus:outline-none focus:bg-muted/40"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -639,7 +650,10 @@ export default function Facturacion() {
                     <Button
                       size="sm"
                       className="gap-1 shrink-0"
-                      onClick={() => facturarPedidoMutation.mutate(p.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        facturarPedidoMutation.mutate(p.id);
+                      }}
                       disabled={facturarPedidoMutation.isPending}
                     >
                       <Stamp className="h-3.5 w-3.5" />
@@ -970,6 +984,12 @@ export default function Facturacion() {
 
         {/* Billing entity management now lives at /admin/empresas */}
       </div>
+
+      <OrderDetailSheet
+        orderId={detailOrderId}
+        open={!!detailOrderId}
+        onOpenChange={(o) => { if (!o) setDetailOrderId(null); }}
+      />
     </div>
   );
 }
