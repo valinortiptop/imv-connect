@@ -666,8 +666,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Buscar cliente..." />
+                        <Command filter={substringFilter}>
+                          <CommandInput placeholder="Buscar cliente..." value={clientSearch} onValueChange={setClientSearch} />
                           <CommandList>
                             <CommandEmpty>Sin resultados.</CommandEmpty>
                             <CommandGroup>
@@ -679,7 +679,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                 >
                                   <span className="inline-flex items-center gap-2">
                                     <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
-                                    <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
+                                    <span>
+                                      <HighlightMatch text={c.name} query={clientSearch} />
+                                      {c.company ? <> — <HighlightMatch text={c.company} query={clientSearch} /></> : null}
+                                    </span>
                                   </span>
                                 </CommandItem>
                               ))}
