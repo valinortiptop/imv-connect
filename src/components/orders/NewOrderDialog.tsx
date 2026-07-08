@@ -296,6 +296,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       setPickerMode("normal");
       setAppliedPriceList(null);
       setStops([]);
+      setAllowNoAddress(false);
+      setQuickAddress("");
       setCreatedOrderId(null);
       setSignedUrl(null);
       setUploading(null);
