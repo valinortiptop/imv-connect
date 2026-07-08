@@ -591,11 +591,11 @@ export default function Clients() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("price_lists")
-        .select("id, name")
+        .select("id, name, default_for_client_type")
         .eq("active", true)
         .order("name") as any;
       if (error) throw error;
-      return (data ?? []) as { id: string; name: string }[];
+      return (data ?? []) as { id: string; name: string; default_for_client_type: "mayoreo" | "menudeo" | null }[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -800,6 +800,20 @@ export default function Clients() {
     }
     setSaving(true);
     try {
+      // Auto-resolve default price list for this client_type when the
+      // user did not manually pick one — matches whichever list is marked
+      // `default_for_client_type` in price_lists.
+      let resolvedPriceListId = form.price_list_id;
+      if (!resolvedPriceListId) {
+        const { data: defList } = await (supabase as any)
+          .from("price_lists")
+          .select("id")
+          .eq("default_for_client_type", form.client_type)
+          .eq("active", true)
+          .maybeSingle();
+        if (defList?.id) resolvedPriceListId = defList.id;
+      }
+
       const payload = {
         name: form.name.trim(),
         company: form.company.trim() || null,
@@ -813,7 +827,7 @@ export default function Clients() {
         nombre_cfdi: form.nombre_cfdi.trim() || null,
         payment_method: form.payment_method.trim() || "Transferencia",
         active: form.active,
-        price_list_id: form.price_list_id,
+        price_list_id: resolvedPriceListId,
         client_type: form.client_type,
         // Delivery reception window — empty inputs → NULL, which the
         // app reads as "no capturado" + renders the dashed warning chip.
@@ -1729,13 +1743,22 @@ export default function Clients() {
                   onChange={e => updateField("price_list_id", e.target.value || null)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  <option value="">Mayoreo (predeterminada)</option>
+                  <option value="">
+                    {(() => {
+                      const def = priceLists.find(pl => pl.default_for_client_type === form.client_type);
+                      return def
+                        ? `Auto: ${def.name} (predeterminada ${form.client_type})`
+                        : `Auto: ${form.client_type} (predeterminada)`;
+                    })()}
+                  </option>
                   {priceLists.map((pl) => (
-                    <option key={pl.id} value={pl.id}>{pl.name}</option>
+                    <option key={pl.id} value={pl.id}>
+                      {pl.name}{pl.default_for_client_type ? ` — default ${pl.default_for_client_type}` : ""}
+                    </option>
                   ))}
                 </select>
                 <p className="text-[11px] text-muted-foreground">
-                  Aplicada automáticamente al crear un pedido para este cliente. Editable por pedido.
+                  Si dejas "Auto", el sistema usa la lista marcada como predeterminada para clientes de tipo {form.client_type}.
                 </p>
               </div>
 

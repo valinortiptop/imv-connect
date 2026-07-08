@@ -127,6 +127,7 @@ interface PriceList {
   description: string | null;
   active: boolean;
   markup_pct: number | null;
+  default_for_client_type: "mayoreo" | "menudeo" | null;
 }
 
 interface PriceListItem {
@@ -157,6 +158,7 @@ export default function PriceLists() {
   const [showNewList, setShowNewList] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newDefaultType, setNewDefaultType] = useState<"mayoreo" | "menudeo" | null>(null);
   const [creating, setCreating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [parsedRows, setParsedRows] = useState<{ clave: string; price: number; name?: string; matched?: boolean; productId?: string }[]>([]);
@@ -237,6 +239,7 @@ export default function PriceLists() {
   const resetDialog = () => {
     setShowNewList(false);
     setNewName("");
+    setNewDefaultType(null);
     setParsedRows([]);
     setFileName("");
     setDragOver(false);
@@ -254,6 +257,7 @@ export default function PriceLists() {
       const { data, error } = await supabase.from("price_lists").insert({
         name: newName.trim(),
         description: `Importado desde ${fileName}`,
+        default_for_client_type: newDefaultType,
       } as any).select("id").single();
       if (error) throw error;
 
@@ -390,6 +394,32 @@ export default function PriceLists() {
     }
   };
 
+  const setListDefaultType = async (listId: string, value: "mayoreo" | "menudeo" | null) => {
+    try {
+      if (value) {
+        // Clear any other list currently holding this default
+        await (supabase as any)
+          .from("price_lists")
+          .update({ default_for_client_type: null })
+          .eq("default_for_client_type", value)
+          .neq("id", listId);
+      }
+      const { error } = await (supabase as any)
+        .from("price_lists")
+        .update({ default_for_client_type: value })
+        .eq("id", listId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["price-lists"] });
+      toast({
+        title: value
+          ? (lang === "es" ? `Lista predeterminada para ${value}` : `Default list for ${value}`)
+          : (lang === "es" ? "Predeterminado removido" : "Default removed"),
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message });
+    }
+  };
+
   // Group by brand and filter
   const filtered = items.filter((item) => {
     if (!search) return true;
@@ -453,13 +483,25 @@ export default function PriceLists() {
           <button
             key={pl.id}
             onClick={() => { setViewMode("tier"); setActivePL(pl.id); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
               viewMode === "tier" && pl.id === plId
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted hover:bg-muted/80 text-foreground"
             }`}
           >
             {pl.name}
+            {pl.default_for_client_type && (
+              <span
+                className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                  viewMode === "tier" && pl.id === plId
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                }`}
+                title={lang === "es" ? `Predeterminada para clientes de ${pl.default_for_client_type}` : `Default for ${pl.default_for_client_type} clients`}
+              >
+                {pl.default_for_client_type}
+              </span>
+            )}
           </button>
         ))}
         <button
@@ -525,6 +567,37 @@ export default function PriceLists() {
               onChange={(e) => setNewName(e.target.value)}
               className="text-base h-11"
             />
+
+            {/* Default client type */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                {lang === "es" ? "Predeterminada para:" : "Default for:"}
+              </span>
+              <div className="inline-flex rounded-md border bg-muted p-0.5">
+                {([
+                  { v: null, label: lang === "es" ? "Ninguno" : "None" },
+                  { v: "mayoreo" as const, label: "Mayoreo" },
+                  { v: "menudeo" as const, label: "Menudeo" },
+                ]).map((opt) => (
+                  <button
+                    key={String(opt.v)}
+                    type="button"
+                    onClick={() => setNewDefaultType(opt.v)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded transition ${
+                      newDefaultType === opt.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {lang === "es"
+                  ? "Se asignará automáticamente a nuevos clientes de ese tipo."
+                  : "Auto-assigned to new clients of that type."}
+              </p>
+            </div>
+
 
             {/* Drop zone */}
             {parsedRows.length === 0 ? (
@@ -642,11 +715,36 @@ export default function PriceLists() {
         <>
           {/* Description + search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{currentPL.description}</span>
               <Badge variant="secondary" className="text-xs">
                 {filtered.length} SKUs
               </Badge>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  {lang === "es" ? "Predeterminada para:" : "Default for:"}
+                </span>
+                <div className="inline-flex rounded-md border bg-muted p-0.5">
+                  {(["mayoreo", "menudeo"] as const).map((opt) => {
+                    const isActive = currentPL.default_for_client_type === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setListDefaultType(currentPL.id, isActive ? null : opt)}
+                        className={`px-2.5 py-1 text-xs font-semibold rounded transition capitalize ${
+                          isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        title={isActive
+                          ? (lang === "es" ? "Quitar predeterminado" : "Remove default")
+                          : (lang === "es" ? `Marcar como predeterminada para ${opt}` : `Set as default for ${opt}`)}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative w-full sm:w-64">
