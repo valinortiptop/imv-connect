@@ -32,6 +32,38 @@ const emptyToNull = (v: string | undefined) => {
   return v.trim();
 };
 
+/** Case-insensitive strict substring filter for cmdk <Command />.
+ *  Prevents fuzzy matches like "marisol" -> "MARICELA". */
+const substringFilter = (value: string, search: string) => {
+  if (!search) return 1;
+  return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+};
+
+/** Highlights every case-insensitive occurrence of `query` inside `text`. */
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const needle = q.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let i = 0;
+  let idx = lower.indexOf(needle, i);
+  let key = 0;
+  while (idx !== -1) {
+    if (idx > i) parts.push(<span key={key++}>{text.slice(i, idx)}</span>);
+    parts.push(
+      <mark key={key++} className="bg-primary/25 text-foreground rounded-sm px-0.5">
+        {text.slice(idx, idx + needle.length)}
+      </mark>
+    );
+    i = idx + needle.length;
+    idx = lower.indexOf(needle, i);
+  }
+  if (i < text.length) parts.push(<span key={key++}>{text.slice(i)}</span>);
+  return <>{parts}</>;
+}
+
 const schema = z.object({
   client_name: z.string().trim().min(1, "Requerido").max(200),
   phone: z.string().optional(),
@@ -87,6 +119,11 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [lines, setLines] = useState<OrderLine[]>([]);
   const [pickerMode, setPickerMode] = useState<"normal" | "damaged">("normal");
+  // Search strings for the three combobox pickers (client, damaged lot,
+  // normal product) — controlled so we can highlight matches in items.
+  const [clientSearch, setClientSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [damagedSearch, setDamagedSearch] = useState("");
   // Multi-stop delivery state. Default = single stop seeded by the
   // chosen client's address (see seeding effect after client load).
   // Stop allocation is keyed by product_id (lines have stable ids only
@@ -629,8 +666,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Buscar cliente..." />
+                        <Command filter={substringFilter}>
+                          <CommandInput placeholder="Buscar cliente..." value={clientSearch} onValueChange={setClientSearch} />
                           <CommandList>
                             <CommandEmpty>Sin resultados.</CommandEmpty>
                             <CommandGroup>
@@ -642,7 +679,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                 >
                                   <span className="inline-flex items-center gap-2">
                                     <ClientTypeBadge type={(c as any).client_type ?? "mayoreo"} />
-                                    <span>{c.name}{c.company ? ` — ${c.company}` : ""}</span>
+                                    <span>
+                                      <HighlightMatch text={c.name} query={clientSearch} />
+                                      {c.company ? <> — <HighlightMatch text={c.company} query={clientSearch} /></> : null}
+                                    </span>
                                   </span>
                                 </CommandItem>
                               ))}
@@ -812,8 +852,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar lote..." />
+                      <Command filter={substringFilter}>
+                        <CommandInput placeholder="Buscar lote..." value={damagedSearch} onValueChange={setDamagedSearch} />
                         <CommandList>
                           <CommandEmpty>Sin resultados.</CommandEmpty>
                           <CommandGroup>
@@ -828,8 +868,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
                                     {b.condition}
                                   </span>
-                                  <span className="font-mono text-xs">{b.clave}</span>
-                                  <span>{b.name}</span>
+                                  <span className="font-mono text-xs"><HighlightMatch text={b.clave} query={damagedSearch} /></span>
+                                  <span><HighlightMatch text={b.name} query={damagedSearch} /></span>
                                   <span className="text-xs text-muted-foreground">
                                     · {b.remaining_quantity} disp. · {fmtMXN(b.unit_price)}
                                   </span>
@@ -856,8 +896,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar producto por clave o nombre..." />
+                      <Command filter={substringFilter}>
+                        <CommandInput placeholder="Buscar producto por clave o nombre..." value={productSearch} onValueChange={setProductSearch} />
                         <CommandList>
                           <CommandEmpty>Sin resultados.</CommandEmpty>
                           <CommandGroup>
@@ -869,8 +909,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                               >
                                 <span className="inline-flex items-center gap-2">
                                   <ProductThumb src={p.image_url} size="xs" />
-                                  <span className="font-mono text-xs">{p.clave}</span>
-                                  <span>{p.name}</span>
+                                  <span className="font-mono text-xs"><HighlightMatch text={p.clave} query={productSearch} /></span>
+                                  <span><HighlightMatch text={p.name} query={productSearch} /></span>
                                   {promoProductIds.has(p.id) && (
                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
                                   )}
