@@ -432,12 +432,16 @@ export default function Orders() {
   };
 
   const handlePreviewSignature = async (orderId: string) => {
+    console.log("[pedidos] Eye click (async fallback)", orderId);
     const url = await getSignatureUrl(orderId);
+    console.log("[pedidos] Eye url =", url);
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCopySignatureLink = async (orderId: string) => {
+    console.log("[pedidos] Copy click (async fallback)", orderId);
     const url = await getSignatureUrl(orderId);
+    console.log("[pedidos] Copy url =", url);
     if (!url) return;
     copyTextSync(url);
   };
@@ -1213,7 +1217,7 @@ export default function Orders() {
                       })()}
                       <button
                         className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
-                        onClick={() => o.id && exportOrderAsImage(o.id)}
+                        onClick={() => { console.log("[pedidos] Download click", o.id); o.id && exportOrderAsImage(o.id); }}
                         title={o.id && signedOrderIds.has(o.id) ? "Descargar comprobante firmado" : "Descargar PDF"}
                       >
                         <Download className="h-4 w-4" />
