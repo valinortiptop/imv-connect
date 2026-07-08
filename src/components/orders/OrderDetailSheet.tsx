@@ -314,7 +314,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => { onOpenChange(false); navigate({ to: "/admin/facturas/$id", params: { id: existingFactura.id } }); }}
+                        onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" /> Ver detalle de factura
                       </DropdownMenuItem>
