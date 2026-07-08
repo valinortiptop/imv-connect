@@ -854,7 +854,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
               {pickerMode === "damaged" ? (
                 availableDamaged.length > 0 ? (
-                  <Popover>
+                  <Popover open={damagedPickerOpen} onOpenChange={setDamagedPickerOpen}>
                     <PopoverTrigger asChild>
                       <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal border-orange-500/40">
                         <span className="text-muted-foreground">Seleccionar lote dañado...</span>
