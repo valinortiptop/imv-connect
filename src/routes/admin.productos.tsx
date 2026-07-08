@@ -1839,13 +1839,39 @@ type ImportRow = {
   proveedor: string;
   peso_kg: number | null;
   precio_lista: number | null;
-  laboratorio_nombre: string; // resolved lab name (existing or new); empty = unresolved
-  laboratorio_id: string | null; // matched existing id (if any)
+  sat_clave: string | null;
+  iva_pct: number | null;
+  ieps_pct: number | null;
+  laboratorio_nombre: string;
+  laboratorio_id: string | null;
   status: "new" | "update" | "unchanged" | "error";
-  existing_id?: string | null; // id of matched existing product (for updates)
-  diff_fields?: string[]; // list of changed field labels
+  existing_id?: string | null;
+  diff_fields?: string[];
   errorMsg?: string;
 };
+
+// Parse a NetSuite / SuiteTax tax code label like:
+//   "ITEM IVA 0%", "ITEM IVA 16%", "ITEM IEPS 6% IVA 0%", "ITEM IEPS 6% IVA 16%"
+function parseTaxCode(raw: string): { iva_pct: number; ieps_pct: number } | null {
+  if (!raw) return null;
+  const s = String(raw).toUpperCase();
+  const ivaMatch = s.match(/IVA\s*(\d+(?:\.\d+)?)\s*%/);
+  const iepsMatch = s.match(/IEPS\s*(\d+(?:\.\d+)?)\s*%/);
+  if (!ivaMatch && !iepsMatch) return null;
+  return {
+    iva_pct: ivaMatch ? Number(ivaMatch[1]) : 0,
+    ieps_pct: iepsMatch ? Number(iepsMatch[1]) : 0,
+  };
+}
+
+// Extract the leading numeric SAT code from strings like "42121600 - Productos veterinarios".
+function parseSatClave(raw: string): string | null {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const m = trimmed.match(/^(\d{6,10})/);
+  return m ? m[1] : trimmed;
+}
 
 function ImportExcelDialog({
   onClose,
