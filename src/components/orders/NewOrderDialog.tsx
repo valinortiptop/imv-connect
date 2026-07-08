@@ -242,6 +242,24 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     staleTime: 2 * 60 * 1000,
   });
 
+  // Live stock (existencias en inventario) keyed by product_id — shown as
+  // a small badge next to each selected line so the person creating the
+  // pedido can see how many bultos hay disponibles antes de confirmar.
+  const { data: stockByProduct = {} } = useQuery<Record<string, number>>({
+    queryKey: ["products-stock-for-order"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("v_products_with_stock")
+        .select("id, stock_actual");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const r of data ?? []) map[r.id] = Number(r.stock_actual) || 0;
+      return map;
+    },
+    staleTime: 30 * 1000,
+  });
+
+
   const { data: damagedBatches = [] } = useQuery<DamagedOption[]>({
     queryKey: ["damaged-available-for-order"],
     queryFn: async () => {
@@ -1049,6 +1067,26 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                           <span className="font-mono text-xs text-primary">{line.clave}</span>
                           <span className="truncate">{line.name}</span>
+                          {!line.is_damaged && line.product_id && (() => {
+                            const s = stockByProduct[line.product_id];
+                            if (s === undefined) return null;
+                            const tone = s <= 0
+                              ? "bg-red-500/15 text-red-600 border-red-500/30"
+                              : s < (Number(line.quantity) || 0)
+                                ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+                            return (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap",
+                                  tone,
+                                )}
+                                title="Existencias en inventario"
+                              >
+                                Inv: {s}
+                              </span>
+                            );
+                          })()}
                           {line.is_damaged && (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30 capitalize">
                               <AlertOctagon className="h-2.5 w-2.5" />
