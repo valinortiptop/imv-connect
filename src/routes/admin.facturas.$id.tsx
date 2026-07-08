@@ -10,6 +10,7 @@ import {
   downloadInvoiceFn,
   sendInvoiceEmailFn,
 } from "@/lib/facturapi.functions";
+import { downloadLocalInvoicePdf, downloadLocalInvoiceXml } from "@/lib/local-invoice-downloads";
 
 export const Route = createFileRoute("/admin/facturas/$id")({
   component: FacturaDetalle,
@@ -75,15 +76,50 @@ function FacturaDetalle() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["factura", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: factura, error } = await supabase
         .from("facturas")
         .select(
-          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, facturapi_id, uuid_fiscal, serie, pdf_url, xml_url, cfdi_status, cliente:clientes(id, razon_social, nombre_comercial, rfc, email), representante:representantes(nombre), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe), pagos(id, fecha, monto, metodo, referencia, notas)",
+          "id, folio, fecha_emision, fecha_vencimiento, subtotal, iva, total, pagado, saldo, estado, notas, pedido_id, facturapi_id, uuid_fiscal, serie, pdf_url, xml_url, cfdi_status, cliente_id, representante_id",
         )
         .eq("id", id)
         .single();
       if (error) throw error;
-      return data as unknown as Factura;
+
+      const [clienteRes, representanteRes, itemsRes, pagosRes] = await Promise.all([
+        supabase
+          .from("clientes")
+          .select("id, razon_social, nombre_comercial, rfc, email")
+          .eq("id", (factura as any).cliente_id)
+          .maybeSingle(),
+        (factura as any).representante_id
+          ? supabase
+              .from("representantes")
+              .select("nombre")
+              .eq("id", (factura as any).representante_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        supabase
+          .from("factura_items")
+          .select("id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, importe")
+          .eq("factura_id", id),
+        supabase
+          .from("pagos")
+          .select("id, fecha, monto, metodo, referencia, notas")
+          .eq("factura_id", id),
+      ]);
+
+      if (clienteRes.error) throw clienteRes.error;
+      if (representanteRes.error) throw representanteRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+      if (pagosRes.error) throw pagosRes.error;
+
+      return {
+        ...(factura as any),
+        cliente: clienteRes.data,
+        representante: representanteRes.data,
+        factura_items: itemsRes.data ?? [],
+        pagos: pagosRes.data ?? [],
+      } as Factura;
     },
   });
 
@@ -176,7 +212,14 @@ function FacturaDetalle() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error((e as Error).message);
+      try {
+        if (format === "pdf") await downloadLocalInvoicePdf(id);
+        else if (format === "xml") await downloadLocalInvoiceXml(id);
+        else throw e;
+        toast.success("Documento interno descargado");
+      } catch (fallbackError) {
+        toast.error((fallbackError as Error).message || (e as Error).message);
+      }
     }
   };
 
