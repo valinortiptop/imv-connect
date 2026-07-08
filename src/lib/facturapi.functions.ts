@@ -102,11 +102,13 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
           { type: "IVA", rate: ivaRate },
         ];
         if (iepsRate > 0) taxes.unshift({ type: "IEPS", rate: iepsRate });
+        const satClave = (it as any).producto?.sat_clave;
+        const productKey = (typeof satClave === "string" && satClave.trim()) ? satClave.trim() : "01010101";
         return {
           quantity: Number(it.cantidad),
           product: {
             description: it.nombre_snapshot,
-            product_key: "01010101", // default genérico SAT — override desde producto en fase posterior
+            product_key: productKey, // ClaveProdServ SAT desde productos.sat_clave (fallback 01010101 genérico)
             price: Number(it.precio_unitario),
             sku: it.sku_snapshot || undefined,
             unit_name: it.unidad_snapshot || "Pieza",
