@@ -226,9 +226,24 @@ function CuentasPage() {
             <Button onClick={() => setEditing({ naturaleza: "deudora", nivel: 3, permite_movimientos: true, activa: true, moneda: "MXN" })}>
               <Plus className="h-4 w-4 mr-1" /> Nueva cuenta
             </Button>
-            {cuentas.length === 0 && (
-              <Button variant="outline" onClick={() => seed.mutate()} disabled={seed.isPending}>
-                {seed.isPending ? "Cargando…" : "Cargar catálogo SAT"}
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Importar CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (cuentas.length > 0 && !confirm("Ya existe un catálogo. ¿Cargar el catálogo SAT junto al actual? Se conservarán las cuentas propias con código distinto."))
+                  return;
+                seed.mutate();
+              }}
+              disabled={seed.isPending}
+            >
+              <Landmark className="h-4 w-4 mr-1" />
+              {seed.isPending ? "Cargando…" : "Cargar catálogo SAT"}
+            </Button>
+            {cuentas.length > 0 && (
+              <Button variant="ghost" onClick={exportCsv}>
+                <Download className="h-4 w-4 mr-1" /> Exportar
               </Button>
             )}
           </div>
