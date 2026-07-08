@@ -539,19 +539,19 @@ export default function Kardex() {
                         })}
                       </td>
                       <td className="py-2 px-3 font-mono text-xs whitespace-nowrap">
-                        {m.warehouse_slots?.code ?? "—"}
+                        {m.slot_code ?? "—"}
                       </td>
                       <td className="py-2 px-3">
                         <ProductThumb
-                          src={m.products?.image_url ?? null}
+                          src={m.product_image_url ?? null}
                           size="sm"
                         />
                       </td>
                       <td className="py-2 px-3 font-mono text-xs text-primary whitespace-nowrap">
-                        {m.products?.clave ?? "—"}
+                        {m.product_clave ?? "—"}
                       </td>
                       <td className="py-2 px-3 truncate max-w-[260px]">
-                        {m.products?.name ?? m.description ?? "—"}
+                        {m.product_name ?? m.description ?? "—"}
                       </td>
                       <td className="py-2 px-3 font-mono text-xs whitespace-nowrap">
                         {m.lote ?? "—"}
