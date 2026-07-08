@@ -1449,3 +1449,136 @@ function CreateUserDialog({
     </Dialog>
   );
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Edit user dialog — admin can change email, name, password
+   ═══════════════════════════════════════════════════════════ */
+function EditUserDialog({
+  user,
+  lang,
+  open,
+  onClose,
+}: {
+  user: UserRow;
+  lang: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [email, setEmail] = useState(user.email || "");
+  const [fullName, setFullName] = useState(user.name || "");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setEmail(user.email || "");
+      setFullName(user.name || "");
+      setPassword("");
+    }
+  }, [open, user.email, user.name]);
+
+  const generatePassword = () => {
+    const chars =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let out = "";
+    for (let i = 0; i < 14; i++) {
+      out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    setPassword(out);
+  };
+
+  const submit = async () => {
+    if (password && password.length < 6) {
+      toast.error(
+        lang === "es"
+          ? "La contraseña debe tener al menos 6 caracteres"
+          : "Password must be at least 6 characters",
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const payload: any = { user_id: user.user_id };
+      const trimmedEmail = email.trim();
+      if (trimmedEmail && trimmedEmail !== (user.email || "")) {
+        payload.email = trimmedEmail;
+      }
+      const trimmedName = fullName.trim();
+      if (trimmedName !== (user.name || "")) {
+        payload.full_name = trimmedName;
+      }
+      if (password) payload.password = password;
+
+      await updateUserFn({ data: payload });
+      toast.success(lang === "es" ? "Usuario actualizado" : "User updated");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? String(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {lang === "es" ? "Editar usuario" : "Edit user"}
+          </DialogTitle>
+          <DialogDescription>
+            {lang === "es"
+              ? "Actualiza el nombre, email o contraseña del usuario."
+              : "Update the user's name, email, or password."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>{lang === "es" ? "Nombre" : "Full name"}</Label>
+            <Input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>
+              {lang === "es" ? "Nueva contraseña" : "New password"}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={
+                  lang === "es"
+                    ? "Dejar vacío para no cambiar"
+                    : "Leave empty to keep current"
+                }
+              />
+              <Button type="button" variant="outline" onClick={generatePassword}>
+                {lang === "es" ? "Generar" : "Generate"}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>
+            {lang === "es" ? "Cancelar" : "Cancel"}
+          </Button>
+          <Button onClick={submit} disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {lang === "es" ? "Guardar" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
