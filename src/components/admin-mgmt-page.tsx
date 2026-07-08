@@ -617,6 +617,7 @@ function UserMobileCard({
 }) {
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const accessLabel = u.approved
     ? lang === "es" ? "Aprobado" : "Approved"
