@@ -773,42 +773,43 @@ function buildPolizasXml(
   return lines.join("\n");
 }
 
-function buildDiotTxt(rows: any[]): string {
-  // Aggregated by tasa — DIOT proper needs per-proveedor RFC rows.
-  // Formato pipe: TipoTercero|TipoOperacion|RFC|IdFiscal|Nombre|Pais|Nacionalidad|IVA16|IVA16NoAcred|IVA8|IVA8NoAcred|IVA0|Exentos|Retenciones|...
-  // Emitimos una fila resumen por tasa marcada como "05" (Global) — el usuario debe complementar con RFC por proveedor.
-  const iva16 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 16)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva8 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 8)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva0 = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 0)
-    .reduce((s, r) => s + Number(r.base), 0);
-  const iva16Monto = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 16)
-    .reduce((s, r) => s + Number(r.monto), 0);
-  const iva8Monto = rows.filter((r) => r.tipo === "iva_acreditable" && Number(r.tasa) === 8)
-    .reduce((s, r) => s + Number(r.monto), 0);
-
-  // Row layout (DIOT 2024 pipe):
-  // 04 = Proveedor global, 85 = Otros
-  const line = [
-    "04",             // Tipo de tercero (proveedor nacional)
-    "85",             // Tipo de operación (otros)
-    "",               // RFC proveedor (a completar por usuario)
-    "",               // Número Id fiscal (extranjero)
-    "PROVEEDOR GLOBAL",
-    "",               // País
-    "",               // Nacionalidad
-    Math.round(iva16).toString(),          // Valor actos 15/16% IVA acreditable
-    "0",                                    // Actos 15/16% no acreditable
-    Math.round(iva8).toString(),           // Actos 8/11% IVA fronteriza
-    "0",
-    Math.round(iva0).toString(),           // Actos tasa 0
-    "0",                                    // Actos exentos
-    "0",                                    // Importación 15/16%
-    "0", "0", "0", "0", "0", "0",
-    Math.round(iva16Monto + iva8Monto).toString(), // IVA retenido
-    "0",
-  ].join("|");
-
-  return line + "\r\n";
+// DIOT 2024 — layout pipe (26 campos) por proveedor.
+// Ref: Anexo A DEM-DIOT (SAT). Bases en pesos redondeadas; IVA retenido en pesos.
+function diotLine(p: {
+  tipoTercero: string; tipoOperacion: string;
+  rfc: string; idFiscal: string; nombre: string; pais: string; nacionalidad: string;
+  base16: number; base8: number; base0: number; retIva: number;
+}): string {
+  const r = (n: number) => Math.round(n || 0).toString();
+  const clean = (s: string) => (s ?? "").replace(/[|\r\n]/g, " ").trim();
+  const cols = [
+    p.tipoTercero,                    // 1  Tipo tercero (04/05/15)
+    p.tipoOperacion,                  // 2  Tipo operación (03/06/85)
+    clean(p.rfc),                     // 3  RFC proveedor nacional
+    clean(p.idFiscal),                // 4  Núm. Id fiscal (extranjero)
+    clean(p.nombre),                  // 5  Nombre extranjero
+    clean(p.pais),                    // 6  País
+    clean(p.nacionalidad),            // 7  Nacionalidad
+    r(p.base16),                      // 8  Actos 15/16% IVA acreditable
+    "0",                              // 9  Actos 15/16% importación bienes/servicios
+    "0",                              // 10 Actos 15/16% importación intangibles
+    "0",                              // 11 Actos 15/16% NO acreditable
+    "0",                              // 12 Actos 15/16% importación NO acreditable
+    r(p.base8),                       // 13 Actos 8/11% IVA acreditable (frontera)
+    "0",                              // 14 Actos 8/11% NO acreditable
+    r(p.base0),                       // 15 Actos tasa 0%
+    "0",                              // 16 Actos exentos
+    "0",                              // 17 Importación tasa 0% / exentos
+    r(p.retIva),                      // 18 IVA retenido por el contribuyente
+    "0",                              // 19 IVA devoluciones/descuentos/bonificaciones
+    "0",                              // 20 (reservado)
+    "0",                              // 21 (reservado)
+    "0",                              // 22 (reservado)
+    "0",                              // 23 (reservado)
+    "0",                              // 24 (reservado)
+    "0",                              // 25 (reservado)
+    "0",                              // 26 (reservado)
+  ];
+  return cols.join("|");
 }
+
