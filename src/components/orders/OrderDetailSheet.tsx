@@ -264,6 +264,29 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
             </DialogTitle>
             {order && (
               <div className="flex items-center gap-2 mr-6">
+                {existingFactura ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
+                    onClick={() => { onOpenChange(false); navigate(`/admin/facturas/${existingFactura.id}`); }}
+                    title={`Factura ${existingFactura.folio}`}
+                  >
+                    <Receipt className="h-4 w-4" />
+                    Factura {existingFactura.folio}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5"
+                    onClick={handleFacturar}
+                    disabled={invoicing || (order?.status ?? "").toLowerCase() === "cancelado"}
+                  >
+                    {invoicing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
+                    Facturar
+                  </Button>
+                )}
                 {onEdit && (
                   <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onEdit(orderId!)}>
                     <Pencil className="h-4 w-4" />
