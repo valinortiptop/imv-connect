@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { useBuildVersionCheck } from "../hooks/use-build-version-check";
+import { AuthProvider } from "../hooks/use-auth";
 
 function NotFoundComponent() {
   return (
@@ -118,7 +119,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
