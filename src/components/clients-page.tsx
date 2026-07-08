@@ -1743,13 +1743,22 @@ export default function Clients() {
                   onChange={e => updateField("price_list_id", e.target.value || null)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  <option value="">Mayoreo (predeterminada)</option>
+                  <option value="">
+                    {(() => {
+                      const def = priceLists.find(pl => pl.default_for_client_type === form.client_type);
+                      return def
+                        ? `Auto: ${def.name} (predeterminada ${form.client_type})`
+                        : `Auto: ${form.client_type} (predeterminada)`;
+                    })()}
+                  </option>
                   {priceLists.map((pl) => (
-                    <option key={pl.id} value={pl.id}>{pl.name}</option>
+                    <option key={pl.id} value={pl.id}>
+                      {pl.name}{pl.default_for_client_type ? ` — default ${pl.default_for_client_type}` : ""}
+                    </option>
                   ))}
                 </select>
                 <p className="text-[11px] text-muted-foreground">
-                  Aplicada automáticamente al crear un pedido para este cliente. Editable por pedido.
+                  Si dejas "Auto", el sistema usa la lista marcada como predeterminada para clientes de tipo {form.client_type}.
                 </p>
               </div>
 
