@@ -304,6 +304,15 @@ function CuentasPage() {
               saving={save.isPending}
             />
           )}
+
+          {importOpen && (
+            <ImportCsvDialog
+              onClose={() => setImportOpen(false)}
+              hasExisting={cuentas.length > 0}
+              onImport={(rows, replace) => importCsv.mutate({ rows, replace }, { onSuccess: () => setImportOpen(false) })}
+              importing={importCsv.isPending}
+            />
+          )}
         </>
       )}
     </section>
