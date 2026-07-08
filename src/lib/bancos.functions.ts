@@ -173,7 +173,12 @@ async function parsePdfWithAI(bytes: Uint8Array): Promise<{
   saldo_final?: number;
   transacciones: RawTxn[];
 }> {
-  const b64 = btoa(String.fromCharCode(...bytes));
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const b64 = btoa(bin);
   const res = await geminiGenerateInline({
     model: "gemini-2.5-flash",
     parts: [
