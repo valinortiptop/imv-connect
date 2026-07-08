@@ -222,6 +222,14 @@ function ProductosPage() {
       if (lineaFilter !== "all" && p.linea !== lineaFilter) return false;
       if (grupoFilter !== "all" && p.grupo !== grupoFilter) return false;
       if (tipoFilter !== "all" && p.tipo_producto !== tipoFilter) return false;
+      if (taxFilter !== "all") {
+        const iva = Number(p.iva_pct ?? 0);
+        const ieps = Number(p.ieps_pct ?? 0);
+        if (taxFilter === "normal" && !(iva === 16 && ieps === 0)) return false;
+        if (taxFilter === "iva0" && !(iva === 0 && ieps === 0)) return false;
+        if (taxFilter === "ieps_iva0" && !(iva === 0 && ieps > 0)) return false;
+        if (taxFilter === "ieps_iva16" && !(iva === 16 && ieps > 0)) return false;
+      }
       if (estadoFilter === "activos" && !p.activo) return false;
       if (estadoFilter === "inactivos" && p.activo) return false;
       if (estadoFilter === "comprometidos" && (p.stock_comprometido ?? 0) <= 0)
@@ -229,7 +237,7 @@ function ProductosPage() {
       if (estadoFilter === "promo" && !p.promo) return false;
       return true;
     });
-  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, estadoFilter]);
+  }, [productos, search, proveedorFilter, marcaFilter, lineaFilter, grupoFilter, tipoFilter, taxFilter, estadoFilter]);
 
   // KPIs
   const kpis = useMemo(() => {
