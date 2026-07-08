@@ -87,7 +87,8 @@ function formatPrice(n: number) {
 /* ── PDF generation ────────────────────────────── */
 async function generateCatalogPDF(
   products: Product[],
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  priceListLabel?: string
 ) {
   onProgress?.("Cargando imágenes...");
 
