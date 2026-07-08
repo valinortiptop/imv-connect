@@ -448,8 +448,15 @@ Reglas:
                 <ChevronDown className="h-4 w-4 opacity-60" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-              <div className="p-2 border-b border-border">
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] p-0 flex flex-col max-h-[min(70vh,var(--radix-popover-content-available-height))]"
+              align="start"
+              side="bottom"
+              sideOffset={4}
+              avoidCollisions
+              collisionPadding={16}
+            >
+              <div className="p-2 border-b border-border shrink-0">
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
@@ -477,7 +484,7 @@ Reglas:
                   )}
                 </div>
               </div>
-              <ScrollArea className="max-h-[320px]">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="p-1">
                   {filteredAddable.length === 0 && (
                     <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -510,7 +517,7 @@ Reglas:
                   })}
                 </div>
               </ScrollArea>
-              <div className="flex items-center justify-between p-2 border-t border-border gap-2">
+              <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
                 {addSelection.size > 0 && (
                   <Badge variant="secondary">{addSelection.size} seleccionados</Badge>
                 )}
