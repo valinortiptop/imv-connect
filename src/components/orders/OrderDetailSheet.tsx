@@ -37,6 +37,27 @@ interface OrderDetailSheetProps {
 export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete }: OrderDetailSheetProps) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const downloadFn = useServerFn(downloadInvoiceFn);
+
+  const downloadCfdi = async (facturaId, format) => {
+    try {
+      const res = await downloadFn({ data: { facturaId, format } });
+      const blob = new Blob(
+        [Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0))],
+        { type: res.contentType },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e?.message ?? "La factura no está timbrada.");
+    }
+  };
   const [ajusteDialogOpen, setAjusteDialogOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<any | null>(null);
   const [deletingAdjustment, setDeletingAdjustment] = useState<any | null>(null);
