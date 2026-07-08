@@ -656,19 +656,23 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
       return orderId as string;
     },
     onSuccess: (newId) => {
-      onOpenChange(false);
       if (isQuote) {
         queryClient.invalidateQueries({ queryKey: ["quotes"] });
         toast.success("Cotización creada");
+        onOpenChange(false);
+        onOrderCreated(newId);
       } else {
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["clients-list"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-batches"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-by-product"] });
         queryClient.invalidateQueries({ queryKey: ["damaged-available-for-order"] });
-        toast.success("Pedido creado");
+        // Swap the dialog body to the success banner. The parent is notified
+        // now (list refreshes), but the dialog stays open so the user can
+        // share the pedido summary via email / image / link.
+        setCreatedOrderId(newId);
+        onOrderCreated(newId);
       }
-      onOrderCreated(newId);
     },
     onError: (err: Error) => {
       toast.error(`Error al crear ${isQuote ? "cotización" : "pedido"}: ` + err.message);
