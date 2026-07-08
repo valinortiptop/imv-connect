@@ -210,6 +210,39 @@ export default function Facturacion() {
     refetchInterval: 60_000,
   });
 
+  // Pedidos ya facturados — permitir ver/descargar PDF y XML
+  const { data: pedidosFacturados = [] } = useQuery({
+    queryKey: ["pedidos-facturados"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("facturas")
+        .select("id, folio, serie, uuid_fiscal, pdf_url, xml_url, cfdi_status, estado, total, subtotal, fecha_emision, pedido_id, cliente_id, clientes:cliente_id(nombre_comercial, razon_social, nickname, rfc), pedidos:pedido_id(order_code, folio)")
+        .order("fecha_emision", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []).map((f: any) => ({
+        id: f.id,
+        folio: f.folio,
+        serie: f.serie,
+        uuid_fiscal: f.uuid_fiscal,
+        pdf_url: f.pdf_url as string | null,
+        xml_url: f.xml_url as string | null,
+        cfdi_status: f.cfdi_status as string | null,
+        estado: f.estado as string,
+        total: Number(f.total ?? 0),
+        subtotal: Number(f.subtotal ?? 0),
+        fecha_emision: f.fecha_emision as string | null,
+        pedido_id: f.pedido_id as string | null,
+        cliente: f.clientes?.nombre_comercial || f.clientes?.razon_social || f.clientes?.nickname || "—",
+        rfc: (f.clientes?.rfc ?? null) as string | null,
+        order_code: (f.pedidos?.order_code || f.pedidos?.folio || null) as string | null,
+      }));
+    },
+    refetchInterval: 60_000,
+  });
+
+
+
   const facturarPedidoMutation = useMutation({
     mutationFn: async (pedidoId: string) => {
       const { data, error } = await (supabase as any).rpc("facturar_pedido", { _pedido: pedidoId, _dias_credito: 30 });
