@@ -242,6 +242,24 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     staleTime: 2 * 60 * 1000,
   });
 
+  // Live stock (existencias en inventario) keyed by product_id — shown as
+  // a small badge next to each selected line so the person creating the
+  // pedido can see how many bultos hay disponibles antes de confirmar.
+  const { data: stockByProduct = {} } = useQuery<Record<string, number>>({
+    queryKey: ["products-stock-for-order"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("v_products_with_stock")
+        .select("id, stock_actual");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const r of data ?? []) map[r.id] = Number(r.stock_actual) || 0;
+      return map;
+    },
+    staleTime: 30 * 1000,
+  });
+
+
   const { data: damagedBatches = [] } = useQuery<DamagedOption[]>({
     queryKey: ["damaged-available-for-order"],
     queryFn: async () => {
