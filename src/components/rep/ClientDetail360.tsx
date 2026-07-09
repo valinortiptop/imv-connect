@@ -140,14 +140,16 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
       </div>
 
       <Tabs defaultValue="ia" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-5 md:grid-cols-9">
           <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="pedido">Pedido</TabsTrigger>
           <TabsTrigger value="historial">Hist.</TabsTrigger>
+          <TabsTrigger value="sku">SKU</TabsTrigger>
           <TabsTrigger value="oportunidades">Oport.</TabsTrigger>
           <TabsTrigger value="inventario">Inv.</TabsTrigger>
           <TabsTrigger value="visitas">Visitas</TabsTrigger>
           <TabsTrigger value="labs">Labs</TabsTrigger>
+          <TabsTrigger value="competencia">Comp.</TabsTrigger>
         </TabsList>
 
         {/* Pedido rápido */}
