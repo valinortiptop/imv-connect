@@ -1,26 +1,10 @@
 // @ts-nocheck
-// Multi-client map view — plots every client with lat/lng on an OpenStreetMap
-// canvas using Leaflet. Clicking a marker opens that client's 360 drawer.
-import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+// Multi-client map view — plots clients on Google Maps loaded via Valinor.
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, ExternalLink } from "lucide-react";
-
-// Fix default Leaflet marker assets (Vite breaks the relative URLs).
-const markerIcon = L.divIcon({
-  className: "imv-client-marker",
-  html: `<div style="
-    width: 22px; height: 22px; border-radius: 50%;
-    background: linear-gradient(135deg, #001D77, #2DE2C5);
-    border: 2px solid white;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  "></div>`,
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
+import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 
 type ClientPoint = {
   id: string;
@@ -31,20 +15,6 @@ type ClientPoint = {
   lat: number;
   lng: number;
 };
-
-function FitBounds({ points }: { points: ClientPoint[] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView([points[0].lat, points[0].lng], 14);
-      return;
-    }
-    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
-  }, [points, map]);
-  return null;
-}
 
 export function ClientsMapView({
   clients,
@@ -61,6 +31,11 @@ export function ClientsMapView({
   }>;
   onSelect: (id: string) => void;
 }) {
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+
   const points = useMemo<ClientPoint[]>(
     () =>
       clients
@@ -83,6 +58,69 @@ export function ClientsMapView({
     ? [points[0].lat, points[0].lng]
     : [19.4326, -99.1332];
 
+  useEffect(() => {
+    let cancelled = false;
+    loadGoogleMapsViaValinor()
+      .then((maps) => {
+        if (cancelled || !mapElRef.current) return;
+        if (!mapRef.current) {
+          mapRef.current = new maps.Map(mapElRef.current, {
+            center: { lat: center[0], lng: center[1] },
+            zoom: 11,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            clickableIcons: false,
+            gestureHandling: "greedy",
+          });
+        }
+        setMapStatus("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setMapStatus("error");
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const maps = window.google?.maps;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+
+    markersRef.current.forEach((marker) => marker?.setMap?.(null));
+    markersRef.current = [];
+
+    points.forEach((p) => {
+      const marker = new maps.Marker({
+        map,
+        position: { lat: p.lat, lng: p.lng },
+        title: p.name,
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: "#059669",
+          fillOpacity: 0.95,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+      });
+      marker.addListener("click", () => onSelect(p.id));
+      markersRef.current.push(marker);
+    });
+
+    if (points.length === 0) {
+      map.setCenter({ lat: center[0], lng: center[1] });
+      map.setZoom(6);
+    } else if (points.length === 1) {
+      map.setCenter({ lat: points[0].lat, lng: points[0].lng });
+      map.setZoom(14);
+    } else {
+      const bounds = new maps.LatLngBounds();
+      points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 48);
+    }
+  }, [center, onSelect, points]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -97,58 +135,13 @@ export function ClientsMapView({
         <span className="ml-auto">Click en un marcador para abrir la ficha 360</span>
       </div>
 
-      <div className="h-[70vh] w-full overflow-hidden rounded-lg border border-border">
-        <MapContainer
-          center={center}
-          zoom={6}
-          scrollWheelZoom
-          style={{ width: "100%", height: "100%" }}
-        >
-          <TileLayer
-            attribution='&copy; Google Maps (via Valinor)'
-            url="/api/public/maps/tile/{z}/{x}/{y}"
-          />
-          <FitBounds points={points} />
-          {points.map((p) => (
-            <Marker key={p.id} position={[p.lat, p.lng]} icon={markerIcon}>
-              <Popup>
-                <div className="space-y-1.5 min-w-[180px]">
-                  <div className="font-semibold text-sm">{p.name}</div>
-                  {p.client_type && (
-                    <Badge variant="secondary" className="capitalize text-[10px]">
-                      {p.client_type}
-                    </Badge>
-                  )}
-                  {p.address && (
-                    <div className="text-xs text-muted-foreground">{p.address}</div>
-                  )}
-                  {p.phone && (
-                    <div className="text-xs">📞 {p.phone}</div>
-                  )}
-                  <div className="flex gap-1.5 pt-1">
-                    <Button size="sm" className="h-7 text-xs" onClick={() => onSelect(p.id)}>
-                      Abrir ficha
-                    </Button>
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                    >
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3" /> Maps
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+      <div className="relative h-[70vh] w-full overflow-hidden rounded-lg border border-border bg-muted">
+        <div ref={mapElRef} className="h-full w-full" />
+        {mapStatus !== "ready" && (
+          <div className="absolute inset-0 grid place-items-center bg-muted/80 text-sm text-muted-foreground">
+            {mapStatus === "loading" ? "Cargando Google Maps vía Valinor..." : "No se pudo cargar Google Maps"}
+          </div>
+        )}
       </div>
     </div>
   );
