@@ -1926,10 +1926,14 @@ function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; i
 
     if (
       iva == null &&
-      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax")) &&
-      /EXENTO|IVA\s*0|IVA\s*CERO/i.test(value)
+      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax") || header.includes("item") || header.includes("grupo"))
     ) {
-      iva = 0;
+      if (/EXENTO|IVA\s*0|IVA\s*CERO|TASA\s*0/i.test(value)) {
+        iva = 0;
+      } else if (/\bNORMAL\b|TASA\s*(GENERAL|16)|GENERAL\s*16/i.test(value)) {
+        // NetSuite "ITEM Normal" / "Normal" tax group = 16% IVA (Mexico general rate)
+        iva = 16;
+      }
     }
   }
 
