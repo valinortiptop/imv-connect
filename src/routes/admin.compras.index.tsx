@@ -1,8 +1,11 @@
 // @ts-nocheck
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Package, DollarSign, TrendingDown, Clock, Truck } from "lucide-react";
+import { AlertTriangle, Package, DollarSign, TrendingDown, Clock, Truck, RefreshCw, Check } from "lucide-react";
+import { regenerarAlertasCompras, resolverAlertaCompras } from "@/lib/compras.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/compras/")({
   component: ComprasDashboard,
@@ -11,6 +14,25 @@ export const Route = createFileRoute("/admin/compras/")({
 const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 
 function ComprasDashboard() {
+  const qc = useQueryClient();
+  const regen = useServerFn(regenerarAlertasCompras);
+  const resolver = useServerFn(resolverAlertaCompras);
+
+  const regenMut = useMutation({
+    mutationFn: () => regen({}),
+    onSuccess: (r: any) => {
+      toast.success(`Alertas regeneradas: ${r?.generadas ?? 0}`);
+      qc.invalidateQueries({ queryKey: ["compras-kpis"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error al regenerar alertas"),
+  });
+
+  const resolveMut = useMutation({
+    mutationFn: (id: string) => resolver({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["compras-kpis"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
+
   const { data: kpis } = useQuery({
     queryKey: ["compras-kpis"],
     queryFn: async () => {
@@ -58,9 +80,20 @@ function ComprasDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold uppercase text-muted-foreground">Centro de alertas</h2>
-            <AlertTriangle className="size-4 text-amber-500" />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => regenMut.mutate()}
+                disabled={regenMut.isPending}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                title="Recalcular alertas"
+              >
+                <RefreshCw className={`size-3 ${regenMut.isPending ? "animate-spin" : ""}`} />
+                Recalcular
+              </button>
+              <AlertTriangle className="size-4 text-amber-500" />
+            </div>
           </div>
           <div className="space-y-2">
             {(kpis?.alertas ?? []).length === 0 && (
@@ -73,6 +106,13 @@ function ComprasDashboard() {
                   <p className="truncate text-sm font-medium">{a.titulo}</p>
                   <p className="text-xs text-muted-foreground">{a.tipo}</p>
                 </div>
+                <button
+                  onClick={() => resolveMut.mutate(a.id)}
+                  className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title="Marcar como resuelta"
+                >
+                  <Check className="size-3.5" />
+                </button>
               </div>
             ))}
           </div>
