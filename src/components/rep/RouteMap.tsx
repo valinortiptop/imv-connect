@@ -395,6 +395,19 @@ export default function RouteMap() {
         </div>
       )}
 
+      {aiRationale && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-wide text-primary">Ruta sugerida por IA</div>
+            <p className="mt-1 text-foreground">{aiRationale}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Revisa la selección y pulsa "Optimizar" para trazar el recorrido.
+            </p>
+          </div>
+        </div>
+      )}
+
       {withoutCoords.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
