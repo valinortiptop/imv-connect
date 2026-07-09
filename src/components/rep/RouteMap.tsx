@@ -63,6 +63,7 @@ export default function RouteMap() {
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [aiRationale, setAiRationale] = useState<string | null>(null);
 
 
   const clientsWithCoords = useMemo(
