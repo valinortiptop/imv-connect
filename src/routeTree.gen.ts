@@ -100,6 +100,7 @@ import { Route as AdminContabilidadAgrupadoresRouteImport } from './routes/admin
 import { Route as AdminComprasProveedoresRouteImport } from './routes/admin.compras.proveedores'
 import { Route as AdminComprasPlaneacionRouteImport } from './routes/admin.compras.planeacion'
 import { Route as AdminComprasOrdenesRouteImport } from './routes/admin.compras.ordenes'
+import { Route as AdminComprasCostosRouteImport } from './routes/admin.compras.costos'
 import { Route as AdminComprasCaducidadesRouteImport } from './routes/admin.compras.caducidades'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
@@ -575,6 +576,11 @@ const AdminComprasOrdenesRoute = AdminComprasOrdenesRouteImport.update({
   path: '/ordenes',
   getParentRoute: () => AdminComprasRoute,
 } as any)
+const AdminComprasCostosRoute = AdminComprasCostosRouteImport.update({
+  id: '/costos',
+  path: '/costos',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
 const AdminComprasCaducidadesRoute = AdminComprasCaducidadesRouteImport.update({
   id: '/caducidades',
   path: '/caducidades',
@@ -707,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -807,6 +814,7 @@ export interface FileRoutesByTo {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -912,6 +920,7 @@ export interface FileRoutesById {
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -1018,6 +1027,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
     | '/admin/compras/ordenes'
     | '/admin/compras/planeacion'
     | '/admin/compras/proveedores'
@@ -1118,6 +1128,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
     | '/admin/compras/ordenes'
     | '/admin/compras/planeacion'
     | '/admin/compras/proveedores'
@@ -1222,6 +1233,7 @@ export interface FileRouteTypes {
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
     | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
     | '/admin/compras/ordenes'
     | '/admin/compras/planeacion'
     | '/admin/compras/proveedores'
@@ -1903,6 +1915,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminComprasOrdenesRouteImport
       parentRoute: typeof AdminComprasRoute
     }
+    '/admin/compras/costos': {
+      id: '/admin/compras/costos'
+      path: '/costos'
+      fullPath: '/admin/compras/costos'
+      preLoaderRoute: typeof AdminComprasCostosRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
     '/admin/compras/caducidades': {
       id: '/admin/compras/caducidades'
       path: '/caducidades'
@@ -2010,6 +2029,7 @@ const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
 interface AdminComprasRouteChildren {
   AdminComprasIdRoute: typeof AdminComprasIdRoute
   AdminComprasCaducidadesRoute: typeof AdminComprasCaducidadesRoute
+  AdminComprasCostosRoute: typeof AdminComprasCostosRoute
   AdminComprasOrdenesRoute: typeof AdminComprasOrdenesRoute
   AdminComprasPlaneacionRoute: typeof AdminComprasPlaneacionRoute
   AdminComprasProveedoresRoute: typeof AdminComprasProveedoresRoute
@@ -2019,6 +2039,7 @@ interface AdminComprasRouteChildren {
 const AdminComprasRouteChildren: AdminComprasRouteChildren = {
   AdminComprasIdRoute: AdminComprasIdRoute,
   AdminComprasCaducidadesRoute: AdminComprasCaducidadesRoute,
+  AdminComprasCostosRoute: AdminComprasCostosRoute,
   AdminComprasOrdenesRoute: AdminComprasOrdenesRoute,
   AdminComprasPlaneacionRoute: AdminComprasPlaneacionRoute,
   AdminComprasProveedoresRoute: AdminComprasProveedoresRoute,
