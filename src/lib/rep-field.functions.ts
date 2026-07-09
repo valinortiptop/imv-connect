@@ -122,22 +122,16 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
     if (data.kind === "pedido") {
       const { data: p } = await context.supabase
         .from("pedidos")
-        .select("id, folio, total, subtotal, iva, created_at, cliente_id, delivery_date, notas")
+        .select(
+          "id, folio, total, subtotal, iva, created_at, cliente_id, delivery_date, notas_cliente, notas_internas",
+        )
         .eq("id", data.id)
         .maybeSingle();
       if (!p) throw new Error("Pedido no encontrado");
       const { data: items } = await context.supabase
         .from("pedido_items")
-        .select("cantidad, producto_id, precio_unitario, importe, notas")
+        .select("cantidad, producto_id, precio_unitario, importe, nombre_snapshot, sku_snapshot")
         .eq("pedido_id", data.id);
-      const productIds = (items ?? []).map((i: any) => i.producto_id);
-      const { data: prods } = productIds.length
-        ? await context.supabase
-            .from("productos")
-            .select("id, nombre, sku")
-            .in("id", productIds)
-        : { data: [] as any[] };
-      const byId = new Map((prods ?? []).map((p: any) => [p.id, p]));
       const { data: c } = await context.supabase
         .from("clientes")
         .select("razon_social, nombre_comercial, nickname, telefono")
@@ -145,7 +139,7 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
         .maybeSingle();
 
       return {
-        kind: "pedido",
+        kind: "pedido" as const,
         rep: rep?.nombre ?? "",
         title: `Pedido ${p.folio ?? p.id.slice(0, 8)}`,
         client: {
@@ -154,19 +148,20 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
         },
         date: p.created_at,
         delivery_date: p.delivery_date,
-        notes: p.notas,
+        notes: p.notas_cliente ?? p.notas_internas ?? null,
         subtotal: Number(p.subtotal ?? 0),
         iva: Number(p.iva ?? 0),
         total: Number(p.total ?? 0),
         items: (items ?? []).map((i: any) => ({
-          name: byId.get(i.producto_id)?.nombre ?? i.producto_id,
-          sku: byId.get(i.producto_id)?.sku ?? "",
+          name: i.nombre_snapshot ?? "",
+          sku: i.sku_snapshot ?? "",
           qty: Number(i.cantidad),
           price: Number(i.precio_unitario),
-          amount: Number(i.importe),
+          amount: Number(i.importe ?? Number(i.cantidad) * Number(i.precio_unitario)),
         })),
       };
     }
+
 
     if (data.kind === "cotizacion") {
       const { data: q } = await context.supabase
