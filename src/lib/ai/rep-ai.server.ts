@@ -172,7 +172,7 @@ ${JSON.stringify(snapshot).slice(0, 14000)}
 Responde en texto plano, máx 6 frases, con datos concretos cuando existan.`;
 
   const res = await geminiGenerate({
-    model: "gemini-2.5-flash",
+    model: "gemini-flash-latest",
     contents: [
       { role: "user", parts: [{ text: REP_SYSTEM }] },
       { role: "model", parts: [{ text: "Entendido. Responderé como asistente del panel de reps." }] },

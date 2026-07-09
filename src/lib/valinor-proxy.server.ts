@@ -363,7 +363,7 @@ export async function pingProviders(): Promise<ProviderPing[]> {
       run: () =>
         callValinor({
           provider: "gemini",
-          endpoint: "/v1beta/models/gemini-2.5-flash:generateContent",
+          endpoint: "/v1beta/models/gemini-flash-latest:generateContent",
           payload: { contents: [{ role: "user", parts: [{ text: "ping" }] }] },
         }),
     },

@@ -224,7 +224,7 @@ export const generateRepCoachingFn = createServerFn({ method: "POST" })
     let coachingJson: any = null;
     try {
       const resp = await geminiGenerate({
-        model: "gemini-2.5-flash",
+        model: "gemini-flash-latest",
         contents: [
           {
             role: "user",
