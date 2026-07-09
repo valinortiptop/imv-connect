@@ -35,8 +35,11 @@ const NAV: NavItem[] = [
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
+  { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
+  { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2, desktopOnly: true },
   { to: "/rep/coach", label: "Coach IA", icon: Sparkles, desktopOnly: true },
   { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, desktopOnly: true },
+
 ];
 
 export default function RepLayout({ children }: { children: ReactNode }) {
