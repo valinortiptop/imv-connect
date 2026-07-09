@@ -49,8 +49,9 @@ export default function NotificationBell() {
     };
     load();
 
+    const channelName = `rep-notif-${userId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel(`rep-notif-${userId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
@@ -69,7 +70,7 @@ export default function NotificationBell() {
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [userId]);
 

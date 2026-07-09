@@ -49,7 +49,7 @@ import {
   Loader2, Shield, CheckCircle2, XCircle, SlidersHorizontal, Users2,
   LayoutDashboard, Bot, Calculator, ShoppingCart, Tag, TrendingUp,
   BarChart3, Package, Warehouse, Truck, ClipboardList, Route,
-  BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus,
+  BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus, UserSquare2, Sparkles, Trophy,
 } from "lucide-react";
 import { createUserFn, updateUserFn } from "@/lib/admin-users.functions";
 
@@ -76,13 +76,15 @@ interface UserOverride {
 }
 
 /* ─── constants ─── */
-const ROLES: AppRole[] = ["admin", "ventas", "almacen", "logistica", "viewer"];
+const ROLES: AppRole[] = ["admin", "representante", "ventas", "almacen", "logistica", "contabilidad", "viewer"];
 
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  representante: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
   ventas: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   almacen: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
   logistica: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  contabilidad: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   viewer: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 };
 
@@ -127,6 +129,9 @@ const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   navAdmin: { es: "Administración", en: "Administration" },
   navPartners: { es: "Partners", en: "Partners" },
   navReps: { es: "Representantes", en: "Sales Reps" },
+  navRepPanel: { es: "Panel Rep", en: "Rep Panel" },
+  navRepCoach: { es: "Coach IA", en: "AI Coach" },
+  navRepSupervisor: { es: "Supervisor", en: "Supervisor" },
   navOnboarding: { es: "Onboarding", en: "Onboarding" },
   navApiStatus: { es: "Estado APIs", en: "API Status" },
   navApiUsage: { es: "Uso de APIs", en: "API Usage" },
@@ -141,6 +146,7 @@ const GROUP_LABELS: Record<string, { es: string; en: string }> = {
   Inventario: { es: "Inventario", en: "Inventory" },
   Operaciones: { es: "Operaciones", en: "Operations" },
   Bancos: { es: "Bancos", en: "Banking" },
+  Representantes: { es: "Representantes", en: "Sales Reps" },
   Configuración: { es: "Configuración", en: "Settings" },
   // Legacy aliases — kept so older rows still render with the right label
   Sales: { es: "Ventas", en: "Sales" },
@@ -961,6 +967,9 @@ const ROUTE_ICONS: Record<string, typeof LayoutDashboard> = {
   navDocuments: FileText,
   navPortalAdmin: Link2,
   navAdmin: Settings,
+  navRepPanel: UserSquare2,
+  navRepCoach: Sparkles,
+  navRepSupervisor: Trophy,
 };
 
 const GROUP_ICONS: Record<string, typeof LayoutDashboard> = {
