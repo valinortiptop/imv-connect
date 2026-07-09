@@ -44,6 +44,9 @@ function LabRiskRoute() {
         </Button>
       </div>
 
+      <AIPageInsights module="rep-laboratorios" />
+
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Laboratorios con caída de participación</CardTitle>
