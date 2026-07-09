@@ -23,7 +23,10 @@ type ModuleId =
   | "rep-cobranza"
   | "rep-devoluciones"
   | "rep-prospectos"
-  | "rep-anaquel";
+  | "rep-anaquel"
+  | "rep-cierre"
+  | "rep-metas";
+
 
 const DEFAULT_PROMPT: Record<ModuleId, string> = {
   "rep-home":
