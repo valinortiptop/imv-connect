@@ -7,6 +7,7 @@ import { getMyRepFn } from "@/lib/rep.functions";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import NotificationBell from "./NotificationBell";
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
@@ -55,11 +56,14 @@ export default function RepLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
         <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card p-3 md:flex">
-          <div className="mb-6 px-2">
-            <div className="text-lg font-semibold">Panel Rep</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {data?.rep?.nombre ?? "Cargando…"}
+          <div className="mb-6 flex items-start justify-between px-2">
+            <div>
+              <div className="text-lg font-semibold">Panel Rep</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {data?.rep?.nombre ?? "Cargando…"}
+              </div>
             </div>
+            <NotificationBell />
           </div>
           <nav className="flex flex-col gap-1">
             {NAV.map((n) => (
@@ -87,17 +91,20 @@ export default function RepLayout({ children }: { children: ReactNode }) {
 
         {/* Main */}
         <main className="min-w-0 flex-1 pb-20 md:pb-6">
-          <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur md:hidden">
+          <header className="sticky top-0 z-30 flex h-12 items-center justify-between gap-2 border-b border-border bg-background/95 px-4 backdrop-blur md:hidden">
             <span className="text-sm font-semibold">Panel Rep</span>
-            {geo ? (
-              <span className="text-[10px] text-muted-foreground">
-                📍 {geo.lat.toFixed(3)}, {geo.lng.toFixed(3)}
-              </span>
-            ) : (
-              <button className="text-[10px] text-primary" onClick={refreshGeo}>
-                Activar ubicación
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {geo ? (
+                <span className="text-[10px] text-muted-foreground">
+                  📍 {geo.lat.toFixed(3)}, {geo.lng.toFixed(3)}
+                </span>
+              ) : (
+                <button className="text-[10px] text-primary" onClick={refreshGeo}>
+                  Activar ubicación
+                </button>
+              )}
+              <NotificationBell />
+            </div>
           </header>
           <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
         </main>
