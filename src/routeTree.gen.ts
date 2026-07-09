@@ -22,6 +22,7 @@ import { Route as RepPlanRouteImport } from './routes/rep.plan'
 import { Route as RepLaboratoriosRouteImport } from './routes/rep.laboratorios'
 import { Route as RepInventarioRouteImport } from './routes/rep.inventario'
 import { Route as RepCotizacionesRouteImport } from './routes/rep.cotizaciones'
+import { Route as RepCobranzaRouteImport } from './routes/rep.cobranza'
 import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as RepCalendarioRouteImport } from './routes/rep.calendario'
@@ -163,6 +164,11 @@ const RepInventarioRoute = RepInventarioRouteImport.update({
 const RepCotizacionesRoute = RepCotizacionesRouteImport.update({
   id: '/cotizaciones',
   path: '/cotizaciones',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCobranzaRoute = RepCobranzaRouteImport.update({
+  id: '/cobranza',
+  path: '/cobranza',
   getParentRoute: () => RepRoute,
 } as any)
 const RepCoachRoute = RepCoachRouteImport.update({
@@ -612,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/rep/calendario': typeof RepCalendarioRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
+  '/rep/cobranza': typeof RepCobranzaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
@@ -701,6 +708,7 @@ export interface FileRoutesByTo {
   '/portal/$token': typeof PortalTokenRoute
   '/rep/calendario': typeof RepCalendarioRoute
   '/rep/coach': typeof RepCoachRoute
+  '/rep/cobranza': typeof RepCobranzaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
@@ -794,6 +802,7 @@ export interface FileRoutesById {
   '/rep/calendario': typeof RepCalendarioRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
+  '/rep/cobranza': typeof RepCobranzaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
@@ -888,6 +897,7 @@ export interface FileRouteTypes {
     | '/rep/calendario'
     | '/rep/clientes'
     | '/rep/coach'
+    | '/rep/cobranza'
     | '/rep/cotizaciones'
     | '/rep/inventario'
     | '/rep/laboratorios'
@@ -977,6 +987,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/rep/calendario'
     | '/rep/coach'
+    | '/rep/cobranza'
     | '/rep/cotizaciones'
     | '/rep/inventario'
     | '/rep/laboratorios'
@@ -1069,6 +1080,7 @@ export interface FileRouteTypes {
     | '/rep/calendario'
     | '/rep/clientes'
     | '/rep/coach'
+    | '/rep/cobranza'
     | '/rep/cotizaciones'
     | '/rep/inventario'
     | '/rep/laboratorios'
@@ -1213,6 +1225,13 @@ declare module '@tanstack/react-router' {
       path: '/cotizaciones'
       fullPath: '/rep/cotizaciones'
       preLoaderRoute: typeof RepCotizacionesRouteImport
+      parentRoute: typeof RepRoute
+    }
+    '/rep/cobranza': {
+      id: '/rep/cobranza'
+      path: '/cobranza'
+      fullPath: '/rep/cobranza'
+      preLoaderRoute: typeof RepCobranzaRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/coach': {
@@ -1990,6 +2009,7 @@ interface RepRouteChildren {
   RepCalendarioRoute: typeof RepCalendarioRoute
   RepClientesRoute: typeof RepClientesRouteWithChildren
   RepCoachRoute: typeof RepCoachRoute
+  RepCobranzaRoute: typeof RepCobranzaRoute
   RepCotizacionesRoute: typeof RepCotizacionesRoute
   RepInventarioRoute: typeof RepInventarioRoute
   RepLaboratoriosRoute: typeof RepLaboratoriosRoute
@@ -2004,6 +2024,7 @@ const RepRouteChildren: RepRouteChildren = {
   RepCalendarioRoute: RepCalendarioRoute,
   RepClientesRoute: RepClientesRouteWithChildren,
   RepCoachRoute: RepCoachRoute,
+  RepCobranzaRoute: RepCobranzaRoute,
   RepCotizacionesRoute: RepCotizacionesRoute,
   RepInventarioRoute: RepInventarioRoute,
   RepLaboratoriosRoute: RepLaboratoriosRoute,
