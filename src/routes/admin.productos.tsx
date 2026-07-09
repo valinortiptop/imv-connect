@@ -2308,12 +2308,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               r.precio_lista == null || String(r.precio_lista) === ""
                 ? null
                 : Number(r.precio_lista) || null;
-            let iva_pct =
-              r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
-            let ieps_pct =
-              r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
-            if (iva_pct != null && !Number.isFinite(iva_pct)) iva_pct = null;
-            if (!Number.isFinite(ieps_pct)) ieps_pct = 0;
+            let iva_pct = normalizeTaxPercent(r.iva_pct, NaN) as number | null;
+            let ieps_pct = normalizeTaxPercent(r.ieps_pct, 0);
+            if (!Number.isFinite(iva_pct)) iva_pct = null;
             const fallbackTax = parseTaxFromColumns(json[i] ?? {});
             if (iva_pct == null && fallbackTax) iva_pct = fallbackTax.iva_pct;
             if ((r.ieps_pct == null || String(r.ieps_pct) === "") && fallbackTax) {
@@ -2510,8 +2507,8 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             precio_lista: r.precio_lista ?? 0,
             laboratorio_id: resolveLab(r),
             sat_clave: r.sat_clave,
-            iva_pct: Number(r.iva_pct),
-            ieps_pct: Number.isFinite(Number(r.ieps_pct)) ? Number(r.ieps_pct) : 0,
+            iva_pct: normalizeTaxPercent(r.iva_pct),
+            ieps_pct: normalizeTaxPercent(r.ieps_pct),
             activo: true,
           };
         };
