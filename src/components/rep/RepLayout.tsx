@@ -95,6 +95,11 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             <div className="px-2">
               <AIToggle compact />
             </div>
+            <Button asChild variant="outline" size="sm" className="w-full justify-start">
+              <Link to="/">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la app
+              </Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
               <LogOut className="mr-2 h-4 w-4" /> Salir
             </Button>
