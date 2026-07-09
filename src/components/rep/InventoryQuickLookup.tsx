@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { quickInventoryLookupFn } from "@/lib/rep.functions";
@@ -9,6 +9,31 @@ import { Search } from "lucide-react";
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 }).format(n);
 
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function Highlight({ text, terms }: { text: string | null | undefined; terms: string[] }) {
+  const value = text ?? "";
+  const activeTerms = terms.filter((t) => t.length > 0);
+  if (!value || activeTerms.length === 0) return <>{value}</>;
+  const re = new RegExp(`(${activeTerms.map(escapeRegExp).join("|")})`, "gi");
+  const parts = value.split(re);
+  return (
+    <>
+      {parts.map((p, i) =>
+        re.test(p) ? (
+          <mark key={i} className="rounded bg-yellow-200/70 px-0.5 text-inherit dark:bg-yellow-400/30">
+            {p}
+          </mark>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export default function InventoryQuickLookup() {
   const [q, setQ] = useState("");
   const fn = useServerFn(quickInventoryLookupFn);
@@ -17,6 +42,11 @@ export default function InventoryQuickLookup() {
     queryFn: () => fn({ data: { q } }),
     enabled: q.trim().length >= 2,
   });
+
+  const terms = useMemo(
+    () => q.trim().split(/\s+/).filter((t) => t.length >= 1),
+    [q],
+  );
 
   return (
     <div className="space-y-4">
@@ -49,9 +79,12 @@ export default function InventoryQuickLookup() {
                   <div className="h-14 w-14 rounded bg-muted" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{p.nombre}</div>
+                  <div className="truncate font-medium">
+                    <Highlight text={p.nombre} terms={terms} />
+                  </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {p.sku} · {p.marca ?? "—"}
+                    <Highlight text={p.sku} terms={terms} /> ·{" "}
+                    <Highlight text={p.marca ?? "—"} terms={terms} />
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs">
                     <span className={disp <= 0 ? "text-red-600" : ""}>
