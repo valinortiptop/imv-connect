@@ -182,11 +182,14 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
             .in("id", productIds)
         : { data: [] as any[] };
       const byId = new Map((prods ?? []).map((p: any) => [p.id, p]));
-      const { data: c } = await context.supabase
-        .from("clientes")
-        .select("razon_social, nombre_comercial, nickname, telefono")
-        .eq("id", q.client_id)
-        .maybeSingle();
+      const { data: c } = q.client_id
+        ? await context.supabase
+            .from("clientes")
+            .select("razon_social, nombre_comercial, nickname, telefono")
+            .eq("id", q.client_id)
+            .maybeSingle()
+        : { data: null as any };
+
       return {
         kind: "cotizacion",
         rep: rep?.nombre ?? "",
