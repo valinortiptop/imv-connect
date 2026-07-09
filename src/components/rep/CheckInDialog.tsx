@@ -7,11 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2 } from "lucide-react";
+import OrderQuickCreate from "./OrderQuickCreate";
+import EvidenceUploader from "./EvidenceUploader";
 
 type Props = {
   open: boolean;
