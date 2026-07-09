@@ -25,6 +25,8 @@ import {
 type NavItem = { key: string; label: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
 
+const ADMIN_BUILD_MARKER = "Build 2026.07.09-2";
+
 const navGroups: NavGroup[] = [
   {
     label: "General",
@@ -214,6 +216,9 @@ export function AdminSidebar({
         <div className="border-t p-3 space-y-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
             <span className="truncate">{email ?? "Cuenta"}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground/70" title="Marca visible para confirmar que el navegador cargó la última publicación">
+            {ADMIN_BUILD_MARKER}
           </div>
           <button
             onClick={onSignOut}
