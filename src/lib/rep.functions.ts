@@ -340,6 +340,7 @@ export const getClientInventoryOfferFn = createServerFn({ method: "POST" })
       .order("entry_date", { ascending: true });
     const entryMap = new Map<string, { qty: number; eta: string | null }>();
     for (const e of entries ?? []) {
+      if (!e.product_id) continue;
       const cur = entryMap.get(e.product_id) ?? { qty: 0, eta: null };
       cur.qty += Number(e.quantity ?? 0);
       if (!cur.eta || (e.entry_date && e.entry_date < cur.eta))
@@ -890,6 +891,7 @@ export const quickInventoryLookupFn = createServerFn({ method: "POST" })
         .in("entry_status", ["transit", "pending", "in_transit"])
         .order("entry_date", { ascending: true });
       for (const e of entries ?? []) {
+        if (!e.product_id) continue;
         const cur = entryMap.get(e.product_id) ?? { qty: 0, eta: null };
         cur.qty += Number(e.quantity ?? 0);
         if (!cur.eta || (e.entry_date && e.entry_date < cur.eta))
