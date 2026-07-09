@@ -2,9 +2,11 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { quickInventoryLookupFn } from "@/lib/rep.functions";
+import { getUpcomingReceiptsFn } from "@/lib/rep-behavior.functions";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, PackagePlus } from "lucide-react";
+import SubstituteSuggestions from "./SubstituteSuggestions";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 }).format(n);
@@ -37,10 +39,16 @@ function Highlight({ text, terms }: { text: string | null | undefined; terms: st
 export default function InventoryQuickLookup() {
   const [q, setQ] = useState("");
   const fn = useServerFn(quickInventoryLookupFn);
+  const fnReceipts = useServerFn(getUpcomingReceiptsFn);
   const { data } = useQuery({
     queryKey: ["rep-inv-lookup", q],
     queryFn: () => fn({ data: { q } }),
     enabled: q.trim().length >= 2,
+  });
+  const receipts = useQuery({
+    queryKey: ["rep-upcoming-receipts"],
+    queryFn: () => fnReceipts(),
+    enabled: q.trim().length < 2,
   });
 
   const terms = useMemo(
@@ -53,7 +61,7 @@ export default function InventoryQuickLookup() {
       <div>
         <h1 className="text-2xl font-bold">Inventario</h1>
         <p className="text-sm text-muted-foreground">
-          Consulta rápida de disponibilidad
+          Consulta rápida de disponibilidad, tránsito y sustitutos
         </p>
       </div>
 
@@ -72,34 +80,41 @@ export default function InventoryQuickLookup() {
           const disp = Number(p.stock_disponible ?? 0);
           return (
             <Card key={p.id}>
-              <CardContent className="flex gap-3 p-3">
-                {p.imagen_url ? (
-                  <img src={p.imagen_url} alt="" className="h-14 w-14 rounded object-cover" />
-                ) : (
-                  <div className="h-14 w-14 rounded bg-muted" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">
-                    <Highlight text={p.nombre} terms={terms} />
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    <Highlight text={p.sku} terms={terms} /> ·{" "}
-                    <Highlight text={p.marca ?? "—"} terms={terms} />
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 text-xs">
-                    <span className={disp <= 0 ? "text-red-600" : ""}>
-                      Disp: {disp}
-                    </span>
-                    <span>Compr: {p.stock_comprometido ?? 0}</span>
-                    <span>
-                      Tránsito: {p.transit_qty > 0 ? p.transit_qty : "—"}
-                      {p.transit_eta && ` (ETA ${p.transit_eta.slice(0, 10)})`}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {p.precio_lista != null ? fmtMXN(Number(p.precio_lista)) : ""}
-                    </span>
+              <CardContent className="flex flex-col gap-3 p-3">
+                <div className="flex gap-3">
+                  {p.imagen_url ? (
+                    <img src={p.imagen_url} alt="" className="h-14 w-14 rounded object-cover" />
+                  ) : (
+                    <div className="h-14 w-14 rounded bg-muted" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">
+                      <Highlight text={p.nombre} terms={terms} />
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      <Highlight text={p.sku} terms={terms} /> ·{" "}
+                      <Highlight text={p.marca ?? "—"} terms={terms} />
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 text-xs">
+                      <span className={disp <= 0 ? "text-red-600" : ""}>
+                        Disp: {disp}
+                      </span>
+                      <span>Compr: {p.stock_comprometido ?? 0}</span>
+                      <span>
+                        Tránsito: {p.transit_qty > 0 ? p.transit_qty : "—"}
+                        {p.transit_eta && ` (ETA ${p.transit_eta.slice(0, 10)})`}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {p.precio_lista != null ? fmtMXN(Number(p.precio_lista)) : ""}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                {disp <= 0 && (
+                  <div className="rounded border border-amber-500/30 bg-amber-500/5 p-2">
+                    <SubstituteSuggestions productoId={p.id} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -108,6 +123,39 @@ export default function InventoryQuickLookup() {
           <div className="text-sm text-muted-foreground">Sin resultados.</div>
         )}
       </div>
+
+      {q.trim().length < 2 && (receipts.data?.receipts ?? []).length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PackagePlus className="h-4 w-4" />
+              Próximos ingresos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(receipts.data?.receipts ?? []).slice(0, 10).map((r: any) => (
+              <div key={r.date} className="rounded border border-border/50 p-2">
+                <div className="mb-1 text-xs font-semibold text-primary">{r.date}</div>
+                <div className="space-y-0.5">
+                  {r.items.slice(0, 6).map((it: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="truncate">
+                        {it.nombre} <span className="text-muted-foreground">({it.sku})</span>
+                      </span>
+                      <span className="text-muted-foreground">+{it.quantity}</span>
+                    </div>
+                  ))}
+                  {r.items.length > 6 && (
+                    <div className="text-[10px] text-muted-foreground">
+                      +{r.items.length - 6} más
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
