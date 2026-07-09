@@ -14,7 +14,13 @@ const MODULE = z.enum([
   "rep-coach",
   "rep-supervisor",
   "rep-calendario",
+  "rep-cotizaciones",
+  "rep-cobranza",
+  "rep-devoluciones",
+  "rep-prospectos",
+  "rep-anaquel",
 ]);
+
 
 
 

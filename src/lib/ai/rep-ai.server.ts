@@ -30,7 +30,12 @@ export type RepModule =
   | "rep-laboratorios"
   | "rep-coach"
   | "rep-supervisor"
-  | "rep-calendario";
+  | "rep-calendario"
+  | "rep-cotizaciones"
+  | "rep-cobranza"
+  | "rep-devoluciones"
+  | "rep-prospectos"
+  | "rep-anaquel";
 
 const MODULE_LABEL: Record<RepModule, string> = {
   "rep-home": "Inicio del rep",
@@ -44,7 +49,13 @@ const MODULE_LABEL: Record<RepModule, string> = {
   "rep-coach": "Coach IA",
   "rep-supervisor": "Panel supervisor",
   "rep-calendario": "Calendario de agenda",
+  "rep-cotizaciones": "Cotizaciones abiertas",
+  "rep-cobranza": "Cobranza en ruta",
+  "rep-devoluciones": "Devoluciones",
+  "rep-prospectos": "Prospectos en campo",
+  "rep-anaquel": "Anaquel y evidencia visual",
 };
+
 
 
 

@@ -21,7 +21,9 @@ type ModuleId =
   | "rep-calendario"
   | "rep-cotizaciones"
   | "rep-cobranza"
-  | "rep-devoluciones";
+  | "rep-devoluciones"
+  | "rep-prospectos"
+  | "rep-anaquel";
 
 const DEFAULT_PROMPT: Record<ModuleId, string> = {
   "rep-home":
@@ -52,7 +54,12 @@ const DEFAULT_PROMPT: Record<ModuleId, string> = {
     "Prioriza mi cobranza: clientes con mayor riesgo, montos vencidos y scripts sugeridos para cada llamada.",
   "rep-devoluciones":
     "Analiza mis devoluciones: patrones de motivos, clientes reincidentes y acciones para reducirlas.",
+  "rep-prospectos":
+    "Analiza mis prospectos: cuáles priorizar por potencial y proximidad, próximos pasos y guiones de contacto.",
+  "rep-anaquel":
+    "Analiza la evidencia visual: cobertura de anaquel, gaps de exhibición y oportunidades vs. competencia.",
 };
+
 
 export function AIPageInsights({
   module,

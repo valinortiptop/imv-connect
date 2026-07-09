@@ -13,9 +13,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
-import { MapPin, Plus, Trash2 } from "lucide-react";
+import { MapPin, Plus, Trash2, AlertTriangle } from "lucide-react";
 import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
+import ShelfPhotoUploader from "./ShelfPhotoUploader";
+import VisitFormFiller from "./VisitFormFiller";
 
 type Props = {
   open: boolean;
@@ -34,6 +36,9 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const [notes, setNotes] = useState("");
   const [outcome, setOutcome] = useState<string>("");
   const [agreements, setAgreements] = useState<{ description: string; due_date?: string }[]>([]);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [needsOverride, setNeedsOverride] = useState(false);
+  const [distanceInfo, setDistanceInfo] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -42,6 +47,9 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     setNotes("");
     setOutcome("");
     setAgreements([]);
+    setOverrideReason("");
+    setNeedsOverride(false);
+    setDistanceInfo(null);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -54,14 +62,34 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const startVisit = useMutation({
     mutationFn: () =>
       doCheckIn({
-        data: { clienteId, lat: geo?.lat, lng: geo?.lng },
+        data: {
+          clienteId,
+          lat: geo?.lat,
+          lng: geo?.lng,
+          overrideReason: overrideReason || undefined,
+        },
       }),
     onSuccess: (r: any) => {
       setVisitId(r.visit.id);
+      setDistanceInfo(r.distanceM ?? null);
       setStep("in-visit");
-      toast.success("Check-in registrado");
+      toast.success(
+        r.distanceM != null
+          ? `Check-in registrado (${r.distanceM}m del cliente)`
+          : "Check-in registrado",
+      );
     },
-    onError: (e: any) => toast.error(e.message ?? "Error"),
+    onError: (e: any) => {
+      const msg = String(e.message ?? "Error");
+      if (msg.includes("override")) {
+        setNeedsOverride(true);
+        const m = msg.match(/(\d+)m/);
+        if (m) setDistanceInfo(parseInt(m[1]));
+        toast.error(msg);
+      } else {
+        toast.error(msg);
+      }
+    },
   });
 
   const finish = useMutation({
@@ -105,12 +133,33 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                 <MapPin className="h-4 w-4" />
                 {geo
                   ? `Ubicación: ${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)}`
-                  : "Sin acceso a ubicación (opcional)"}
+                  : "Sin acceso a ubicación (requerida para anti-fraude)"}
               </div>
             </div>
+
+            {needsOverride && (
+              <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Estás lejos del cliente registrado
+                  {distanceInfo != null ? ` (~${distanceInfo}m)` : ""}
+                </div>
+                <Label className="text-xs">Motivo para hacer check-in aquí</Label>
+                <Textarea
+                  rows={2}
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  placeholder="p.ej. cliente cambió de sucursal, cita en otra dirección"
+                />
+              </div>
+            )}
+
             <DialogFooter>
               <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button disabled={startVisit.isPending} onClick={() => startVisit.mutate()}>
+              <Button
+                disabled={startVisit.isPending || (needsOverride && !overrideReason.trim())}
+                onClick={() => startVisit.mutate()}
+              >
                 Registrar check-in
               </Button>
             </DialogFooter>
@@ -119,9 +168,11 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
 
         {step === "in-visit" && visitId && (
           <Tabs defaultValue="cierre" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="cierre">Cierre</TabsTrigger>
               <TabsTrigger value="pedido">Pedido</TabsTrigger>
+              <TabsTrigger value="anaquel">Anaquel</TabsTrigger>
+              <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="evidencia">Evidencia</TabsTrigger>
             </TabsList>
 
@@ -133,6 +184,22 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
               />
             </TabsContent>
 
+            <TabsContent value="anaquel" className="pt-2">
+              {userId ? (
+                <ShelfPhotoUploader
+                  visitId={visitId}
+                  clienteId={clienteId}
+                  userId={userId}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">Cargando sesión…</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="forms" className="pt-2">
+              <VisitFormFiller visitId={visitId} />
+            </TabsContent>
+
             <TabsContent value="evidencia" className="pt-2">
               {userId ? (
                 <EvidenceUploader visitId={visitId} userId={userId} />
@@ -142,6 +209,11 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
             </TabsContent>
 
             <TabsContent value="cierre" className="space-y-3 pt-2">
+              {distanceInfo != null && (
+                <div className="rounded-md border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                  Check-in registrado a {distanceInfo}m del cliente.
+                </div>
+              )}
               <div>
                 <Label>Resultado</Label>
                 <Select value={outcome} onValueChange={setOutcome}>

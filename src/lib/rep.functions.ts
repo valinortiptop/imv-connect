@@ -694,12 +694,45 @@ export const checkInFn = createServerFn({ method: "POST" })
         clienteId: z.string().uuid(),
         lat: z.number().optional(),
         lng: z.number().optional(),
+        overrideReason: z.string().max(500).optional(),
+        maxDistanceM: z.number().default(300),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId);
     if (!rep) throw new Error("Solo representantes pueden hacer check-in");
+
+    // Compute distance to registered client location for anti-fraude
+    let distanceM: number | null = null;
+    if (data.lat != null && data.lng != null) {
+      const { data: cliente } = await context.supabase
+        .from("clientes")
+        .select("lat, lng")
+        .eq("id", data.clienteId)
+        .maybeSingle();
+      if (cliente?.lat && cliente?.lng) {
+        const R = 6371000;
+        const toRad = (d: number) => (d * Math.PI) / 180;
+        const dLat = toRad(Number(cliente.lat) - data.lat);
+        const dLng = toRad(Number(cliente.lng) - data.lng);
+        const a =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(data.lat)) *
+            Math.cos(toRad(Number(cliente.lat))) *
+            Math.sin(dLng / 2) ** 2;
+        distanceM = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+      }
+      if (
+        distanceM != null &&
+        distanceM > data.maxDistanceM &&
+        !data.overrideReason?.trim()
+      ) {
+        throw new Error(
+          `Estás a ${distanceM}m del cliente registrado. Requiere motivo de override para continuar.`,
+        );
+      }
+    }
 
     const { data: row, error } = await context.supabase
       .from("rep_visits")
@@ -709,12 +742,15 @@ export const checkInFn = createServerFn({ method: "POST" })
         check_in_at: new Date().toISOString(),
         check_in_lat: data.lat ?? null,
         check_in_lng: data.lng ?? null,
+        distance_m: distanceM,
+        override_reason: data.overrideReason?.trim() || null,
       })
       .select()
       .single();
     if (error) throw error;
-    return { visit: row };
+    return { visit: row, distanceM };
   });
+
 
 export const checkOutFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
