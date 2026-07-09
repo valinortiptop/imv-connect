@@ -232,6 +232,7 @@ function OCDetail() {
       {recOpen && (
         <RecibirModal
           ocId={id}
+          almacenId={oc.almacen_id}
           items={items}
           onClose={() => setRecOpen(false)}
           onSaved={() => {
@@ -239,6 +240,7 @@ function OCDetail() {
             qc.invalidateQueries({ queryKey: ["oc", id] });
             qc.invalidateQueries({ queryKey: ["ordenes_compra"] });
             qc.invalidateQueries({ queryKey: ["v_stock_productos"] });
+            qc.invalidateQueries({ queryKey: ["v_caducidades"] });
             setRecOpen(false);
           }}
         />
