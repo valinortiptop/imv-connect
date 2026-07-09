@@ -1,170 +1,128 @@
 
-# Rep panel mobile responsive plan
+# Módulo de Compras — Plan de implementación
 
-Scope: every `/rep/*` route + shared components. Admin panel is a separate plan (later).
+## Qué ya tenemos (base sólida)
 
-Approach: **single component tree, Tailwind `md:` breakpoints + `useIsMobile()` where the DOM differs too much**. Cards on mobile, tables on desktop. Base breakpoint: `md` (768px) — matches existing `RepLayout`.
+**Datos / SQL**
+- `ordenes_compra` + `oc_items` con folio, estados (`borrador/enviada/parcial/recibida/cancelada`), totales y RPC `recibir_oc` que genera entradas a inventario y actualiza costo (`0007_modulo_7_compras.sql`).
+- Vistas: `v_ordenes_compra`, `v_margen_productos`, `v_stock_productos`, `v_products_with_stock` (stock físico, comprometido, en camino, disponible).
+- `productos` con `costo`, `stock_minimo`, `stock_comprometido`, `stock_en_camino`, `bonificacion_pct`, `promo`.
+- `movimientos_inventario` con historial completo de entradas/salidas/ventas.
+- `laboratorios` (proveedores), `stock_entries`, `damaged_batches`.
 
----
+**UI existente**
+- `/admin/compras` — lista simple de OCs + modal nueva OC (226 líneas).
+- `/admin/compras/$id` — detalle de OC con recepción (413 líneas).
+- `/admin/necesidades` → `purchase-needs-page.tsx` (1132 líneas) — análisis fuerte de faltantes por pedido/cotización, agrupado por proveedor, con `PurchaseOrderDialog` y `SuppliersImportDialog`.
 
-## 1. Global chrome (`RepLayout.tsx`)
+**Lo que falta** vs los 13 requerimientos: planeación predictiva multi-variable, KPIs de proveedor (fill rate, lead time, on-time), catálogo de motivos de faltante, historial de costos con alertas de variación, control de caducidades por lote, recomendación comercial de caducos, integración con flujo de efectivo, baja rotación, centro de alertas, dashboard gerencial, asistente IA.
 
-Fixes that pay off on every page:
+## Arquitectura propuesta
 
-- **Bottom nav "Más" slot.** Replace the 5th item (`Inventario`) with a `Más` button that opens a full-height `Sheet` (bottom → top). Sheet lists every desktop-only route grouped by section: *Ventas* (Cotizaciones, Cobranza, Devoluciones, Prospectos), *Operación* (Calendario, Catálogo, Inventario, Plan semanal, Cierre de día), *Inteligencia* (Laboratorios, Competencia, Metas, Coach IA, Supervisor). Auto-close on nav.
-- **Bottom nav polish.** Add `pb-[env(safe-area-inset-bottom)]`, active-state accent bar above the icon, `min-h-14` touch target, hide labels only when there are 6+ items (keep 5 slots → labels stay).
-- **Mobile header.** Widen to `h-14`, drop the raw geo coords (`lat, lng`) — replace with a `MapPin` icon that pulses when active, tap to refresh. Keeps room for AI toggle + bell without overflow. Add a page-title slot so each route can inject its own H1 there (removes duplicate titles below).
-- **Main padding.** Increase mobile bottom padding from `pb-20` to `pb-24` to clear the taller nav.
-- **Body scroll containment.** Add `min-h-0` to the main column so long lists inside cards can scroll independently.
-- **Sidebar (desktop only).** Unchanged — already fixed last turn.
+Consolidar todo bajo `/admin/compras` con **layout de tabs** (una sola ruta padre, sub-rutas planas):
 
----
+```text
+/admin/compras                → Dashboard (KPIs, alertas)
+/admin/compras/planeacion     → Planeación inteligente (reemplaza necesidades + agrega predictivo)
+/admin/compras/ordenes        → Lista OCs (lo actual, mejorado)
+/admin/compras/ordenes/$id    → Detalle OC (lo actual)
+/admin/compras/proveedores    → Evaluación / KPIs por laboratorio
+/admin/compras/caducidades    → Lotes por vencer + recomendación comercial
+/admin/compras/costos         → Historial de costos y variaciones
+/admin/compras/rotacion       → Baja rotación / sobreinventario
+```
 
-## 2. `rep.index.tsx` — Home / Dashboard (`RepDashboard.tsx`)
+Sidebar admin: un solo item "Compras" con sub-items; deprecar link "Necesidades" (redirigir a `/admin/compras/planeacion`).
 
-- **Stat cards:** currently `grid-cols-2 md:grid-cols-4`. Change to a horizontal **scroll-snap rail** on mobile (`flex overflow-x-auto snap-x snap-mandatory` with `snap-start` cards, `w-[45%]`), grid on `md:`. Frees vertical space above the AI plan.
-- **AI Plan list:** each row grows a **swipe-hint chevron** and increases padding to `p-3` → `p-4` on mobile. `text-xs` reason clamped to 3 lines on mobile (currently 2), badge wraps below name if width < 380px (already handled by flex-wrap).
-- **"Laboratorios en riesgo" + "Recompras próximas"** — stack on mobile (already `md:grid-cols-2`), but wrap both in a **tabs component** on mobile (`Tabs` with two triggers) to reduce vertical scroll. Desktop unchanged.
+## Cambios de base de datos (una migración `0025_compras_full.sql`)
 
----
+**Tablas nuevas**
+- `product_stock_params(producto_id pk, stock_min, stock_max, punto_reorden, dias_cobertura_objetivo, dias_seguridad, lead_time_dias, updated_at)` — parámetros por producto (con defaults derivados del histórico).
+- `product_batches(id, producto_id, almacen_id, lote, caducidad, cantidad, costo_unitario, oc_id, entrada_id, created_at)` — control de lotes con caducidad. Poblado por `recibir_oc` y ajustes.
+- `supplier_metrics(laboratorio_id, periodo, ocs, on_time_pct, fill_rate_pct, lead_time_prom_dias, incidencias, updated_at)` — snapshot mensual materializado.
+- `supplier_incidents(id, oc_id, laboratorio_id, tipo, motivo, cantidad, monto, notas, created_by, created_at)`.
+- `shortage_reasons(id, codigo, label, activo)` + `shortage_events(id, producto_id, cliente_id, pedido_id, motivo_id, cantidad, fecha, notas)` — catálogo configurable y bitácora.
+- `cost_history(id, producto_id, laboratorio_id, costo_unitario, oc_id, fecha)` — histórico automático desde trigger en `oc_items` al recibir.
+- `purchase_alerts(id, tipo, severidad, producto_id, laboratorio_id, oc_id, payload jsonb, resuelto, created_at)` — centro unificado.
+- `purchase_config(clave pk, valor jsonb)` — % variación costo, días alerta caducidad, umbrales cobertura, etc.
 
-## 3. `rep.clientes.index.tsx` — `ClientList.tsx`
+**Vistas**
+- `v_compras_planeacion` — por producto: ventas 30/60/90/365, tendencia, consumo diario, stock físico/disp/comprometido/en_camino, cobertura días, punto reorden, cantidad sugerida (fórmula: `max(0, (cobertura_objetivo * consumo_diario) - (stock_disp + en_camino - pedidos_pendientes))`), laboratorio principal, último costo.
+- `v_supplier_kpis` — laboratorio: fill rate = recibido/pedido, on-time = recibida ≤ esperada, lead time promedio, incidencias 12m.
+- `v_caducidades` — lotes con `dias_restantes`, valor económico, clasificados (verde/amarillo/rojo).
+- `v_caducidades_clientes` — por lote/producto: clientes que compraron, frecuencia, última compra, cantidad prom, vendedor asignado (join `pedidos`/`pedido_items`/`representantes`).
+- `v_baja_rotacion` — productos con `dias_sin_venta`, existencia, valor inmovilizado, clasificación (60/90/180d).
+- `v_flujo_compras` — compromisos OCs pendientes por semana + saldos bancarios (join `bank_accounts` + `pagos`).
 
-- Filters bar (search + segment chips) becomes **sticky** on mobile: `sticky top-14 z-20 -mx-4 px-4 py-2 bg-background/95 backdrop-blur`.
-- Segment chips become a **horizontal scroll rail** with snap; add a "Filtros" button that opens a `Sheet` for advanced filters (segmento, riesgo, laboratorio).
-- Client rows already render as cards — verify `truncate` on name, `shrink-0` on avatar/badge; add `line-clamp-1` on the address line.
-- **FAB** (`+` new prospect) fixed bottom-right, above bottom nav (`bottom-24 right-4`).
+**Triggers**
+- On `recibir_oc` → insert `cost_history`, `product_batches`, actualizar `supplier_metrics` (recalc), snapshot on-time.
+- On `oc_items` costo > último `cost_history` * (1 + umbral) → insert `purchase_alerts` tipo `incremento_costo`.
 
-## 4. `rep.clientes.$id.tsx` — `ClientDetail360.tsx`
+**Seeds**: motivos de faltante (proveedor sin stock, orden tardía, caducidad, dañado en tránsito, error captura), config default (% variación 10%, alerta caducidad 90/60/30d).
 
-Biggest offender. Currently multiple side-by-side panels.
+## UI — página por página
 
-- **Header:** switch to `grid-cols-[minmax(0,1fr)_auto]` with `truncate` on `nombre_comercial`, action buttons collapse into an overflow `DropdownMenu` on mobile (Check-in, Cotización, Pedido, Compartir).
-- **Sticky mobile action bar** at bottom (above nav): primary CTA **"Check-in"**, secondary **"Nuevo pedido"** — always accessible while scrolling long detail.
-- **Tabs:** convert the current section grid into a `Tabs` on mobile — *Resumen · Compras · Precios · Comportamiento · Notas*. Keeps single-scroll behavior. Desktop keeps the multi-column grid.
-- **Behavior panel, missed opps, subs, coll priority** — each already Card-based; add `min-w-0` where needed, tighten padding on `<md`.
-- **Money figures**: use `tabular-nums` and reduce from `text-2xl` to `text-xl` on mobile.
+**1. Dashboard `/admin/compras`**
+- Cards KPI: valor inventario, cobertura promedio, rotación, sobreinventario, inventario crítico, compras del mes, fill rate consolidado, valor por caducar.
+- Gráficas: compras por proveedor (barras), compras vs presupuesto, flujo de efectivo próximas 8 semanas, top faltantes.
+- Centro de alertas (lista compacta, filtro por tipo/severidad).
 
-## 5. `rep.ruta.tsx` — `RouteMap.tsx`
+**2. Planeación `/admin/compras/planeacion`**
+- Tabla productos con propuesta: consumo diario, cobertura actual, sugerido, editable. Filtros: proveedor, categoría, solo bajo mínimo, solo con promoción activa.
+- Toggle "Considerar cotizaciones abiertas" (heredado de necesidades).
+- Botón "Generar OCs" → agrupa por laboratorio, abre `PurchaseOrderDialog` (reutilizado).
+- Botón "Asistente IA" → llama a proxy Valinor (Gemini) con snapshot del renglón: devuelve ajustes recomendados y justificación por producto (aceptar / rechazar).
+- Reutiliza `purchase-needs-page.tsx` extendido con las nuevas columnas predictivas.
 
-- **Map full-bleed** on mobile: `-mx-4 h-[60vh]` with the toolbar (Optimizar, Ruta con IA, contador) collapsed into a **floating pill** overlay at top of the map.
-- **Client list beneath map**: becomes a `Sheet` triggered by a "Ver clientes (N)" bottom-sheet handle (drag handle visible). Desktop keeps side-by-side layout.
-- **AI rationale block**: on mobile appears inside the sheet, not pushing the map down.
+**3. Órdenes `/admin/compras/ordenes` y `$id`**
+- Lista actual + columnas: on-time esperado, fill rate previsto, presupuesto restante.
+- Detalle: agregar sección "Recepción por lote" (lote + caducidad requeridos al recibir), historial de incidencias.
 
-## 6. `rep.visitas.tsx` — `VisitsList.tsx`
+**4. Proveedores `/admin/compras/proveedores`**
+- Tabla laboratorios con KPIs (fill rate, on-time, lead time, incidencias, cumplimiento).
+- Drawer: histórico OCs, gráfica cumplimiento 12m, botón "Registrar incidencia".
 
-- Add a **date-grouped list** with sticky day headers on mobile (`Hoy`, `Ayer`, `dd MMM`).
-- Cards get a small colored left-bar mapped to `outcome` (venta, sin_venta, seguimiento).
-- Duration + timestamp on one line with `tabular-nums`.
+**5. Caducidades `/admin/compras/caducidades`**
+- Tabs verde/amarillo/rojo por umbral. Muestra lote, cantidad, valor, días restantes.
+- Botón "Campaña comercial" → abre panel con clientes recomendados (frecuencia, última compra, vendedor). Acciones: crear promo, asignar tarea al rep, exportar lista.
 
-## 7. `rep.cotizaciones.tsx`
+**6. Costos `/admin/compras/costos`**
+- Tabla productos con último costo, costo anterior, variación %, alertas.
+- Detalle: gráfica histórica de costos por proveedor.
 
-- Header CTA "Nueva desde cliente" → icon-only on `<sm`, full label on `md+`.
-- Grid `md:grid-cols-2` already fine. Add `flex-wrap` guard for the total row; use `tabular-nums`.
-- Action buttons (`ShareTicketButton`, "Convertir a pedido") stack vertically on `<sm` with full width.
+**7. Baja rotación `/admin/compras/rotacion`**
+- Filtros 60/90/180d sin venta. Muestra existencia, valor inmovilizado, sugerencia (liquidar, devolver, promocionar).
 
-## 8. `rep.cobranza.tsx`
+## Server functions (nuevas, en `src/lib/compras.functions.ts`)
 
-- Table → **card list on mobile**. Each card: cliente + saldo (right, bold, tabular), badge for antigüedad (0-30 / 31-60 / 60+), row of actions (Registrar pago, Recordatorio) as icon buttons.
-- Summary chips (total vencido / por cobrar) → horizontal scroll rail on mobile.
-- Desktop keeps existing table.
+- `getComprasDashboard()` — agrega KPIs, alertas top.
+- `getPlaneacionCompras({ filters })` — devuelve `v_compras_planeacion` con paginación.
+- `aiRefinePropuesta({ productos })` — llama a Valinor proxy (Gemini) para ajustes; server-only, valida usuario.
+- `getSupplierKpis()`, `registerSupplierIncident()`.
+- `getCaducidades({ severity })`, `getClientesRecomendadosLote({ lote_id })`.
+- `getCostHistory({ producto_id })`, `getBajaRotacion({ dias })`.
+- `getAlertasCompras()`, `resolveAlerta({ id })`, `getPurchaseConfig()`, `setPurchaseConfig()`.
 
-## 9. `rep.devoluciones.tsx`
+Todas usan `requireSupabaseAuth` + rol admin/compras. La IA usa Valinor proxy (patrón existente en `src/lib/valinor-proxy.server.ts`).
 
-- Wizard-like flow already; on mobile use a **single-column stepper** (`Steps` component) with a sticky bottom "Siguiente / Guardar" bar.
+## Detalles técnicos
 
-## 10. `rep.prospectos.tsx`
+- Reusar componentes: `PurchaseOrderDialog`, `SuppliersImportDialog`, `GlowCard`, tablas mobile-responsive (patrón cards en `md:hidden`).
+- Sin nuevas dependencias; gráficas con `recharts` (ya presente).
+- Alertas: función cron (pg_cron o server route `/api/public/compras.recalc`) diaria que recalcula `purchase_alerts`, `supplier_metrics`, snapshots de caducidades.
+- Permisos: agregar `route_key`s en `permission_routes` para cada sub-ruta.
+- Mantener retrocompatibilidad: `/admin/necesidades` → redirect a `/admin/compras/planeacion`.
 
-- Same treatment as `rep.clientes.index.tsx`: sticky filter, card list, FAB.
-- The "convert to client" dialog becomes a `Sheet` on mobile (full height).
+## Orden de entrega
 
-## 11. `rep.calendario.tsx` — `CalendarView.tsx`
+1. Migración SQL (tablas, vistas, triggers, seeds).
+2. Layout con tabs + rutas vacías + redirect necesidades.
+3. Dashboard + centro de alertas.
+4. Planeación (extendiendo necesidades) + IA Valinor.
+5. Proveedores + incidencias.
+6. Caducidades + recomendación comercial.
+7. Costos + baja rotación.
+8. Recepción por lote en OC detalle.
+9. Cron de recalculo + integración flujo de efectivo.
 
-- Month grid unreadable at <640px. On mobile: **agenda-list view** (day rows with events grouped) by default; add a small toggle chip [Mes | Semana | Agenda] where **Agenda is default on mobile, Mes on desktop**.
-- Day cells on mobile force `aspect-square` with only a dot per event count.
-
-## 12. `rep.catalogo.tsx`
-
-- Product grid: `grid-cols-2` on mobile (currently likely `md:grid-cols-3` or 4). Ensure image `aspect-square object-cover`, name `line-clamp-2`, price `tabular-nums`, add-to-cart as a full-width button at card bottom.
-- Search + filters → sticky sub-header with `Sheet` for filters.
-- Cart drawer already used; verify it opens as a full-height `Sheet` on mobile with a sticky "Enviar cotización / pedido" CTA.
-
-## 13. `rep.inventario.tsx` — `InventoryQuickLookup.tsx`
-
-- Search input full-width, sticky on mobile.
-- Result rows: card format (SKU + nombre + stock badges per almacén). Table only on `md+`.
-- Barcode-scan button (if present) becomes a large FAB.
-
-## 14. `rep.plan.tsx` — Weekly plan
-
-- Board of 7 columns doesn't fit mobile. Convert to a **tab bar of day chips** (Lun–Dom) with sticky top, one day visible at a time. Desktop unchanged.
-- Client cards within a day: horizontal drag disabled on mobile, use "Mover" menu instead.
-
-## 15. `rep.laboratorios.tsx` — `LabRiskPanel`
-
-- Already card-based; ensure charts inside cards use `ResponsiveContainer` with `min-w-0`. Legend below chart on mobile, right side on desktop.
-
-## 16. `rep.competencia.tsx` — `CompetitiveLandscape.tsx`
-
-- Any table converts to cards (competitor name, share %, trend arrow, last-seen). Filter chips → scroll rail.
-- Capture dialog (`CompetitorCaptureDialog`) → open as full-screen `Sheet` on mobile so the camera + form fit.
-
-## 17. `rep.metas.tsx`
-
-- Big number KPIs stack single-column on mobile with progress bars full-width. Reduce hero number from `text-4xl` to `text-3xl` on `<sm`.
-
-## 18. `rep.cierre.tsx` — Day close
-
-- Multi-section summary → collapsible `Accordion` sections on mobile (default first section open). Sticky bottom "Cerrar día" CTA.
-
-## 19. `rep.coach.tsx` — Coach IA
-
-- Chat surface: input row becomes fixed bottom (`fixed inset-x-0 bottom-16 md:static`) above bottom nav, respecting `env(safe-area-inset-bottom)`. Message list uses `min-h-0 flex-1 overflow-y-auto`.
-- Suggestion chips scroll horizontally above input.
-
-## 20. `rep.supervisor.tsx` — `SupervisorDashboard.tsx`
-
-- Table converts to cards on mobile: one card per rep with the 7 metrics rendered as a compact 2-col grid (`Visitas: 42 · Pedidos: 12 · Ratio: 29% · …`). Desktop keeps table.
-- Period toggle (7/30/90d) stays as chips (already fine).
-
----
-
-## Shared component polish
-
-- **`ShareTicketButton`** — ensure the resulting share sheet triggers Web Share API on mobile (`navigator.share`) and falls back to the current dropdown on desktop.
-- **`CheckInDialog`, `VisitFormFiller`, `OrderQuickCreate`, `ShelfPhotoUploader`, `SignaturePad`, `EvidenceUploader`** — every dialog opens as a **full-height `Sheet` on mobile** (`side="bottom"` with `h-[100dvh]`), keeps `Dialog` on desktop. Add a thin `useIsMobile()` wrapper (`ResponsiveDialog`) so we don't duplicate content.
-- **`NotificationBell`** dropdown → `Sheet` on mobile so items are tap-friendly.
-- **`AICopilotDrawer`** — already a drawer; verify it uses `100dvh` and has safe-area padding.
-
----
-
-## Cross-cutting rules to apply everywhere
-
-- Add `min-w-0` on any flex/grid text container, `shrink-0` on icons/avatars, `truncate` or `line-clamp-*` on any headline that can overflow.
-- Replace ad-hoc `text-2xl` headlines with `text-xl md:text-2xl`.
-- Money and counts → `tabular-nums`.
-- Every fixed bottom element → `pb-[env(safe-area-inset-bottom)]`.
-- Every scroll rail → `snap-x snap-mandatory` + `[&>*]:snap-start`.
-- Every table wrapped for mobile → `hidden md:table` desktop, `md:hidden` card list mobile, both fed by the same query result.
-- Preview device switched to mobile at the start of the build so we can verify each page (`preview_ui--set_preview_device_viewport`).
-
----
-
-## Technical notes (for the record)
-
-- No new deps required — `Sheet`, `Tabs`, `Accordion`, `DropdownMenu`, `Drawer` already available via shadcn.
-- New shared file: `src/components/rep/mobile/MoreSheet.tsx` (the "Más" drawer nav).
-- New shared file: `src/components/ui/responsive-dialog.tsx` (Dialog on desktop / Sheet on mobile wrapper) — used by all rep dialogs.
-- No server function / DB changes. No business logic changes. Frontend + presentation only.
-- No changes to admin panel routes.
-- Verify each page in a mobile viewport via Playwright screenshots after implementation, in batches of ~5 pages.
-
-## Build order
-
-1. Global chrome (RepLayout + MoreSheet + ResponsiveDialog) — unlocks everything else.
-2. Home, Clientes (index + detail), Ruta, Visitas — highest-traffic field pages.
-3. Ventas cluster: Cotizaciones, Cobranza, Devoluciones, Prospectos.
-4. Operación: Calendario, Catálogo, Inventario, Plan, Cierre.
-5. Inteligencia: Laboratorios, Competencia, Metas, Coach, Supervisor.
-6. Shared dialogs migrated to `ResponsiveDialog`.
-7. Screenshot verification pass at 375×812.
+¿Confirmas y arranco por la migración + layout con tabs, o quieres priorizar una sección concreta primero (p.ej. Planeación + IA para tener valor inmediato)?

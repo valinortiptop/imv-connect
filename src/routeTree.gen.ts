@@ -78,6 +78,7 @@ import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as RepClientesIndexRouteImport } from './routes/rep.clientes.index'
 import { Route as AdminContabilidadIndexRouteImport } from './routes/admin.contabilidad.index'
+import { Route as AdminComprasIndexRouteImport } from './routes/admin.compras.index'
 import { Route as AdminBancosIndexRouteImport } from './routes/admin.bancos.index'
 import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
@@ -96,6 +97,12 @@ import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.cont
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
 import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.contabilidad.balanza'
 import { Route as AdminContabilidadAgrupadoresRouteImport } from './routes/admin.contabilidad.agrupadores'
+import { Route as AdminComprasRotacionRouteImport } from './routes/admin.compras.rotacion'
+import { Route as AdminComprasProveedoresRouteImport } from './routes/admin.compras.proveedores'
+import { Route as AdminComprasPlaneacionRouteImport } from './routes/admin.compras.planeacion'
+import { Route as AdminComprasOrdenesRouteImport } from './routes/admin.compras.ordenes'
+import { Route as AdminComprasCostosRouteImport } from './routes/admin.compras.costos'
+import { Route as AdminComprasCaducidadesRouteImport } from './routes/admin.compras.caducidades'
 import { Route as AdminComprasIdRouteImport } from './routes/admin.compras.$id'
 import { Route as AdminClientesIdRouteImport } from './routes/admin.clientes.$id'
 import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.traspasos'
@@ -452,6 +459,11 @@ const AdminContabilidadIndexRoute = AdminContabilidadIndexRouteImport.update({
   path: '/contabilidad/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminComprasIndexRoute = AdminComprasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
 const AdminBancosIndexRoute = AdminBancosIndexRouteImport.update({
   id: '/bancos/',
   path: '/bancos/',
@@ -550,6 +562,36 @@ const AdminContabilidadAgrupadoresRoute =
     path: '/contabilidad/agrupadores',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminComprasRotacionRoute = AdminComprasRotacionRouteImport.update({
+  id: '/rotacion',
+  path: '/rotacion',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
+const AdminComprasProveedoresRoute = AdminComprasProveedoresRouteImport.update({
+  id: '/proveedores',
+  path: '/proveedores',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
+const AdminComprasPlaneacionRoute = AdminComprasPlaneacionRouteImport.update({
+  id: '/planeacion',
+  path: '/planeacion',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
+const AdminComprasOrdenesRoute = AdminComprasOrdenesRouteImport.update({
+  id: '/ordenes',
+  path: '/ordenes',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
+const AdminComprasCostosRoute = AdminComprasCostosRouteImport.update({
+  id: '/costos',
+  path: '/costos',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
+const AdminComprasCaducidadesRoute = AdminComprasCaducidadesRouteImport.update({
+  id: '/caducidades',
+  path: '/caducidades',
+  getParentRoute: () => AdminComprasRoute,
+} as any)
 const AdminComprasIdRoute = AdminComprasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -676,6 +718,12 @@ export interface FileRoutesByFullPath {
   '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
+  '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
+  '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
+  '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
+  '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -694,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
+  '/admin/compras/': typeof AdminComprasIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -713,7 +762,6 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
-  '/admin/compras': typeof AdminComprasRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -772,6 +820,12 @@ export interface FileRoutesByTo {
   '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
+  '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
+  '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
+  '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
+  '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -790,6 +844,7 @@ export interface FileRoutesByTo {
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos': typeof AdminBancosIndexRoute
+  '/admin/compras': typeof AdminComprasIndexRoute
   '/admin/contabilidad': typeof AdminContabilidadIndexRoute
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -872,6 +927,12 @@ export interface FileRoutesById {
   '/admin/bancos/traspasos': typeof AdminBancosTraspasosRoute
   '/admin/clientes/$id': typeof AdminClientesIdRouteWithChildren
   '/admin/compras/$id': typeof AdminComprasIdRoute
+  '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
+  '/admin/compras/costos': typeof AdminComprasCostosRoute
+  '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
+  '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
+  '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
+  '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -890,6 +951,7 @@ export interface FileRoutesById {
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
+  '/admin/compras/': typeof AdminComprasIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -973,6 +1035,12 @@ export interface FileRouteTypes {
     | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
+    | '/admin/compras/ordenes'
+    | '/admin/compras/planeacion'
+    | '/admin/compras/proveedores'
+    | '/admin/compras/rotacion'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -991,6 +1059,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$id'
     | '/rep/clientes/$id'
     | '/admin/bancos/'
+    | '/admin/compras/'
     | '/admin/contabilidad/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
@@ -1010,7 +1079,6 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
-    | '/admin/compras'
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
@@ -1069,6 +1137,12 @@ export interface FileRouteTypes {
     | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
+    | '/admin/compras/ordenes'
+    | '/admin/compras/planeacion'
+    | '/admin/compras/proveedores'
+    | '/admin/compras/rotacion'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -1087,6 +1161,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$id'
     | '/rep/clientes/$id'
     | '/admin/bancos'
+    | '/admin/compras'
     | '/admin/contabilidad'
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
@@ -1168,6 +1243,12 @@ export interface FileRouteTypes {
     | '/admin/bancos/traspasos'
     | '/admin/clientes/$id'
     | '/admin/compras/$id'
+    | '/admin/compras/caducidades'
+    | '/admin/compras/costos'
+    | '/admin/compras/ordenes'
+    | '/admin/compras/planeacion'
+    | '/admin/compras/proveedores'
+    | '/admin/compras/rotacion'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -1186,6 +1267,7 @@ export interface FileRouteTypes {
     | '/admin/pedidos/$id'
     | '/rep/clientes/$id'
     | '/admin/bancos/'
+    | '/admin/compras/'
     | '/admin/contabilidad/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
@@ -1691,6 +1773,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/compras/': {
+      id: '/admin/compras/'
+      path: '/'
+      fullPath: '/admin/compras/'
+      preLoaderRoute: typeof AdminComprasIndexRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
     '/admin/bancos/': {
       id: '/admin/bancos/'
       path: '/bancos'
@@ -1817,6 +1906,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadAgrupadoresRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/compras/rotacion': {
+      id: '/admin/compras/rotacion'
+      path: '/rotacion'
+      fullPath: '/admin/compras/rotacion'
+      preLoaderRoute: typeof AdminComprasRotacionRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
+    '/admin/compras/proveedores': {
+      id: '/admin/compras/proveedores'
+      path: '/proveedores'
+      fullPath: '/admin/compras/proveedores'
+      preLoaderRoute: typeof AdminComprasProveedoresRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
+    '/admin/compras/planeacion': {
+      id: '/admin/compras/planeacion'
+      path: '/planeacion'
+      fullPath: '/admin/compras/planeacion'
+      preLoaderRoute: typeof AdminComprasPlaneacionRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
+    '/admin/compras/ordenes': {
+      id: '/admin/compras/ordenes'
+      path: '/ordenes'
+      fullPath: '/admin/compras/ordenes'
+      preLoaderRoute: typeof AdminComprasOrdenesRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
+    '/admin/compras/costos': {
+      id: '/admin/compras/costos'
+      path: '/costos'
+      fullPath: '/admin/compras/costos'
+      preLoaderRoute: typeof AdminComprasCostosRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
+    '/admin/compras/caducidades': {
+      id: '/admin/compras/caducidades'
+      path: '/caducidades'
+      fullPath: '/admin/compras/caducidades'
+      preLoaderRoute: typeof AdminComprasCaducidadesRouteImport
+      parentRoute: typeof AdminComprasRoute
+    }
     '/admin/compras/$id': {
       id: '/admin/compras/$id'
       path: '/$id'
@@ -1916,10 +2047,24 @@ const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
 
 interface AdminComprasRouteChildren {
   AdminComprasIdRoute: typeof AdminComprasIdRoute
+  AdminComprasCaducidadesRoute: typeof AdminComprasCaducidadesRoute
+  AdminComprasCostosRoute: typeof AdminComprasCostosRoute
+  AdminComprasOrdenesRoute: typeof AdminComprasOrdenesRoute
+  AdminComprasPlaneacionRoute: typeof AdminComprasPlaneacionRoute
+  AdminComprasProveedoresRoute: typeof AdminComprasProveedoresRoute
+  AdminComprasRotacionRoute: typeof AdminComprasRotacionRoute
+  AdminComprasIndexRoute: typeof AdminComprasIndexRoute
 }
 
 const AdminComprasRouteChildren: AdminComprasRouteChildren = {
   AdminComprasIdRoute: AdminComprasIdRoute,
+  AdminComprasCaducidadesRoute: AdminComprasCaducidadesRoute,
+  AdminComprasCostosRoute: AdminComprasCostosRoute,
+  AdminComprasOrdenesRoute: AdminComprasOrdenesRoute,
+  AdminComprasPlaneacionRoute: AdminComprasPlaneacionRoute,
+  AdminComprasProveedoresRoute: AdminComprasProveedoresRoute,
+  AdminComprasRotacionRoute: AdminComprasRotacionRoute,
+  AdminComprasIndexRoute: AdminComprasIndexRoute,
 }
 
 const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
@@ -2177,13 +2322,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

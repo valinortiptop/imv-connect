@@ -71,7 +71,7 @@ const navGroups: NavGroup[] = [
       { key: "navInventario",    label: "Almacén",              url: "/admin/almacen",            icon: Warehouse },
       { key: "navKardex",        label: "Kardex",               url: "/admin/kardex",             icon: History },
       { key: "navStock",         label: "Entradas",             url: "/admin/entradas",           icon: Truck },
-      { key: "navPurchaseNeeds", label: "Compras", url: "/admin/necesidades",       icon: ClipboardList },
+      { key: "navPurchaseNeeds", label: "Compras", url: "/admin/compras",           icon: ClipboardList },
       { key: "navDevoluciones",  label: "Devoluciones",         url: "/admin/devoluciones/lista", icon: Undo2 },
       { key: "navDamaged",       label: "Dañados",              url: "/admin/danados",            icon: AlertOctagon },
     ],

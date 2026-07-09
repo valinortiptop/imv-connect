@@ -1,7 +1,7 @@
-// @ts-nocheck
-import { createFileRoute } from "@tanstack/react-router";
-import PurchaseNeedsPage from "@/components/purchase-needs-page";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/admin/necesidades")({
-  component: PurchaseNeedsPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/compras/planeacion" });
+  },
 });
