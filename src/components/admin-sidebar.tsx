@@ -5,7 +5,7 @@ import {
   Bot, FileText, Link2, BarChart3, ChevronDown, LogOut, CheckSquare,
   AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
   Calculator as CalcIcon, BookText, Scale, Receipt, Landmark, ShieldCheck, PieChart, ScrollText,
-  Banknote, ArrowLeftRight, ArrowDownUp, Wallet, FileSpreadsheet,
+  Banknote, ArrowLeftRight, ArrowDownUp, Wallet, FileSpreadsheet, Sparkles, Trophy,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -46,7 +46,6 @@ const navGroups: NavGroup[] = [
       { key: "navClients",      label: "Clientes",             url: "/admin/clientes",       icon: Users },
       { key: "navPortalAdmin",  label: "Portal Clientes",      url: "/admin/portal",          icon: Link2 },
       { key: "navReps",         label: "Vendedores",           url: "/admin/representantes", icon: UserSquare2 },
-      { key: "navRepPanel",     label: "Panel Representante",  url: "/rep",                  icon: UserSquare2 },
       { key: "navDirectory",    label: "Facturación",          url: "/admin/facturas",       icon: FileText },
       { key: "navPromos",       label: "Promociones",          url: "/admin/promos",         icon: Tag },
       { key: "navPartners",     label: "Partners",             url: "/admin/partners",       icon: Handshake },
@@ -54,6 +53,14 @@ const navGroups: NavGroup[] = [
       { key: "navSales",        label: "Sales",                url: "/admin/sales",          icon: TrendingUp },
       { key: "navPnL",          label: "P&L",                  url: "/admin/pnl",            icon: BarChart3 },
       { key: "navVentasReport", label: "Ventas",               url: "/admin/ventas",         icon: FileText },
+    ],
+  },
+  {
+    label: "Representantes",
+    items: [
+      { key: "navRepPanel",      label: "Panel Rep",    url: "/rep",            icon: UserSquare2, exact: true },
+      { key: "navRepCoach",      label: "Coach IA",     url: "/rep/coach",      icon: Sparkles },
+      { key: "navRepSupervisor", label: "Supervisor",   url: "/rep/supervisor", icon: Trophy },
     ],
   },
   {

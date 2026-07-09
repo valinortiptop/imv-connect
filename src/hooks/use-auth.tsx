@@ -10,6 +10,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "ventas" | "almacen" | "logistica" | "viewer";
 
+function applyRolePayload(
+  data: unknown,
+  setRole: (role: AppRole | null) => void,
+  setApproved: (approved: boolean) => void,
+) {
+  if (!data) return false;
+  if (typeof data === "string") {
+    setRole(data as AppRole);
+    setApproved(true);
+    return true;
+  }
+  if (typeof data === "object" && "role" in data) {
+    const obj = data as { role?: AppRole; approved?: boolean | null };
+    setRole(obj.role ?? null);
+    setApproved(obj.approved ?? false);
+    return true;
+  }
+  return false;
+}
+
 interface AuthState {
   session: Session | null;
   user: User | null;
@@ -60,10 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const { data, error } = await supabase.rpc("get_my_role");
               if (!error && data) {
-                const obj = typeof data === "string" ? JSON.parse(data) : data;
-                if (obj && typeof obj === "object" && "role" in obj) {
-                  setRole(obj.role as AppRole);
-                  setApproved(obj.approved ?? false);
+                if (applyRolePayload(data, setRole, setApproved)) {
                   setLoading(false);
                   clearTimeout(timeout);
                   return;
@@ -135,13 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s) {
         setSession(s);
         const { data } = await supabase.rpc("get_my_role");
-        if (data) {
-          const obj = typeof data === "string" ? JSON.parse(data) : data;
-          if (obj && typeof obj === "object" && "role" in obj) {
-            setRole(obj.role as AppRole);
-            setApproved(obj.approved ?? false);
-          }
-        }
+        if (data) applyRolePayload(data, setRole, setApproved);
       }
     } catch (err) {
       console.error("[auth] retry error:", err);
