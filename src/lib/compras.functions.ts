@@ -231,34 +231,32 @@ export const regenerarAlertasCompras = createServerFn({ method: "POST" })
     // 2) Caducidades
     const { data: cad } = await supabase
       .from("v_caducidades")
-      .select("producto_id, nombre, sku, laboratorio_id, cantidad, valor_economico, dias_para_caducar, semaforo")
+      .select("producto_id, nombre, sku, cantidad, valor_economico, dias_restantes, semaforo")
       .in("semaforo", ["rojo", "amarillo"])
       .limit(500);
-    for (const c of cad ?? []) {
+    for (const c of (cad ?? []) as any[]) {
       inserts.push({
         tipo: "caducidad",
         severidad: c.semaforo === "rojo" ? "critica" : "media",
         producto_id: c.producto_id,
-        laboratorio_id: c.laboratorio_id,
         titulo: `Caducidad ${c.semaforo === "rojo" ? "crítica" : "próxima"}: ${c.nombre}`,
-        detalle: `${Number(c.cantidad || 0)} u · ${c.dias_para_caducar}d · ${Number(c.valor_economico || 0).toFixed(0)} MXN`,
+        detalle: `${Number(c.cantidad || 0)} u · ${c.dias_restantes}d · ${Number(c.valor_economico || 0).toFixed(0)} MXN`,
         payload: { sku: c.sku },
       });
     }
 
-    // 3) Sobrestock (baja rotación 180d)
+    // 3) Sobrestock (baja rotación 180d / sin venta)
     const { data: rot } = await supabase
       .from("v_baja_rotacion")
-      .select("producto_id, nombre, sku, laboratorio_id, valor_inmovilizado, dias_sin_venta, clasificacion")
+      .select("producto_id, nombre, sku, valor_inmovilizado, dias_sin_venta, clasificacion")
       .in("clasificacion", ["180d", "sin_venta"])
       .order("valor_inmovilizado", { ascending: false })
       .limit(50);
-    for (const r of rot ?? []) {
+    for (const r of (rot ?? []) as any[]) {
       inserts.push({
         tipo: "sobrestock",
         severidad: "media",
         producto_id: r.producto_id,
-        laboratorio_id: r.laboratorio_id,
         titulo: `Baja rotación: ${r.nombre}`,
         detalle: `${r.dias_sin_venta}d sin venta · ${Number(r.valor_inmovilizado || 0).toFixed(0)} MXN inmovilizados`,
         payload: { sku: r.sku, clasificacion: r.clasificacion },
