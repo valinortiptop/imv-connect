@@ -37,7 +37,7 @@ function ComprasLayout() {
               return (
                 <Link
                   key={t.to}
-                  to={t.to}
+                  to={t.to as any}
                   className={cn(
                     "shrink-0 rounded-t-md px-3 py-2 text-sm transition-colors",
                     active
