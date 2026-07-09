@@ -272,10 +272,11 @@ export function PriceListsImportDialog({
       if (missing.length > 0) {
         const inserts = missing.map((k) => ({
           name: LIST_LABEL[k],
-          markup_pct: null,
+          markup_pct: 0,
           active: true,
           description: `Lista ${k} — importada desde catálogo Excel`,
         }));
+
         const { data: inserted, error: insErr } = await supabase
           .from("price_lists")
           .insert(inserts)
