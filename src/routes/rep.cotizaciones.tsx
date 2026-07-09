@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { FileText, ArrowRight, Plus } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
+import ShareTicketButton from "@/components/rep/ShareTicketButton";
+
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
@@ -82,17 +84,21 @@ function Page() {
                   <span>{new Date(c.created_at).toLocaleDateString("es-MX")}</span>
                   <span>{c.delivery_date ? `Entrega: ${c.delivery_date}` : "Sin fecha"}</span>
                 </div>
-                {!c.converted_to_order_id && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    disabled={mutate.isPending}
-                    onClick={() => mutate.mutate(c.id)}
-                  >
-                    Convertir a pedido <ArrowRight className="ml-2 h-3 w-3" />
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  <ShareTicketButton kind="cotizacion" id={c.id} />
+                  {!c.converted_to_order_id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      disabled={mutate.isPending}
+                      onClick={() => mutate.mutate(c.id)}
+                    >
+                      Convertir a pedido <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+
               </CardContent>
             </Card>
           ))}
