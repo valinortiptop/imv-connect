@@ -124,6 +124,27 @@ export default function RouteMap() {
     }
   }, [clientsWithCoords, selected, geo, mapReady]);
 
+  // Heatmap layer
+  useEffect(() => {
+    if (!mapObj.current || !window.google?.maps?.visualization) return;
+    if (heatLayerRef.current) {
+      heatLayerRef.current.setMap(null);
+      heatLayerRef.current = null;
+    }
+    if (!showHeatmap) return;
+    const points = (heatQ.data?.points ?? []).map((p: any) => ({
+      location: new window.google.maps.LatLng(p.lat, p.lng),
+      weight: p.weight,
+    }));
+    if (points.length === 0) return;
+    heatLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
+      data: points,
+      map: mapObj.current,
+      radius: 40,
+      opacity: 0.7,
+    });
+  }, [showHeatmap, heatQ.data, mapReady]);
+
   const doOptimize = useMutation({
     mutationFn: async () => {
       if (!geo) throw new Error("Activa tu ubicación primero");
