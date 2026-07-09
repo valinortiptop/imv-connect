@@ -22,6 +22,7 @@ import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as ReTooltip,
 } from "recharts";
 import CheckInDialog from "./CheckInDialog";
+import OrderQuickCreate from "./OrderQuickCreate";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
@@ -136,14 +137,27 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
       </div>
 
       <Tabs defaultValue="ia" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
           <TabsTrigger value="ia">IA</TabsTrigger>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
+          <TabsTrigger value="pedido">Pedido</TabsTrigger>
+          <TabsTrigger value="historial">Hist.</TabsTrigger>
           <TabsTrigger value="oportunidades">Oport.</TabsTrigger>
           <TabsTrigger value="inventario">Inv.</TabsTrigger>
           <TabsTrigger value="visitas">Visitas</TabsTrigger>
           <TabsTrigger value="labs">Labs</TabsTrigger>
         </TabsList>
+
+        {/* Pedido rápido */}
+        <TabsContent value="pedido">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Levantar pedido</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OrderQuickCreate clienteId={clienteId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* IA */}
         <TabsContent value="ia" className="space-y-3">
