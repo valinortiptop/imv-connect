@@ -136,7 +136,9 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+        <AICopilotButton />
       </div>
     </Ctx.Provider>
+    </AIProvider>
   );
 }
