@@ -7,11 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2 } from "lucide-react";
+import OrderQuickCreate from "./OrderQuickCreate";
+import EvidenceUploader from "./EvidenceUploader";
 
 type Props = {
   open: boolean;
@@ -81,11 +85,16 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then((r) => setUserId(r.data.user?.id ?? null));
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{step === "start" ? "Iniciar visita" : "Finalizar visita"}</DialogTitle>
+          <DialogTitle>{step === "start" ? "Iniciar visita" : "Visita en curso"}</DialogTitle>
           <DialogDescription>{clienteNombre}</DialogDescription>
         </DialogHeader>
 
@@ -108,75 +117,99 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
           </div>
         )}
 
-        {step === "in-visit" && (
-          <div className="space-y-3">
-            <div>
-              <Label>Resultado</Label>
-              <Select value={outcome} onValueChange={setOutcome}>
-                <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pedido">Pedido levantado</SelectItem>
-                  <SelectItem value="sin_pedido">Sin pedido</SelectItem>
-                  <SelectItem value="seguimiento">Requiere seguimiento</SelectItem>
-                  <SelectItem value="incidencia">Incidencia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Notas</Label>
-              <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </div>
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <Label>Acuerdos</Label>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setAgreements((a) => [...a, { description: "" }])}
-                >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Añadir
+        {step === "in-visit" && visitId && (
+          <Tabs defaultValue="cierre" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="cierre">Cierre</TabsTrigger>
+              <TabsTrigger value="pedido">Pedido</TabsTrigger>
+              <TabsTrigger value="evidencia">Evidencia</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pedido" className="pt-2">
+              <OrderQuickCreate
+                clienteId={clienteId}
+                visitId={visitId}
+                onCreated={() => setOutcome("pedido")}
+              />
+            </TabsContent>
+
+            <TabsContent value="evidencia" className="pt-2">
+              {userId ? (
+                <EvidenceUploader visitId={visitId} userId={userId} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Cargando sesión…</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="cierre" className="space-y-3 pt-2">
+              <div>
+                <Label>Resultado</Label>
+                <Select value={outcome} onValueChange={setOutcome}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pedido">Pedido levantado</SelectItem>
+                    <SelectItem value="sin_pedido">Sin pedido</SelectItem>
+                    <SelectItem value="seguimiento">Requiere seguimiento</SelectItem>
+                    <SelectItem value="incidencia">Incidencia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Notas</Label>
+                <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <Label>Acuerdos</Label>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setAgreements((a) => [...a, { description: "" }])}
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Añadir
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {agreements.map((a, i) => (
+                    <div key={i} className="flex gap-1">
+                      <Input
+                        placeholder="Compromiso"
+                        value={a.description}
+                        onChange={(e) => {
+                          const copy = [...agreements];
+                          copy[i] = { ...copy[i], description: e.target.value };
+                          setAgreements(copy);
+                        }}
+                      />
+                      <Input
+                        type="date"
+                        className="w-36"
+                        value={a.due_date ?? ""}
+                        onChange={(e) => {
+                          const copy = [...agreements];
+                          copy[i] = { ...copy[i], due_date: e.target.value };
+                          setAgreements(copy);
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setAgreements(agreements.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                <Button disabled={finish.isPending} onClick={() => finish.mutate()}>
+                  Finalizar visita
                 </Button>
-              </div>
-              <div className="space-y-2">
-                {agreements.map((a, i) => (
-                  <div key={i} className="flex gap-1">
-                    <Input
-                      placeholder="Compromiso"
-                      value={a.description}
-                      onChange={(e) => {
-                        const copy = [...agreements];
-                        copy[i] = { ...copy[i], description: e.target.value };
-                        setAgreements(copy);
-                      }}
-                    />
-                    <Input
-                      type="date"
-                      className="w-36"
-                      value={a.due_date ?? ""}
-                      onChange={(e) => {
-                        const copy = [...agreements];
-                        copy[i] = { ...copy[i], due_date: e.target.value };
-                        setAgreements(copy);
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setAgreements(agreements.filter((_, j) => j !== i))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => onOpenChange(false)}>Cerrar</Button>
-              <Button disabled={finish.isPending} onClick={() => finish.mutate()}>
-                Finalizar visita
-              </Button>
-            </DialogFooter>
-          </div>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

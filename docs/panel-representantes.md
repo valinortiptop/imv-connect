@@ -95,3 +95,33 @@ Módulo de asistente comercial IA para venta en campo, con historial de cliente,
 
 ### Navegación
 - Sidebar desktop añade "Plan semanal" y "Laboratorios" (ocultas en bottom nav móvil para no romper el grid de 5).
+
+---
+
+## Fase 4 — Ejecución en visita ✅ IMPLEMENTADA
+
+### Nuevas server functions (`src/lib/rep.functions.ts`)
+- **`getReorderPrefillFn`** — Sugerencias de recompra con precio efectivo (respeta `client_price_overrides` con IVA → sin IVA, luego `precios_cliente`, luego último precio pagado, luego lista).
+- **`searchProductsForRepFn`** — Búsqueda por SKU/nombre resolviendo precio especial por cliente.
+- **`createRepOrderFn`** — Inserta `pedidos` + `pedido_items` desde la visita; calcula subtotal/IVA/total, asigna `representante_id` y liga la visita (`pedido_id`, `outcome='pedido'`).
+- **`createRepQuoteFn`** — Cotización rápida en `quotes` + `quote_items` (source='rep', status='draft').
+- **`attachVisitEvidenceFn`** — Guarda `photo_paths[]`, `signature_path` y `signed_by_name` en `rep_visits`.
+- **`getVisitEvidenceUrlsFn`** — Genera signed URLs (30 min) para mostrar fotos y firma.
+
+### Cambios de base de datos
+- `rep_visits` ahora tiene `photo_paths text[]`, `signature_path text`, `signed_by_name text`, `pedido_id uuid` (FK a `pedidos`).
+- Bucket privado `rep-evidence` con RLS: cada representante ve/sube/actualiza sus propios archivos (`owner = auth.uid()`); admin puede leer y eliminar todos.
+
+### Nuevos componentes
+- `OrderQuickCreate.tsx` — Buscador + sugerencias IA + carrito + totales + entrega/urgencia; usa precios especiales automáticamente.
+- `SignaturePad.tsx` — Canvas con captura de trazos, nombre del firmante y exportación a PNG.
+- `EvidenceUploader.tsx` — Subida de fotos (con cámara del móvil) al bucket `rep-evidence`, listado con miniaturas signed y firma digital integrada.
+
+### Integración en visita
+- `CheckInDialog` ahora tiene 3 pestañas después del check-in: **Cierre**, **Pedido**, **Evidencia**.
+- Al crear un pedido dentro de la visita se marca automáticamente `outcome='pedido'` en `rep_visits`.
+- `ClientDetail360` incorpora la pestaña **Pedido** para levantar pedidos fuera de una visita formal.
+
+### Seguridad
+- Todas las llamadas usan `requireSupabaseAuth`; RLS impone que el rep solo edite sus propios clientes/visitas.
+- Precios efectivos se calculan server-side; el cliente no puede forzar overrides que no le correspondan.

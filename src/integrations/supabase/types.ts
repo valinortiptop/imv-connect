@@ -5109,7 +5109,11 @@ export type Database = {
           id: string
           notes: string | null
           outcome: string | null
+          pedido_id: string | null
+          photo_paths: string[] | null
           representante_id: string
+          signature_path: string | null
+          signed_by_name: string | null
         }
         Insert: {
           check_in_at?: string
@@ -5123,7 +5127,11 @@ export type Database = {
           id?: string
           notes?: string | null
           outcome?: string | null
+          pedido_id?: string | null
+          photo_paths?: string[] | null
           representante_id: string
+          signature_path?: string | null
+          signed_by_name?: string | null
         }
         Update: {
           check_in_at?: string
@@ -5137,7 +5145,11 @@ export type Database = {
           id?: string
           notes?: string | null
           outcome?: string | null
+          pedido_id?: string | null
+          photo_paths?: string[] | null
           representante_id?: string
+          signature_path?: string | null
+          signed_by_name?: string | null
         }
         Relationships: [
           {
@@ -5167,6 +5179,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "rep_visits_representante_id_fkey"
