@@ -85,11 +85,16 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then((r) => setUserId(r.data.user?.id ?? null));
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{step === "start" ? "Iniciar visita" : "Finalizar visita"}</DialogTitle>
+          <DialogTitle>{step === "start" ? "Iniciar visita" : "Visita en curso"}</DialogTitle>
           <DialogDescription>{clienteNombre}</DialogDescription>
         </DialogHeader>
 
