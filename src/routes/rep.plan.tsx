@@ -142,6 +142,19 @@ function WeeklyPlanRoute() {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <CollectionsPriorityCard />
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Oportunidades perdidas hoy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MissedOpportunitiesList compact />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+
