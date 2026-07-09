@@ -2357,8 +2357,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
             if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
             if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
-            if (fields.has("iva")) patch.iva_pct = r.iva_pct;
-            if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
+            // iva_pct / ieps_pct are NOT NULL — never patch with null.
+            if (fields.has("iva") && r.iva_pct != null) patch.iva_pct = r.iva_pct;
+            if (fields.has("ieps") && r.ieps_pct != null) patch.ieps_pct = r.ieps_pct;
             return { id: r.existing_id!, patch };
           })
           .filter((t) => Object.keys(t.patch).length > 0);
