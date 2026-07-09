@@ -183,5 +183,3 @@ function ClientesRecomendadosDialog({ producto, onClose }: any) {
     </div>
   );
 }
-  );
-}
