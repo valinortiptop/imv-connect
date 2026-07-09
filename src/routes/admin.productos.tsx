@@ -1860,6 +1860,8 @@ type ImportRow = {
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
+  notes?: string[];
+  extra_fields?: Record<string, unknown>;
 };
 
 // Parse a NetSuite / SuiteTax tax code label like:
