@@ -76,3 +76,22 @@ Módulo de asistente comercial IA para venta en campo, con historial de cliente,
 - Icono con contador de no leídas en sidebar desktop y header móvil.
 - Suscripción a `INSERT`/`UPDATE` filtrada por `user_id`.
 - Botón "Marcar todo leído".
+
+---
+
+## Fase 3 — Ruta y territorio ✅ IMPLEMENTADA
+
+### Nuevas server functions
+- **`detectOverVisitedFn`** — Clientes con >3 visitas sin `outcome=pedido` en 60 días.
+- **`buildWeeklyPlanFn`** — Plan lun-vie balanceado: puntaje = riesgo churn + días sin pedido + valor 12m; zonas asignadas a días con round-robin.
+- **`getOpportunityHeatmapFn`** — Puntos ponderados (churn + recencia + valor) para heatmap.
+
+### Nueva ruta
+- **`/rep/plan`** — Plan semanal en grid 5 columnas + panel de clientes sobre-visitados.
+
+### RouteMap
+- Botón "Heatmap" alterna `google.maps.visualization.HeatmapLayer` sobre el mapa con los puntos ponderados.
+- Se cargan librerías `visualization,geometry`.
+
+### Navegación
+- Sidebar desktop añade "Plan semanal" y "Laboratorios" (ocultas en bottom nav móvil para no romper el grid de 5).

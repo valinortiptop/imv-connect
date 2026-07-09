@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyClientsFn, optimizeRouteFn, geocodeClientFn } from "@/lib/rep.functions";
+import {
+  getMyClientsFn,
+  optimizeRouteFn,
+  geocodeClientFn,
+  getOpportunityHeatmapFn,
+} from "@/lib/rep.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route, Locate } from "lucide-react";
+import { MapPin, Route, Locate, Flame } from "lucide-react";
 
 declare global {
   interface Window {
@@ -26,7 +31,7 @@ function loadMaps(): Promise<void> {
     window.__repInitMap = () => resolve();
     const s = document.createElement("script");
     s.async = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&loading=async&callback=__repInitMap${TRACKING ? `&channel=${TRACKING}` : ""}`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=visualization,geometry&loading=async&callback=__repInitMap${TRACKING ? `&channel=${TRACKING}` : ""}`;
     s.onerror = () => reject(new Error("No se pudo cargar Google Maps"));
     document.head.appendChild(s);
   });
@@ -37,15 +42,19 @@ export default function RouteMap() {
   const fetchClients = useServerFn(getMyClientsFn);
   const optimize = useServerFn(optimizeRouteFn);
   const geocode = useServerFn(geocodeClientFn);
+  const fetchHeat = useServerFn(getOpportunityHeatmapFn);
 
   const { data, refetch } = useQuery({ queryKey: ["rep-clients"], queryFn: () => fetchClients() });
+  const heatQ = useQuery({ queryKey: ["rep-heatmap"], queryFn: () => fetchHeat() });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ km: number; min: number } | null>(null);
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
+  const heatLayerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -115,6 +124,27 @@ export default function RouteMap() {
     }
   }, [clientsWithCoords, selected, geo, mapReady]);
 
+  // Heatmap layer
+  useEffect(() => {
+    if (!mapObj.current || !window.google?.maps?.visualization) return;
+    if (heatLayerRef.current) {
+      heatLayerRef.current.setMap(null);
+      heatLayerRef.current = null;
+    }
+    if (!showHeatmap) return;
+    const points = (heatQ.data?.points ?? []).map((p: any) => ({
+      location: new window.google.maps.LatLng(p.lat, p.lng),
+      weight: p.weight,
+    }));
+    if (points.length === 0) return;
+    heatLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
+      data: points,
+      map: mapObj.current,
+      radius: 40,
+      opacity: 0.7,
+    });
+  }, [showHeatmap, heatQ.data, mapReady]);
+
   const doOptimize = useMutation({
     mutationFn: async () => {
       if (!geo) throw new Error("Activa tu ubicación primero");
@@ -159,7 +189,14 @@ export default function RouteMap() {
             Toca los marcadores para seleccionar y optimizar
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={showHeatmap ? "default" : "outline"}
+            onClick={() => setShowHeatmap((v) => !v)}
+          >
+            <Flame className="mr-1 h-4 w-4" /> Heatmap
+          </Button>
           <Button
             size="sm"
             variant="outline"

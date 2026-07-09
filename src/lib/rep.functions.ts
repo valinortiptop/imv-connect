@@ -1210,3 +1210,247 @@ export const generateRepAlertsFn = createServerFn({ method: "POST" })
     }
     return { created: rows.length };
   });
+
+/* ─── FASE 3 ─────────────────────────────────────────────────────────────── */
+
+/* 15. detectOverVisitedFn — clientes con >3 visitas sin pedido en 60 días */
+export const detectOverVisitedFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+    const since = new Date();
+    since.setDate(since.getDate() - 60);
+
+    let visitsQ = context.supabase
+      .from("rep_visits")
+      .select("id, cliente_id, representante_id, check_in_at, outcome")
+      .gte("check_in_at", since.toISOString());
+    if (rep) visitsQ = visitsQ.eq("representante_id", rep.id);
+    const { data: visits } = await visitsQ;
+
+    const byClient = new Map<string, { visits: number; withOrder: number; last: string }>();
+    for (const v of visits ?? []) {
+      const cur = byClient.get(v.cliente_id) ?? { visits: 0, withOrder: 0, last: "" };
+      cur.visits += 1;
+      if (v.outcome === "pedido") cur.withOrder += 1;
+      if (v.check_in_at > cur.last) cur.last = v.check_in_at;
+      byClient.set(v.cliente_id, cur);
+    }
+
+    const flagged = Array.from(byClient.entries())
+      .filter(([, s]) => s.visits > 3 && s.withOrder === 0)
+      .map(([cliente_id, s]) => ({ cliente_id, ...s }));
+
+    if (flagged.length === 0) return { rep, clients: [] };
+
+    const { data: clientes } = await context.supabase
+      .from("clientes")
+      .select("id, razon_social, nombre_comercial, telefono, phone, direccion, zona")
+      .in("id", flagged.map((f) => f.cliente_id));
+    const cmap = new Map((clientes ?? []).map((c: any) => [c.id, c]));
+
+    const results = flagged
+      .map((f) => {
+        const c = cmap.get(f.cliente_id) as any;
+        return {
+          ...f,
+          nombre: c?.nombre_comercial ?? c?.razon_social ?? "Cliente",
+          telefono: c?.telefono ?? c?.phone ?? null,
+          zona: c?.zona ?? null,
+          direccion: c?.direccion ?? null,
+        };
+      })
+      .sort((a, b) => b.visits - a.visits);
+
+    return { rep, clients: results };
+  });
+
+/* 16. buildWeeklyPlanFn — plan semanal balanceado por zona/día */
+export const buildWeeklyPlanFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ maxPerDay: z.number().int().min(1).max(20).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const maxPerDay = data.maxPerDay ?? 8;
+    const { rep, clientes } = await getScopedClientIds(context.supabase, context.userId);
+    if (clientes.length === 0) return { rep, week: [] };
+
+    const clientIds = clientes.map((c) => c.id);
+    const since = new Date();
+    since.setDate(since.getDate() - 120);
+
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("cliente_id, created_at, total")
+      .in("cliente_id", clientIds)
+      .gte("created_at", since.toISOString());
+    const lastMap = new Map<string, { last: string; count: number; total: number }>();
+    for (const p of pedidos ?? []) {
+      const c = lastMap.get(p.cliente_id) ?? { last: "", count: 0, total: 0 };
+      if (p.created_at > c.last) c.last = p.created_at;
+      c.count++;
+      c.total += Number(p.total ?? 0);
+      lastMap.set(p.cliente_id, c);
+    }
+
+    const { data: insights } = await context.supabase
+      .from("rep_client_insights")
+      .select("cliente_id, churn_risk_score")
+      .in("cliente_id", clientIds);
+    const iMap = new Map((insights ?? []).map((i: any) => [i.cliente_id, Number(i.churn_risk_score ?? 0)]));
+
+    // Score por cliente
+    const now = Date.now();
+    const scored = clientes
+      .map((c) => {
+        const s = lastMap.get(c.id);
+        const daysSince = s?.last
+          ? Math.floor((now - new Date(s.last).getTime()) / 86400000)
+          : 999;
+        const churn = iMap.get(c.id) ?? 0;
+        const total = s?.total ?? 0;
+        // score: mezcla riesgo, recencia, valor
+        const score =
+          churn * 100 +
+          Math.min(daysSince, 180) * 0.6 +
+          Math.log10(total + 1) * 8;
+        return {
+          cliente_id: c.id,
+          nombre: c.nombre_comercial ?? c.razon_social,
+          zona: c.zona ?? "sin_zona",
+          churn,
+          daysSince,
+          total_12m: Math.round(total),
+          score,
+        };
+      })
+      .filter((x) => x.score > 25)
+      .sort((a, b) => b.score - a.score);
+
+    // Agrupar por zona; distribuir zonas a días (lun-vie)
+    const zonas = Array.from(new Set(scored.map((s) => s.zona)));
+    const days = ["lunes", "martes", "miércoles", "jueves", "viernes"];
+    const week: Record<string, any[]> = Object.fromEntries(days.map((d) => [d, []]));
+
+    // asignar zona → día (round-robin por prioridad de zona)
+    const zoneOrder = zonas
+      .map((z) => ({
+        z,
+        top: scored.filter((s) => s.zona === z).slice(0, maxPerDay * 2).length,
+      }))
+      .sort((a, b) => b.top - a.top)
+      .map((x) => x.z);
+
+    const zoneToDay = new Map<string, string>();
+    zoneOrder.forEach((z, i) => zoneToDay.set(z, days[i % days.length]));
+
+    for (const s of scored) {
+      const day = zoneToDay.get(s.zona) ?? days[0];
+      if (week[day].length < maxPerDay) {
+        week[day].push({
+          ...s,
+          prioridad:
+            s.churn >= 0.6 ? "urgente" : s.daysSince > 45 ? "oportunidad" : "seguimiento",
+          razon:
+            s.churn >= 0.6
+              ? `Riesgo alto de pérdida (${Math.round(s.churn * 100)}%)`
+              : s.daysSince > 60
+                ? `Sin pedido hace ${s.daysSince} días`
+                : `Valor 12m ${s.total_12m}`,
+        });
+      }
+    }
+
+    // rebalanceo: rellenar días que quedaron cortos con siguientes candidatos globales
+    const already = new Set<string>();
+    for (const d of days) for (const c of week[d]) already.add(c.cliente_id);
+    for (const d of days) {
+      let i = 0;
+      while (week[d].length < maxPerDay && i < scored.length) {
+        const cand = scored[i++];
+        if (already.has(cand.cliente_id)) continue;
+        week[d].push({
+          ...cand,
+          prioridad: cand.churn >= 0.6 ? "urgente" : "seguimiento",
+          razon: `Zona: ${cand.zona}`,
+        });
+        already.add(cand.cliente_id);
+      }
+    }
+
+    const weekArr = days.map((d) => ({
+      dia: d,
+      zona_principal: zoneOrder.find((z) => zoneToDay.get(z) === d) ?? null,
+      clientes: week[d],
+    }));
+
+    return { rep, week: weekArr };
+  });
+
+/* 17. getOpportunityHeatmapFn — puntos ponderados por oportunidad */
+export const getOpportunityHeatmapFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { rep, clientes } = await getScopedClientIds(context.supabase, context.userId);
+    const clientIds = clientes.map((c) => c.id);
+    if (clientIds.length === 0) return { rep, points: [] };
+
+    // Necesitamos lat/lng — leer de tabla clientes
+    const { data: rows } = await context.supabase
+      .from("clientes")
+      .select("id, razon_social, nombre_comercial, lat, lng")
+      .in("id", clientIds)
+      .not("lat", "is", null)
+      .not("lng", "is", null);
+
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("cliente_id, created_at, total")
+      .in("cliente_id", clientIds)
+      .gte("created_at", new Date(Date.now() - 365 * 86400000).toISOString());
+
+    const stats = new Map<string, { last: string; total: number; count: number }>();
+    for (const p of pedidos ?? []) {
+      const c = stats.get(p.cliente_id) ?? { last: "", total: 0, count: 0 };
+      if (p.created_at > c.last) c.last = p.created_at;
+      c.total += Number(p.total ?? 0);
+      c.count += 1;
+      stats.set(p.cliente_id, c);
+    }
+
+    const { data: insights } = await context.supabase
+      .from("rep_client_insights")
+      .select("cliente_id, churn_risk_score")
+      .in("cliente_id", clientIds);
+    const iMap = new Map(
+      (insights ?? []).map((i: any) => [i.cliente_id, Number(i.churn_risk_score ?? 0)]),
+    );
+
+    const now = Date.now();
+    const points = (rows ?? []).map((c: any) => {
+      const s = stats.get(c.id);
+      const daysSince = s?.last
+        ? Math.floor((now - new Date(s.last).getTime()) / 86400000)
+        : 999;
+      const churn = iMap.get(c.id) ?? 0;
+      const total = s?.total ?? 0;
+      // weight 0..1
+      const weight = Math.min(
+        1,
+        churn * 0.5 + Math.min(daysSince, 120) / 240 + Math.min(Math.log10(total + 1) / 6, 0.4),
+      );
+      return {
+        cliente_id: c.id,
+        nombre: c.nombre_comercial ?? c.razon_social,
+        lat: Number(c.lat),
+        lng: Number(c.lng),
+        weight,
+        churn,
+        days_since_last: daysSince,
+        total_12m: Math.round(total),
+      };
+    });
+
+    return { rep, points };
+  });

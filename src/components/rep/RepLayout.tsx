@@ -17,13 +17,15 @@ type RepCtx = {
 const Ctx = createContext<RepCtx>({ rep: null, geo: null, refreshGeo: () => {} });
 export const useRepContext = () => useContext(Ctx);
 
-type NavItem = { to: string; label: string; icon: any; exact?: boolean };
+type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean };
 const NAV: NavItem[] = [
   { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true },
   { to: "/rep/clientes", label: "Clientes", icon: Users },
   { to: "/rep/ruta", label: "Ruta", icon: MapIcon },
   { to: "/rep/visitas", label: "Visitas", icon: ClipboardList },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
+  { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
+  { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
 ];
 
 export default function RepLayout({ children }: { children: ReactNode }) {
@@ -111,7 +113,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
 
         {/* Bottom nav mobile */}
         <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
-          {NAV.map((n) => {
+          {NAV.filter((n) => !n.desktopOnly).map((n) => {
             const active = isActive(n.to, n.exact);
             return (
               <Link
