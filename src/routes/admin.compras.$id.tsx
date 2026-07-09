@@ -232,6 +232,7 @@ function OCDetail() {
       {recOpen && (
         <RecibirModal
           ocId={id}
+          almacenId={oc.almacen_id}
           items={items}
           onClose={() => setRecOpen(false)}
           onSaved={() => {
@@ -239,6 +240,7 @@ function OCDetail() {
             qc.invalidateQueries({ queryKey: ["oc", id] });
             qc.invalidateQueries({ queryKey: ["ordenes_compra"] });
             qc.invalidateQueries({ queryKey: ["v_stock_productos"] });
+            qc.invalidateQueries({ queryKey: ["v_caducidades"] });
             setRecOpen(false);
           }}
         />
@@ -335,8 +337,9 @@ function AddItemModal({ ocId, laboratorioId, onClose, onSaved }: {
   );
 }
 
-function RecibirModal({ ocId, items, onClose, onSaved }: {
+function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
   ocId: string;
+  almacenId: string;
   items: Item[];
   onClose: () => void;
   onSaved: () => void;
@@ -345,6 +348,8 @@ function RecibirModal({ ocId, items, onClose, onSaved }: {
   const [qty, setQty] = useState<Record<string, number>>(
     Object.fromEntries(pendientes.map((i) => [i.id, i.cantidad - i.cantidad_recibida])),
   );
+  const [lotes, setLotes] = useState<Record<string, string>>({});
+  const [caducs, setCaducs] = useState<Record<string, string>>({});
 
   const recibir = useMutation({
     mutationFn: async () => {
@@ -354,9 +359,26 @@ function RecibirModal({ ocId, items, onClose, onSaved }: {
       if (payload.length === 0) throw new Error("Nada que recibir");
       const { error } = await supabase.rpc("recibir_oc", { _oc: ocId, _items: payload });
       if (error) throw error;
+
+      // Register batches (lote + caducidad) for lines that provided them
+      const batchRows = pendientes
+        .filter((i) => (qty[i.id] ?? 0) > 0 && (lotes[i.id] || caducs[i.id]))
+        .map((i) => ({
+          producto_id: i.producto_id,
+          almacen_id: almacenId,
+          lote: lotes[i.id] || null,
+          caducidad: caducs[i.id] || null,
+          cantidad: qty[i.id],
+          costo_unitario: Number(i.costo_unitario),
+          oc_id: ocId,
+        }));
+      if (batchRows.length > 0) {
+        const { error: eB } = await supabase.from("product_batches").insert(batchRows);
+        if (eB) throw eB;
+      }
     },
     onSuccess: () => {
-      toast.success("Recepción registrada · stock actualizado");
+      toast.success("Recepción registrada · stock y lotes actualizados");
       onSaved();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -367,7 +389,7 @@ function RecibirModal({ ocId, items, onClose, onSaved }: {
       <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-card p-6">
         <h2 className="mb-1 text-lg font-semibold">Recibir mercancía</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Indica cuánto recibiste de cada producto. Se generarán entradas a inventario y se actualizará el costo del producto.
+          Indica cantidad, lote y caducidad por línea. Se generarán entradas a inventario y se registrarán los lotes para trazabilidad.
         </p>
         {pendientes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay items pendientes.</p>
@@ -376,22 +398,41 @@ function RecibirModal({ ocId, items, onClose, onSaved }: {
             {pendientes.map((i) => {
               const pend = Number(i.cantidad) - Number(i.cantidad_recibida);
               return (
-                <div key={i.id} className="flex items-center gap-3 rounded-md border border-border p-3">
-                  <div className="flex-1">
-                    <div className="font-medium">{i.productos?.nombre}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Pendiente: {pend} · Costo: ${Number(i.costo_unitario).toFixed(2)}
+                <div key={i.id} className="rounded-md border border-border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{i.productos?.nombre}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Pendiente: {pend} · Costo: ${Number(i.costo_unitario).toFixed(2)}
+                      </div>
                     </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      max={pend}
+                      value={qty[i.id] ?? 0}
+                      onChange={(e) => setQty({ ...qty, [i.id]: Number(e.target.value) })}
+                      className="input w-24 text-right"
+                      placeholder="Cant."
+                    />
                   </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    max={pend}
-                    value={qty[i.id] ?? 0}
-                    onChange={(e) => setQty({ ...qty, [i.id]: Number(e.target.value) })}
-                    className="input w-32"
-                  />
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={lotes[i.id] ?? ""}
+                      onChange={(e) => setLotes({ ...lotes, [i.id]: e.target.value })}
+                      className="input"
+                      placeholder="Lote"
+                      maxLength={60}
+                    />
+                    <input
+                      type="date"
+                      value={caducs[i.id] ?? ""}
+                      onChange={(e) => setCaducs({ ...caducs, [i.id]: e.target.value })}
+                      className="input"
+                    />
+                  </div>
                 </div>
               );
             })}
