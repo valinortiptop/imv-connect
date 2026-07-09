@@ -268,13 +268,13 @@ export const startDevolucionFn = createServerFn({ method: "POST" })
     z
       .object({
         clienteId: z.string().uuid(),
+        facturaId: z.string().uuid(),
         motivo: z.string().min(3),
         notas: z.string().optional().nullable(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    // Pick a default warehouse (principal)
     const { data: alm } = await context.supabase
       .from("almacenes")
       .select("id")
@@ -286,6 +286,7 @@ export const startDevolucionFn = createServerFn({ method: "POST" })
       .from("devoluciones")
       .insert({
         cliente_id: data.clienteId,
+        factura_id: data.facturaId,
         almacen_id: alm.id,
         motivo: data.motivo,
         notas: data.notas ?? null,
