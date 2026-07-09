@@ -154,6 +154,20 @@ export default function Facturacion() {
     }
   };
 
+  const [stampingId, setStampingId] = useState<string | null>(null);
+  const handleTimbrarRow = async (facturaId: string) => {
+    setStampingId(facturaId);
+    try {
+      await stampFn({ data: { facturaId } });
+      toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
+      queryClient.invalidateQueries({ queryKey: ["facturas"] });
+    } catch (e: any) {
+      toast({ title: "No se pudo timbrar", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setStampingId(null);
+    }
+  };
+
   /* ── state ── */
   // Mayoreo / Menudeo / Todos — filters the client picker dropdown.
   // Default 'todos' so all clients are visible until the user
