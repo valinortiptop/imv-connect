@@ -93,6 +93,7 @@ import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.
 import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nomina'
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
+import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
@@ -525,6 +526,11 @@ const AdminBancosEstadosRoute = AdminBancosEstadosRouteImport.update({
   path: '/bancos/estados',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicMapsScriptRoute = ApiPublicMapsScriptRouteImport.update({
+  id: '/api/public/maps/script',
+  path: '/api/public/maps/script',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContabilidadPolizasIdRoute =
   AdminContabilidadPolizasIdRouteImport.update({
     id: '/$id',
@@ -629,6 +635,7 @@ export interface FileRoutesByFullPath {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesByTo {
@@ -715,6 +722,7 @@ export interface FileRoutesByTo {
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesById {
@@ -805,6 +813,7 @@ export interface FileRoutesById {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRouteTypes {
@@ -896,6 +905,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -982,6 +992,7 @@ export interface FileRouteTypes {
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   id:
     | '__root__'
@@ -1071,6 +1082,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
@@ -1082,6 +1094,7 @@ export interface RootRouteChildren {
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiPublicMapsScriptRoute: typeof ApiPublicMapsScriptRoute
   ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
 }
 
@@ -1675,6 +1688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBancosEstadosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/maps/script': {
+      id: '/api/public/maps/script'
+      path: '/api/public/maps/script'
+      fullPath: '/api/public/maps/script'
+      preLoaderRoute: typeof ApiPublicMapsScriptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/contabilidad/polizas/$id': {
       id: '/admin/contabilidad/polizas/$id'
       path: '/$id'
@@ -1962,6 +1982,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiPublicMapsScriptRoute: ApiPublicMapsScriptRoute,
   ApiPublicMapsTileZXYRoute: ApiPublicMapsTileZXYRoute,
 }
 export const routeTree = rootRouteImport

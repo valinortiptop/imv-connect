@@ -1,13 +1,16 @@
-let googleMapsPromise: Promise<typeof google.maps> | null = null;
+type GoogleMapsNamespace = any;
+
+let googleMapsPromise: Promise<GoogleMapsNamespace> | null = null;
 
 declare global {
   interface Window {
     google?: typeof google;
+    google?: any;
     __imvGoogleMapsReady?: () => void;
   }
 }
 
-export function loadGoogleMapsViaValinor(): Promise<typeof google.maps> {
+export function loadGoogleMapsViaValinor(): Promise<GoogleMapsNamespace> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Google Maps sólo está disponible en el navegador"));
   }
