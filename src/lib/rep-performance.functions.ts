@@ -157,15 +157,22 @@ export const computeDayCloseFn = createServerFn({ method: "POST" })
     const start = day.toISOString();
     const end = new Date(day.getTime() + 24 * 3600_000).toISOString();
 
-    const [{ data: visits }, { data: orders }, { data: payments }, { data: returns }] =
+    // First fetch clients belonging to this rep (needed to filter devoluciones)
+    const { data: repClients } = await context.supabase
+      .from("clientes")
+      .select("id")
+      .eq("representante_id", rep.id);
+    const clientIds = (repClients ?? []).map((c: any) => c.id);
+
+    const [{ data: visits }, { data: orders }, { data: payments }, returnsRes] =
       await Promise.all([
         context.supabase
           .from("rep_visits")
-          .select("id, cliente_id, latitude, longitude, checkin_at, checkout_at")
+          .select("id, cliente_id, check_in_lat, check_in_lng, check_in_at, check_out_at")
           .eq("representante_id", rep.id)
-          .gte("checkin_at", start)
-          .lt("checkin_at", end)
-          .order("checkin_at", { ascending: true }),
+          .gte("check_in_at", start)
+          .lt("check_in_at", end)
+          .order("check_in_at", { ascending: true }),
         context.supabase
           .from("pedidos")
           .select("id, total, cliente_id, created_at")
@@ -177,27 +184,31 @@ export const computeDayCloseFn = createServerFn({ method: "POST" })
           .select("id, monto, factura_id, created_at")
           .gte("created_at", start)
           .lt("created_at", end),
-        context.supabase
-          .from("devoluciones")
-          .select("id, cliente_id, created_at")
-          .eq("representante_id", rep.id)
-          .gte("created_at", start)
-          .lt("created_at", end),
+        clientIds.length
+          ? context.supabase
+              .from("devoluciones")
+              .select("id, cliente_id, created_at")
+              .in("cliente_id", clientIds)
+              .gte("created_at", start)
+              .lt("created_at", end)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
+    const returns = (returnsRes as any).data ?? [];
 
     // km via visits trail
     let km = 0;
     const pts = (visits ?? [])
-      .filter((v: any) => v.latitude != null && v.longitude != null)
-      .map((v: any) => ({ lat: Number(v.latitude), lng: Number(v.longitude) }));
+      .filter((v: any) => v.check_in_lat != null && v.check_in_lng != null)
+      .map((v: any) => ({ lat: Number(v.check_in_lat), lng: Number(v.check_in_lng) }));
     for (let i = 1; i < pts.length; i++) km += haversineKm(pts[i - 1], pts[i]);
 
     // avg time per client (min)
     const durations = (visits ?? [])
-      .filter((v: any) => v.checkout_at)
+      .filter((v: any) => v.check_out_at)
       .map(
         (v: any) =>
-          (new Date(v.checkout_at).getTime() - new Date(v.checkin_at).getTime()) / 60000,
+          (new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000,
+
       );
     const avgTime = durations.length
       ? durations.reduce((a: number, b: number) => a + b, 0) / durations.length
