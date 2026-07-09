@@ -166,25 +166,25 @@ export default function CalendarView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <CalendarDays className="h-6 w-6 text-primary" /> Calendario
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-xl font-semibold md:text-2xl">
+            <CalendarDays className="h-5 w-5 shrink-0 text-primary md:h-6 md:w-6" /> Calendario
           </h1>
           <p className="text-sm text-muted-foreground">
-            Visitas, acuerdos, llamadas, pedidos y entregas de la agenda.
+            Visitas, acuerdos, llamadas, pedidos y entregas.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 md:w-auto">
           <Button variant="outline" size="sm" onClick={() => step(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCursor(startOfDay(new Date()))}>
+          <Button variant="outline" size="sm" onClick={() => setCursor(startOfDay(new Date()))} className="flex-1 md:flex-none">
             Hoy
           </Button>
           <Button variant="outline" size="sm" onClick={() => step(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <div className="ml-2 flex rounded-md border">
+          <div className="ml-auto flex rounded-md border md:ml-2">
             {(["month", "week", "day"] as ViewMode[]).map((v) => (
               <button
                 key={v}
@@ -194,7 +194,7 @@ export default function CalendarView() {
                   view === v ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                 )}
               >
-                {v === "month" ? "Mes" : v === "week" ? "Semana" : "Día"}
+                {v === "month" ? "Mes" : v === "week" ? "Sem" : "Día"}
               </button>
             ))}
           </div>
