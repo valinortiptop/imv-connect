@@ -21,6 +21,7 @@ import { Route as RepRutaRouteImport } from './routes/rep.ruta'
 import { Route as RepPlanRouteImport } from './routes/rep.plan'
 import { Route as RepLaboratoriosRouteImport } from './routes/rep.laboratorios'
 import { Route as RepInventarioRouteImport } from './routes/rep.inventario'
+import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
@@ -152,6 +153,11 @@ const RepLaboratoriosRoute = RepLaboratoriosRouteImport.update({
 const RepInventarioRoute = RepInventarioRouteImport.update({
   id: '/inventario',
   path: '/inventario',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCoachRoute = RepCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
   getParentRoute: () => RepRoute,
 } as any)
 const RepClientesRoute = RepClientesRouteImport.update({
@@ -574,6 +580,7 @@ export interface FileRoutesByFullPath {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
@@ -658,6 +665,7 @@ export interface FileRoutesByTo {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
@@ -745,6 +753,7 @@ export interface FileRoutesById {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
@@ -833,6 +842,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
@@ -917,6 +927,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
@@ -1003,6 +1014,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
@@ -1134,6 +1146,13 @@ declare module '@tanstack/react-router' {
       path: '/inventario'
       fullPath: '/rep/inventario'
       preLoaderRoute: typeof RepInventarioRouteImport
+      parentRoute: typeof RepRoute
+    }
+    '/rep/coach': {
+      id: '/rep/coach'
+      path: '/coach'
+      fullPath: '/rep/coach'
+      preLoaderRoute: typeof RepCoachRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/clientes': {
@@ -1872,6 +1891,7 @@ const RepClientesRouteWithChildren = RepClientesRoute._addFileChildren(
 
 interface RepRouteChildren {
   RepClientesRoute: typeof RepClientesRouteWithChildren
+  RepCoachRoute: typeof RepCoachRoute
   RepInventarioRoute: typeof RepInventarioRoute
   RepLaboratoriosRoute: typeof RepLaboratoriosRoute
   RepPlanRoute: typeof RepPlanRoute
@@ -1883,6 +1903,7 @@ interface RepRouteChildren {
 
 const RepRouteChildren: RepRouteChildren = {
   RepClientesRoute: RepClientesRouteWithChildren,
+  RepCoachRoute: RepCoachRoute,
   RepInventarioRoute: RepInventarioRoute,
   RepLaboratoriosRoute: RepLaboratoriosRoute,
   RepPlanRoute: RepPlanRoute,
