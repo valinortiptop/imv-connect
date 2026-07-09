@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
   { to: "/rep/clientes", label: "Clientes", icon: Users },
   { to: "/rep/ruta", label: "Ruta", icon: MapIcon },
   { to: "/rep/visitas", label: "Visitas", icon: ClipboardList },
+  { to: "/rep/calendario", label: "Calendario", icon: CalendarDays, desktopOnly: true },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
