@@ -275,8 +275,20 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
           </Card>
         </TabsContent>
 
+        {/* SKU behavior */}
+        <TabsContent value="sku">
+          <ClientBehaviorPanel clienteId={clienteId} />
+        </TabsContent>
+
         {/* Oportunidades */}
         <TabsContent value="oportunidades" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Oportunidades perdidas</CardTitle></CardHeader>
+            <CardContent>
+              <MissedOpportunitiesList clienteId={clienteId} />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Recompra probable</CardTitle></CardHeader>
             <CardContent className="space-y-1 text-sm">
