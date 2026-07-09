@@ -189,7 +189,14 @@ export default function RouteMap() {
             Toca los marcadores para seleccionar y optimizar
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant={showHeatmap ? "default" : "outline"}
+            onClick={() => setShowHeatmap((v) => !v)}
+          >
+            <Flame className="mr-1 h-4 w-4" /> Heatmap
+          </Button>
           <Button
             size="sm"
             variant="outline"
