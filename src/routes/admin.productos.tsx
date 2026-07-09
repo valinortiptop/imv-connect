@@ -2317,8 +2317,11 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
     }
   };
 
+  const [failedRows, setFailedRows] = useState<Array<{ row: ImportRow; error: string }>>([]);
+
   const save = async () => {
     console.log("[ImportExcel] Aplicar clicked");
+    setFailedRows([]);
     setSaving(true);
     setProgress({ done: 0, total: 0, label: "Preparando…" });
     try {
@@ -2326,6 +2329,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       const toUpdate = rows.filter((r) => r.status === "update");
       if (toInsert.length === 0 && toUpdate.length === 0) {
         toast.info("No hay cambios por aplicar");
+        return;
+      }
+
+      // Hard block: no silent IVA defaults. IVA is critical for facturación.
+      const missingIva = toInsert.filter((r) => r.iva_pct == null);
+      if (missingIva.length > 0) {
+        toast.error(
+          `${missingIva.length} producto(s) nuevo(s) sin IVA detectado. Corrige la columna de impuestos en el Excel o el mapeo antes de continuar.`,
+        );
         return;
       }
 
@@ -2368,11 +2380,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         return r.laboratorio_id ?? labFromName ?? overrideLab ?? null;
       };
 
-      // INSERT new in batches of 500
+      const failures: Array<{ row: ImportRow; error: string }> = [];
+
+      // INSERT new in batches of 500. On batch error, retry row-by-row so we
+      // surface WHICH row failed instead of losing the whole batch.
       let inserted = 0;
       if (toInsert.length > 0) {
         const BATCH = 500;
-        const payloadAll = toInsert.map((r) => ({
+        const buildPayload = (r: ImportRow) => ({
           sku: r.sku || null,
           nombre: r.nombre,
           marca: r.marca || null,
@@ -2381,19 +2396,32 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
           sat_clave: r.sat_clave,
-          // iva_pct / ieps_pct are NOT NULL in DB — always include a value so
-          // heterogeneous rows in a batch don't emit NULLs for these columns.
-          iva_pct: r.iva_pct ?? 16,
+          iva_pct: r.iva_pct as number, // validated non-null above
           ieps_pct: r.ieps_pct ?? 0,
           activo: true,
-        }));
-        setProgress({ done: 0, total: payloadAll.length, label: "Insertando productos nuevos…" });
-        for (let i = 0; i < payloadAll.length; i += BATCH) {
-          const chunk = payloadAll.slice(i, i + BATCH);
-          const { error } = await supabase.from("productos").insert(chunk);
-          if (error) throw error;
-          inserted += chunk.length;
-          setProgress({ done: inserted, total: payloadAll.length, label: "Insertando productos nuevos…" });
+        });
+        setProgress({ done: 0, total: toInsert.length, label: "Insertando productos nuevos…" });
+        for (let i = 0; i < toInsert.length; i += BATCH) {
+          const chunkRows = toInsert.slice(i, i + BATCH);
+          const chunkPayload = chunkRows.map(buildPayload);
+          const { error } = await supabase.from("productos").insert(chunkPayload);
+          if (error) {
+            // Fall back to per-row insert so we can attribute the failure.
+            for (let j = 0; j < chunkRows.length; j++) {
+              const { error: rowErr } = await supabase
+                .from("productos")
+                .insert(buildPayload(chunkRows[j]));
+              if (rowErr) {
+                failures.push({ row: chunkRows[j], error: rowErr.message });
+              } else {
+                inserted += 1;
+              }
+              setProgress({ done: inserted, total: toInsert.length, label: "Insertando productos nuevos…" });
+            }
+          } else {
+            inserted += chunkRows.length;
+            setProgress({ done: inserted, total: toInsert.length, label: "Insertando productos nuevos…" });
+          }
         }
       }
 
@@ -2417,30 +2445,39 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             // iva_pct / ieps_pct are NOT NULL — never patch with null.
             if (fields.has("iva") && r.iva_pct != null) patch.iva_pct = r.iva_pct;
             if (fields.has("ieps") && r.ieps_pct != null) patch.ieps_pct = r.ieps_pct;
-            return { id: r.existing_id!, patch };
+            return { row: r, id: r.existing_id!, patch };
           })
           .filter((t) => Object.keys(t.patch).length > 0);
 
         for (let i = 0; i < tasks.length; i += CONCURRENCY) {
           const wave = tasks.slice(i, i + CONCURRENCY);
           const results = await Promise.all(
-            wave.map((t) =>
-              supabase.from("productos").update(t.patch).eq("id", t.id),
-            ),
+            wave.map(async (t) => {
+              const { error } = await supabase.from("productos").update(t.patch).eq("id", t.id);
+              return { t, error };
+            }),
           );
-          const firstErr = results.find((r) => r.error)?.error;
-          if (firstErr) throw firstErr;
-          updated += wave.length;
+          for (const { t, error } of results) {
+            if (error) {
+              failures.push({ row: t.row, error: error.message });
+            } else {
+              updated += 1;
+            }
+          }
           setProgress({ done: updated, total: tasks.length, label: "Actualizando productos…" });
         }
       }
 
-      toast.success(
-        `${inserted} nuevo(s) · ${updated} actualizado(s)${
-          newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
-        }`,
-      );
-      onSaved();
+      setFailedRows(failures);
+      const summary = `${inserted} nuevo(s) · ${updated} actualizado(s)${
+        newLabNames.length ? ` · ${newLabNames.length} lab(s) creado(s)` : ""
+      }${failures.length ? ` · ${failures.length} fallido(s)` : ""}`;
+      if (failures.length > 0) {
+        toast.error(summary + " — revisa el detalle en la lista.");
+      } else {
+        toast.success(summary);
+        onSaved();
+      }
     } catch (e) {
       console.error("[ImportExcel] save error", e);
       toast.error((e as Error).message ?? "Error al aplicar cambios");
