@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
+import { AIProvider } from "@/components/ai/AIProvider";
+import { AIToggle } from "@/components/ai/AIToggle";
+import { AICopilotButton } from "@/components/ai/AICopilotButton";
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
@@ -56,6 +59,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
   };
 
   return (
+    <AIProvider>
     <Ctx.Provider value={{ rep: data?.rep ?? null, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
@@ -86,7 +90,10 @@ export default function RepLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="mt-auto pt-4">
+          <div className="mt-auto space-y-2 pt-4">
+            <div className="px-2">
+              <AIToggle compact />
+            </div>
             <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
               <LogOut className="mr-2 h-4 w-4" /> Salir
             </Button>
@@ -107,6 +114,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
                   Activar ubicación
                 </button>
               )}
+              <AIToggle compact />
               <NotificationBell />
             </div>
           </header>
@@ -132,7 +140,9 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+        <AICopilotButton />
       </div>
     </Ctx.Provider>
+    </AIProvider>
   );
 }
