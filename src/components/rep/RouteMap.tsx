@@ -1,6 +1,15 @@
+// @ts-nocheck
+// Route map — uses Leaflet + OpenStreetMap (no browser key needed).
+// Server-side geocoding + route optimization go through the Valinor proxy
+// via existing server functions.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import {
+  MapContainer, TileLayer, CircleMarker, Marker, Polyline, Tooltip, useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   getMyClientsFn,
   optimizeRouteFn,
@@ -12,29 +21,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route, Locate, Flame } from "lucide-react";
+import { MapPin, Route as RouteIcon, Locate, Flame } from "lucide-react";
 
-declare global {
-  interface Window {
-    __repInitMap?: () => void;
-    google?: any;
+const meIcon = L.divIcon({
+  className: "rep-me-marker",
+  html: `<div style="width:16px;height:16px;border-radius:50%;background:#111827;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>`,
+  iconSize: [16, 16], iconAnchor: [8, 8],
+});
+
+function decodePolyline(str: string): [number, number][] {
+  // Google encoded polyline algorithm.
+  let index = 0, lat = 0, lng = 0;
+  const coords: [number, number][] = [];
+  while (index < str.length) {
+    let b: number, shift = 0, result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+    coords.push([lat / 1e5, lng / 1e5]);
   }
+  return coords;
 }
 
-const MAPS_KEY = (import.meta as any).env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
-const TRACKING = (import.meta as any).env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
-
-function loadMaps(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.google?.maps) { resolve(); return; }
-    if (!MAPS_KEY) { reject(new Error("Google Maps key no configurada")); return; }
-    window.__repInitMap = () => resolve();
-    const s = document.createElement("script");
-    s.async = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=visualization,geometry&loading=async&callback=__repInitMap${TRACKING ? `&channel=${TRACKING}` : ""}`;
-    s.onerror = () => reject(new Error("No se pudo cargar Google Maps"));
-    document.head.appendChild(s);
-  });
+function FitBounds({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length === 0) return;
+    if (points.length === 1) { map.setView(points[0], 13); return; }
+    map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 13 });
+  }, [points, map]);
+  return null;
 }
 
 export default function RouteMap() {
@@ -49,124 +69,34 @@ export default function RouteMap() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [routeInfo, setRouteInfo] = useState<{ km: number; min: number } | null>(null);
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapObj = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const polylineRef = useRef<any>(null);
-  const heatLayerRef = useRef<any>(null);
-  const [mapReady, setMapReady] = useState(false);
-
-  useEffect(() => {
-    loadMaps().then(() => setMapReady(true)).catch((e) => toast.error(e.message));
-  }, []);
+  const [routeInfo, setRouteInfo] = useState<{ km: number; min: number; path: [number, number][] } | null>(null);
 
   const clientsWithCoords = useMemo(
     () => (data?.clients ?? []).filter((c: any) => c.lat && c.lng),
     [data],
   );
 
-  useEffect(() => {
-    if (!mapReady || !mapRef.current || mapObj.current) return;
-    const center = geo ?? { lat: 19.4326, lng: -99.1332 };
-    mapObj.current = new window.google.maps.Map(mapRef.current, {
-      center,
-      zoom: 11,
-      disableDefaultUI: false,
-      streetViewControl: false,
-      mapTypeControl: false,
-    });
-  }, [mapReady, geo]);
+  const allPoints = useMemo<[number, number][]>(
+    () => clientsWithCoords.map((c: any) => [Number(c.lat), Number(c.lng)]),
+    [clientsWithCoords],
+  );
 
-  useEffect(() => {
-    if (!mapObj.current) return;
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
-    clientsWithCoords.forEach((c: any) => {
-      const isSel = selected.has(c.id);
-      const risk = (c.churn_risk_score ?? 0) >= 0.6;
-      const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
-      const m = new window.google.maps.Marker({
-        position: { lat: Number(c.lat), lng: Number(c.lng) },
-        map: mapObj.current,
-        title: c.nombre_comercial ?? c.razon_social,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          fillColor: color,
-          fillOpacity: 0.9,
-          strokeColor: "#fff",
-          strokeWeight: 2,
-          scale: isSel ? 10 : 7,
-        },
-      });
-      m.addListener("click", () => {
-        setSelected((prev) => {
-          const n = new Set(prev);
-          if (n.has(c.id)) n.delete(c.id);
-          else n.add(c.id);
-          return n;
-        });
-      });
-      markersRef.current.push(m);
-    });
-    if (geo) {
-      markersRef.current.push(
-        new window.google.maps.Marker({
-          position: geo,
-          map: mapObj.current,
-          title: "Tú",
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            fillColor: "#111827", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2, scale: 8,
-          },
-        }),
-      );
-    }
-  }, [clientsWithCoords, selected, geo, mapReady]);
-
-  // Heatmap layer
-  useEffect(() => {
-    if (!mapObj.current || !window.google?.maps?.visualization) return;
-    if (heatLayerRef.current) {
-      heatLayerRef.current.setMap(null);
-      heatLayerRef.current = null;
-    }
-    if (!showHeatmap) return;
-    const points = (heatQ.data?.points ?? []).map((p: any) => ({
-      location: new window.google.maps.LatLng(p.lat, p.lng),
-      weight: p.weight,
-    }));
-    if (points.length === 0) return;
-    heatLayerRef.current = new window.google.maps.visualization.HeatmapLayer({
-      data: points,
-      map: mapObj.current,
-      radius: 40,
-      opacity: 0.7,
-    });
-  }, [showHeatmap, heatQ.data, mapReady]);
+  const center: [number, number] = geo
+    ? [geo.lat, geo.lng]
+    : allPoints[0] ?? [19.4326, -99.1332];
 
   const doOptimize = useMutation({
     mutationFn: async () => {
       if (!geo) throw new Error("Activa tu ubicación primero");
       const stops = clientsWithCoords
         .filter((c: any) => selected.has(c.id))
-        .map((c: any) => ({
-          cliente_id: c.id, lat: Number(c.lat), lng: Number(c.lng),
-        }));
+        .map((c: any) => ({ cliente_id: c.id, lat: Number(c.lat), lng: Number(c.lng) }));
       if (stops.length === 0) throw new Error("Selecciona al menos un cliente");
-      return optimize({
-        data: { startLat: geo.lat, startLng: geo.lng, stops },
-      });
+      return optimize({ data: { startLat: geo.lat, startLng: geo.lng, stops } });
     },
     onSuccess: (r: any) => {
-      setRouteInfo({ km: r.total_km, min: r.total_minutes });
-      if (polylineRef.current) polylineRef.current.setMap(null);
-      if (r.polyline && window.google?.maps?.geometry) {
-        const path = window.google.maps.geometry.encoding.decodePath(r.polyline);
-        polylineRef.current = new window.google.maps.Polyline({
-          path, map: mapObj.current, strokeColor: "#2563eb", strokeWeight: 4, strokeOpacity: 0.8,
-        });
-      }
+      const path = r.polyline ? decodePolyline(r.polyline) : [];
+      setRouteInfo({ km: r.total_km, min: r.total_minutes, path });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
@@ -180,6 +110,9 @@ export default function RouteMap() {
 
   const withoutCoords = (data?.clients ?? []).filter((c: any) => !c.lat || !c.lng);
 
+  const toggleSel = (id: string) =>
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -190,41 +123,55 @@ export default function RouteMap() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant={showHeatmap ? "default" : "outline"}
-            onClick={() => setShowHeatmap((v) => !v)}
-          >
+          <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)}>
             <Flame className="mr-1 h-4 w-4" /> Heatmap
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setSelected(new Set())}
-            disabled={selected.size === 0}
-          >
+          <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
             Limpiar ({selected.size})
           </Button>
           <Button size="sm" disabled={doOptimize.isPending} onClick={() => doOptimize.mutate()}>
-            <Route className="mr-1 h-4 w-4" /> Optimizar
+            <RouteIcon className="mr-1 h-4 w-4" /> Optimizar
           </Button>
         </div>
       </div>
 
-      <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-muted">
-        <div ref={mapRef} className="absolute inset-0" />
-        {!MAPS_KEY && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
-            <MapPin className="h-6 w-6" />
-            <p className="font-medium text-foreground">Mapa no disponible</p>
-            <p>Falta configurar la conexión Google Maps para este proyecto.</p>
-          </div>
-        )}
-        {MAPS_KEY && !mapReady && (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-            Cargando mapa…
-          </div>
-        )}
+      <div className="h-[420px] w-full overflow-hidden rounded-lg border border-border">
+        <MapContainer center={center} zoom={11} scrollWheelZoom style={{ width: "100%", height: "100%" }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <FitBounds points={geo ? [[geo.lat, geo.lng], ...allPoints] : allPoints} />
+          {showHeatmap && (heatQ.data?.points ?? []).map((p: any, i: number) => (
+            <CircleMarker
+              key={`heat-${i}`}
+              center={[p.lat, p.lng]}
+              radius={Math.min(30, 8 + p.weight * 3)}
+              pathOptions={{ color: "#f97316", fillColor: "#f97316", fillOpacity: 0.25, weight: 0 }}
+              interactive={false}
+            />
+          ))}
+          {clientsWithCoords.map((c: any) => {
+            const isSel = selected.has(c.id);
+            const risk = (c.churn_risk_score ?? 0) >= 0.6;
+            const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
+            return (
+              <CircleMarker
+                key={c.id}
+                center={[Number(c.lat), Number(c.lng)]}
+                radius={isSel ? 10 : 7}
+                pathOptions={{ color: "#fff", weight: 2, fillColor: color, fillOpacity: 0.9 }}
+                eventHandlers={{ click: () => toggleSel(c.id) }}
+              >
+                <Tooltip>{c.nombre_comercial ?? c.razon_social}</Tooltip>
+              </CircleMarker>
+            );
+          })}
+          {geo && <Marker position={[geo.lat, geo.lng]} icon={meIcon}><Tooltip>Tú</Tooltip></Marker>}
+          {routeInfo?.path && routeInfo.path.length > 1 && (
+            <Polyline positions={routeInfo.path} pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.8 }} />
+          )}
+        </MapContainer>
       </div>
       {routeInfo && (
         <div className="text-sm text-muted-foreground">
