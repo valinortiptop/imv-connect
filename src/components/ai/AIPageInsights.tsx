@@ -18,7 +18,10 @@ type ModuleId =
   | "rep-laboratorios"
   | "rep-coach"
   | "rep-supervisor"
-  | "rep-calendario";
+  | "rep-calendario"
+  | "rep-cotizaciones"
+  | "rep-cobranza"
+  | "rep-devoluciones";
 
 const DEFAULT_PROMPT: Record<ModuleId, string> = {
   "rep-home":
@@ -43,6 +46,12 @@ const DEFAULT_PROMPT: Record<ModuleId, string> = {
     "Analiza el desempeño del equipo: quién necesita apoyo, quién destaca y qué zonas tienen oportunidad.",
   "rep-calendario":
     "Analiza mi agenda: conflictos, huecos, seguimientos pendientes y recomendaciones para optimizar la semana.",
+  "rep-cotizaciones":
+    "Revisa mis cotizaciones abiertas: cuáles tienen más probabilidad de cerrar, cuáles hacer follow-up y cómo mejorar el pipeline.",
+  "rep-cobranza":
+    "Prioriza mi cobranza: clientes con mayor riesgo, montos vencidos y scripts sugeridos para cada llamada.",
+  "rep-devoluciones":
+    "Analiza mis devoluciones: patrones de motivos, clientes reincidentes y acciones para reducirlas.",
 };
 
 export function AIPageInsights({
