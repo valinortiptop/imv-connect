@@ -364,6 +364,16 @@ export default function RouteMap() {
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
             Limpiar ({selected.size})
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={aiSuggest.isPending}
+            onClick={() => aiSuggest.mutate()}
+            className="border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="mr-1 h-4 w-4" />
+            {aiSuggest.isPending ? "Generando…" : "Ruta con IA"}
+          </Button>
           <Button size="sm" disabled={doOptimize.isPending} onClick={() => doOptimize.mutate()}>
             <RouteIcon className="mr-1 h-4 w-4" /> Optimizar
           </Button>
