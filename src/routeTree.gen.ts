@@ -110,6 +110,7 @@ import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nom
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
+import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
@@ -627,6 +628,12 @@ const ApiPublicMapsScriptRoute = ApiPublicMapsScriptRouteImport.update({
   path: '/api/public/maps/script',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRegenerateComprasAlertsRoute =
+  ApiPublicHooksRegenerateComprasAlertsRouteImport.update({
+    id: '/api/public/hooks/regenerate-compras-alerts',
+    path: '/api/public/hooks/regenerate-compras-alerts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminContabilidadPolizasIdRoute =
   AdminContabilidadPolizasIdRouteImport.update({
     id: '/$id',
@@ -747,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
@@ -849,6 +857,7 @@ export interface FileRoutesByTo {
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
@@ -956,6 +965,7 @@ export interface FileRoutesById {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
@@ -1064,6 +1074,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
@@ -1166,6 +1177,7 @@ export interface FileRouteTypes {
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   id:
@@ -1272,6 +1284,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
@@ -1284,6 +1297,7 @@ export interface RootRouteChildren {
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiPublicHooksRegenerateComprasAlertsRoute: typeof ApiPublicHooksRegenerateComprasAlertsRoute
   ApiPublicMapsScriptRoute: typeof ApiPublicMapsScriptRoute
   ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
 }
@@ -1997,6 +2011,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMapsScriptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/regenerate-compras-alerts': {
+      id: '/api/public/hooks/regenerate-compras-alerts'
+      path: '/api/public/hooks/regenerate-compras-alerts'
+      fullPath: '/api/public/hooks/regenerate-compras-alerts'
+      preLoaderRoute: typeof ApiPublicHooksRegenerateComprasAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/contabilidad/polizas/$id': {
       id: '/admin/contabilidad/polizas/$id'
       path: '/$id'
@@ -2316,6 +2337,8 @@ const rootRouteChildren: RootRouteChildren = {
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiPublicHooksRegenerateComprasAlertsRoute:
+    ApiPublicHooksRegenerateComprasAlertsRoute,
   ApiPublicMapsScriptRoute: ApiPublicMapsScriptRoute,
   ApiPublicMapsTileZXYRoute: ApiPublicMapsTileZXYRoute,
 }
