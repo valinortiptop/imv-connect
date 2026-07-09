@@ -46,6 +46,7 @@ const navGroups: NavGroup[] = [
       { key: "navClients",      label: "Clientes",             url: "/admin/clientes",       icon: Users },
       { key: "navPortalAdmin",  label: "Portal Clientes",      url: "/admin/portal",          icon: Link2 },
       { key: "navReps",         label: "Vendedores",           url: "/admin/representantes", icon: UserSquare2 },
+      { key: "navRepPanel",     label: "Panel Representante",  url: "/rep",                  icon: UserSquare2 },
       { key: "navDirectory",    label: "Facturación",          url: "/admin/facturas",       icon: FileText },
       { key: "navPromos",       label: "Promociones",          url: "/admin/promos",         icon: Tag },
       { key: "navPartners",     label: "Partners",             url: "/admin/partners",       icon: Handshake },
