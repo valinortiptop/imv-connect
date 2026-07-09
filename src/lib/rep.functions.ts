@@ -2116,10 +2116,10 @@ export const getGamificationFn = createServerFn({ method: "POST" })
       const ps = (pedidos ?? []).filter((x: any) => x.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
       const puntos = v * 10 + ps.length * 50 + Math.floor(ventas / 1000);
-      return { rep_id: r.id, nombre: r.nombre, visitas: v, pedidos: ps.length, ventas: Math.round(ventas), puntos };
+      return { rep_id: r.id as string, nombre: r.nombre as string, visitas: v, pedidos: ps.length, ventas: Math.round(ventas), puntos, rank: 0 };
     });
     ranking.sort((a, b) => b.puntos - a.puntos);
-    ranking.forEach((r, i) => ((r as any).rank = i + 1));
+    ranking.forEach((r, i) => { r.rank = i + 1; });
 
     const me = rep ? ranking.find((r) => r.rep_id === rep.id) ?? null : null;
 
