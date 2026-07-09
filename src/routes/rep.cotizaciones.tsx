@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { FileText, ArrowRight, Plus } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
+import ShareTicketButton from "@/components/rep/ShareTicketButton";
+
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
