@@ -2158,8 +2158,15 @@ function ImportExcelDialog({
             "codigo suitetax",
             "clave impuestos",
             "tax code",
+            "grupo de impuestos",
+            "impuesto",
+            "impuestos",
+            "iva",
+            "% iva",
+            "ieps",
+            "% ieps",
           );
-          const parsedTax = parseTaxCode(taxRaw);
+          const parsedTax = parseTaxCode(taxRaw) ?? parseTaxFromColumns(r);
 
           const matchedLab = labNombre
             ? labByNameLower.get(labNombre.toLowerCase())
@@ -2185,7 +2192,15 @@ function ImportExcelDialog({
               errorMsg: `Fila ${i + 2}: falta nombre`,
             };
           }
-          return { ...base, ...diffRow(base) } as ImportRow;
+          const diffRes = diffRow(base);
+          if (diffRes.status === "new" && !isValidIvaValue(base.iva_pct)) {
+            return {
+              ...base,
+              status: "error" as const,
+              errorMsg: `Fila ${i + 2}: IVA no detectado — corrige la columna de impuestos`,
+            };
+          }
+          return { ...base, ...diffRes } as ImportRow;
         });
 
       // If it's a recognised NetSuite export the heuristic is authoritative;
@@ -2287,10 +2302,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               r.precio_lista == null || String(r.precio_lista) === ""
                 ? null
                 : Number(r.precio_lista) || null;
-            const iva_pct =
+            let iva_pct =
               r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
             const ieps_pct =
               r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
+            if (!Number.isFinite(iva_pct)) iva_pct = null;
+            const fallbackTax = parseTaxFromColumns(json[i] ?? {});
+            if (iva_pct == null && fallbackTax) iva_pct = fallbackTax.iva_pct;
             const issues = Array.isArray(r.issues)
               ? r.issues.map((x) => String(x)).filter(Boolean)
               : [];
@@ -2330,7 +2348,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             }
             // Missing IVA on a new product → hard error (NOT NULL in DB, critical field)
             const diffRes = diffRow(base);
-            if (diffRes.status === "new" && base.iva_pct == null) {
+            if (diffRes.status === "new" && !isValidIvaValue(base.iva_pct)) {
               return {
                 ...base,
                 status: "error" as const,
@@ -2347,13 +2365,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           } else {
             toast.error("La IA no pudo mapear el archivo");
           }
-          parsed = heuristicParse().map((r) =>
+          parsed = heuristicParse().map((r, i) =>
             r.status === "error"
               ? r
               : {
                   ...r,
                   status: "error" as const,
-                  errorMsg: `Fila ${r.status}: mapeo IA falló — revisa manualmente`,
+                  errorMsg: `Fila ${i + 2}: mapeo IA falló — revisa manualmente`,
                 },
           );
         }
