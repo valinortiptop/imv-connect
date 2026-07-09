@@ -39,6 +39,23 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
   const navigate = useNavigate();
   const qc = useQueryClient();
   const downloadFn = useServerFn(downloadInvoiceFn);
+  const stampFn = useServerFn(stampInvoiceFn);
+  const [stamping, setStamping] = useState(false);
+
+  const handleTimbrar = async (facturaId: string) => {
+    setStamping(true);
+    try {
+      await stampFn({ data: { facturaId } });
+      toast.success("CFDI timbrado correctamente");
+      qc.invalidateQueries({ queryKey: ["order-factura", orderId] });
+      qc.invalidateQueries({ queryKey: ["facturas"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo timbrar la factura");
+    } finally {
+      setStamping(false);
+    }
+  };
+
 
   const downloadCfdi = async (facturaId, format) => {
     try {
