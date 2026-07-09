@@ -4993,6 +4993,54 @@ export type Database = {
         }
         Relationships: []
       }
+      rep_achievements: {
+        Row: {
+          badge_code: string
+          description: string | null
+          earned_at: string
+          id: string
+          label: string
+          meta: Json
+          points: number
+          rep_id: string
+        }
+        Insert: {
+          badge_code: string
+          description?: string | null
+          earned_at?: string
+          id?: string
+          label: string
+          meta?: Json
+          points?: number
+          rep_id: string
+        }
+        Update: {
+          badge_code?: string
+          description?: string | null
+          earned_at?: string
+          id?: string
+          label?: string
+          meta?: Json
+          points?: number
+          rep_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_achievements_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_achievements_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_client_insights: {
         Row: {
           churn_reasons: Json | null
@@ -5058,6 +5106,57 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
+      rep_coaching: {
+        Row: {
+          created_at: string
+          goals: Json
+          id: string
+          improvements: Json
+          kpis: Json
+          rep_id: string
+          strengths: Json
+          summary: string | null
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          goals?: Json
+          id?: string
+          improvements?: Json
+          kpis?: Json
+          rep_id: string
+          strengths?: Json
+          summary?: string | null
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          goals?: Json
+          id?: string
+          improvements?: Json
+          kpis?: Json
+          rep_id?: string
+          strengths?: Json
+          summary?: string | null
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_coaching_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_coaching_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
           },
         ]
       }
