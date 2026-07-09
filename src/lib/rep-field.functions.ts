@@ -252,7 +252,7 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
       total: Number(pago.monto),
       items: [
         {
-          name: `Pago ${pago.forma_pago ?? ""} ${pago.referencia ? `· ref ${pago.referencia}` : ""}`,
+          name: `Pago ${pago.metodo ?? ""} ${pago.referencia ? `· ref ${pago.referencia}` : ""}`,
           sku: "",
           qty: 1,
           price: Number(pago.monto),
