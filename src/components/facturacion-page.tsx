@@ -818,6 +818,11 @@ export default function Facturacion() {
                           )}>
                             {statusLabel}
                           </span>
+                          {!f.uuid_fiscal && !isCanceled && (
+                            <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-300">
+                              No timbrada
+                            </span>
+                          )}
                           {f.rfc && (
                             <span className="text-[10px] text-muted-foreground font-mono">{f.rfc}</span>
                           )}
