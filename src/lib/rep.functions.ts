@@ -906,3 +906,307 @@ export const quickInventoryLookupFn = createServerFn({ method: "POST" })
     }));
     return { productos: enriched };
   });
+
+/* ─── FASE 2 ─────────────────────────────────────────────────────────────── */
+
+/* Helper: obtiene clientes del rep (o todos si es admin) */
+async function getScopedClientIds(supabase: any, userId: string) {
+  const rep = await getCurrentRep(supabase, userId);
+  let q = supabase.from("clientes").select("id, razon_social, nombre_comercial, zona").eq("active", true);
+  if (rep) q = q.eq("representante_id", rep.id);
+  const { data } = await q.limit(1000);
+  return { rep, clientes: (data ?? []) as Array<{ id: string; razon_social: string; nombre_comercial: string | null; zona: string | null }> };
+}
+
+/* ─── 12. getLabRiskPanel ─── Detección de migración por laboratorio */
+export const getLabRiskPanelFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { rep, clientes } = await getScopedClientIds(context.supabase, context.userId);
+    const clientIds = clientes.map((c) => c.id);
+    if (clientIds.length === 0) return { rep, labs: [] };
+
+    // 4 meses de historia para comparar bloques de 60 días
+    const since = new Date();
+    since.setDate(since.getDate() - 120);
+
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("id, cliente_id, created_at")
+      .in("cliente_id", clientIds)
+      .gte("created_at", since.toISOString());
+
+    const pedidoIds = (pedidos ?? []).map((p: any) => p.id);
+    if (pedidoIds.length === 0) return { rep, labs: [] };
+
+    const pedidoMeta = new Map(
+      (pedidos ?? []).map((p: any) => [p.id, { cliente_id: p.cliente_id, created_at: p.created_at as string }]),
+    );
+
+    const { data: items } = await context.supabase
+      .from("pedido_items")
+      .select("pedido_id, producto_id, cantidad, importe")
+      .in("pedido_id", pedidoIds);
+
+    const productIds = Array.from(new Set((items ?? []).map((i: any) => i.producto_id).filter(Boolean)));
+    if (productIds.length === 0) return { rep, labs: [] };
+
+    const { data: productos } = await context.supabase
+      .from("productos")
+      .select("id, laboratorio_id")
+      .in("id", productIds);
+    const prodLab = new Map((productos ?? []).map((p: any) => [p.id, p.laboratorio_id]));
+
+    const labIds = Array.from(new Set((productos ?? []).map((p: any) => p.laboratorio_id).filter(Boolean)));
+    const { data: labs } = await context.supabase
+      .from("laboratorios")
+      .select("id, nombre")
+      .in("id", labIds);
+    const labName = new Map((labs ?? []).map((l: any) => [l.id, l.nombre]));
+
+    const now = Date.now();
+    const CUT_60 = now - 60 * 86400000;
+    const CUT_120 = now - 120 * 86400000;
+
+    type Agg = {
+      lab_id: string;
+      nombre: string;
+      recent: number;
+      previous: number;
+      clientes_recent: Set<string>;
+      clientes_prev: Set<string>;
+      clientes_perdidos: Set<string>;
+    };
+    const agg = new Map<string, Agg>();
+
+    // Track por (lab, cliente) para saber si un cliente dejó de comprar el lab
+    const perLabClientRecent = new Map<string, Map<string, number>>();
+    const perLabClientPrev = new Map<string, Map<string, number>>();
+
+    for (const it of items ?? []) {
+      const meta = pedidoMeta.get(it.pedido_id) as { cliente_id: string; created_at: string } | undefined;
+      if (!meta) continue;
+      const lab = prodLab.get(it.producto_id) as string | undefined;
+      if (!lab) continue;
+      const ts = new Date(meta.created_at).getTime();
+      const bucket = ts >= CUT_60 ? "recent" : ts >= CUT_120 ? "previous" : null;
+      if (!bucket) continue;
+      const importe = Number(it.importe ?? 0);
+      const cur = agg.get(lab) ?? {
+        lab_id: lab,
+        nombre: (labName.get(lab) as string) ?? "—",
+        recent: 0,
+        previous: 0,
+        clientes_recent: new Set<string>(),
+        clientes_prev: new Set<string>(),
+        clientes_perdidos: new Set<string>(),
+      };
+      if (bucket === "recent") {
+        cur.recent += importe;
+        cur.clientes_recent.add(meta.cliente_id);
+        const m = perLabClientRecent.get(lab) ?? new Map<string, number>();
+        m.set(meta.cliente_id, (m.get(meta.cliente_id) ?? 0) + importe);
+        perLabClientRecent.set(lab, m);
+      } else {
+        cur.previous += importe;
+        cur.clientes_prev.add(meta.cliente_id);
+        const m = perLabClientPrev.get(lab) ?? new Map<string, number>();
+        m.set(meta.cliente_id, (m.get(meta.cliente_id) ?? 0) + importe);
+        perLabClientPrev.set(lab, m);
+      }
+      agg.set(lab, cur);
+    }
+
+    const results = Array.from(agg.values())
+      .map((a) => {
+        const drop_pct = a.previous > 0 ? (a.previous - a.recent) / a.previous : a.recent > 0 ? -1 : 0;
+        const prevClients = perLabClientPrev.get(a.lab_id) ?? new Map<string, number>();
+        const recentClients = perLabClientRecent.get(a.lab_id) ?? new Map<string, number>();
+        const perdidos: Array<{ cliente_id: string; nombre: string; importe_prev: number }> = [];
+        for (const [cid, imp] of prevClients) {
+          if (!recentClients.has(cid) && imp >= 500) {
+            const c = clientes.find((x) => x.id === cid);
+            perdidos.push({
+              cliente_id: cid,
+              nombre: c?.nombre_comercial ?? c?.razon_social ?? "Cliente",
+              importe_prev: Math.round(imp),
+            });
+          }
+        }
+        perdidos.sort((a, b) => b.importe_prev - a.importe_prev);
+        return {
+          laboratorio_id: a.lab_id,
+          nombre: a.nombre,
+          importe_recent: Math.round(a.recent),
+          importe_previous: Math.round(a.previous),
+          drop_pct,
+          clientes_recent: a.clientes_recent.size,
+          clientes_previous: a.clientes_prev.size,
+          clientes_perdidos: perdidos.slice(0, 8),
+          risk_level:
+            drop_pct >= 0.6 ? "alto" : drop_pct >= 0.3 ? "medio" : drop_pct >= 0.1 ? "bajo" : "estable",
+        };
+      })
+      .filter((l) => l.importe_previous > 0 || l.importe_recent > 0)
+      .sort((a, b) => b.drop_pct - a.drop_pct);
+
+    return { rep, labs: results };
+  });
+
+/* ─── 13. getReorderPredictions ─── Predicción determinística de recompra */
+export const getReorderPredictionsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ withinDays: z.number().int().min(1).max(60).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const within = data.withinDays ?? 10;
+    const { rep, clientes } = await getScopedClientIds(context.supabase, context.userId);
+    const clientIds = clientes.map((c) => c.id);
+    if (clientIds.length === 0) return { rep, predictions: [] };
+
+    const since = new Date();
+    since.setMonth(since.getMonth() - 9);
+
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("id, cliente_id, created_at")
+      .in("cliente_id", clientIds)
+      .gte("created_at", since.toISOString())
+      .order("created_at", { ascending: true });
+
+    const pedidoIds = (pedidos ?? []).map((p: any) => p.id);
+    if (pedidoIds.length === 0) return { rep, predictions: [] };
+
+    const pedidoMeta = new Map(
+      (pedidos ?? []).map((p: any) => [p.id, { cliente_id: p.cliente_id, created_at: p.created_at as string }]),
+    );
+
+    const { data: items } = await context.supabase
+      .from("pedido_items")
+      .select("pedido_id, producto_id, cantidad, importe, nombre_snapshot")
+      .in("pedido_id", pedidoIds);
+
+    // Agrupar por (cliente, producto): fechas de compra + qty promedio
+    type Key = string;
+    const map = new Map<Key, { cliente_id: string; producto_id: string; nombre: string; dates: number[]; qtys: number[] }>();
+    for (const it of items ?? []) {
+      if (!it.producto_id) continue;
+      const meta = pedidoMeta.get(it.pedido_id) as { cliente_id: string; created_at: string } | undefined;
+      if (!meta) continue;
+      const key = `${meta.cliente_id}:${it.producto_id}`;
+      const cur = map.get(key) ?? {
+        cliente_id: meta.cliente_id,
+        producto_id: it.producto_id,
+        nombre: it.nombre_snapshot ?? "",
+        dates: [],
+        qtys: [],
+      };
+      cur.dates.push(new Date(meta.created_at).getTime());
+      cur.qtys.push(Number(it.cantidad ?? 0));
+      map.set(key, cur);
+    }
+
+    const productIds = Array.from(new Set(Array.from(map.values()).map((v) => v.producto_id)));
+    const { data: prods } = await context.supabase
+      .from("productos")
+      .select("id, nombre, sku, stock_disponible, precio_lista")
+      .in("id", productIds);
+    const prodMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+
+    const now = Date.now();
+    const predictions: any[] = [];
+    for (const v of map.values()) {
+      if (v.dates.length < 3) continue; // necesitamos histórico
+      v.dates.sort((a, b) => a - b);
+      const intervals: number[] = [];
+      for (let i = 1; i < v.dates.length; i++) {
+        intervals.push((v.dates[i] - v.dates[i - 1]) / 86400000);
+      }
+      // media móvil de los últimos 4 intervalos
+      const recentInt = intervals.slice(-4);
+      const avg = recentInt.reduce((a, b) => a + b, 0) / recentInt.length;
+      if (!isFinite(avg) || avg < 3 || avg > 180) continue;
+      const last = v.dates[v.dates.length - 1];
+      const nextTs = last + avg * 86400000;
+      const daysUntil = Math.round((nextTs - now) / 86400000);
+      if (daysUntil > within || daysUntil < -within * 2) continue;
+      const prod = prodMap.get(v.producto_id) as any;
+      const qtyAvg = v.qtys.reduce((a, b) => a + b, 0) / v.qtys.length;
+      const c = clientes.find((x) => x.id === v.cliente_id);
+      predictions.push({
+        cliente_id: v.cliente_id,
+        cliente_nombre: c?.nombre_comercial ?? c?.razon_social ?? "Cliente",
+        producto_id: v.producto_id,
+        producto_nombre: prod?.nombre ?? v.nombre,
+        sku: prod?.sku ?? null,
+        stock_disponible: Number(prod?.stock_disponible ?? 0),
+        precio_lista: Number(prod?.precio_lista ?? 0),
+        qty_sugerida: Math.max(1, Math.round(qtyAvg)),
+        cadencia_dias: Math.round(avg),
+        probable_date: new Date(nextTs).toISOString().slice(0, 10),
+        days_until: daysUntil,
+        confidence:
+          intervals.length >= 6 ? "alta" : intervals.length >= 4 ? "media" : "baja",
+        urgency: daysUntil <= 0 ? "vencido" : daysUntil <= 3 ? "inmediato" : "proximo",
+      });
+    }
+
+    predictions.sort((a, b) => a.days_until - b.days_until);
+    return { rep, predictions: predictions.slice(0, 100) };
+  });
+
+/* ─── 14. generateRepAlerts ─── Genera notifications al rep */
+export const generateRepAlertsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+
+    // Recupera insights de riesgo alto
+    let clientsQ = context.supabase
+      .from("clientes")
+      .select("id, nombre_comercial, razon_social, representante_id")
+      .eq("active", true);
+    if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
+    const { data: clientes } = await clientsQ.limit(1000);
+    const clientIds = (clientes ?? []).map((c: any) => c.id);
+    if (clientIds.length === 0) return { created: 0 };
+
+    const { data: insights } = await context.supabase
+      .from("rep_client_insights")
+      .select("cliente_id, churn_risk_score, summary, generated_at")
+      .in("cliente_id", clientIds)
+      .gte("churn_risk_score", 0.7);
+
+    // Notificaciones ya enviadas hoy para no duplicar
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { data: existing } = await context.supabase
+      .from("notifications")
+      .select("route")
+      .eq("user_id", context.userId)
+      .eq("category", "rep_alert")
+      .gte("created_at", todayStart.toISOString());
+    const alreadySent = new Set((existing ?? []).map((n: any) => n.route));
+
+    const rows: any[] = [];
+    for (const ins of insights ?? []) {
+      const c = (clientes ?? []).find((x: any) => x.id === ins.cliente_id);
+      const route = `/rep/clientes/${ins.cliente_id}`;
+      if (alreadySent.has(route)) continue;
+      rows.push({
+        user_id: context.userId,
+        title: `⚠️ Riesgo alto: ${c?.nombre_comercial ?? c?.razon_social ?? "Cliente"}`,
+        description: ins.summary?.slice(0, 200) ?? `Riesgo de pérdida ${(Number(ins.churn_risk_score) * 100).toFixed(0)}%`,
+        category: "rep_alert",
+        type: "churn",
+        priority: "high",
+        route,
+      });
+    }
+
+    if (rows.length > 0) {
+      await context.supabase.from("notifications").insert(rows);
+    }
+    return { created: rows.length };
+  });
