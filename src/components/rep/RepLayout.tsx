@@ -113,7 +113,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
 
         {/* Bottom nav mobile */}
         <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
-          {NAV.map((n) => {
+          {NAV.filter((n) => !n.desktopOnly).map((n) => {
             const active = isActive(n.to, n.exact);
             return (
               <Link
