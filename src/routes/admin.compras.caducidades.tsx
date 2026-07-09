@@ -68,6 +68,7 @@ function CaducidadesPage() {
                   <th className="px-3 py-2 text-right">Valor</th>
                   <th className="px-3 py-2 text-right">Caducidad</th>
                   <th className="px-3 py-2 text-right">Días</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -86,10 +87,15 @@ function CaducidadesPage() {
                       r.dias_restantes <= 30 ? "text-rose-600" : r.dias_restantes <= 90 ? "text-amber-600" : "text-emerald-600")}>
                       {r.dias_restantes}
                     </td>
+                    <td className="px-3 py-2 text-right">
+                      <Button variant="outline" size="sm" onClick={() => setRecFor({ producto_id: r.producto_id, nombre: r.nombre, sku: r.sku })}>
+                        <Users className="mr-1 size-3.5" /> Clientes
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {(data ?? []).length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin lotes en este rango.</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Sin lotes en este rango.</td></tr>
                 )}
               </tbody>
             </table>
@@ -112,11 +118,70 @@ function CaducidadesPage() {
                   <span className="tabular-nums">{mxn.format(Number(r.valor_economico))}</span>
                   <span>{r.caducidad ?? "—"}</span>
                 </div>
+                <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setRecFor({ producto_id: r.producto_id, nombre: r.nombre, sku: r.sku })}>
+                  <Users className="mr-1 size-3.5" /> Ver clientes recomendados
+                </Button>
               </div>
             ))}
           </div>
         </>
       )}
+      {recFor && <ClientesRecomendadosDialog producto={recFor} onClose={() => setRecFor(null)} />}
     </div>
+  );
+}
+
+function ClientesRecomendadosDialog({ producto, onClose }: any) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["v_caducidades_clientes", producto.producto_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("v_caducidades_clientes")
+        .select("*")
+        .eq("producto_id", producto.producto_id)
+        .order("total_comprado", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-card p-5">
+        <div className="mb-3 flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Clientes recomendados</h2>
+            <p className="text-xs text-muted-foreground">{producto.nombre} · {producto.sku}</p>
+          </div>
+          <button onClick={onClose}><X className="size-5" /></button>
+        </div>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Cargando…</p>
+        ) : (data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sin historial de compras en los últimos 12 meses.</p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto divide-y divide-border rounded-md border border-border">
+            {(data ?? []).map((c: any) => (
+              <div key={c.cliente_id} className="px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate font-medium">{c.nombre_comercial || c.cliente}</p>
+                  <span className="tabular-nums text-xs">{Number(c.total_comprado).toFixed(0)} u</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {c.pedidos_count} pedido(s) · última {c.ultima_compra ? new Date(c.ultima_compra).toLocaleDateString("es-MX") : "—"}
+                  {c.representante && ` · ${c.representante}`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-4 flex justify-end">
+          <Button variant="outline" onClick={onClose}>Cerrar</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
   );
 }
