@@ -13,6 +13,7 @@ import { Route as RepRouteImport } from './routes/rep'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RepIndexRouteImport } from './routes/rep.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
@@ -104,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const RepIndexRoute = RepIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RepRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -474,7 +480,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/rep': typeof RepRoute
+  '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -520,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -550,7 +557,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/rep': typeof RepRoute
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -596,6 +602,7 @@ export interface FileRoutesByTo {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/rep': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -628,7 +635,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/rep': typeof RepRoute
+  '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -674,6 +681,7 @@ export interface FileRoutesById {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -753,6 +761,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin/'
+    | '/rep/'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -783,7 +792,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
@@ -829,6 +837,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin'
+    | '/rep'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -906,6 +915,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/admin/'
+    | '/rep/'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -938,7 +948,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
-  RepRoute: typeof RepRoute
+  RepRoute: typeof RepRouteWithChildren
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
@@ -973,6 +983,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/rep/': {
+      id: '/rep/'
+      path: '/'
+      fullPath: '/rep/'
+      preLoaderRoute: typeof RepIndexRouteImport
+      parentRoute: typeof RepRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1689,11 +1706,21 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface RepRouteChildren {
+  RepIndexRoute: typeof RepIndexRoute
+}
+
+const RepRouteChildren: RepRouteChildren = {
+  RepIndexRoute: RepIndexRoute,
+}
+
+const RepRouteWithChildren = RepRoute._addFileChildren(RepRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
-  RepRoute: RepRoute,
+  RepRoute: RepRouteWithChildren,
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
