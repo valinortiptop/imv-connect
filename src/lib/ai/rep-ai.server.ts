@@ -47,18 +47,6 @@ const MODULE_LABEL: Record<RepModule, string> = {
 };
 
 
-const MODULE_LABEL: Record<RepModule, string> = {
-  "rep-home": "Inicio del rep",
-  "rep-clientes": "Listado de clientes",
-  "rep-cliente-detalle": "Ficha 360° del cliente",
-  "rep-ruta": "Ruta del día",
-  "rep-visitas": "Visitas realizadas",
-  "rep-inventario": "Inventario / catálogo",
-  "rep-plan": "Plan semanal",
-  "rep-laboratorios": "Laboratorios asignados",
-  "rep-coach": "Coach IA",
-  "rep-supervisor": "Panel supervisor",
-};
 
 type SB = SupabaseClient<Database>;
 
