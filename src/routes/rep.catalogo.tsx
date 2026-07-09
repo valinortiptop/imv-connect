@@ -19,7 +19,7 @@ function Page() {
   const [clientId, setClientId] = useState<string>("");
   const [zoom, setZoom] = useState<any | null>(null);
 
-  const listClients = useServerFn(listRepClientsFn);
+  const listClients = useServerFn(getMyClientsFn);
   const fetchCatalog = useServerFn(getRepCatalogFn);
 
   const clientsQ = useQuery({
