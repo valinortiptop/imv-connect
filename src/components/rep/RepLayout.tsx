@@ -114,6 +114,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
                   Activar ubicación
                 </button>
               )}
+              <AIToggle compact />
               <NotificationBell />
             </div>
           </header>
