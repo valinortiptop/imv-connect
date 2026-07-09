@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { stampInvoiceFn, downloadInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
-  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp,
+  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp, Loader2,
 } from "lucide-react";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -151,6 +151,20 @@ export default function Facturacion() {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const [stampingId, setStampingId] = useState<string | null>(null);
+  const handleTimbrarRow = async (facturaId: string) => {
+    setStampingId(facturaId);
+    try {
+      await stampFn({ data: { facturaId } });
+      toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
+      queryClient.invalidateQueries({ queryKey: ["facturas"] });
+    } catch (e: any) {
+      toast({ title: "No se pudo timbrar", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setStampingId(null);
     }
   };
 
@@ -804,6 +818,11 @@ export default function Facturacion() {
                           )}>
                             {statusLabel}
                           </span>
+                          {!f.uuid_fiscal && !isCanceled && (
+                            <span className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-300">
+                              No timbrada
+                            </span>
+                          )}
                           {f.rfc && (
                             <span className="text-[10px] text-muted-foreground font-mono">{f.rfc}</span>
                           )}
@@ -827,6 +846,27 @@ export default function Facturacion() {
                       </div>
                       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <TooltipProvider>
+                          {!f.uuid_fiscal && !isCanceled && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 border-amber-500/50 text-amber-600 hover:bg-amber-500/10 dark:text-amber-300"
+                                  disabled={stampingId === f.id}
+                                  onClick={() => handleTimbrarRow(f.id)}
+                                >
+                                  {stampingId === f.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Stamp className="h-3.5 w-3.5" />
+                                  )}
+                                  Timbrar
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Timbrar CFDI con Facturapi</TooltipContent>
+                            </Tooltip>
+                          )}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
