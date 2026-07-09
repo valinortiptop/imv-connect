@@ -1878,6 +1878,65 @@ function parseTaxCode(raw: string): { iva_pct: number; ieps_pct: number } | null
   };
 }
 
+function parseNumericTaxValue(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  const normalized = String(raw).replace(/,/g, ".").trim();
+  if (!normalized) return null;
+  const match = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const value = Number(match[0]);
+  if (!Number.isFinite(value)) return null;
+  return value > 0 && value < 1 ? value * 100 : value;
+}
+
+function isValidIvaValue(value: unknown): value is number {
+  return value != null && value !== "" && Number.isFinite(Number(value));
+}
+
+function normalizeTaxPercent(value: unknown, fallback = 0): number {
+  const numeric = parseNumericTaxValue(value);
+  return numeric == null ? fallback : numeric;
+}
+
+function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; ieps_pct: number } | null {
+  let iva: number | null = null;
+  let ieps: number | null = null;
+
+  for (const [headerRaw, valueRaw] of Object.entries(row)) {
+    const header = headerRaw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const value = String(valueRaw ?? "").trim();
+    const combined = `${headerRaw} ${value}`;
+    const parsedCode = parseTaxCode(combined);
+
+    if (parsedCode) {
+      iva = parsedCode.iva_pct;
+      ieps = parsedCode.ieps_pct;
+      continue;
+    }
+
+    if (header.includes("iva") && !header.includes("ieps")) {
+      const numeric = parseNumericTaxValue(valueRaw);
+      if (numeric != null) iva = numeric;
+    }
+
+    if (header.includes("ieps")) {
+      const numeric = parseNumericTaxValue(valueRaw);
+      if (numeric != null) ieps = numeric;
+    }
+
+    if (
+      iva == null &&
+      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax")) &&
+      /EXENTO|IVA\s*0|IVA\s*CERO/i.test(value)
+    ) {
+      iva = 0;
+    }
+  }
+
+  if (iva == null && ieps == null) return null;
+  return { iva_pct: iva ?? 0, ieps_pct: ieps ?? 0 };
+}
+
 // Extract the leading numeric SAT code from strings like "42121600 - Productos veterinarios".
 function parseSatClave(raw: string): string | null {
   if (!raw) return null;
@@ -2105,8 +2164,15 @@ function ImportExcelDialog({
             "codigo suitetax",
             "clave impuestos",
             "tax code",
+            "grupo de impuestos",
+            "impuesto",
+            "impuestos",
+            "iva",
+            "% iva",
+            "ieps",
+            "% ieps",
           );
-          const parsedTax = parseTaxCode(taxRaw);
+          const parsedTax = parseTaxCode(taxRaw) ?? parseTaxFromColumns(r);
 
           const matchedLab = labNombre
             ? labByNameLower.get(labNombre.toLowerCase())
@@ -2132,7 +2198,15 @@ function ImportExcelDialog({
               errorMsg: `Fila ${i + 2}: falta nombre`,
             };
           }
-          return { ...base, ...diffRow(base) } as ImportRow;
+          const diffRes = diffRow(base);
+          if (diffRes.status === "new" && !isValidIvaValue(base.iva_pct)) {
+            return {
+              ...base,
+              status: "error" as const,
+              errorMsg: `Fila ${i + 2}: IVA no detectado — corrige la columna de impuestos`,
+            };
+          }
+          return { ...base, ...diffRes } as ImportRow;
         });
 
       // If it's a recognised NetSuite export the heuristic is authoritative;
@@ -2234,10 +2308,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               r.precio_lista == null || String(r.precio_lista) === ""
                 ? null
                 : Number(r.precio_lista) || null;
-            const iva_pct =
-              r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
-            const ieps_pct =
-              r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
+            let iva_pct = normalizeTaxPercent(r.iva_pct, NaN) as number | null;
+            let ieps_pct = normalizeTaxPercent(r.ieps_pct, 0);
+            if (!Number.isFinite(iva_pct)) iva_pct = null;
+            const fallbackTax = parseTaxFromColumns(json[i] ?? {});
+            if (iva_pct == null && fallbackTax) iva_pct = fallbackTax.iva_pct;
+            if ((r.ieps_pct == null || String(r.ieps_pct) === "") && fallbackTax) {
+              ieps_pct = fallbackTax.ieps_pct;
+            }
             const issues = Array.isArray(r.issues)
               ? r.issues.map((x) => String(x)).filter(Boolean)
               : [];
@@ -2277,7 +2355,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             }
             // Missing IVA on a new product → hard error (NOT NULL in DB, critical field)
             const diffRes = diffRow(base);
-            if (diffRes.status === "new" && base.iva_pct == null) {
+            if (diffRes.status === "new" && !isValidIvaValue(base.iva_pct)) {
               return {
                 ...base,
                 status: "error" as const,
@@ -2294,13 +2372,13 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           } else {
             toast.error("La IA no pudo mapear el archivo");
           }
-          parsed = heuristicParse().map((r) =>
+          parsed = heuristicParse().map((r, i) =>
             r.status === "error"
               ? r
               : {
                   ...r,
                   status: "error" as const,
-                  errorMsg: `Fila ${r.status}: mapeo IA falló — revisa manualmente`,
+                  errorMsg: `Fila ${i + 2}: mapeo IA falló — revisa manualmente`,
                 },
           );
         }
@@ -2333,8 +2411,26 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       }
 
       // Hard block: no silent IVA defaults. IVA is critical for facturación.
-      const missingIva = toInsert.filter((r) => r.iva_pct == null);
+      const missingIva = toInsert.filter((r) => !isValidIvaValue(r.iva_pct));
       if (missingIva.length > 0) {
+        const missingSet = new Set(missingIva);
+        setRows((prev) =>
+          prev.map((r, idx) =>
+            missingSet.has(r)
+              ? {
+                  ...r,
+                  status: "error" as const,
+                  errorMsg: `Fila ${idx + 2}: IVA no detectado — corrige la columna de impuestos`,
+                }
+              : r,
+          ),
+        );
+        setFailedRows(
+          missingIva.map((row) => ({
+            row,
+            error: "IVA no detectado; productos.iva_pct es obligatorio.",
+          })),
+        );
         toast.error(
           `${missingIva.length} producto(s) nuevo(s) sin IVA detectado. Corrige la columna de impuestos en el Excel o el mapeo antes de continuar.`,
         );
@@ -2387,30 +2483,60 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       let inserted = 0;
       if (toInsert.length > 0) {
         const BATCH = 500;
-        const buildPayload = (r: ImportRow) => ({
-          sku: r.sku || null,
-          nombre: r.nombre,
-          marca: r.marca || null,
-          proveedor: r.proveedor || null,
-          peso_kg: r.peso_kg,
-          precio_lista: r.precio_lista ?? 0,
-          laboratorio_id: resolveLab(r),
-          sat_clave: r.sat_clave,
-          iva_pct: r.iva_pct as number, // validated non-null above
-          ieps_pct: r.ieps_pct ?? 0,
-          activo: true,
-        });
+        type ProductImportPayload = {
+          sku: string | null;
+          nombre: string;
+          marca: string | null;
+          proveedor: string | null;
+          peso_kg: number | null;
+          precio_lista: number;
+          laboratorio_id: string | null;
+          sat_clave: string | null;
+          iva_pct: number;
+          ieps_pct: number;
+          activo: boolean;
+        };
+        const buildPayload = (r: ImportRow): ProductImportPayload | null => {
+          if (!isValidIvaValue(r.iva_pct)) return null;
+          return {
+            sku: r.sku || null,
+            nombre: r.nombre,
+            marca: r.marca || null,
+            proveedor: r.proveedor || null,
+            peso_kg: r.peso_kg,
+            precio_lista: r.precio_lista ?? 0,
+            laboratorio_id: resolveLab(r),
+            sat_clave: r.sat_clave,
+            iva_pct: normalizeTaxPercent(r.iva_pct),
+            ieps_pct: normalizeTaxPercent(r.ieps_pct),
+            activo: true,
+          };
+        };
         setProgress({ done: 0, total: toInsert.length, label: "Insertando productos nuevos…" });
         for (let i = 0; i < toInsert.length; i += BATCH) {
           const chunkRows = toInsert.slice(i, i + BATCH);
-          const chunkPayload = chunkRows.map(buildPayload);
+          const chunkPayload = chunkRows
+            .map(buildPayload)
+            .filter((payload): payload is ProductImportPayload => payload != null);
+          if (chunkPayload.length !== chunkRows.length) {
+            for (const row of chunkRows) {
+              if (!isValidIvaValue(row.iva_pct)) {
+                failures.push({ row, error: "IVA no detectado; no se envió a Supabase." });
+              }
+            }
+          }
+          if (chunkPayload.length === 0) continue;
           const { error } = await supabase.from("productos").insert(chunkPayload);
           if (error) {
             // Fall back to per-row insert so we can attribute the failure.
             for (let j = 0; j < chunkRows.length; j++) {
+              const payload = buildPayload(chunkRows[j]);
+              if (!payload) {
+                continue;
+              }
               const { error: rowErr } = await supabase
                 .from("productos")
-                .insert(buildPayload(chunkRows[j]));
+                .insert(payload);
               if (rowErr) {
                 failures.push({ row: chunkRows[j], error: rowErr.message });
               } else {
