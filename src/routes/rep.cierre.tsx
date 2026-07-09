@@ -81,7 +81,7 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-cierre" />
       <div>
-        <h1 className="text-2xl font-semibold">Cierre de día</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Cierre de día</h1>
         <p className="text-sm text-muted-foreground">
           Resumen automático de tu jornada. Guarda con una nota para dejar constancia.
         </p>

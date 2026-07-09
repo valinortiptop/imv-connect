@@ -140,17 +140,20 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
       </div>
 
       <Tabs defaultValue="ia" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 md:grid-cols-9">
-          <TabsTrigger value="ia">IA</TabsTrigger>
-          <TabsTrigger value="pedido">Pedido</TabsTrigger>
-          <TabsTrigger value="historial">Hist.</TabsTrigger>
-          <TabsTrigger value="sku">SKU</TabsTrigger>
-          <TabsTrigger value="oportunidades">Oport.</TabsTrigger>
-          <TabsTrigger value="inventario">Inv.</TabsTrigger>
-          <TabsTrigger value="visitas">Visitas</TabsTrigger>
-          <TabsTrigger value="labs">Labs</TabsTrigger>
-          <TabsTrigger value="competencia">Comp.</TabsTrigger>
-        </TabsList>
+        {/* Horizontal scroll on mobile so all 9 tabs fit; grid on md+ */}
+        <div className="-mx-4 overflow-x-auto md:mx-0">
+          <TabsList className="inline-flex w-max min-w-full gap-1 px-4 md:grid md:w-full md:grid-cols-9 md:gap-0 md:px-0">
+            <TabsTrigger value="ia">IA</TabsTrigger>
+            <TabsTrigger value="pedido">Pedido</TabsTrigger>
+            <TabsTrigger value="historial">Hist.</TabsTrigger>
+            <TabsTrigger value="sku">SKU</TabsTrigger>
+            <TabsTrigger value="oportunidades">Oport.</TabsTrigger>
+            <TabsTrigger value="inventario">Inv.</TabsTrigger>
+            <TabsTrigger value="visitas">Visitas</TabsTrigger>
+            <TabsTrigger value="labs">Labs</TabsTrigger>
+            <TabsTrigger value="competencia">Comp.</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Pedido rápido */}
         <TabsContent value="pedido">
@@ -464,7 +467,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-card p-2 text-center">
       <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
-      <div className="text-sm font-semibold">{value}</div>
+      <div className="text-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
 }

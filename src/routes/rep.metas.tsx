@@ -29,7 +29,7 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-metas" />
       <div>
-        <h1 className="text-2xl font-semibold">Metas y avance</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Metas y avance</h1>
         <p className="text-sm text-muted-foreground">
           Meta del mes y mínimo diario configurados por tu supervisor.
         </p>
@@ -51,9 +51,9 @@ function Page() {
               <CardTitle className="text-base">Meta del mes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-semibold">{fmtMXN(progress?.month_amount ?? 0)}</span>
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xl font-semibold tabular-nums md:text-2xl">{fmtMXN(progress?.month_amount ?? 0)}</span>
+                <span className="text-sm text-muted-foreground tabular-nums">
                   de {fmtMXN(Number(target.target_amount))}
                 </span>
               </div>
@@ -69,9 +69,9 @@ function Page() {
               <CardTitle className="text-base">Mínimo diario</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-semibold">{fmtMXN(progress?.today_amount ?? 0)}</span>
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xl font-semibold tabular-nums md:text-2xl">{fmtMXN(progress?.today_amount ?? 0)}</span>
+                <span className="text-sm text-muted-foreground tabular-nums">
                   meta {fmtMXN(Number(target.min_daily))}
                 </span>
               </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Clock, Phone, Search } from "lucide-react";
+import { AlertTriangle, Clock, Phone, Search, Plus } from "lucide-react";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
@@ -47,40 +47,44 @@ export default function ClientList() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Mis clientes</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Mis clientes</h1>
         <p className="text-sm text-muted-foreground">
           {data?.clients.length ?? 0} asignados
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Buscar por nombre, RFC…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {(
-            [
-              ["todos", "Todos"],
-              ["urgente", "Riesgo"],
-              ["oportunidad", "Oportunidad"],
-              ["sin_visita", "Sin pedido 60d"],
-            ] as [Filter, string][]
-          ).map(([k, label]) => (
-            <Button
-              key={k}
-              size="sm"
-              variant={filter === k ? "default" : "outline"}
-              onClick={() => setFilter(k)}
-            >
-              {label}
-            </Button>
-          ))}
+      {/* Sticky filter bar on mobile */}
+      <div className="sticky top-14 z-20 -mx-4 border-b border-border/60 bg-background/95 px-4 py-2 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder="Buscar por nombre, RFC…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+          <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-0.5 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
+            {(
+              [
+                ["todos", "Todos"],
+                ["urgente", "Riesgo"],
+                ["oportunidad", "Oportunidad"],
+                ["sin_visita", "Sin pedido 60d"],
+              ] as [Filter, string][]
+            ).map(([k, label]) => (
+              <Button
+                key={k}
+                size="sm"
+                variant={filter === k ? "default" : "outline"}
+                onClick={() => setFilter(k)}
+                className="shrink-0"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -98,23 +102,23 @@ export default function ClientList() {
             <Link
               to="/rep/clientes/$id"
               params={{ id: c.id }}
-              className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40"
+              className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40 active:bg-muted"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-medium">
+                  <span className="min-w-0 flex-1 truncate font-medium">
                     {c.nombre_comercial ?? c.razon_social}
                   </span>
                   {c.churn_risk_score != null && c.churn_risk_score >= 0.6 && (
-                    <Badge variant="destructive" className="gap-1">
+                    <Badge variant="destructive" className="shrink-0 gap-1">
                       <AlertTriangle className="h-3 w-3" /> Riesgo
                     </Badge>
                   )}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                  <span>{fmtMXN(c.total_12m ?? 0)} • 12m</span>
-                  <span>{c.orders_12m} pedidos</span>
-                  <span className="inline-flex items-center gap-1">
+                  <span className="tabular-nums">{fmtMXN(c.total_12m ?? 0)} • 12m</span>
+                  <span className="tabular-nums">{c.orders_12m} pedidos</span>
+                  <span className="inline-flex items-center gap-1 tabular-nums">
                     <Clock className="h-3 w-3" />
                     {c.days_since_last != null
                       ? `${c.days_since_last} d sin pedido`
@@ -137,6 +141,16 @@ export default function ClientList() {
           </li>
         )}
       </ul>
+
+      {/* FAB — new prospect (mobile only, admin has its own button on desktop) */}
+      <Link
+        to="/rep/prospectos"
+        className="fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 md:hidden"
+        style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        aria-label="Nuevo prospecto"
+      >
+        <Plus className="h-6 w-6" />
+      </Link>
     </div>
   );
 }

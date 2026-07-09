@@ -59,7 +59,7 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-cobranza" />
       <div>
-        <h1 className="text-2xl font-semibold">Cobranza en ruta</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Cobranza en ruta</h1>
         <p className="text-sm text-muted-foreground">
           Registra pagos contra facturas abiertas de tus clientes.
         </p>

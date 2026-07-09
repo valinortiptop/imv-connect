@@ -29,7 +29,7 @@ export default function CoachingPanel() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-semibold">Mi coach IA</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Mi coach IA</h1>
         <Button
           size="sm"
           variant="outline"

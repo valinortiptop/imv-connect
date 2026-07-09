@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag, Swords } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag, Swords, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
+import MoreSheet from "./mobile/MoreSheet";
 import { AIProvider } from "@/components/ai/AIProvider";
 import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
@@ -21,12 +22,12 @@ type RepCtx = {
 const Ctx = createContext<RepCtx>({ rep: null, geo: null, refreshGeo: () => {} });
 export const useRepContext = () => useContext(Ctx);
 
-type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean };
+type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean; mobilePrimary?: boolean };
 const NAV: NavItem[] = [
-  { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true },
-  { to: "/rep/clientes", label: "Clientes", icon: Users },
-  { to: "/rep/ruta", label: "Ruta", icon: MapIcon },
-  { to: "/rep/visitas", label: "Visitas", icon: ClipboardList },
+  { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true, mobilePrimary: true },
+  { to: "/rep/clientes", label: "Clientes", icon: Users, mobilePrimary: true },
+  { to: "/rep/ruta", label: "Ruta", icon: MapIcon, mobilePrimary: true },
+  { to: "/rep/visitas", label: "Visitas", icon: ClipboardList, mobilePrimary: true },
   { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText, desktopOnly: true },
   { to: "/rep/cobranza", label: "Cobranza", icon: Banknote, desktopOnly: true },
   { to: "/rep/devoluciones", label: "Devoluciones", icon: RotateCcw, desktopOnly: true },
@@ -119,19 +120,29 @@ export default function RepLayout({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Main */}
-        <main className="min-w-0 flex-1 pb-20 md:pb-6">
-          <header className="sticky top-0 z-30 flex h-12 items-center justify-between gap-2 border-b border-border bg-background/95 px-4 backdrop-blur md:hidden">
-            <span className="text-sm font-semibold">Panel Rep</span>
-            <div className="flex items-center gap-2">
-              {geo ? (
-                <span className="text-[10px] text-muted-foreground">
-                  📍 {geo.lat.toFixed(3)}, {geo.lng.toFixed(3)}
-                </span>
-              ) : (
-                <button className="text-[10px] text-primary" onClick={refreshGeo}>
-                  Activar ubicación
-                </button>
-              )}
+        <main
+          className="min-w-0 flex-1 md:pb-6"
+          style={{
+            paddingBottom: "calc(6rem + env(safe-area-inset-bottom))",
+          }}
+        >
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border bg-background/95 px-4 backdrop-blur md:hidden">
+            <span className="truncate text-base font-semibold">Panel Rep</span>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                onClick={refreshGeo}
+                aria-label={geo ? "Ubicación activa" : "Activar ubicación"}
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                  geo
+                    ? "text-primary hover:bg-primary/10"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                <MapPin
+                  className={cn("h-4 w-4", geo && "animate-pulse")}
+                />
+              </button>
               <AIToggle compact />
               <NotificationBell />
             </div>
@@ -140,23 +151,36 @@ export default function RepLayout({ children }: { children: ReactNode }) {
         </main>
 
         {/* Bottom nav mobile */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden">
-          {NAV.filter((n) => !n.desktopOnly).map((n) => {
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          {NAV.filter((n) => n.mobilePrimary).map((n) => {
             const active = isActive(n.to, n.exact);
             return (
               <Link
                 key={n.to}
                 to={n.to}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px]",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[10px]",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
+                {active && (
+                  <span className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-primary" />
+                )}
                 <n.icon className="h-5 w-5" />
                 <span>{n.label}</span>
               </Link>
             );
           })}
+          <MoreSheet
+            active={
+              !NAV.filter((n) => n.mobilePrimary).some((n) =>
+                isActive(n.to, n.exact),
+              )
+            }
+          />
         </nav>
         <AICopilotButton />
 

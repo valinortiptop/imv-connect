@@ -21,7 +21,7 @@ export default function SupervisorDashboard() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">Panel supervisor</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Panel supervisor</h1>
         <div className="ml-auto flex gap-1">
           {[7, 30, 90].map((d) => (
             <Button key={d} variant={days === d ? "default" : "outline"} size="sm" onClick={() => setDays(d)}>
@@ -35,22 +35,24 @@ export default function SupervisorDashboard() {
         <p className="text-sm text-muted-foreground">Cargando…</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Card>
+          {/* KPI stat rail: horizontal scroll on mobile, 3-col grid desktop */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 md:pb-0 [&>*]:snap-start">
+            <Card className="w-[70%] shrink-0 md:w-auto md:shrink">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Visitas</CardTitle></CardHeader>
-              <CardContent className="text-2xl font-semibold">{data?.totals.visits ?? 0}</CardContent>
+              <CardContent className="text-2xl font-semibold tabular-nums">{data?.totals.visits ?? 0}</CardContent>
             </Card>
-            <Card>
+            <Card className="w-[70%] shrink-0 md:w-auto md:shrink">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Pedidos</CardTitle></CardHeader>
-              <CardContent className="text-2xl font-semibold">{data?.totals.pedidos ?? 0}</CardContent>
+              <CardContent className="text-2xl font-semibold tabular-nums">{data?.totals.pedidos ?? 0}</CardContent>
             </Card>
-            <Card>
+            <Card className="w-[70%] shrink-0 md:w-auto md:shrink">
               <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Ventas</CardTitle></CardHeader>
-              <CardContent className="text-2xl font-semibold">{money(data?.totals.ventas ?? 0)}</CardContent>
+              <CardContent className="text-2xl font-semibold tabular-nums">{money(data?.totals.ventas ?? 0)}</CardContent>
             </Card>
           </div>
 
-          <Card>
+          {/* Desktop table */}
+          <Card className="hidden md:block">
             <CardHeader><CardTitle>Rendimiento por representante</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
@@ -70,13 +72,13 @@ export default function SupervisorDashboard() {
                   {(data?.rows ?? []).map((r) => (
                     <TableRow key={r.rep_id}>
                       <TableCell className="font-medium">{r.rep_nombre}</TableCell>
-                      <TableCell className="text-right">{r.visitas}</TableCell>
-                      <TableCell className="text-right">{r.pedidos}</TableCell>
-                      <TableCell className="text-right">{(r.ratio * 100).toFixed(0)}%</TableCell>
-                      <TableCell className="text-right">{r.clientes_unicos}</TableCell>
-                      <TableCell className="text-right">{r.duracion_prom_min}m</TableCell>
-                      <TableCell className="text-right">{money(r.ticket_prom)}</TableCell>
-                      <TableCell className="text-right font-semibold">{money(r.ventas)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.visitas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.pedidos}</TableCell>
+                      <TableCell className="text-right tabular-nums">{(r.ratio * 100).toFixed(0)}%</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.clientes_unicos}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r.duracion_prom_min}m</TableCell>
+                      <TableCell className="text-right tabular-nums">{money(r.ticket_prom)}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">{money(r.ventas)}</TableCell>
                     </TableRow>
                   ))}
                   {(data?.rows ?? []).length === 0 && (
@@ -86,6 +88,38 @@ export default function SupervisorDashboard() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Mobile card list */}
+          <div className="space-y-2 md:hidden">
+            <h2 className="text-sm font-semibold">Rendimiento por rep</h2>
+            {(data?.rows ?? []).length === 0 && (
+              <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Sin datos en el período
+              </p>
+            )}
+            {(data?.rows ?? []).map((r) => (
+              <Card key={r.rep_id}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                      {r.rep_nombre}
+                    </span>
+                    <span className="shrink-0 text-base font-bold tabular-nums">
+                      {money(r.ventas)}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] tabular-nums text-muted-foreground">
+                    <span>Visitas: <b className="text-foreground">{r.visitas}</b></span>
+                    <span>Pedidos: <b className="text-foreground">{r.pedidos}</b></span>
+                    <span>Ratio V→P: <b className="text-foreground">{(r.ratio * 100).toFixed(0)}%</b></span>
+                    <span>Clientes: <b className="text-foreground">{r.clientes_unicos}</b></span>
+                    <span>Duración: <b className="text-foreground">{r.duracion_prom_min}m</b></span>
+                    <span>Ticket: <b className="text-foreground">{money(r.ticket_prom)}</b></span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </>
       )}
     </div>

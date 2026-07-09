@@ -22,7 +22,7 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-devoluciones" />
       <div>
-        <h1 className="text-2xl font-semibold">Devoluciones</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Devoluciones</h1>
         <p className="text-sm text-muted-foreground">
           Historial de devoluciones registradas por tus clientes.
         </p>

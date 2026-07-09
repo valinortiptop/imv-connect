@@ -74,7 +74,7 @@ export default function ClientBehaviorPanel({ clienteId }: { clienteId: string }
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold">{fmtMXN(lastTicket)}</div>
+              <div className="text-xl font-bold md:text-2xl">{fmtMXN(lastTicket)}</div>
               <div className="text-xs text-muted-foreground">
                 {trend.length > 0 ? `Mes ${trend[trend.length - 1].month}` : "Sin ventas"}
                 {trendDelta !== 0 && (

@@ -55,11 +55,12 @@ export default function RepDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Hola{clientsQ.data?.rep ? `, ${clientsQ.data.rep.nombre.split(" ")[0]}` : ""}</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Hola{clientsQ.data?.rep ? `, ${clientsQ.data.rep.nombre.split(" ")[0]}` : ""}</h1>
         <p className="text-sm text-muted-foreground">Tu asistente comercial IA para el día</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {/* Mobile: horizontal scroll rail. Desktop: 4-col grid */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 md:pb-0 [&>*]:snap-start">
         <StatCard icon={Users} label="Mis clientes" value={String(stats.total)} />
         <StatCard icon={TrendingUp} label="Ventas 12m" value={fmtMXN(stats.total12m)} />
         <StatCard icon={MapPin} label="Activos 30d" value={String(stats.active30)} />
@@ -172,13 +173,13 @@ function StatCard({
   tone?: "warn";
 }) {
   return (
-    <Card>
+    <Card className="w-[70%] shrink-0 md:w-auto md:shrink">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">{label}</span>
-          <Icon className={`h-4 w-4 ${tone === "warn" ? "text-amber-500" : "text-muted-foreground"}`} />
+          <Icon className={`h-4 w-4 shrink-0 ${tone === "warn" ? "text-amber-500" : "text-muted-foreground"}`} />
         </div>
-        <div className="mt-1 text-xl font-semibold">{value}</div>
+        <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
       </CardContent>
     </Card>
   );

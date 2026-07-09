@@ -264,21 +264,23 @@ export default function RouteMap() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Ruta del día</h1>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold md:text-2xl">Ruta del día</h1>
           <p className="text-sm text-muted-foreground">
             Toca los marcadores para seleccionar y optimizar
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 md:w-auto">
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
-              <Button size="sm" variant="outline">
-                <ListChecks className="mr-1 h-4 w-4" /> Seleccionar clientes
+              <Button size="sm" variant="outline" className="flex-1 md:flex-none">
+                <ListChecks className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">Seleccionar clientes</span>
+                <span className="sm:hidden">Clientes</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-[calc(100vw-2rem)] max-w-sm p-0 sm:w-80" align="end">
               <div className="border-b p-2">
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -359,9 +361,10 @@ export default function RouteMap() {
             </PopoverContent>
           </Popover>
           <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)}>
-            <Flame className="mr-1 h-4 w-4" /> Heatmap
+            <Flame className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">Heatmap</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
+          <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0} className="hidden sm:inline-flex">
             Limpiar ({selected.size})
           </Button>
           <Button
@@ -369,19 +372,20 @@ export default function RouteMap() {
             variant="outline"
             disabled={aiSuggest.isPending}
             onClick={() => aiSuggest.mutate()}
-            className="border-primary/40 text-primary hover:bg-primary/10"
+            className="flex-1 border-primary/40 text-primary hover:bg-primary/10 md:flex-none"
           >
             <Sparkles className="mr-1 h-4 w-4" />
-            {aiSuggest.isPending ? "Generando…" : "Ruta con IA"}
+            {aiSuggest.isPending ? "IA…" : "Ruta con IA"}
           </Button>
-          <Button size="sm" disabled={doOptimize.isPending} onClick={() => doOptimize.mutate()}>
+          <Button size="sm" disabled={doOptimize.isPending} onClick={() => doOptimize.mutate()} className="flex-1 md:flex-none">
             <RouteIcon className="mr-1 h-4 w-4" /> Optimizar
           </Button>
         </div>
 
       </div>
 
-      <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-muted">
+      {/* Map: full-bleed on mobile, contained on desktop */}
+      <div className="relative -mx-4 h-[60vh] overflow-hidden border-y border-border bg-muted md:mx-0 md:h-[420px] md:rounded-lg md:border">
         <div ref={mapElRef} className="h-full w-full" />
         {mapStatus !== "ready" && (
           <div className="absolute inset-0 grid place-items-center bg-muted/80 text-sm text-muted-foreground">
@@ -390,7 +394,7 @@ export default function RouteMap() {
         )}
       </div>
       {routeInfo && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground tabular-nums">
           Total: {routeInfo.km} km · {routeInfo.min} min
         </div>
       )}

@@ -6,7 +6,7 @@ function Page() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Inteligencia competitiva</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Inteligencia competitiva</h1>
         <p className="text-sm text-muted-foreground">
           Contra quién estamos perdiendo y qué laboratorios están migrando
         </p>
