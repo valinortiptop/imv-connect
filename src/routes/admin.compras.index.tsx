@@ -14,6 +14,25 @@ export const Route = createFileRoute("/admin/compras/")({
 const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 
 function ComprasDashboard() {
+  const qc = useQueryClient();
+  const regen = useServerFn(regenerarAlertasCompras);
+  const resolver = useServerFn(resolverAlertaCompras);
+
+  const regenMut = useMutation({
+    mutationFn: () => regen({}),
+    onSuccess: (r: any) => {
+      toast.success(`Alertas regeneradas: ${r?.generadas ?? 0}`);
+      qc.invalidateQueries({ queryKey: ["compras-kpis"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Error al regenerar alertas"),
+  });
+
+  const resolveMut = useMutation({
+    mutationFn: (id: string) => resolver({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["compras-kpis"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Error"),
+  });
+
   const { data: kpis } = useQuery({
     queryKey: ["compras-kpis"],
     queryFn: async () => {
