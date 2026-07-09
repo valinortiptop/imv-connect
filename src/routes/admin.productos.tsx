@@ -2324,8 +2324,10 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
           sat_clave: r.sat_clave,
-          ...(r.iva_pct != null ? { iva_pct: r.iva_pct } : {}),
-          ...(r.ieps_pct != null ? { ieps_pct: r.ieps_pct } : {}),
+          // iva_pct / ieps_pct are NOT NULL in DB — always include a value so
+          // heterogeneous rows in a batch don't emit NULLs for these columns.
+          iva_pct: r.iva_pct ?? 16,
+          ieps_pct: r.ieps_pct ?? 0,
           activo: true,
         }));
         setProgress({ done: 0, total: payloadAll.length, label: "Insertando productos nuevos…" });
@@ -2355,8 +2357,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             if (fields.has("precio")) patch.precio_lista = r.precio_lista ?? 0;
             if (fields.has("laboratorio")) patch.laboratorio_id = resolveLab(r);
             if (fields.has("sat_clave")) patch.sat_clave = r.sat_clave;
-            if (fields.has("iva")) patch.iva_pct = r.iva_pct;
-            if (fields.has("ieps")) patch.ieps_pct = r.ieps_pct;
+            // iva_pct / ieps_pct are NOT NULL — never patch with null.
+            if (fields.has("iva") && r.iva_pct != null) patch.iva_pct = r.iva_pct;
+            if (fields.has("ieps") && r.ieps_pct != null) patch.ieps_pct = r.ieps_pct;
             return { id: r.existing_id!, patch };
           })
           .filter((t) => Object.keys(t.patch).length > 0);
