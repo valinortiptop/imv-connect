@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RepIndexRouteImport } from './routes/rep.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
 import { Route as EntregaTokenRouteImport } from './routes/entrega.$token'
@@ -115,6 +116,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const RepClientesRoute = RepClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => RepRoute,
 } as any)
 const PortalTokenRoute = PortalTokenRouteImport.update({
   id: '/portal/$token',
@@ -525,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/rep/clientes': typeof RepClientesRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -601,6 +608,7 @@ export interface FileRoutesByTo {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/rep/clientes': typeof RepClientesRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -680,6 +688,7 @@ export interface FileRoutesById {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
+  '/rep/clientes': typeof RepClientesRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -760,6 +769,7 @@ export interface FileRouteTypes {
     | '/entrega/$token'
     | '/maniobra/$token'
     | '/portal/$token'
+    | '/rep/clientes'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -836,6 +846,7 @@ export interface FileRouteTypes {
     | '/entrega/$token'
     | '/maniobra/$token'
     | '/portal/$token'
+    | '/rep/clientes'
     | '/admin'
     | '/rep'
     | '/admin/bancos/estados'
@@ -914,6 +925,7 @@ export interface FileRouteTypes {
     | '/entrega/$token'
     | '/maniobra/$token'
     | '/portal/$token'
+    | '/rep/clientes'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -997,6 +1009,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/rep/clientes': {
+      id: '/rep/clientes'
+      path: '/clientes'
+      fullPath: '/rep/clientes'
+      preLoaderRoute: typeof RepClientesRouteImport
+      parentRoute: typeof RepRoute
     }
     '/portal/$token': {
       id: '/portal/$token'
@@ -1707,10 +1726,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface RepRouteChildren {
+  RepClientesRoute: typeof RepClientesRoute
   RepIndexRoute: typeof RepIndexRoute
 }
 
 const RepRouteChildren: RepRouteChildren = {
+  RepClientesRoute: RepClientesRoute,
   RepIndexRoute: RepIndexRoute,
 }
 
