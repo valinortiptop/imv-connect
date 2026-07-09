@@ -2650,11 +2650,18 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         newLabNames.length ? ` · ${newLabNames.length} lab(s) creado(s)` : ""
       }${failures.length ? ` · ${failures.length} fallido(s)` : ""}`;
       if (failures.length > 0) {
-        toast.error(summary + " — revisa el detalle en la lista.");
+        toast.error("Importación finalizada con errores", {
+          description: summary + " — revisa el detalle en la lista.",
+          duration: 10000,
+        });
       } else {
-        toast.success(summary);
+        toast.success("✅ Importación completada — sin errores", {
+          description: summary,
+          duration: 8000,
+        });
         onSaved();
       }
+
     } catch (e) {
       console.error("[ImportExcel] save error", e);
       toast.error((e as Error).message ?? "Error al aplicar cambios");
