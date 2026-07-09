@@ -45,13 +45,13 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-inventario" />
       <div>
-        <h1 className="text-2xl font-semibold">Catálogo</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Catálogo</h1>
         <p className="text-sm text-muted-foreground">
           Vista para mostrar al cliente. Toca una foto para verla grande.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="sticky top-14 z-20 -mx-4 flex flex-col gap-2 border-b border-border/60 bg-background/95 px-4 py-2 backdrop-blur sm:flex-row md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -95,7 +95,7 @@ function Page() {
               <button
                 type="button"
                 onClick={() => setZoom(p)}
-                className="relative block h-40 w-full bg-muted"
+                className="relative block aspect-square w-full bg-muted md:h-40 md:aspect-auto"
               >
                 {p.imagen_url ? (
                   <img
@@ -115,7 +115,7 @@ function Page() {
                   </Badge>
                 )}
                 <Badge
-                  className="absolute right-2 top-2"
+                  className="absolute right-2 top-2 tabular-nums"
                   variant={p.stock_disponible > 0 ? "secondary" : "outline"}
                 >
                   {p.stock_disponible > 0 ? `${p.stock_disponible}` : "Sin stock"}
@@ -127,9 +127,9 @@ function Page() {
                   {p.lab_name ?? p.marca ?? "—"} {p.sku ? `· ${p.sku}` : ""}
                 </div>
                 <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-base font-semibold">{fmtMXN(Number(p.price))}</span>
+                  <span className="text-base font-semibold tabular-nums">{fmtMXN(Number(p.price))}</span>
                   {p.promo?.promo_cost_with_iva && (
-                    <span className="text-xs text-emerald-600 line-through">
+                    <span className="text-xs text-emerald-600 line-through tabular-nums">
                       {fmtMXN(Number(p.promo.promo_cost_with_iva))}
                     </span>
                   )}
@@ -141,7 +141,10 @@ function Page() {
       )}
 
       {clientId && (
-        <div className="fixed bottom-20 right-4 md:bottom-6">
+        <div
+          className="fixed right-4 z-40 md:bottom-6"
+          style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}
+        >
           <Link
             to="/rep/clientes/$id"
             params={{ id: clientId }}
