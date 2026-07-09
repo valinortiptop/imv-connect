@@ -56,11 +56,14 @@ export default function RepLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
         <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card p-3 md:flex">
-          <div className="mb-6 px-2">
-            <div className="text-lg font-semibold">Panel Rep</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {data?.rep?.nombre ?? "Cargando…"}
+          <div className="mb-6 flex items-start justify-between px-2">
+            <div>
+              <div className="text-lg font-semibold">Panel Rep</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {data?.rep?.nombre ?? "Cargando…"}
+              </div>
             </div>
+            <NotificationBell />
           </div>
           <nav className="flex flex-col gap-1">
             {NAV.map((n) => (
