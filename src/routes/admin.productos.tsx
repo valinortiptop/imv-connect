@@ -2480,7 +2480,20 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       let inserted = 0;
       if (toInsert.length > 0) {
         const BATCH = 500;
-        const buildPayload = (r: ImportRow): Record<string, unknown> | null => {
+        type ProductImportPayload = {
+          sku: string | null;
+          nombre: string;
+          marca: string | null;
+          proveedor: string | null;
+          peso_kg: number | null;
+          precio_lista: number;
+          laboratorio_id: string | null;
+          sat_clave: string | null;
+          iva_pct: number;
+          ieps_pct: number;
+          activo: boolean;
+        };
+        const buildPayload = (r: ImportRow): ProductImportPayload | null => {
           if (!isValidIvaValue(r.iva_pct)) return null;
           return {
             sku: r.sku || null,
@@ -2499,7 +2512,9 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         setProgress({ done: 0, total: toInsert.length, label: "Insertando productos nuevos…" });
         for (let i = 0; i < toInsert.length; i += BATCH) {
           const chunkRows = toInsert.slice(i, i + BATCH);
-          const chunkPayload = chunkRows.map(buildPayload).filter(Boolean) as Record<string, unknown>[];
+          const chunkPayload = chunkRows
+            .map(buildPayload)
+            .filter((payload): payload is ProductImportPayload => payload != null);
           if (chunkPayload.length !== chunkRows.length) {
             for (const row of chunkRows) {
               if (!isValidIvaValue(row.iva_pct)) {
