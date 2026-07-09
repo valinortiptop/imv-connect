@@ -38,7 +38,7 @@ function Page() {
       <AIPageInsights module="rep-cotizaciones" />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Cotizaciones</h1>
+          <h1 className="text-xl font-semibold md:text-2xl">Cotizaciones</h1>
           <p className="text-sm text-muted-foreground">Propuestas enviadas y su conversión a pedido</p>
         </div>
         <Button asChild size="sm">

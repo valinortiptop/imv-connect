@@ -33,7 +33,7 @@ function LabRiskRoute() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Inteligencia comercial</h1>
+          <h1 className="text-xl font-bold md:text-2xl">Inteligencia comercial</h1>
           <p className="text-sm text-muted-foreground">
             Migración de laboratorios y predicción de recompra por cliente
           </p>

@@ -59,7 +59,7 @@ export default function InventoryQuickLookup() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Inventario</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Inventario</h1>
         <p className="text-sm text-muted-foreground">
           Consulta rápida de disponibilidad, tránsito y sustitutos
         </p>
