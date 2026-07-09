@@ -1,51 +1,31 @@
+## What I found
 
-## What's actually happening
-
-Two separate issues, neither is a failed publish.
-
-### 1. The changes exist but are not on the live domain
-
-All the edits from this hour (merged "Importar imágenes" CTA, "No timbrada" badge + Timbrar action, catalog import IVA validation, Gemini model fix) are in the **preview** build. Your `imv.valinor.studio` / `imv-catalogo-digital.lovable.app` sites still serve the last published version. Frontend changes require clicking **Publish → Update** in the publish dialog to go live — they don't auto-deploy. Nothing failed; nothing was pushed.
-
-### 2. The 404 on `/rpc/get_my_role` is real
-
-`src/hooks/use-auth.tsx` calls `supabase.rpc("get_my_role")` in two places (lines 61 and 137). I queried the database directly — the function does not exist. Only `has_role(uuid, app_role)` exists. The earlier migration that would have created `get_my_role` was never approved, so it never ran.
+- The published catalog bundle already includes the latest import changes: IVA/IEPS validation, observations, and the merged “Importar imágenes” CTA.
+- The published order detail bundle includes “No timbrada” and “Timbrar con Facturapi”. The factura list route to check is `/admin/facturas`, not `/admin/facturacion`.
+- The `get_my_role` migration exists in the codebase and generated Supabase types now include it, so the 404 should be resolved after a hard refresh / new deployment cache.
+- The save error in your screenshot is real and clear: `productos.iva_pct` is `NOT NULL`, and at least one imported row is still reaching save with `iva_pct = null`.
 
 ## Plan
 
-**Step 1 — Create the missing `get_my_role` RPC**
+1. **Fix the catalog import save guard**
+   - Treat both `null` and invalid numeric IVA values as blocking errors.
+   - Mark rows with missing IVA as `error` in the preview so they cannot be included in the “Aplicar” save set.
+   - Show the exact rows/SKUs/names that are missing IVA before save, instead of only a toast.
 
-Add a migration creating a `SECURITY DEFINER` function that returns the current user's highest-priority role from `public.user_roles`:
+2. **Make NetSuite tax detection stricter**
+   - Expand tax column detection for NetSuite imports so IVA/IEPS are extracted from all likely tax-code headers.
+   - If a new product has no detectable IVA, keep it visible in preview but mark it as an error row.
 
-```sql
-create or replace function public.get_my_role()
-returns public.app_role
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select role from public.user_roles
-   where user_id = auth.uid()
-   order by case role
-     when 'admin' then 1
-     when 'moderator' then 2
-     when 'user' then 3
-     else 99
-   end
-   limit 1
-$$;
+3. **Make insert payload database-safe**
+   - Before inserting, coerce `iva_pct` and `ieps_pct` to valid numbers only.
+   - Never send `iva_pct: null` to Supabase.
+   - If a row somehow reaches payload building without valid IVA, skip it and add a row-level failure message.
 
-grant execute on function public.get_my_role() to authenticated;
-```
+4. **Improve published-change visibility diagnosis**
+   - Add a tiny visible build/version marker in the admin footer or sidebar so you can tell whether the browser is showing the latest deployment.
+   - Keep this unobtrusive, but useful for debugging “published but I don’t see it” issues.
 
-This matches the shape `use-auth.tsx` already expects (a single role string or null). Once created, the 404s in every page disappear.
-
-**Step 2 — Tell the user to publish**
-
-After the migration lands, click **Publish → Update** so the merged imágenes button, "No timbrada" badge, catalog import fixes, and Gemini model update reach the live domain. The migration itself (backend) deploys immediately and does not need a re-publish.
-
-## Files touched
-
-- New migration creating `public.get_my_role()` (via the migration tool, requires your approval).
-- No frontend edits are needed for the 404 — the client code is already correct.
+5. **Validate after implementation**
+   - Check the edited save path in source.
+   - Confirm the final logic cannot produce an insert payload with `iva_pct: null`.
+   - Report back that the remaining published-site issue is likely browser cache/open-tab stale bundle if the live asset contains the strings but your tab does not.
