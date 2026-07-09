@@ -29,7 +29,7 @@ function Page() {
     <div className="space-y-4">
       <AIPageInsights module="rep-metas" />
       <div>
-        <h1 className="text-2xl font-semibold">Metas y avance</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Metas y avance</h1>
         <p className="text-sm text-muted-foreground">
           Meta del mes y mínimo diario configurados por tu supervisor.
         </p>
