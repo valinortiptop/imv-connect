@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
@@ -35,8 +35,11 @@ const NAV: NavItem[] = [
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
+  { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
+  { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2, desktopOnly: true },
   { to: "/rep/coach", label: "Coach IA", icon: Sparkles, desktopOnly: true },
   { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, desktopOnly: true },
+
 ];
 
 export default function RepLayout({ children }: { children: ReactNode }) {

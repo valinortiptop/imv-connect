@@ -19,7 +19,10 @@ const MODULE = z.enum([
   "rep-devoluciones",
   "rep-prospectos",
   "rep-anaquel",
+  "rep-cierre",
+  "rep-metas",
 ]);
+
 
 
 

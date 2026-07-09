@@ -5160,6 +5160,120 @@ export type Database = {
           },
         ]
       }
+      rep_day_closes: {
+        Row: {
+          avg_time_per_client_min: number
+          close_date: string
+          created_at: string
+          id: string
+          km_traveled: number
+          narrative: string | null
+          orders_amount: number
+          orders_count: number
+          payments_amount: number
+          rep_id: string
+          returns_count: number
+          top_clients: Json
+          visits_count: number
+        }
+        Insert: {
+          avg_time_per_client_min?: number
+          close_date: string
+          created_at?: string
+          id?: string
+          km_traveled?: number
+          narrative?: string | null
+          orders_amount?: number
+          orders_count?: number
+          payments_amount?: number
+          rep_id: string
+          returns_count?: number
+          top_clients?: Json
+          visits_count?: number
+        }
+        Update: {
+          avg_time_per_client_min?: number
+          close_date?: string
+          created_at?: string
+          id?: string
+          km_traveled?: number
+          narrative?: string | null
+          orders_amount?: number
+          orders_count?: number
+          payments_amount?: number
+          rep_id?: string
+          returns_count?: number
+          top_clients?: Json
+          visits_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_day_closes_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_day_closes_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
+      rep_targets: {
+        Row: {
+          created_at: string
+          id: string
+          min_daily: number
+          notes: string | null
+          period_month: string
+          rep_id: string
+          target_amount: number
+          target_by_lab: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          min_daily?: number
+          notes?: string | null
+          period_month: string
+          rep_id: string
+          target_amount?: number
+          target_by_lab?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          min_daily?: number
+          notes?: string | null
+          period_month?: string
+          rep_id?: string
+          target_amount?: number
+          target_by_lab?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_targets_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_targets_rep_id_fkey"
+            columns: ["rep_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_visit_agreements: {
         Row: {
           created_at: string
