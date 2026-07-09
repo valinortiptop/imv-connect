@@ -159,6 +159,8 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         <AICopilotButton />
+        <IncidentQuickButton />
+
       </div>
     </Ctx.Provider>
     </AIProvider>
