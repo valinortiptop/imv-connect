@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyClientsFn, optimizeRouteFn, geocodeClientFn } from "@/lib/rep.functions";
+import {
+  getMyClientsFn,
+  optimizeRouteFn,
+  geocodeClientFn,
+  getOpportunityHeatmapFn,
+} from "@/lib/rep.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route, Locate } from "lucide-react";
+import { MapPin, Route, Locate, Flame } from "lucide-react";
 
 declare global {
   interface Window {
