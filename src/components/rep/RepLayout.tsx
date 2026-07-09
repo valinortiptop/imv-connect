@@ -90,7 +90,10 @@ export default function RepLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="mt-auto pt-4">
+          <div className="mt-auto space-y-2 pt-4">
+            <div className="px-2">
+              <AIToggle compact />
+            </div>
             <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
               <LogOut className="mr-2 h-4 w-4" /> Salir
             </Button>
