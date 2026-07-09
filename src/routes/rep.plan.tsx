@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, AlertOctagon, Phone } from "lucide-react";
+import AIPageInsights from "@/components/ai/AIPageInsights";
 
 export const Route = createFileRoute("/rep/plan")({
   head: () => ({ meta: [{ title: "Plan semanal · Panel Rep" }] }),
