@@ -54,49 +54,119 @@ function WeeklyPlanRoute() {
         <CardContent>
           {weekQ.isLoading && <Skeleton className="h-40 w-full" />}
           {weekQ.data && (
-            <div className="grid gap-3 md:grid-cols-5">
-              {weekQ.data.week.map((d: any) => (
-                <div
-                  key={d.dia}
-                  className="rounded-lg border border-border bg-card p-3"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold capitalize">{d.dia}</span>
-                    {d.zona_principal && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {d.zona_principal}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    {d.clientes.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Sin visitas</p>
-                    )}
-                    {d.clientes.map((c: any) => (
-                      <Link
-                        key={c.cliente_id}
-                        to="/rep/clientes/$id"
-                        params={{ id: c.cliente_id }}
-                        className="block rounded-md border border-border/60 p-2 text-xs hover:bg-muted/40"
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="truncate font-medium">{c.nombre}</span>
-                          <Badge
-                            variant="outline"
-                            className={`shrink-0 px-1 py-0 text-[9px] ${priorityColor[c.prioridad] ?? ""}`}
-                          >
-                            {c.prioridad}
-                          </Badge>
-                        </div>
-                        <p className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">
-                          {c.razon}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
+            <>
+              {/* Mobile: day tabs, one column at a time */}
+              <div className="md:hidden">
+                <div className="-mx-3 mb-3 flex gap-1.5 overflow-x-auto px-3 pb-1">
+                  {weekQ.data.week.map((d: any, i: number) => (
+                    <button
+                      key={d.dia}
+                      onClick={() => setActiveDay(i)}
+                      className={cn(
+                        "shrink-0 rounded-full border px-3 py-1.5 text-xs capitalize transition",
+                        activeDay === i
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-muted-foreground",
+                      )}
+                    >
+                      {d.dia}
+                      {d.clientes.length > 0 && (
+                        <span className="ml-1 tabular-nums opacity-80">
+                          {d.clientes.length}
+                        </span>
+                      )}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+                {(() => {
+                  const d = weekQ.data.week[activeDay];
+                  if (!d) return null;
+                  return (
+                    <div className="rounded-lg border border-border bg-card p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold capitalize">{d.dia}</span>
+                        {d.zona_principal && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {d.zona_principal}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        {d.clientes.length === 0 && (
+                          <p className="text-xs text-muted-foreground">Sin visitas</p>
+                        )}
+                        {d.clientes.map((c: any) => (
+                          <Link
+                            key={c.cliente_id}
+                            to="/rep/clientes/$id"
+                            params={{ id: c.cliente_id }}
+                            className="block rounded-md border border-border/60 p-2 text-xs hover:bg-muted/40 active:bg-muted"
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="min-w-0 flex-1 truncate font-medium">{c.nombre}</span>
+                              <Badge
+                                variant="outline"
+                                className={`shrink-0 px-1 py-0 text-[9px] ${priorityColor[c.prioridad] ?? ""}`}
+                              >
+                                {c.prioridad}
+                              </Badge>
+                            </div>
+                            <p className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">
+                              {c.razon}
+                            </p>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Desktop: 5-column grid */}
+              <div className="hidden gap-3 md:grid md:grid-cols-5">
+                {weekQ.data.week.map((d: any) => (
+                  <div
+                    key={d.dia}
+                    className="rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold capitalize">{d.dia}</span>
+                      {d.zona_principal && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {d.zona_principal}
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      {d.clientes.length === 0 && (
+                        <p className="text-xs text-muted-foreground">Sin visitas</p>
+                      )}
+                      {d.clientes.map((c: any) => (
+                        <Link
+                          key={c.cliente_id}
+                          to="/rep/clientes/$id"
+                          params={{ id: c.cliente_id }}
+                          className="block rounded-md border border-border/60 p-2 text-xs hover:bg-muted/40"
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="truncate font-medium">{c.nombre}</span>
+                            <Badge
+                              variant="outline"
+                              className={`shrink-0 px-1 py-0 text-[9px] ${priorityColor[c.prioridad] ?? ""}`}
+                            >
+                              {c.prioridad}
+                            </Badge>
+                          </div>
+                          <p className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground">
+                            {c.razon}
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
