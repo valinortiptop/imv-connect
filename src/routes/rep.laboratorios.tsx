@@ -8,6 +8,7 @@ import { generateRepAlertsFn } from "@/lib/rep.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
+import AIPageInsights from "@/components/ai/AIPageInsights";
 
 export const Route = createFileRoute("/rep/laboratorios")({
   head: () => ({
