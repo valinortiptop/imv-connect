@@ -2655,13 +2655,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                       <TableHead>Nombre</TableHead>
                       <TableHead>Clase</TableHead>
                       <TableHead>Laboratorio</TableHead>
+                      <TableHead className="text-right">IVA/IEPS</TableHead>
                       <TableHead>Cambios</TableHead>
+                      <TableHead>Observaciones</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rows.map((r, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className={r.status === "error" ? "bg-destructive/5" : undefined}>
                         <TableCell>
                           {r.status === "new" && (
                             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/40">
@@ -2679,7 +2681,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             </Badge>
                           )}
                           {r.status === "error" && (
-                            <Badge variant="destructive">{r.errorMsg}</Badge>
+                            <Badge variant="destructive" title={r.errorMsg}>Error</Badge>
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
@@ -2699,10 +2701,28 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-right text-xs tabular-nums">
+                          {r.iva_pct == null ? (
+                            <span className="text-destructive font-medium">sin IVA</span>
+                          ) : (
+                            <span>
+                              {r.iva_pct}% / {r.ieps_pct ?? 0}%
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {r.diff_fields && r.diff_fields.length > 0
                             ? r.diff_fields.join(", ")
                             : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[220px]">
+                          {r.status === "error" && r.errorMsg ? (
+                            <span className="text-destructive">{r.errorMsg}</span>
+                          ) : r.notes && r.notes.length > 0 ? (
+                            <span title={r.notes.join(" · ")}>{r.notes.join(" · ")}</span>
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
@@ -2712,8 +2732,30 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                   </TableBody>
                 </Table>
               </div>
+
+              {failedRows.length > 0 && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs">
+                  <div className="font-medium text-destructive mb-2">
+                    {failedRows.length} fila(s) fallaron al guardar:
+                  </div>
+                  <ul className="space-y-1 max-h-40 overflow-y-auto">
+                    {failedRows.slice(0, 50).map((f, idx) => (
+                      <li key={idx} className="flex gap-2">
+                        <span className="font-mono text-muted-foreground">
+                          {f.row.sku || f.row.nombre}
+                        </span>
+                        <span className="text-destructive">— {f.error}</span>
+                      </li>
+                    ))}
+                    {failedRows.length > 50 && (
+                      <li className="text-muted-foreground">…y {failedRows.length - 50} más</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </>
           )}
+
 
           {progress && (
             <div className="rounded-md border border-border bg-muted/50 p-3 text-sm">
