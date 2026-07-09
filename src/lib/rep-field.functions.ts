@@ -217,7 +217,7 @@ export const getShareTicketFn = createServerFn({ method: "POST" })
     // pago
     const { data: pago } = await context.supabase
       .from("pagos")
-      .select("id, monto, forma_pago, referencia, fecha, factura_id, notas")
+      .select("id, monto, metodo, referencia, fecha, factura_id, notas")
       .eq("id", data.id)
       .maybeSingle();
     if (!pago) throw new Error("Pago no encontrado");
