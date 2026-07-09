@@ -11,7 +11,7 @@ import NotificationBell from "./NotificationBell";
 import { AIProvider } from "@/components/ai/AIProvider";
 import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
-import IncidentQuickButton from "./IncidentQuickButton";
+
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
@@ -159,7 +159,6 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         <AICopilotButton />
-        <IncidentQuickButton />
 
       </div>
     </Ctx.Provider>
