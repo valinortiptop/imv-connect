@@ -211,7 +211,21 @@ export default function RouteMap() {
         </div>
       </div>
 
-      <div ref={mapRef} className="h-[420px] w-full overflow-hidden rounded-lg border border-border bg-muted" />
+      <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-muted">
+        <div ref={mapRef} className="absolute inset-0" />
+        {!MAPS_KEY && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+            <MapPin className="h-6 w-6" />
+            <p className="font-medium text-foreground">Mapa no disponible</p>
+            <p>Falta configurar la conexión Google Maps para este proyecto.</p>
+          </div>
+        )}
+        {MAPS_KEY && !mapReady && (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+            Cargando mapa…
+          </div>
+        )}
+      </div>
       {routeInfo && (
         <div className="text-sm text-muted-foreground">
           Total: {routeInfo.km} km · {routeInfo.min} min
