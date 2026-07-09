@@ -25,7 +25,10 @@ type ModuleId =
   | "rep-prospectos"
   | "rep-anaquel"
   | "rep-cierre"
-  | "rep-metas";
+  | "rep-metas"
+  | "rep-competencia"
+  | "rep-comportamiento-sku"
+  | "rep-oportunidades-perdidas";
 
 
 const DEFAULT_PROMPT: Record<ModuleId, string> = {
@@ -65,6 +68,12 @@ const DEFAULT_PROMPT: Record<ModuleId, string> = {
     "Resume mi jornada: highlights, brechas contra la meta y 3 prioridades para mañana.",
   "rep-metas":
     "Analiza mi avance vs. la meta del mes: ritmo, gap proyectado y acciones específicas para cerrar.",
+  "rep-competencia":
+    "Analiza contra quién estamos perdiendo participación: distribuidores mencionados, laboratorios migrados y patrones. Sugiere contragolpe.",
+  "rep-comportamiento-sku":
+    "Analiza el comportamiento por SKU de este cliente: qué dejó de comprar, qué está en baja, qué crece. Sugiere próxima acción.",
+  "rep-oportunidades-perdidas":
+    "Analiza las oportunidades perdidas detectadas y priorízalas: cuáles atacar primero y cómo.",
 };
 
 

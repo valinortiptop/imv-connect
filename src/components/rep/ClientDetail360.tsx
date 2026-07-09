@@ -23,6 +23,9 @@ import {
 } from "recharts";
 import CheckInDialog from "./CheckInDialog";
 import OrderQuickCreate from "./OrderQuickCreate";
+import ClientBehaviorPanel from "./ClientBehaviorPanel";
+import MissedOpportunitiesList from "./MissedOpportunitiesList";
+import CompetitorCaptureDialog from "./CompetitorCaptureDialog";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
