@@ -46,6 +46,8 @@ export default function RouteMap() {
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
+  const didFitRef = useRef<boolean>(false);
+  const userInteractedRef = useRef<boolean>(false);
 
   const { data, refetch } = useQuery({ queryKey: ["rep-clients"], queryFn: () => fetchClients() });
   const heatQ = useQuery({ queryKey: ["rep-heatmap"], queryFn: () => fetchHeat() });
@@ -54,6 +56,9 @@ export default function RouteMap() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ km: number; min: number; path: [number, number][] } | null>(null);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [clientQuery, setClientQuery] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
 
   const clientsWithCoords = useMemo(
     () => (data?.clients ?? []).filter((c: any) => c.lat && c.lng),
