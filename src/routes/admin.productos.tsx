@@ -1878,6 +1878,59 @@ function parseTaxCode(raw: string): { iva_pct: number; ieps_pct: number } | null
   };
 }
 
+function parseNumericTaxValue(raw: unknown): number | null {
+  if (raw == null || raw === "") return null;
+  const normalized = String(raw).replace(/,/g, ".").trim();
+  if (!normalized) return null;
+  const match = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const value = Number(match[0]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function isValidIvaValue(value: unknown): value is number {
+  return value != null && value !== "" && Number.isFinite(Number(value));
+}
+
+function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; ieps_pct: number } | null {
+  let iva: number | null = null;
+  let ieps: number | null = null;
+
+  for (const [headerRaw, valueRaw] of Object.entries(row)) {
+    const header = headerRaw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const value = String(valueRaw ?? "").trim();
+    const combined = `${headerRaw} ${value}`;
+    const parsedCode = parseTaxCode(combined);
+
+    if (parsedCode) {
+      iva = parsedCode.iva_pct;
+      ieps = parsedCode.ieps_pct;
+      continue;
+    }
+
+    if (header.includes("iva") && !header.includes("ieps")) {
+      const numeric = parseNumericTaxValue(valueRaw);
+      if (numeric != null) iva = numeric;
+    }
+
+    if (header.includes("ieps")) {
+      const numeric = parseNumericTaxValue(valueRaw);
+      if (numeric != null) ieps = numeric;
+    }
+
+    if (
+      iva == null &&
+      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax")) &&
+      /EXENTO|IVA\s*0|IVA\s*CERO/i.test(value)
+    ) {
+      iva = 0;
+    }
+  }
+
+  if (iva == null && ieps == null) return null;
+  return { iva_pct: iva ?? 0, ieps_pct: ieps ?? 0 };
+}
+
 // Extract the leading numeric SAT code from strings like "42121600 - Productos veterinarios".
 function parseSatClave(raw: string): string | null {
   if (!raw) return null;
