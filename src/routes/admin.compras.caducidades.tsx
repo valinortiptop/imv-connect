@@ -15,6 +15,7 @@ const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN",
 
 function CaducidadesPage() {
   const [tab, setTab] = useState<"rojo" | "amarillo" | "verde">("rojo");
+  const [recFor, setRecFor] = useState<{ producto_id: string; nombre: string; sku: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["v_caducidades", tab],
