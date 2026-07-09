@@ -61,7 +61,12 @@ const DEFAULT_PROMPT: Record<ModuleId, string> = {
     "Analiza mis prospectos: cuáles priorizar por potencial y proximidad, próximos pasos y guiones de contacto.",
   "rep-anaquel":
     "Analiza la evidencia visual: cobertura de anaquel, gaps de exhibición y oportunidades vs. competencia.",
+  "rep-cierre":
+    "Resume mi jornada: highlights, brechas contra la meta y 3 prioridades para mañana.",
+  "rep-metas":
+    "Analiza mi avance vs. la meta del mes: ritmo, gap proyectado y acciones específicas para cerrar.",
 };
+
 
 
 export function AIPageInsights({
