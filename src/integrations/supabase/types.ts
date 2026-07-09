@@ -7317,6 +7317,10 @@ export type Database = {
           route_path: string
         }[]
       }
+      get_my_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_or_create_embarque_slot: { Args: never; Returns: string }
       get_order_fulfillment_state: {
         Args: { p_order_id: string }
