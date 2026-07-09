@@ -60,7 +60,7 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
     const { data: factura, error } = await supabaseAdmin
       .from("facturas")
       .select(
-        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, address, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, ieps_pct, importe, producto:productos(sat_clave))",
+        "id, folio, fecha_emision, subtotal, iva, total, cfdi_use, payment_form, payment_method, uuid_fiscal, facturapi_id, cliente:clientes(id, razon_social, nombre_comercial, rfc, email, regimen_fiscal, uso_cfdi_default, codigo_postal, direccion, facturapi_id), factura_items(id, nombre_snapshot, sku_snapshot, unidad_snapshot, cantidad, precio_unitario, iva_pct, ieps_pct, importe, producto:productos(sat_clave))",
       )
       .eq("id", data.facturaId)
       .single();
