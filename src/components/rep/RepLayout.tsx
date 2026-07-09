@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
+import { AIProvider } from "@/components/ai/AIProvider";
+import { AIToggle } from "@/components/ai/AIToggle";
+import { AICopilotButton } from "@/components/ai/AICopilotButton";
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
