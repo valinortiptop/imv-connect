@@ -31,7 +31,7 @@ function loadMaps(): Promise<void> {
     window.__repInitMap = () => resolve();
     const s = document.createElement("script");
     s.async = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&loading=async&callback=__repInitMap${TRACKING ? `&channel=${TRACKING}` : ""}`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=visualization,geometry&loading=async&callback=__repInitMap${TRACKING ? `&channel=${TRACKING}` : ""}`;
     s.onerror = () => reject(new Error("No se pudo cargar Google Maps"));
     document.head.appendChild(s);
   });
@@ -42,15 +42,19 @@ export default function RouteMap() {
   const fetchClients = useServerFn(getMyClientsFn);
   const optimize = useServerFn(optimizeRouteFn);
   const geocode = useServerFn(geocodeClientFn);
+  const fetchHeat = useServerFn(getOpportunityHeatmapFn);
 
   const { data, refetch } = useQuery({ queryKey: ["rep-clients"], queryFn: () => fetchClients() });
+  const heatQ = useQuery({ queryKey: ["rep-heatmap"], queryFn: () => fetchHeat() });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ km: number; min: number } | null>(null);
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
+  const heatLayerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
