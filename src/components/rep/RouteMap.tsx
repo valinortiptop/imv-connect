@@ -138,8 +138,8 @@ export default function RouteMap() {
       <div className="h-[420px] w-full overflow-hidden rounded-lg border border-border">
         <MapContainer center={center} zoom={11} scrollWheelZoom style={{ width: "100%", height: "100%" }}>
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; Google Maps (via Valinor)'
+            url="/api/public/maps/tile/{z}/{x}/{y}"
           />
           <FitBounds points={geo ? [[geo.lat, geo.lng], ...allPoints] : allPoints} />
           {showHeatmap && (heatQ.data?.points ?? []).map((p: any, i: number) => (

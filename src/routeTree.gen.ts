@@ -95,6 +95,7 @@ import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.banco
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
+import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
 
 const RepRoute = RepRouteImport.update({
   id: '/rep',
@@ -535,6 +536,11 @@ const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   path: '/precios',
   getParentRoute: () => AdminClientesIdRoute,
 } as any)
+const ApiPublicMapsTileZXYRoute = ApiPublicMapsTileZXYRouteImport.update({
+  id: '/api/public/maps/tile/$z/$x/$y',
+  path: '/api/public/maps/tile/$z/$x/$y',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -623,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -708,6 +715,7 @@ export interface FileRoutesByTo {
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -797,6 +805,7 @@ export interface FileRoutesById {
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
+  '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -887,6 +896,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -972,6 +982,7 @@ export interface FileRouteTypes {
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/tile/$z/$x/$y'
   id:
     | '__root__'
     | '/'
@@ -1060,6 +1071,7 @@ export interface FileRouteTypes {
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/contabilidad/polizas/$id'
+    | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1070,6 +1082,7 @@ export interface RootRouteChildren {
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1676,6 +1689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesIdPreciosRouteImport
       parentRoute: typeof AdminClientesIdRoute
     }
+    '/api/public/maps/tile/$z/$x/$y': {
+      id: '/api/public/maps/tile/$z/$x/$y'
+      path: '/api/public/maps/tile/$z/$x/$y'
+      fullPath: '/api/public/maps/tile/$z/$x/$y'
+      preLoaderRoute: typeof ApiPublicMapsTileZXYRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1942,6 +1962,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiPublicMapsTileZXYRoute: ApiPublicMapsTileZXYRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

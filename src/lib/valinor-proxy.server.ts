@@ -66,6 +66,20 @@ export async function callValinor<T = unknown>(
   }
 }
 
+/**
+ * Like callValinor but returns the raw Response so binary bodies
+ * (PNG tiles, static map images) pass through unchanged.
+ */
+export async function callValinorRaw(opts: ValinorCallOptions): Promise<Response> {
+  const url = readEnv("VALINOR_PROXY_URL");
+  const token = readEnv("VALINOR_PROXY_TOKEN");
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-proxy-token": token },
+    body: JSON.stringify(opts),
+  });
+}
+
 /* ───────────────────── Helpers tipados por servicio ───────────────────── */
 
 export async function sendEmail(input: {
