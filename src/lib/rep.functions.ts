@@ -5,6 +5,7 @@ import {
   openaiChat,
   googleGeocode,
   googleDirections,
+  geminiGenerate,
 } from "./valinor-proxy.server";
 import {
   CLIENT_INSIGHTS_SYSTEM,
