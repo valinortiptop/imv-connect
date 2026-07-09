@@ -10,6 +10,7 @@ import {
   optimizeRouteFn,
   geocodeClientFn,
   getOpportunityHeatmapFn,
+  suggestRouteWithAIFn,
 } from "@/lib/rep.functions";
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search } from "lucide-react";
+import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search, Sparkles } from "lucide-react";
 
 function decodePolyline(str: string): [number, number][] {
   // Google encoded polyline algorithm.
@@ -46,6 +47,7 @@ export default function RouteMap() {
   const optimize = useServerFn(optimizeRouteFn);
   const geocode = useServerFn(geocodeClientFn);
   const fetchHeat = useServerFn(getOpportunityHeatmapFn);
+  const suggestAI = useServerFn(suggestRouteWithAIFn);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
@@ -61,6 +63,7 @@ export default function RouteMap() {
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [aiRationale, setAiRationale] = useState<string | null>(null);
 
 
   const clientsWithCoords = useMemo(
@@ -221,6 +224,36 @@ export default function RouteMap() {
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const aiSuggest = useMutation({
+    mutationFn: async () => {
+      const payload: any = { maxStops: 8 };
+      if (geo) { payload.startLat = geo.lat; payload.startLng = geo.lng; }
+      return suggestAI({ data: payload });
+    },
+    onSuccess: (r: any) => {
+      const ids: string[] = r?.ordered ?? [];
+      if (ids.length === 0) {
+        toast.info(r?.rationale ?? "Sin sugerencias disponibles");
+        return;
+      }
+      setSelected(new Set(ids));
+      setAiRationale(r?.rationale ?? null);
+      setRouteInfo(null);
+      // Auto-fit map to suggested clients
+      const maps = (window as any).google?.maps;
+      const map = mapRef.current;
+      if (maps && map) {
+        const bounds = new maps.LatLngBounds();
+        (r.detail ?? []).forEach((d: any) => bounds.extend({ lat: Number(d.lat), lng: Number(d.lng) }));
+        if (geo) bounds.extend({ lat: geo.lat, lng: geo.lng });
+        userInteractedRef.current = true;
+        map.fitBounds(bounds, 60);
+      }
+      toast.success(`IA sugirió ${ids.length} clientes para hoy`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo generar la ruta"),
+  });
+
   const geocodeMut = useMutation({
     mutationFn: (clienteId: string) => geocode({ data: { clienteId } }),
     onSuccess: () => { toast.success("Ubicación calculada"); refetch(); },
@@ -331,6 +364,16 @@ export default function RouteMap() {
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
             Limpiar ({selected.size})
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={aiSuggest.isPending}
+            onClick={() => aiSuggest.mutate()}
+            className="border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="mr-1 h-4 w-4" />
+            {aiSuggest.isPending ? "Generando…" : "Ruta con IA"}
+          </Button>
           <Button size="sm" disabled={doOptimize.isPending} onClick={() => doOptimize.mutate()}>
             <RouteIcon className="mr-1 h-4 w-4" /> Optimizar
           </Button>
@@ -349,6 +392,19 @@ export default function RouteMap() {
       {routeInfo && (
         <div className="text-sm text-muted-foreground">
           Total: {routeInfo.km} km · {routeInfo.min} min
+        </div>
+      )}
+
+      {aiRationale && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <div className="text-xs font-semibold uppercase tracking-wide text-primary">Ruta sugerida por IA</div>
+            <p className="mt-1 text-foreground">{aiRationale}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Revisa la selección y pulsa "Optimizar" para trazar el recorrido.
+            </p>
+          </div>
         </div>
       )}
 
