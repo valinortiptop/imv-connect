@@ -386,8 +386,8 @@ export default function RouteMap() {
               const c = clientsWithCoords.find((x: any) => x.id === id) as any;
               if (!c) return null;
               return (
-                <Badge key={id} variant="secondary">
-                  {c.nombre_comercial ?? c.razon_social}
+                <Badge key={id} variant="secondary" className="cursor-pointer" onClick={() => toggleSel(id)} title="Quitar">
+                  {c.nombre_comercial ?? c.razon_social} ×
                 </Badge>
               );
             })}
