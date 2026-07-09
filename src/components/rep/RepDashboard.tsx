@@ -4,10 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { buildDailyPlanFn, getMyClientsFn } from "@/lib/rep.functions";
 import { useRepContext } from "./RepLayout";
+import LabRiskPanel from "./LabRiskPanel";
+import ReorderPredictions from "./ReorderPredictions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Users, TrendingUp, MapPin, Sparkles } from "lucide-react";
+import { AlertTriangle, Users, TrendingUp, MapPin, Sparkles, FlaskConical, ArrowRight } from "lucide-react";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
