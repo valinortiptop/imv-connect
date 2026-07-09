@@ -273,6 +273,16 @@ export const saveDayCloseFn = createServerFn({ method: "POST" })
       .object({
         close_date: z.string(),
         narrative: z.string().optional(),
+        summary: z.object({
+          visits_count: z.number(),
+          orders_count: z.number(),
+          orders_amount: z.number(),
+          payments_amount: z.number(),
+          returns_count: z.number(),
+          km_traveled: z.number(),
+          avg_time_per_client_min: z.number(),
+          top_clients: z.array(z.any()),
+        }),
       })
       .parse(input),
   )
@@ -280,14 +290,7 @@ export const saveDayCloseFn = createServerFn({ method: "POST" })
     const rep = await getCurrentRep(context.supabase, context.userId);
     if (!rep) throw new Error("No hay representante asociado");
 
-    // Recompute to save canonical numbers
-    const compute = await (computeDayCloseFn as any).__executeServer?.({
-      data: { date: data.close_date },
-    });
-    // Fallback: inline compute
-    const s = compute?.summary;
-    if (!s) throw new Error("No se pudo calcular el cierre");
-
+    const s = data.summary;
     const { data: row, error } = await context.supabase
       .from("rep_day_closes")
       .upsert(
@@ -311,6 +314,7 @@ export const saveDayCloseFn = createServerFn({ method: "POST" })
     if (error) throw error;
     return { close: row };
   });
+
 
 export const listDayClosesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
