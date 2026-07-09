@@ -16,12 +16,7 @@ const MODULE = z.enum([
   "rep-calendario",
 ]);
 
-  "rep-inventario",
-  "rep-plan",
-  "rep-laboratorios",
-  "rep-coach",
-  "rep-supervisor",
-]);
+
 
 export const aiRepAskFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
