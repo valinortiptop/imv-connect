@@ -82,11 +82,6 @@ export default function RouteMap() {
     loadGoogleMapsViaValinor()
       .then((maps) => {
         if (cancelled || !mapElRef.current) return;
-  useEffect(() => {
-    let cancelled = false;
-    loadGoogleMapsViaValinor()
-      .then((maps) => {
-        if (cancelled || !mapElRef.current) return;
         if (!mapRef.current) {
           mapRef.current = new maps.Map(mapElRef.current, {
             center: { lat: center[0], lng: center[1] },
