@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
   { to: "/rep/clientes", label: "Clientes", icon: Users },
   { to: "/rep/ruta", label: "Ruta", icon: MapIcon },
   { to: "/rep/visitas", label: "Visitas", icon: ClipboardList },
+  { to: "/rep/calendario", label: "Calendario", icon: CalendarDays, desktopOnly: true },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
