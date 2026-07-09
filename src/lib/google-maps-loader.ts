@@ -4,7 +4,6 @@ let googleMapsPromise: Promise<GoogleMapsNamespace> | null = null;
 
 declare global {
   interface Window {
-    google?: typeof google;
     google?: any;
     __imvGoogleMapsReady?: () => void;
   }
