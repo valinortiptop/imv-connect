@@ -62,6 +62,7 @@ import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as AdminContabilidadIndexRouteImport } from './routes/admin.contabilidad.index'
 import { Route as AdminBancosIndexRouteImport } from './routes/admin.bancos.index'
+import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
@@ -352,6 +353,11 @@ const AdminBancosIndexRoute = AdminBancosIndexRouteImport.update({
   path: '/bancos/',
   getParentRoute: () => AdminRoute,
 } as any)
+const RepClientesIdRoute = RepClientesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => RepClientesRoute,
+} as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -531,7 +537,7 @@ export interface FileRoutesByFullPath {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
-  '/rep/clientes': typeof RepClientesRoute
+  '/rep/clientes': typeof RepClientesRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -556,6 +562,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -608,7 +615,7 @@ export interface FileRoutesByTo {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
-  '/rep/clientes': typeof RepClientesRoute
+  '/rep/clientes': typeof RepClientesRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -633,6 +640,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos': typeof AdminBancosIndexRoute
   '/admin/contabilidad': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -688,7 +696,7 @@ export interface FileRoutesById {
   '/entrega/$token': typeof EntregaTokenRoute
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
-  '/rep/clientes': typeof RepClientesRoute
+  '/rep/clientes': typeof RepClientesRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -713,6 +721,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
@@ -794,6 +803,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/rep/clientes/$id'
     | '/admin/bancos/'
     | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
@@ -871,6 +881,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/rep/clientes/$id'
     | '/admin/bancos'
     | '/admin/contabilidad'
     | '/admin/clientes/$id/precios'
@@ -950,6 +961,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/rep/clientes/$id'
     | '/admin/bancos/'
     | '/admin/contabilidad/'
     | '/admin/clientes/$id/precios'
@@ -1339,6 +1351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBancosIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/rep/clientes/$id': {
+      id: '/rep/clientes/$id'
+      path: '/$id'
+      fullPath: '/rep/clientes/$id'
+      preLoaderRoute: typeof RepClientesIdRouteImport
+      parentRoute: typeof RepClientesRoute
+    }
     '/admin/pedidos/$id': {
       id: '/admin/pedidos/$id'
       path: '/$id'
@@ -1725,13 +1744,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface RepClientesRouteChildren {
+  RepClientesIdRoute: typeof RepClientesIdRoute
+}
+
+const RepClientesRouteChildren: RepClientesRouteChildren = {
+  RepClientesIdRoute: RepClientesIdRoute,
+}
+
+const RepClientesRouteWithChildren = RepClientesRoute._addFileChildren(
+  RepClientesRouteChildren,
+)
+
 interface RepRouteChildren {
-  RepClientesRoute: typeof RepClientesRoute
+  RepClientesRoute: typeof RepClientesRouteWithChildren
   RepIndexRoute: typeof RepIndexRoute
 }
 
 const RepRouteChildren: RepRouteChildren = {
-  RepClientesRoute: RepClientesRoute,
+  RepClientesRoute: RepClientesRouteWithChildren,
   RepIndexRoute: RepIndexRoute,
 }
 
