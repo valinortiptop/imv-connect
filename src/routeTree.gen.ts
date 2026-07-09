@@ -29,6 +29,7 @@ import { Route as RepCobranzaRouteImport } from './routes/rep.cobranza'
 import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as RepCierreRouteImport } from './routes/rep.cierre'
+import { Route as RepCatalogoRouteImport } from './routes/rep.catalogo'
 import { Route as RepCalendarioRouteImport } from './routes/rep.calendario'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
@@ -203,6 +204,11 @@ const RepClientesRoute = RepClientesRouteImport.update({
 const RepCierreRoute = RepCierreRouteImport.update({
   id: '/cierre',
   path: '/cierre',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCatalogoRoute = RepCatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
   getParentRoute: () => RepRoute,
 } as any)
 const RepCalendarioRoute = RepCalendarioRouteImport.update({
@@ -640,6 +646,7 @@ export interface FileRoutesByFullPath {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/calendario': typeof RepCalendarioRoute
+  '/rep/catalogo': typeof RepCatalogoRoute
   '/rep/cierre': typeof RepCierreRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
@@ -735,6 +742,7 @@ export interface FileRoutesByTo {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/calendario': typeof RepCalendarioRoute
+  '/rep/catalogo': typeof RepCatalogoRoute
   '/rep/cierre': typeof RepCierreRoute
   '/rep/coach': typeof RepCoachRoute
   '/rep/cobranza': typeof RepCobranzaRoute
@@ -832,6 +840,7 @@ export interface FileRoutesById {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/calendario': typeof RepCalendarioRoute
+  '/rep/catalogo': typeof RepCatalogoRoute
   '/rep/cierre': typeof RepCierreRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
@@ -931,6 +940,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/calendario'
+    | '/rep/catalogo'
     | '/rep/cierre'
     | '/rep/clientes'
     | '/rep/coach'
@@ -1026,6 +1036,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/calendario'
+    | '/rep/catalogo'
     | '/rep/cierre'
     | '/rep/coach'
     | '/rep/cobranza'
@@ -1122,6 +1133,7 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/calendario'
+    | '/rep/catalogo'
     | '/rep/cierre'
     | '/rep/clientes'
     | '/rep/coach'
@@ -1322,6 +1334,13 @@ declare module '@tanstack/react-router' {
       path: '/cierre'
       fullPath: '/rep/cierre'
       preLoaderRoute: typeof RepCierreRouteImport
+      parentRoute: typeof RepRoute
+    }
+    '/rep/catalogo': {
+      id: '/rep/catalogo'
+      path: '/catalogo'
+      fullPath: '/rep/catalogo'
+      preLoaderRoute: typeof RepCatalogoRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/calendario': {
@@ -2083,6 +2102,7 @@ const RepClientesRouteWithChildren = RepClientesRoute._addFileChildren(
 
 interface RepRouteChildren {
   RepCalendarioRoute: typeof RepCalendarioRoute
+  RepCatalogoRoute: typeof RepCatalogoRoute
   RepCierreRoute: typeof RepCierreRoute
   RepClientesRoute: typeof RepClientesRouteWithChildren
   RepCoachRoute: typeof RepCoachRoute
@@ -2102,6 +2122,7 @@ interface RepRouteChildren {
 
 const RepRouteChildren: RepRouteChildren = {
   RepCalendarioRoute: RepCalendarioRoute,
+  RepCatalogoRoute: RepCatalogoRoute,
   RepCierreRoute: RepCierreRoute,
   RepClientesRoute: RepClientesRouteWithChildren,
   RepCoachRoute: RepCoachRoute,
