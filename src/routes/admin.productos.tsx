@@ -1885,11 +1885,17 @@ function parseNumericTaxValue(raw: unknown): number | null {
   const match = normalized.match(/-?\d+(?:\.\d+)?/);
   if (!match) return null;
   const value = Number(match[0]);
-  return Number.isFinite(value) ? value : null;
+  if (!Number.isFinite(value)) return null;
+  return value > 0 && value < 1 ? value * 100 : value;
 }
 
 function isValidIvaValue(value: unknown): value is number {
   return value != null && value !== "" && Number.isFinite(Number(value));
+}
+
+function normalizeTaxPercent(value: unknown, fallback = 0): number {
+  const numeric = parseNumericTaxValue(value);
+  return numeric == null ? fallback : numeric;
 }
 
 function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; ieps_pct: number } | null {
