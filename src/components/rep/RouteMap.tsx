@@ -82,6 +82,11 @@ export default function RouteMap() {
     loadGoogleMapsViaValinor()
       .then((maps) => {
         if (cancelled || !mapElRef.current) return;
+  useEffect(() => {
+    let cancelled = false;
+    loadGoogleMapsViaValinor()
+      .then((maps) => {
+        if (cancelled || !mapElRef.current) return;
         if (!mapRef.current) {
           mapRef.current = new maps.Map(mapElRef.current, {
             center: { lat: center[0], lng: center[1] },
@@ -92,6 +97,12 @@ export default function RouteMap() {
             clickableIcons: false,
             gestureHandling: "greedy",
           });
+          // Detect real user interactions so we don't override their zoom/pan.
+          mapRef.current.addListener("dragstart", () => { userInteractedRef.current = true; });
+          mapRef.current.addListener("zoom_changed", () => {
+            // Ignore programmatic zoom changes flagged by didFitRef.
+            if (didFitRef.current) userInteractedRef.current = true;
+          });
         }
         setMapStatus("ready");
       })
@@ -100,6 +111,7 @@ export default function RouteMap() {
       });
     return () => { cancelled = true; };
   }, []);
+
 
   useEffect(() => {
     const maps = window.google?.maps;
