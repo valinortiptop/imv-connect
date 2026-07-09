@@ -125,3 +125,24 @@ Módulo de asistente comercial IA para venta en campo, con historial de cliente,
 ### Seguridad
 - Todas las llamadas usan `requireSupabaseAuth`; RLS impone que el rep solo edite sus propios clientes/visitas.
 - Precios efectivos se calculan server-side; el cliente no puede forzar overrides que no le correspondan.
+
+---
+
+## Fase 5 — Analítica y coaching ✅ IMPLEMENTADA
+
+### Nuevas tablas
+- **`rep_coaching`** — coaching semanal generado por Gemini, cacheado por `(rep_id, week_start)`. Guarda `summary`, `strengths`, `improvements`, `goals` y snapshot de KPIs (actual vs semana previa).
+- **`rep_achievements`** — badges/logros por representante (código, etiqueta, puntos, metadata).
+
+### Nuevas server functions (`src/lib/rep.functions.ts`)
+- **`getSupervisorDashboardFn`** (admin) — Agrega por representante (30/7/90d): visitas, pedidos, ratio V→P, ventas, clientes únicos, duración promedio, ticket promedio.
+- **`getRepKpisFn`** — KPIs del rep actual (o de un `repId` específico para admin).
+- **`generateRepCoachingFn`** — Ejecuta Gemini `2.5-flash` sobre KPIs semana actual vs previa, guarda en `rep_coaching`. Cache por semana + botón "Regenerar" (`force: true`). Fallback determinístico si Gemini falla.
+- **`getGamificationFn`** — Ranking 30d: puntos = visitas×10 + pedidos×50 + floor(ventas/1000). Badges dinámicos (Explorador, Cerrador, Top 3, Ticket alto).
+
+### Nuevas rutas
+- **`/rep/supervisor`** — Dashboard admin con filtro de ventana (7/30/90d), totales globales y tabla por representante.
+- **`/rep/coach`** — KPIs 7d, coaching IA (fortalezas, mejoras, metas SMART) y ranking + badges.
+
+### Navegación
+- Sidebar desktop añade "Coach IA" y "Supervisor" (ocultos en bottom nav móvil para no romper el grid de 5).
