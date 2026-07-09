@@ -80,9 +80,20 @@ function ComprasDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold uppercase text-muted-foreground">Centro de alertas</h2>
-            <AlertTriangle className="size-4 text-amber-500" />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => regenMut.mutate()}
+                disabled={regenMut.isPending}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                title="Recalcular alertas"
+              >
+                <RefreshCw className={`size-3 ${regenMut.isPending ? "animate-spin" : ""}`} />
+                Recalcular
+              </button>
+              <AlertTriangle className="size-4 text-amber-500" />
+            </div>
           </div>
           <div className="space-y-2">
             {(kpis?.alertas ?? []).length === 0 && (
@@ -95,6 +106,13 @@ function ComprasDashboard() {
                   <p className="truncate text-sm font-medium">{a.titulo}</p>
                   <p className="text-xs text-muted-foreground">{a.tipo}</p>
                 </div>
+                <button
+                  onClick={() => resolveMut.mutate(a.id)}
+                  className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title="Marcar como resuelta"
+                >
+                  <Check className="size-3.5" />
+                </button>
               </div>
             ))}
           </div>
