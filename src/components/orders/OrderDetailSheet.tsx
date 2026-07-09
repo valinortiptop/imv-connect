@@ -153,7 +153,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_items")
-        .select("*, products(clave, name, sale_price_with_iva, image_url)")
+        .select("*, products(clave, name, sale_price_with_iva, cost_without_iva, image_url)")
         .eq("order_id", orderId!);
       if (error) throw error;
       return data ?? [];
@@ -163,6 +163,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
 
   // Order-level gifted summary. The old v_order_item_breakdown columns no
   // longer exist, so keep this derived from the order item rows themselves.
+  // Cost accrues on every unit (paid and gifted); revenue only on paid units.
   const giftedSummary = useMemo(() => {
     let giftedUnits = 0;
     let paidUnits = 0;
@@ -173,9 +174,11 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
       const gifted = item.is_gifted ? quantity : 0;
       const paid = Math.max(0, quantity - gifted);
       const unitPrice = Number(item.unit_price_override ?? item.products?.sale_price_with_iva ?? 0);
+      const unitCostNoIva = Number(item.products?.cost_without_iva ?? 0);
       giftedUnits += gifted;
       paidUnits += paid;
-      revenueNoIva += (quantity * unitPrice) / 1.16;
+      revenueNoIva += (paid * unitPrice) / 1.16;
+      costNoIva += quantity * unitCostNoIva;
     }
     const profit = revenueNoIva - costNoIva;
     const marginPct = revenueNoIva > 0 ? (profit / revenueNoIva) * 100 : 0;
