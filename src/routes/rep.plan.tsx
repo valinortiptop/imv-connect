@@ -38,6 +38,9 @@ function WeeklyPlanRoute() {
         </p>
       </div>
 
+      <AIPageInsights module="rep-plan" />
+
+
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-3">
           <CalendarDays className="h-5 w-5 text-primary" />
