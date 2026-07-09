@@ -286,12 +286,18 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
             {order && (
               <div className="flex items-center gap-2 mr-6">
                 {existingFactura ? (
+                  <>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-9 gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
+                        className={cn(
+                          "h-9 gap-1.5",
+                          existingFactura.uuid_fiscal
+                            ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/10"
+                            : "border-amber-500/40 text-amber-600 dark:text-amber-300 hover:bg-amber-500/10",
+                        )}
                         title={`Factura ${existingFactura.folio}`}
                       >
                         <Receipt className="h-4 w-4" />
@@ -300,6 +306,22 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
+                      {!existingFactura.uuid_fiscal && (
+                        <>
+                          <DropdownMenuItem
+                            disabled={stamping}
+                            onClick={() => handleTimbrar(existingFactura.id)}
+                          >
+                            {stamping ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Receipt className="h-4 w-4 mr-2" />
+                            )}
+                            Timbrar con Facturapi
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
                       <DropdownMenuItem onClick={() => downloadCfdi(existingFactura.id, "pdf")}>
                         <Download className="h-4 w-4 mr-2" /> Descargar PDF
                       </DropdownMenuItem>
@@ -337,6 +359,15 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {!existingFactura.uuid_fiscal && (
+                    <Badge
+                      variant="outline"
+                      className="h-6 border-amber-500/40 bg-amber-500/10 text-[10px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-300"
+                    >
+                      No timbrada
+                    </Badge>
+                  )}
+                  </>
                 ) : (
                   <Button
                     variant="outline"
