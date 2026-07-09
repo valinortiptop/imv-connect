@@ -29,7 +29,23 @@ export type RepModule =
   | "rep-plan"
   | "rep-laboratorios"
   | "rep-coach"
-  | "rep-supervisor";
+  | "rep-supervisor"
+  | "rep-calendario";
+
+const MODULE_LABEL: Record<RepModule, string> = {
+  "rep-home": "Inicio del rep",
+  "rep-clientes": "Listado de clientes",
+  "rep-cliente-detalle": "Ficha 360° del cliente",
+  "rep-ruta": "Ruta del día",
+  "rep-visitas": "Visitas realizadas",
+  "rep-inventario": "Inventario / catálogo",
+  "rep-plan": "Plan semanal",
+  "rep-laboratorios": "Laboratorios asignados",
+  "rep-coach": "Coach IA",
+  "rep-supervisor": "Panel supervisor",
+  "rep-calendario": "Calendario de agenda",
+};
+
 
 const MODULE_LABEL: Record<RepModule, string> = {
   "rep-home": "Inicio del rep",
