@@ -8,7 +8,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "ventas" | "almacen" | "logistica" | "viewer";
+export type AppRole = "admin" | "representante" | "ventas" | "almacen" | "logistica" | "contabilidad" | "viewer";
 
 function applyRolePayload(
   data: unknown,
