@@ -26,6 +26,7 @@ const priorityColor: Record<string, string> = {
 function WeeklyPlanRoute() {
   const buildWeek = useServerFn(buildWeeklyPlanFn);
   const detectOver = useServerFn(detectOverVisitedFn);
+  const [activeDay, setActiveDay] = useState(0);
 
   const weekQ = useQuery({
     queryKey: ["rep-week-plan"],
@@ -36,7 +37,7 @@ function WeeklyPlanRoute() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Plan semanal</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Plan semanal</h1>
         <p className="text-sm text-muted-foreground">
           Distribución balanceada por zona con prioridad por riesgo y valor
         </p>
