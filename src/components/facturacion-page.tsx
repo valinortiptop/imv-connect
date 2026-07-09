@@ -156,13 +156,22 @@ export default function Facturacion() {
 
   const [stampingId, setStampingId] = useState<string | null>(null);
   const handleTimbrarRow = async (facturaId: string) => {
+    console.log("[timbrar] click", facturaId);
+    toast({ title: "Timbrando…", description: `Enviando a Facturapi (${facturaId.slice(0, 8)}…)` });
     setStampingId(facturaId);
     try {
-      await stampFn({ data: { facturaId } });
-      toast({ title: "CFDI timbrado", description: "La factura fue timbrada correctamente." });
+      const res: any = await stampFn({ data: { facturaId } });
+      console.log("[timbrar] ok", res);
+      toast({ title: "CFDI timbrado", description: `UUID ${res?.uuid ?? "—"}` });
       queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      queryClient.invalidateQueries({ queryKey: ["pedidos-facturados"] });
     } catch (e: any) {
-      toast({ title: "No se pudo timbrar", description: e?.message ?? String(e), variant: "destructive" });
+      console.error("[timbrar] error", e);
+      toast({
+        title: "No se pudo timbrar",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
     } finally {
       setStampingId(null);
     }
