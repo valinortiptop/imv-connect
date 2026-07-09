@@ -2532,7 +2532,6 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             for (let j = 0; j < chunkRows.length; j++) {
               const payload = buildPayload(chunkRows[j]);
               if (!payload) {
-                failures.push({ row: chunkRows[j], error: "IVA no detectado; no se envió a Supabase." });
                 continue;
               }
               const { error: rowErr } = await supabase
