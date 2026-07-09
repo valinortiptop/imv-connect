@@ -2146,7 +2146,7 @@ function ImportExcelDialog({
         const sampleRows = json.slice(0, 800);
         const system = `Eres un asistente que normaliza datos de productos farmacéuticos veterinarios desde Excel.
 Devuelves SOLO JSON válido, sin markdown ni texto extra.
-Tarea: para cada fila del Excel, identifica los campos canónicos y el laboratorio.
+Tarea: para cada fila del Excel, identifica los campos canónicos, el laboratorio, y los impuestos.
 Campos canónicos:
 - sku (clave/código del producto — puede llamarse "Nombre" en exports de NetSuite)
 - nombre (descripción legible del producto — en NetSuite es "Nombre para mostrar")
@@ -2155,10 +2155,14 @@ Campos canónicos:
 - peso_kg (número en kg; null si no se sabe)
 - precio_lista (número en MXN; en NetSuite es "Precio base"; null si no se sabe)
 - sat_clave (código numérico SAT de "SAT Clave Producto Servicio"; solo los dígitos; null si no aplica)
-- tax_code (texto crudo tipo "ITEM IVA 16%" o "ITEM IEPS 6% IVA 0%"; null si no aplica)
+- iva_pct (número: 0, 8 o 16; extráelo de CUALQUIER columna relacionada con impuestos: "IVA", "% IVA", "Impuesto", "Tax", "Grupo de impuestos", "Código de artículo de SuiteTax", "ITEM IVA X%", "Clave impuestos", etc. Devuelve null SOLO si no hay ninguna columna de impuestos)
+- ieps_pct (número: 0, 6, 7, 8, ...; extráelo de columnas tipo "IEPS", "% IEPS", "ITEM IEPS X%". Si no hay columna de IEPS, devuelve 0)
 - laboratorio (nombre del laboratorio; en NetSuite suele ser "Clase")
+- confidence: "high" | "medium" | "low" según qué tan seguro estás del mapeo
+- issues: array de strings describiendo qué no pudiste mapear en la fila (ej. "no se detectó IVA", "peso ambiguo")
+- extra_fields: objeto con columnas del Excel que NO caben en ningún campo canónico (ej. {"categoria":"Antibiótico","presentacion":"Frasco 250ml"})
 IMPORTANTE: NUNCA uses la clave/SKU como nombre. Si sólo hay una columna con códigos, deja nombre vacío.
-Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"sat_clave":null,"tax_code":null,"laboratorio":""}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
+Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"sat_clave":null,"iva_pct":null,"ieps_pct":0,"laboratorio":"","confidence":"high","issues":[],"extra_fields":{}}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
         const userMsg = JSON.stringify({
           laboratorios_existentes: labs.map((l) => l.nombre),
           headers,
@@ -2173,9 +2177,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           peso_kg?: number | null;
           precio_lista?: number | null;
           sat_clave?: string | null;
-          tax_code?: string | null;
+          iva_pct?: number | null;
+          ieps_pct?: number | null;
           laboratorio?: string;
+          confidence?: string;
+          issues?: string[];
+          extra_fields?: Record<string, unknown>;
         }> | null = null;
+        let aiError: string | null = null;
 
         try {
           const resp = await aiChatFn({
@@ -2201,8 +2210,10 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             .trim();
           const parsedJson = JSON.parse(cleaned);
           aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+          if (!aiRows) aiError = "La IA no devolvió filas en el formato esperado";
         } catch (e) {
-          console.warn("AI mapping failed, using heuristic", e);
+          aiError = (e as Error).message || "Error desconocido en la IA";
+          console.warn("AI mapping failed", e);
         }
 
         if (aiRows && aiRows.length > 0) {
@@ -2223,7 +2234,25 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               r.precio_lista == null || String(r.precio_lista) === ""
                 ? null
                 : Number(r.precio_lista) || null;
-            const parsedTax = r.tax_code ? parseTaxCode(String(r.tax_code)) : null;
+            const iva_pct =
+              r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
+            const ieps_pct =
+              r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
+            const issues = Array.isArray(r.issues)
+              ? r.issues.map((x) => String(x)).filter(Boolean)
+              : [];
+            const extra_fields =
+              r.extra_fields && typeof r.extra_fields === "object" && !Array.isArray(r.extra_fields)
+                ? (r.extra_fields as Record<string, unknown>)
+                : undefined;
+            const extraKeys = extra_fields ? Object.keys(extra_fields).filter((k) => {
+              const v = extra_fields[k];
+              return v != null && String(v).trim() !== "";
+            }) : [];
+            const notes: string[] = [...issues];
+            if (extraKeys.length > 0) {
+              notes.push(`Campos sin destino: ${extraKeys.join(", ")}`);
+            }
             const base: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg"> = {
               sku,
               nombre,
@@ -2232,10 +2261,12 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               peso_kg,
               precio_lista,
               sat_clave: r.sat_clave ? parseSatClave(String(r.sat_clave)) : null,
-              iva_pct: parsedTax ? parsedTax.iva_pct : null,
-              ieps_pct: parsedTax ? parsedTax.ieps_pct : null,
+              iva_pct: iva_pct != null && Number.isFinite(iva_pct) ? iva_pct : null,
+              ieps_pct: Number.isFinite(ieps_pct) ? ieps_pct : 0,
               laboratorio_nombre: labNombre,
               laboratorio_id: matchedLab?.id ?? null,
+              notes: notes.length > 0 ? notes : undefined,
+              extra_fields,
             };
             if (!nombre) {
               return {
@@ -2244,16 +2275,40 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 errorMsg: `Fila ${i + 2}: falta nombre`,
               };
             }
-            return { ...base, ...diffRow(base) } as ImportRow;
+            // Missing IVA on a new product → hard error (NOT NULL in DB, critical field)
+            const diffRes = diffRow(base);
+            if (diffRes.status === "new" && base.iva_pct == null) {
+              return {
+                ...base,
+                status: "error" as const,
+                errorMsg: `Fila ${i + 2}: IVA no detectado — corrige la columna de impuestos`,
+              };
+            }
+            return { ...base, ...diffRes } as ImportRow;
           });
         } else {
-          parsed = heuristicParse();
+          // AI failed and layout is not NetSuite — do NOT silently fall back to
+          // a heuristic that will mis-map columns. Surface the error.
+          if (aiError) {
+            toast.error(`La IA no pudo mapear el archivo: ${aiError}`);
+          } else {
+            toast.error("La IA no pudo mapear el archivo");
+          }
+          parsed = heuristicParse().map((r) =>
+            r.status === "error"
+              ? r
+              : {
+                  ...r,
+                  status: "error" as const,
+                  errorMsg: `Fila ${r.status}: mapeo IA falló — revisa manualmente`,
+                },
+          );
         }
       }
 
       setRows(parsed);
-      if (!isNetSuite) toast.success("Excel analizado con IA");
-      else toast.success("Excel de NetSuite detectado y mapeado");
+      if (!isNetSuite && parsed.some((r) => r.status !== "error")) toast.success("Excel analizado con IA");
+      else if (isNetSuite) toast.success("Excel de NetSuite detectado y mapeado");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
