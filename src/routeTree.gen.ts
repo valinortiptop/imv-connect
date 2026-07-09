@@ -134,11 +134,6 @@ const RepVisitasRoute = RepVisitasRouteImport.update({
   path: '/visitas',
   getParentRoute: () => RepRoute,
 } as any)
-const RepCalendarioRoute = RepCalendarioRouteImport.update({
-  id: '/calendario',
-  path: '/calendario',
-  getParentRoute: () => RepRoute,
-} as any)
 const RepSupervisorRoute = RepSupervisorRouteImport.update({
   id: '/supervisor',
   path: '/supervisor',
