@@ -2304,11 +2304,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 : Number(r.precio_lista) || null;
             let iva_pct =
               r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
-            const ieps_pct =
+            let ieps_pct =
               r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
-            if (!Number.isFinite(iva_pct)) iva_pct = null;
+            if (iva_pct != null && !Number.isFinite(iva_pct)) iva_pct = null;
+            if (!Number.isFinite(ieps_pct)) ieps_pct = 0;
             const fallbackTax = parseTaxFromColumns(json[i] ?? {});
             if (iva_pct == null && fallbackTax) iva_pct = fallbackTax.iva_pct;
+            if ((r.ieps_pct == null || String(r.ieps_pct) === "") && fallbackTax) {
+              ieps_pct = fallbackTax.ieps_pct;
+            }
             const issues = Array.isArray(r.issues)
               ? r.issues.map((x) => String(x)).filter(Boolean)
               : [];
@@ -2404,8 +2408,26 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       }
 
       // Hard block: no silent IVA defaults. IVA is critical for facturación.
-      const missingIva = toInsert.filter((r) => r.iva_pct == null);
+      const missingIva = toInsert.filter((r) => !isValidIvaValue(r.iva_pct));
       if (missingIva.length > 0) {
+        const missingSet = new Set(missingIva);
+        setRows((prev) =>
+          prev.map((r, idx) =>
+            missingSet.has(r)
+              ? {
+                  ...r,
+                  status: "error" as const,
+                  errorMsg: `Fila ${idx + 2}: IVA no detectado — corrige la columna de impuestos`,
+                }
+              : r,
+          ),
+        );
+        setFailedRows(
+          missingIva.map((row) => ({
+            row,
+            error: "IVA no detectado; productos.iva_pct es obligatorio.",
+          })),
+        );
         toast.error(
           `${missingIva.length} producto(s) nuevo(s) sin IVA detectado. Corrige la columna de impuestos en el Excel o el mapeo antes de continuar.`,
         );
@@ -2458,30 +2480,46 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       let inserted = 0;
       if (toInsert.length > 0) {
         const BATCH = 500;
-        const buildPayload = (r: ImportRow) => ({
-          sku: r.sku || null,
-          nombre: r.nombre,
-          marca: r.marca || null,
-          proveedor: r.proveedor || null,
-          peso_kg: r.peso_kg,
-          precio_lista: r.precio_lista ?? 0,
-          laboratorio_id: resolveLab(r),
-          sat_clave: r.sat_clave,
-          iva_pct: r.iva_pct as number, // validated non-null above
-          ieps_pct: r.ieps_pct ?? 0,
-          activo: true,
-        });
+        const buildPayload = (r: ImportRow): Record<string, unknown> | null => {
+          if (!isValidIvaValue(r.iva_pct)) return null;
+          return {
+            sku: r.sku || null,
+            nombre: r.nombre,
+            marca: r.marca || null,
+            proveedor: r.proveedor || null,
+            peso_kg: r.peso_kg,
+            precio_lista: r.precio_lista ?? 0,
+            laboratorio_id: resolveLab(r),
+            sat_clave: r.sat_clave,
+            iva_pct: Number(r.iva_pct),
+            ieps_pct: Number.isFinite(Number(r.ieps_pct)) ? Number(r.ieps_pct) : 0,
+            activo: true,
+          };
+        };
         setProgress({ done: 0, total: toInsert.length, label: "Insertando productos nuevos…" });
         for (let i = 0; i < toInsert.length; i += BATCH) {
           const chunkRows = toInsert.slice(i, i + BATCH);
-          const chunkPayload = chunkRows.map(buildPayload);
+          const chunkPayload = chunkRows.map(buildPayload).filter(Boolean) as Record<string, unknown>[];
+          if (chunkPayload.length !== chunkRows.length) {
+            for (const row of chunkRows) {
+              if (!isValidIvaValue(row.iva_pct)) {
+                failures.push({ row, error: "IVA no detectado; no se envió a Supabase." });
+              }
+            }
+          }
+          if (chunkPayload.length === 0) continue;
           const { error } = await supabase.from("productos").insert(chunkPayload);
           if (error) {
             // Fall back to per-row insert so we can attribute the failure.
             for (let j = 0; j < chunkRows.length; j++) {
+              const payload = buildPayload(chunkRows[j]);
+              if (!payload) {
+                failures.push({ row: chunkRows[j], error: "IVA no detectado; no se envió a Supabase." });
+                continue;
+              }
               const { error: rowErr } = await supabase
                 .from("productos")
-                .insert(buildPayload(chunkRows[j]));
+                .insert(payload);
               if (rowErr) {
                 failures.push({ row: chunkRows[j], error: rowErr.message });
               } else {
