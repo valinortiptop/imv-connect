@@ -427,7 +427,28 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Competencia */}
+        <TabsContent value="competencia" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Migraciones a competencia</CardTitle>
+              <CompetitorCaptureDialog clienteId={clienteId} />
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {(ins?.lost_labs ?? []).length > 0 && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">
+                  Detectado por IA: caída en {(ins?.lost_labs ?? []).map((l: any) => l.laboratorio_nombre).join(", ")}.
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Registra a qué competidor migró cada laboratorio para construir inteligencia competitiva.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
       <CheckInDialog
         open={checkInOpen}
