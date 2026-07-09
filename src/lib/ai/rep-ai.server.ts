@@ -65,7 +65,9 @@ async function buildSnapshot(
       case "rep-clientes":
       case "rep-plan":
       case "rep-coach":
+      case "rep-calendario":
       case "rep-supervisor": {
+
         const [{ data: clientes }, { data: visitas }] = await Promise.all([
           (supabase as any).from("clientes").select("id, nombre, churn_risk, ultima_visita").limit(50),
           (supabase as any)
