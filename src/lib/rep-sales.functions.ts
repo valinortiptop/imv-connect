@@ -86,10 +86,11 @@ export const convertQuoteToPedidoFn = createServerFn({ method: "POST" })
 
     // Create pedido
     const rep = await getCurrentRep(context.supabase, context.userId);
+    if (!quote.client_id) throw new Error("Cotización sin cliente");
     const { data: ped, error: pErr } = await context.supabase
       .from("pedidos")
       .insert({
-        cliente_id: quote.client_id,
+        cliente_id: quote.client_id as string,
         notas_cliente: quote.notes ?? `Convertido de cotización`,
         contacto_nombre: quote.contact_name,
         contacto_telefono: quote.contact_phone,
