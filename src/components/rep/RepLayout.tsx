@@ -32,7 +32,9 @@ const NAV: NavItem[] = [
   { to: "/rep/prospectos", label: "Prospectos", icon: UserPlus, desktopOnly: true },
 
   { to: "/rep/calendario", label: "Calendario", icon: CalendarDays, desktopOnly: true },
+  { to: "/rep/catalogo", label: "Catálogo", icon: ShoppingBag, desktopOnly: true },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
+
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
