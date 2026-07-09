@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { generateRepCoachingFn, getGamificationFn, getRepKpisFn } from "@/lib/rep.functions";
+import { generateRepCoachingFn, getGamificationFn, getRepKpisFn } from "@/lib/rep-analytics.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
