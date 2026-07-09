@@ -239,6 +239,92 @@ export default function RouteMap() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline">
+                <ListChecks className="mr-1 h-4 w-4" /> Seleccionar clientes
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="end">
+              <div className="border-b p-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    value={clientQuery}
+                    onChange={(e) => setClientQuery(e.target.value)}
+                    placeholder="Buscar cliente…"
+                    className="h-8 pl-7 text-sm"
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{selected.size} seleccionados</span>
+                  <div className="flex gap-2">
+                    <button
+                      className="hover:underline"
+                      onClick={() =>
+                        setSelected(new Set(clientsWithCoords.map((c: any) => c.id)))
+                      }
+                    >
+                      Todos
+                    </button>
+                    <button
+                      className="hover:underline"
+                      onClick={() => setSelected(new Set())}
+                      disabled={selected.size === 0}
+                    >
+                      Ninguno
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="max-h-72 overflow-y-auto py-1">
+                {clientsWithCoords
+                  .filter((c: any) => {
+                    const q = clientQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    const name = (c.nombre_comercial ?? c.razon_social ?? "").toLowerCase();
+                    return name.includes(q);
+                  })
+                  .slice(0, 200)
+                  .map((c: any) => {
+                    const isSel = selected.has(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"
+                      >
+                        <Checkbox
+                          checked={isSel}
+                          onCheckedChange={() => toggleSel(c.id)}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {c.nombre_comercial ?? c.razon_social}
+                        </span>
+                        <button
+                          className="text-[11px] text-primary hover:underline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const map = mapRef.current;
+                            if (!map) return;
+                            userInteractedRef.current = true;
+                            map.panTo({ lat: Number(c.lat), lng: Number(c.lng) });
+                            if (map.getZoom() < 15) map.setZoom(15);
+                          }}
+                        >
+                          Ver
+                        </button>
+                      </label>
+                    );
+                  })}
+                {clientsWithCoords.length === 0 && (
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                    No hay clientes con coordenadas.
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)}>
             <Flame className="mr-1 h-4 w-4" /> Heatmap
           </Button>
@@ -249,6 +335,7 @@ export default function RouteMap() {
             <RouteIcon className="mr-1 h-4 w-4" /> Optimizar
           </Button>
         </div>
+
       </div>
 
       <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-muted">
