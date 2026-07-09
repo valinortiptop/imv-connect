@@ -5,7 +5,7 @@ export const Route = createFileRoute("/admin/compras")({
   component: ComprasLayout,
 });
 
-const TABS = [
+const TABS: { to: string; label: string; exact?: boolean }[] = [
   { to: "/admin/compras", label: "Dashboard", exact: true },
   { to: "/admin/compras/planeacion", label: "Planeación" },
   { to: "/admin/compras/ordenes", label: "Órdenes" },
@@ -13,7 +13,7 @@ const TABS = [
   { to: "/admin/compras/caducidades", label: "Caducidades" },
   { to: "/admin/compras/costos", label: "Costos" },
   { to: "/admin/compras/rotacion", label: "Rotación" },
-] as const;
+];
 
 function ComprasLayout() {
   const { pathname } = useLocation();
