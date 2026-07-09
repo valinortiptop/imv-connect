@@ -612,7 +612,6 @@ export interface FileRoutesByFullPath {
   '/rep/ruta': typeof RepRutaRoute
   '/rep/supervisor': typeof RepSupervisorRoute
   '/rep/visitas': typeof RepVisitasRoute
-  '/rep/calendario': typeof RepCalendarioRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -701,7 +700,6 @@ export interface FileRoutesByTo {
   '/rep/ruta': typeof RepRutaRoute
   '/rep/supervisor': typeof RepSupervisorRoute
   '/rep/visitas': typeof RepVisitasRoute
-  '/rep/calendario': typeof RepCalendarioRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -887,7 +885,6 @@ export interface FileRouteTypes {
     | '/rep/ruta'
     | '/rep/supervisor'
     | '/rep/visitas'
-    | '/rep/calendario'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -976,7 +973,6 @@ export interface FileRouteTypes {
     | '/rep/ruta'
     | '/rep/supervisor'
     | '/rep/visitas'
-    | '/rep/calendario'
     | '/admin'
     | '/rep'
     | '/admin/bancos/estados'
@@ -1068,7 +1064,6 @@ export interface FileRouteTypes {
     | '/rep/ruta'
     | '/rep/supervisor'
     | '/rep/visitas'
-    | '/rep/calendario'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -1164,13 +1159,6 @@ declare module '@tanstack/react-router' {
       path: '/visitas'
       fullPath: '/rep/visitas'
       preLoaderRoute: typeof RepVisitasRouteImport
-      parentRoute: typeof RepRoute
-    }
-    '/rep/calendario': {
-      id: '/rep/calendario'
-      path: '/calendario'
-      fullPath: '/rep/calendario'
-      preLoaderRoute: typeof RepCalendarioRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/supervisor': {
@@ -1989,7 +1977,6 @@ interface RepRouteChildren {
   RepRutaRoute: typeof RepRutaRoute
   RepSupervisorRoute: typeof RepSupervisorRoute
   RepVisitasRoute: typeof RepVisitasRoute
-  RepCalendarioRoute: typeof RepCalendarioRoute
   RepIndexRoute: typeof RepIndexRoute
 }
 
@@ -2003,7 +1990,6 @@ const RepRouteChildren: RepRouteChildren = {
   RepRutaRoute: RepRutaRoute,
   RepSupervisorRoute: RepSupervisorRoute,
   RepVisitasRoute: RepVisitasRoute,
-  RepCalendarioRoute: RepCalendarioRoute,
   RepIndexRoute: RepIndexRoute,
 }
 
