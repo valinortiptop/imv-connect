@@ -49,3 +49,30 @@ Módulo de asistente comercial IA para venta en campo, con historial de cliente,
 - `VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY` sí se expone al cliente (es la clave con restricción por referrer para Maps JS).
 - Insights por cliente se cachean 24 h en `rep_client_insights`; botón "Regenerar" fuerza recomputo.
 - RLS: policies en las 3 tablas nuevas restringen filas al representante propietario o a `has_role('admin')`.
+
+---
+
+## Fase 2 — Inteligencia comercial avanzada ✅ IMPLEMENTADA
+
+### Nuevas server functions (`src/lib/rep.functions.ts`)
+- **`getLabRiskPanelFn`** — Compara consumo por laboratorio en ventanas de 60d vs 60d previos. Marca `alto` (>60% caída), `medio` (>30%), `bajo` (>10%), `estable`. Devuelve clientes que dejaron de comprar cada laboratorio (posible migración).
+- **`getReorderPredictionsFn`** — Predicción determinística por cadencia (media móvil de intervalos entre pedidos). Requiere ≥3 compras del producto. Marca urgencia: `vencido`, `inmediato` (≤3d), `proximo` (≤N días).
+- **`generateRepAlertsFn`** — Inserta notifications para clientes con `churn_risk_score ≥ 0.7`. Idempotente por día (dedup por `route + created_at ≥ hoy`).
+
+### Nuevos componentes
+- `LabRiskPanel.tsx`, `ReorderPredictions.tsx`, `NotificationBell.tsx` (Realtime en `notifications`).
+
+### Nueva ruta
+- `/rep/laboratorios` — Panel completo de laboratorios en riesgo y recompras próximas 14d, con botón "Correr análisis" que dispara `generateRepAlertsFn`.
+
+### Dashboard
+- Añadidas dos tarjetas: top 3 labs en riesgo y top 5 recompras próximas 7d, con enlace a la vista completa.
+
+### RLS y Realtime
+- Nueva policy `notif_insert_self` permite al rep insertar sus propias alertas.
+- `notifications` añadida a la publicación `supabase_realtime` con `REPLICA IDENTITY FULL`.
+
+### Campana de notificaciones
+- Icono con contador de no leídas en sidebar desktop y header móvil.
+- Suscripción a `INSERT`/`UPDATE` filtrada por `user_id`.
+- Botón "Marcar todo leído".
