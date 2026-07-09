@@ -4993,6 +4993,197 @@ export type Database = {
         }
         Relationships: []
       }
+      rep_client_insights: {
+        Row: {
+          churn_reasons: Json | null
+          churn_risk_score: number | null
+          cliente_id: string
+          cross_sell: Json | null
+          generated_at: string
+          lost_labs: Json | null
+          model: string | null
+          raw: Json | null
+          reorder_predictions: Json | null
+          summary: string | null
+        }
+        Insert: {
+          churn_reasons?: Json | null
+          churn_risk_score?: number | null
+          cliente_id: string
+          cross_sell?: Json | null
+          generated_at?: string
+          lost_labs?: Json | null
+          model?: string | null
+          raw?: Json | null
+          reorder_predictions?: Json | null
+          summary?: string | null
+        }
+        Update: {
+          churn_reasons?: Json | null
+          churn_risk_score?: number | null
+          cliente_id?: string
+          cross_sell?: Json | null
+          generated_at?: string
+          lost_labs?: Json | null
+          model?: string | null
+          raw?: Json | null
+          reorder_predictions?: Json | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
+      rep_visit_agreements: {
+        Row: {
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          status: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_visit_agreements_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "rep_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rep_visits: {
+        Row: {
+          check_in_at: string
+          check_in_lat: number | null
+          check_in_lng: number | null
+          check_out_at: string | null
+          check_out_lat: number | null
+          check_out_lng: number | null
+          cliente_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          outcome: string | null
+          representante_id: string
+        }
+        Insert: {
+          check_in_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_at?: string | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          cliente_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          representante_id: string
+        }
+        Update: {
+          check_in_at?: string
+          check_in_lat?: number | null
+          check_in_lng?: number | null
+          check_out_at?: string | null
+          check_out_lat?: number | null
+          check_out_lng?: number | null
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outcome?: string | null
+          representante_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_visits_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       reportes_personalizados: {
         Row: {
           configuracion: Json
