@@ -74,7 +74,10 @@ export default function CalendarView() {
   const fetchEvents = useServerFn(getRepCalendarEventsFn);
   const fetchReps = useServerFn(listRepresentantesFn);
 
-  const [view, setView] = useState<ViewMode>("month");
+  // On mobile, default to day view (agenda-like); month grid is unusable at <640px.
+  const initialView: ViewMode =
+    typeof window !== "undefined" && window.innerWidth < 768 ? "day" : "month";
+  const [view, setView] = useState<ViewMode>(initialView);
   const [cursor, setCursor] = useState<Date>(startOfDay(new Date()));
   const [selectedRepIds, setSelectedRepIds] = useState<string[]>([]);
   const [activeTypes, setActiveTypes] = useState<CalendarEvent["type"][]>([...ALL_TYPES]);
