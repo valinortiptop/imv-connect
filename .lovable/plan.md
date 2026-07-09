@@ -1,69 +1,60 @@
+
 ## Goal
-Close the loop **Pedidos → Almacén → Facturación → Contabilidad** so a pedido created in `/pedidos` shows up automatically as an "Orden por surtir" on `/almacen`, moves through picking/dispatch, becomes an invoice on `/facturacion`, and posts a póliza in `/contabilidad`.
 
-## Current state (what I found)
+Make the Excel catalog import truly AI-driven: the AI maps every incoming column to the existing catalog schema (including `iva_pct` / `ieps_pct`), flags rows it can't confidently map, and the save step never silently defaults critical tax fields. Errors are surfaced per row before insert.
 
-- `pedidos` table has 8 real rows (folios `p-1`…`p-8`), all with `estado = 'Nuevo'`.
-- `/almacen` shows "No hay órdenes por surtir" because the RPC `list_orders_to_fulfill` (and ~5 other RPCs the panel uses) **do not exist in the database**. All the buttons on `OrdersToFulfillPanel` + `FulfillOrderDialog` are wired to functions that were never created.
-- `crear_factura_desde_pedido(uuid)` already exists — it copies items and creates a `facturas` row. Not called anywhere from the UI right now.
-- `polizas` / `poliza_movimientos` tables exist with recalc triggers, but nothing auto-creates a póliza when a factura is issued.
-- Estados in `pedidos_stock_trigger` are lowercase (`confirmado`, `enviado`, `entregado`, `cancelado`) but the app writes `'Nuevo'`. Needs unification.
+## Changes
 
-## Plan
+### 1. Expand the AI mapping prompt (`ImportExcelDialog.parseFile`)
 
-### 1. Unify pedido lifecycle (single source of truth)
-Introduce the canonical state machine on `pedidos.estado`:
+In `src/routes/admin.productos.tsx` (~line 2145), extend the system prompt so the AI must return, per row:
 
-```text
-Nuevo → Surtiendo → Surtido → EnRuta ─┐
-                              Entregado ─┼→ Facturado → Pagado
-                              (Pickup)  ─┘
-Cancelado (from any pre-invoice state)
-```
+- Existing canonical fields (sku, nombre, marca, proveedor, peso_kg, precio_lista, sat_clave, laboratorio) — unchanged.
+- **`iva_pct`** (number: 0, 8, or 16) and **`ieps_pct`** (number: 0, 6, 7, 8, …) parsed from any tax column — not just the raw `tax_code` string. The AI must inspect columns like "IVA", "IEPS", "Impuesto", "Tax", "Grupo de impuestos", "% IVA", etc., not only `ITEM IVA X%` strings.
+- **`confidence`**: `"high" | "medium" | "low"` per row.
+- **`issues`**: array of strings describing anything the AI could not map (e.g. `"no se detectó IVA"`, `"columna 'Categoría' sin campo destino"`).
+- **`extra_fields`**: object with any source columns that don't fit the canonical schema, so we can report them.
 
-- `Nuevo` = created in /pedidos, appears in /almacen as "por surtir".
-- `Surtiendo` = at least 1 bulto picked to embarque.
-- `Surtido` = all bultos picked, awaiting despacho / pickup.
-- `EnRuta` / `Entregado` = physically left warehouse.
-- `Facturado` = CFDI emitted (or draft factura created).
+Send the actual column headers + a larger sample (already 800 rows) and keep temperature 0.
 
-### 2. DB migration — Almacén RPCs
-Create the missing functions the frontend already calls:
+### 2. Row-level validation before save
 
-- `list_orders_to_fulfill(p_horizon_days int)` – returns pedidos in `Nuevo|Surtiendo|Surtido` with `delivery_date <= today + horizon`, joins `clientes`, aggregates bultos needed from `pedido_items` and picked from `slot_contents` where `kind='embarque'` and `pedido_id=`.
-- `get_order_fulfillment_state(p_order_id uuid)` – per-line: needed vs in-embarque vs remaining.
-- `suggest_source_slots_for_picking(...)` – FIFO by caducidad, smallest pile first, from `slot_contents`.
-- `pick_order_item_to_embarque(...)` – moves qty from a source slot to the order's embarque slot, writes `slot_movements` (kardex), advances estado to `Surtiendo`.
-- `dispatch_order(p_order_id uuid)` – flips estado to `EnRuta`, deletes embarque slot rows, writes final kardex "salida por pedido".
-- `mark_pickup_delivered(p_order_id uuid)` – same but flips to `Entregado`.
+Right after the AI response is normalized into `ImportRow[]`:
 
-### 3. DB migration — Facturación wiring
-- Add helper `list_pedidos_por_facturar()` (returns pedidos in `Entregado`/`EnRuta` without an existing factura).
-- Reuse existing `crear_factura_desde_pedido`; after success, flip `pedidos.estado='Facturado'`.
-- Add trigger `facturas_after_stamp` → when `facturas.cfdi_status='timbrada'` (or `uuid_fiscal` fills), auto-create a póliza header + `poliza_movimientos` from a mapping table (fallback: hard-coded 105 Clientes / 401 Ventas / 208 IVA cuentas contables lookup by `codigo`).
+- If `iva_pct` is `null` after AI parsing AND the row has no tax-related source column value at all → mark row `status: "error"` with `errorMsg: "Fila N: IVA no detectado — corrige la columna de impuestos o edita manualmente"`.
+- Same treatment for `ieps_pct` only when the source clearly has an IEPS column but the AI couldn't parse it (missing IEPS defaults to 0 silently is OK — that's the real-world default).
+- Collect all rows with `issues` from the AI and expose them in the preview table via a new "Observaciones" column and a summary banner.
 
-### 4. Frontend wiring
-- `/pedidos` order-detail sheet: add "Facturar" button (visible only when `estado in (Entregado,EnRuta)` and no factura exists).
-- `/facturacion` page: add "Pedidos por facturar" tab using `list_pedidos_por_facturar`; clicking "Timbrar" calls `crear_factura_desde_pedido` → then existing timbrado flow.
-- `/almacen` panel: works automatically once RPCs exist. No component changes needed.
-- `/contabilidad`: no UI change — pólizas appear via the new trigger. Add a "origen: factura F-123" link in the póliza detail already shown.
+### 3. Remove silent defaults in `save()`
 
-### 5. Backfill
-One-off SQL: keep the 8 existing pedidos as `Nuevo` so they immediately appear in /almacen.
+In the insert payload (~lines 2318–2332):
 
-## Technical notes
+- Stop coercing `iva_pct` to `16` and `ieps_pct` to `0` unconditionally.
+- Instead: block save if any `status === "new"` row still has `iva_pct == null`. Show a toast and highlight offending rows.
+- Only rows that pass validation are sent to Supabase. Batch size stays at 500; because every row now guarantees a non-null `iva_pct`, PostgREST won't emit `NULL` columns across the batch.
 
-- All RPCs `SECURITY DEFINER`, `SET search_path=public`, `GRANT EXECUTE TO authenticated`.
-- Kardex uses the existing `slot_contents` + `slot_movements` tables (already present with 12/10 columns). Embarque = a virtual slot per order, or `slot_contents` rows tagged `kind='embarque'` — I will confirm by reading the current slot_contents schema before writing SQL.
-- No schema changes to `facturas`; only a new trigger.
-- Cuentas contables lookup: read from `cuentas_contables` by SAT `codigo_agrupador` prefix. If a company hasn't seeded their catálogo, the trigger skips póliza creation instead of failing the timbrado.
+Update the update path (~lines 2360–2362) the same way: if the diff flagged `iva`/`ieps` but the value is null, mark the row as error rather than skipping.
 
-## Out of scope for this pass
-- Real CFDI/PAC integration (already exists via Facturapi fields on `facturas`).
-- Pagos automáticos → póliza de ingreso (can be a follow-up).
-- Partial invoicing (one factura per pedido for now).
+### 4. Surface AI/DB errors instead of swallowing them
 
-## Rollout order (single approval → 2 migrations + 3-4 file edits)
-1. Migration A: almacén RPCs + state machine.
-2. Migration B: facturación helper + póliza trigger.
-3. UI edits: OrderDetailSheet "Facturar" button, Facturación page "Pedidos por facturar" tab.
+- In `parseFile`, when the AI call fails (`aiChatFn` throws or returns non-JSON), show `toast.error("La IA no pudo mapear el archivo: <mensaje>")` and fall back to the heuristic only for recognised NetSuite headers. For unknown layouts, keep the rows but mark all as `status: "error"` so nothing is imported silently.
+- In `save`, replace the single top-level `catch` with per-batch error handling that logs the offending rows and keeps a `failedRows[]` array; final toast reports `X insertados · Y fallidos` with a "Ver detalles" action opening a small dialog listing the failures.
+
+### 5. Optional schema extension for unmapped fields
+
+Only if the AI consistently reports the same `extra_fields` key across ≥ 20% of rows (e.g. `categoria`, `presentacion`, `unidad`):
+
+- Prompt the user in the preview dialog: *"La IA detectó campos nuevos que no existen en el catálogo: `categoria`, `presentacion`. ¿Deseas crearlos como columnas?"*
+- On confirm, run a `supabase--migration` adding nullable `text` columns to `public.productos` with proper GRANTs preserved (table already has RLS). The migration only runs after user approval, so nothing schema-changing happens implicitly.
+
+If the user declines, the extra fields are stored in the row's `errorMsg`/observations for reference and not persisted.
+
+## Files touched
+
+- `src/routes/admin.productos.tsx` — prompt, parsing, validation, save, preview UI (new "Observaciones" column + failures dialog).
+- Optional migration (only on user confirm in step 5) adding nullable text columns to `public.productos`.
+
+## Non-goals
+
+- No changes to the images import, NetSuite heuristic path, or other pages.
+- No change to the existing 500-batch insert strategy — only what goes into each row.

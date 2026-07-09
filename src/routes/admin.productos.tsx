@@ -1860,6 +1860,8 @@ type ImportRow = {
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
+  notes?: string[];
+  extra_fields?: Record<string, unknown>;
 };
 
 // Parse a NetSuite / SuiteTax tax code label like:
@@ -2144,7 +2146,7 @@ function ImportExcelDialog({
         const sampleRows = json.slice(0, 800);
         const system = `Eres un asistente que normaliza datos de productos farmacéuticos veterinarios desde Excel.
 Devuelves SOLO JSON válido, sin markdown ni texto extra.
-Tarea: para cada fila del Excel, identifica los campos canónicos y el laboratorio.
+Tarea: para cada fila del Excel, identifica los campos canónicos, el laboratorio, y los impuestos.
 Campos canónicos:
 - sku (clave/código del producto — puede llamarse "Nombre" en exports de NetSuite)
 - nombre (descripción legible del producto — en NetSuite es "Nombre para mostrar")
@@ -2153,10 +2155,14 @@ Campos canónicos:
 - peso_kg (número en kg; null si no se sabe)
 - precio_lista (número en MXN; en NetSuite es "Precio base"; null si no se sabe)
 - sat_clave (código numérico SAT de "SAT Clave Producto Servicio"; solo los dígitos; null si no aplica)
-- tax_code (texto crudo tipo "ITEM IVA 16%" o "ITEM IEPS 6% IVA 0%"; null si no aplica)
+- iva_pct (número: 0, 8 o 16; extráelo de CUALQUIER columna relacionada con impuestos: "IVA", "% IVA", "Impuesto", "Tax", "Grupo de impuestos", "Código de artículo de SuiteTax", "ITEM IVA X%", "Clave impuestos", etc. Devuelve null SOLO si no hay ninguna columna de impuestos)
+- ieps_pct (número: 0, 6, 7, 8, ...; extráelo de columnas tipo "IEPS", "% IEPS", "ITEM IEPS X%". Si no hay columna de IEPS, devuelve 0)
 - laboratorio (nombre del laboratorio; en NetSuite suele ser "Clase")
+- confidence: "high" | "medium" | "low" según qué tan seguro estás del mapeo
+- issues: array de strings describiendo qué no pudiste mapear en la fila (ej. "no se detectó IVA", "peso ambiguo")
+- extra_fields: objeto con columnas del Excel que NO caben en ningún campo canónico (ej. {"categoria":"Antibiótico","presentacion":"Frasco 250ml"})
 IMPORTANTE: NUNCA uses la clave/SKU como nombre. Si sólo hay una columna con códigos, deja nombre vacío.
-Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"sat_clave":null,"tax_code":null,"laboratorio":""}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
+Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg":null,"precio_lista":null,"sat_clave":null,"iva_pct":null,"ieps_pct":0,"laboratorio":"","confidence":"high","issues":[],"extra_fields":{}}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
         const userMsg = JSON.stringify({
           laboratorios_existentes: labs.map((l) => l.nombre),
           headers,
@@ -2171,9 +2177,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           peso_kg?: number | null;
           precio_lista?: number | null;
           sat_clave?: string | null;
-          tax_code?: string | null;
+          iva_pct?: number | null;
+          ieps_pct?: number | null;
           laboratorio?: string;
+          confidence?: string;
+          issues?: string[];
+          extra_fields?: Record<string, unknown>;
         }> | null = null;
+        let aiError: string | null = null;
 
         try {
           const resp = await aiChatFn({
@@ -2199,8 +2210,10 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             .trim();
           const parsedJson = JSON.parse(cleaned);
           aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+          if (!aiRows) aiError = "La IA no devolvió filas en el formato esperado";
         } catch (e) {
-          console.warn("AI mapping failed, using heuristic", e);
+          aiError = (e as Error).message || "Error desconocido en la IA";
+          console.warn("AI mapping failed", e);
         }
 
         if (aiRows && aiRows.length > 0) {
@@ -2221,7 +2234,25 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               r.precio_lista == null || String(r.precio_lista) === ""
                 ? null
                 : Number(r.precio_lista) || null;
-            const parsedTax = r.tax_code ? parseTaxCode(String(r.tax_code)) : null;
+            const iva_pct =
+              r.iva_pct == null || String(r.iva_pct) === "" ? null : Number(r.iva_pct);
+            const ieps_pct =
+              r.ieps_pct == null || String(r.ieps_pct) === "" ? 0 : Number(r.ieps_pct);
+            const issues = Array.isArray(r.issues)
+              ? r.issues.map((x) => String(x)).filter(Boolean)
+              : [];
+            const extra_fields =
+              r.extra_fields && typeof r.extra_fields === "object" && !Array.isArray(r.extra_fields)
+                ? (r.extra_fields as Record<string, unknown>)
+                : undefined;
+            const extraKeys = extra_fields ? Object.keys(extra_fields).filter((k) => {
+              const v = extra_fields[k];
+              return v != null && String(v).trim() !== "";
+            }) : [];
+            const notes: string[] = [...issues];
+            if (extraKeys.length > 0) {
+              notes.push(`Campos sin destino: ${extraKeys.join(", ")}`);
+            }
             const base: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg"> = {
               sku,
               nombre,
@@ -2230,10 +2261,12 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               peso_kg,
               precio_lista,
               sat_clave: r.sat_clave ? parseSatClave(String(r.sat_clave)) : null,
-              iva_pct: parsedTax ? parsedTax.iva_pct : null,
-              ieps_pct: parsedTax ? parsedTax.ieps_pct : null,
+              iva_pct: iva_pct != null && Number.isFinite(iva_pct) ? iva_pct : null,
+              ieps_pct: Number.isFinite(ieps_pct) ? ieps_pct : 0,
               laboratorio_nombre: labNombre,
               laboratorio_id: matchedLab?.id ?? null,
+              notes: notes.length > 0 ? notes : undefined,
+              extra_fields,
             };
             if (!nombre) {
               return {
@@ -2242,16 +2275,40 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                 errorMsg: `Fila ${i + 2}: falta nombre`,
               };
             }
-            return { ...base, ...diffRow(base) } as ImportRow;
+            // Missing IVA on a new product → hard error (NOT NULL in DB, critical field)
+            const diffRes = diffRow(base);
+            if (diffRes.status === "new" && base.iva_pct == null) {
+              return {
+                ...base,
+                status: "error" as const,
+                errorMsg: `Fila ${i + 2}: IVA no detectado — corrige la columna de impuestos`,
+              };
+            }
+            return { ...base, ...diffRes } as ImportRow;
           });
         } else {
-          parsed = heuristicParse();
+          // AI failed and layout is not NetSuite — do NOT silently fall back to
+          // a heuristic that will mis-map columns. Surface the error.
+          if (aiError) {
+            toast.error(`La IA no pudo mapear el archivo: ${aiError}`);
+          } else {
+            toast.error("La IA no pudo mapear el archivo");
+          }
+          parsed = heuristicParse().map((r) =>
+            r.status === "error"
+              ? r
+              : {
+                  ...r,
+                  status: "error" as const,
+                  errorMsg: `Fila ${r.status}: mapeo IA falló — revisa manualmente`,
+                },
+          );
         }
       }
 
       setRows(parsed);
-      if (!isNetSuite) toast.success("Excel analizado con IA");
-      else toast.success("Excel de NetSuite detectado y mapeado");
+      if (!isNetSuite && parsed.some((r) => r.status !== "error")) toast.success("Excel analizado con IA");
+      else if (isNetSuite) toast.success("Excel de NetSuite detectado y mapeado");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -2260,8 +2317,11 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
     }
   };
 
+  const [failedRows, setFailedRows] = useState<Array<{ row: ImportRow; error: string }>>([]);
+
   const save = async () => {
     console.log("[ImportExcel] Aplicar clicked");
+    setFailedRows([]);
     setSaving(true);
     setProgress({ done: 0, total: 0, label: "Preparando…" });
     try {
@@ -2269,6 +2329,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       const toUpdate = rows.filter((r) => r.status === "update");
       if (toInsert.length === 0 && toUpdate.length === 0) {
         toast.info("No hay cambios por aplicar");
+        return;
+      }
+
+      // Hard block: no silent IVA defaults. IVA is critical for facturación.
+      const missingIva = toInsert.filter((r) => r.iva_pct == null);
+      if (missingIva.length > 0) {
+        toast.error(
+          `${missingIva.length} producto(s) nuevo(s) sin IVA detectado. Corrige la columna de impuestos en el Excel o el mapeo antes de continuar.`,
+        );
         return;
       }
 
@@ -2311,11 +2380,14 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         return r.laboratorio_id ?? labFromName ?? overrideLab ?? null;
       };
 
-      // INSERT new in batches of 500
+      const failures: Array<{ row: ImportRow; error: string }> = [];
+
+      // INSERT new in batches of 500. On batch error, retry row-by-row so we
+      // surface WHICH row failed instead of losing the whole batch.
       let inserted = 0;
       if (toInsert.length > 0) {
         const BATCH = 500;
-        const payloadAll = toInsert.map((r) => ({
+        const buildPayload = (r: ImportRow) => ({
           sku: r.sku || null,
           nombre: r.nombre,
           marca: r.marca || null,
@@ -2324,19 +2396,32 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
           sat_clave: r.sat_clave,
-          // iva_pct / ieps_pct are NOT NULL in DB — always include a value so
-          // heterogeneous rows in a batch don't emit NULLs for these columns.
-          iva_pct: r.iva_pct ?? 16,
+          iva_pct: r.iva_pct as number, // validated non-null above
           ieps_pct: r.ieps_pct ?? 0,
           activo: true,
-        }));
-        setProgress({ done: 0, total: payloadAll.length, label: "Insertando productos nuevos…" });
-        for (let i = 0; i < payloadAll.length; i += BATCH) {
-          const chunk = payloadAll.slice(i, i + BATCH);
-          const { error } = await supabase.from("productos").insert(chunk);
-          if (error) throw error;
-          inserted += chunk.length;
-          setProgress({ done: inserted, total: payloadAll.length, label: "Insertando productos nuevos…" });
+        });
+        setProgress({ done: 0, total: toInsert.length, label: "Insertando productos nuevos…" });
+        for (let i = 0; i < toInsert.length; i += BATCH) {
+          const chunkRows = toInsert.slice(i, i + BATCH);
+          const chunkPayload = chunkRows.map(buildPayload);
+          const { error } = await supabase.from("productos").insert(chunkPayload);
+          if (error) {
+            // Fall back to per-row insert so we can attribute the failure.
+            for (let j = 0; j < chunkRows.length; j++) {
+              const { error: rowErr } = await supabase
+                .from("productos")
+                .insert(buildPayload(chunkRows[j]));
+              if (rowErr) {
+                failures.push({ row: chunkRows[j], error: rowErr.message });
+              } else {
+                inserted += 1;
+              }
+              setProgress({ done: inserted, total: toInsert.length, label: "Insertando productos nuevos…" });
+            }
+          } else {
+            inserted += chunkRows.length;
+            setProgress({ done: inserted, total: toInsert.length, label: "Insertando productos nuevos…" });
+          }
         }
       }
 
@@ -2360,30 +2445,39 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             // iva_pct / ieps_pct are NOT NULL — never patch with null.
             if (fields.has("iva") && r.iva_pct != null) patch.iva_pct = r.iva_pct;
             if (fields.has("ieps") && r.ieps_pct != null) patch.ieps_pct = r.ieps_pct;
-            return { id: r.existing_id!, patch };
+            return { row: r, id: r.existing_id!, patch };
           })
           .filter((t) => Object.keys(t.patch).length > 0);
 
         for (let i = 0; i < tasks.length; i += CONCURRENCY) {
           const wave = tasks.slice(i, i + CONCURRENCY);
           const results = await Promise.all(
-            wave.map((t) =>
-              supabase.from("productos").update(t.patch).eq("id", t.id),
-            ),
+            wave.map(async (t) => {
+              const { error } = await supabase.from("productos").update(t.patch).eq("id", t.id);
+              return { t, error };
+            }),
           );
-          const firstErr = results.find((r) => r.error)?.error;
-          if (firstErr) throw firstErr;
-          updated += wave.length;
+          for (const { t, error } of results) {
+            if (error) {
+              failures.push({ row: t.row, error: error.message });
+            } else {
+              updated += 1;
+            }
+          }
           setProgress({ done: updated, total: tasks.length, label: "Actualizando productos…" });
         }
       }
 
-      toast.success(
-        `${inserted} nuevo(s) · ${updated} actualizado(s)${
-          newLabNames.length ? ` · ${newLabNames.length} laboratorio(s) creado(s)` : ""
-        }`,
-      );
-      onSaved();
+      setFailedRows(failures);
+      const summary = `${inserted} nuevo(s) · ${updated} actualizado(s)${
+        newLabNames.length ? ` · ${newLabNames.length} lab(s) creado(s)` : ""
+      }${failures.length ? ` · ${failures.length} fallido(s)` : ""}`;
+      if (failures.length > 0) {
+        toast.error(summary + " — revisa el detalle en la lista.");
+      } else {
+        toast.success(summary);
+        onSaved();
+      }
     } catch (e) {
       console.error("[ImportExcel] save error", e);
       toast.error((e as Error).message ?? "Error al aplicar cambios");
@@ -2561,13 +2655,15 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                       <TableHead>Nombre</TableHead>
                       <TableHead>Clase</TableHead>
                       <TableHead>Laboratorio</TableHead>
+                      <TableHead className="text-right">IVA/IEPS</TableHead>
                       <TableHead>Cambios</TableHead>
+                      <TableHead>Observaciones</TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {rows.map((r, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className={r.status === "error" ? "bg-destructive/5" : undefined}>
                         <TableCell>
                           {r.status === "new" && (
                             <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/40">
@@ -2585,7 +2681,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             </Badge>
                           )}
                           {r.status === "error" && (
-                            <Badge variant="destructive">{r.errorMsg}</Badge>
+                            <Badge variant="destructive" title={r.errorMsg}>Error</Badge>
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
@@ -2605,10 +2701,28 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-right text-xs tabular-nums">
+                          {r.iva_pct == null ? (
+                            <span className="text-destructive font-medium">sin IVA</span>
+                          ) : (
+                            <span>
+                              {r.iva_pct}% / {r.ieps_pct ?? 0}%
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {r.diff_fields && r.diff_fields.length > 0
                             ? r.diff_fields.join(", ")
                             : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[220px]">
+                          {r.status === "error" && r.errorMsg ? (
+                            <span className="text-destructive">{r.errorMsg}</span>
+                          ) : r.notes && r.notes.length > 0 ? (
+                            <span title={r.notes.join(" · ")}>{r.notes.join(" · ")}</span>
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {r.precio_lista != null ? mxnFmt2.format(r.precio_lista) : "—"}
@@ -2618,8 +2732,30 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
                   </TableBody>
                 </Table>
               </div>
+
+              {failedRows.length > 0 && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs">
+                  <div className="font-medium text-destructive mb-2">
+                    {failedRows.length} fila(s) fallaron al guardar:
+                  </div>
+                  <ul className="space-y-1 max-h-40 overflow-y-auto">
+                    {failedRows.slice(0, 50).map((f, idx) => (
+                      <li key={idx} className="flex gap-2">
+                        <span className="font-mono text-muted-foreground">
+                          {f.row.sku || f.row.nombre}
+                        </span>
+                        <span className="text-destructive">— {f.error}</span>
+                      </li>
+                    ))}
+                    {failedRows.length > 50 && (
+                      <li className="text-muted-foreground">…y {failedRows.length - 50} más</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </>
           )}
+
 
           {progress && (
             <div className="rounded-md border border-border bg-muted/50 p-3 text-sm">
