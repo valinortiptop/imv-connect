@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   openaiChat,
+  geminiGenerate,
   googleGeocode,
   googleDirections,
 } from "./valinor-proxy.server";
