@@ -51,9 +51,9 @@ function Page() {
               <CardTitle className="text-base">Meta del mes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-semibold">{fmtMXN(progress?.month_amount ?? 0)}</span>
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xl font-semibold tabular-nums md:text-2xl">{fmtMXN(progress?.month_amount ?? 0)}</span>
+                <span className="text-sm text-muted-foreground tabular-nums">
                   de {fmtMXN(Number(target.target_amount))}
                 </span>
               </div>
