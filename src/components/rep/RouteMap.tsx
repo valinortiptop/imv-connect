@@ -224,6 +224,36 @@ export default function RouteMap() {
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const aiSuggest = useMutation({
+    mutationFn: async () => {
+      const payload: any = { maxStops: 8 };
+      if (geo) { payload.startLat = geo.lat; payload.startLng = geo.lng; }
+      return suggestAI({ data: payload });
+    },
+    onSuccess: (r: any) => {
+      const ids: string[] = r?.ordered ?? [];
+      if (ids.length === 0) {
+        toast.info(r?.rationale ?? "Sin sugerencias disponibles");
+        return;
+      }
+      setSelected(new Set(ids));
+      setAiRationale(r?.rationale ?? null);
+      setRouteInfo(null);
+      // Auto-fit map to suggested clients
+      const maps = (window as any).google?.maps;
+      const map = mapRef.current;
+      if (maps && map) {
+        const bounds = new maps.LatLngBounds();
+        (r.detail ?? []).forEach((d: any) => bounds.extend({ lat: Number(d.lat), lng: Number(d.lng) }));
+        if (geo) bounds.extend({ lat: geo.lat, lng: geo.lng });
+        userInteractedRef.current = true;
+        map.fitBounds(bounds, 60);
+      }
+      toast.success(`IA sugirió ${ids.length} clientes para hoy`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo generar la ruta"),
+  });
+
   const geocodeMut = useMutation({
     mutationFn: (clienteId: string) => geocode({ data: { clienteId } }),
     onSuccess: () => { toast.success("Ubicación calculada"); refetch(); },
