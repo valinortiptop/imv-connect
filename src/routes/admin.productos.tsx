@@ -1898,6 +1898,10 @@ function normalizeTaxPercent(value: unknown, fallback = 0): number {
   return numeric == null ? fallback : numeric;
 }
 
+function normalizeSkuKey(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; ieps_pct: number } | null {
   let iva: number | null = null;
   let ieps: number | null = null;
@@ -2015,11 +2019,6 @@ function ImportExcelDialog({
         defval: "",
       });
 
-      const { data: existing } = await supabase
-        .from("productos")
-        .select(
-          "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id, sat_clave, iva_pct, ieps_pct",
-        );
       type ExistingProd = {
         id: string;
         sku: string | null;
@@ -2033,19 +2032,41 @@ function ImportExcelDialog({
         iva_pct: number | null;
         ieps_pct: number | null;
       };
-      const existingList = (existing ?? []) as ExistingProd[];
+      const pageSize = 1000;
+      let from = 0;
+      const existingList: ExistingProd[] = [];
+      // Supabase caps plain selects at 1000 rows. The import compares against the
+      // full catalog, so paginate or existing SKUs after row 1000 look "new" and
+      // then collide with productos_sku_key on save.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("productos")
+          .select(
+            "id, sku, nombre, marca, proveedor, peso_kg, precio_lista, laboratorio_id, sat_clave, iva_pct, ieps_pct",
+          )
+          .order("nombre")
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = (data ?? []) as ExistingProd[];
+        existingList.push(...batch);
+        if (batch.length < pageSize) break;
+        from += pageSize;
+      }
       const existingBySku = new Map<string, ExistingProd>();
       const existingByName = new Map<string, ExistingProd>();
       for (const p of existingList) {
-        if (p.sku) existingBySku.set(p.sku.toLowerCase().trim(), p);
-        if (p.nombre) existingByName.set(p.nombre.toLowerCase().trim(), p);
+        const skuKey = normalizeSkuKey(p.sku);
+        const nameKey = normalizeSkuKey(p.nombre);
+        if (skuKey) existingBySku.set(skuKey, p);
+        if (nameKey) existingByName.set(nameKey, p);
       }
 
       const diffRow = (
         row: Omit<ImportRow, "status" | "existing_id" | "diff_fields" | "errorMsg">,
       ): { status: ImportRow["status"]; existing_id?: string; diff_fields?: string[] } => {
-        const key = row.sku.toLowerCase().trim();
-        const nameKey = row.nombre.toLowerCase().trim();
+        const key = normalizeSkuKey(row.sku);
+        const nameKey = normalizeSkuKey(row.nombre);
         // SKU is the primary key. Only fall back to name when SKU is empty.
         const match =
           (key && existingBySku.get(key)) ||
@@ -2388,7 +2409,23 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
         }
       }
 
-      setRows(parsed);
+      const seenImportSkus = new Map<string, number>();
+      const parsedWithDuplicateGuards = parsed.map((row, idx) => {
+        const key = normalizeSkuKey(row.sku);
+        if (!key || row.status === "error") return row;
+        const firstIdx = seenImportSkus.get(key);
+        if (firstIdx != null) {
+          return {
+            ...row,
+            status: "error" as const,
+            errorMsg: `Fila ${idx + 2}: SKU duplicado en el Excel; ya aparece en fila ${firstIdx + 2}`,
+          };
+        }
+        seenImportSkus.set(key, idx);
+        return row;
+      });
+
+      setRows(parsedWithDuplicateGuards);
       if (!isNetSuite && parsed.some((r) => r.status !== "error")) toast.success("Excel analizado con IA");
       else if (isNetSuite) toast.success("Excel de NetSuite detectado y mapeado");
     } catch (e) {
@@ -2462,12 +2499,19 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
       const newLabMap = new Map<string, string>();
       if (newLabNames.length > 0) {
         setProgress({ done: 0, total: newLabNames.length, label: "Creando laboratorios…" });
-        const { data: created, error: labErr } = await supabase
+        const { error: labErr } = await supabase
           .from("laboratorios")
-          .insert(newLabNames.map((nombre) => ({ nombre })))
-          .select("id, nombre");
+          .upsert(newLabNames.map((nombre) => ({ nombre })), {
+            onConflict: "nombre",
+            ignoreDuplicates: true,
+          });
         if (labErr) throw labErr;
-        for (const l of created ?? []) {
+        const { data: labsAfterUpsert, error: labsFetchErr } = await supabase
+          .from("laboratorios")
+          .select("id, nombre")
+          .in("nombre", newLabNames);
+        if (labsFetchErr) throw labsFetchErr;
+        for (const l of labsAfterUpsert ?? []) {
           newLabMap.set((l.nombre as string).toLowerCase(), l.id as string);
         }
         await labsQ.refetch();
@@ -2530,9 +2574,12 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
             }
           }
           if (chunkPayload.length === 0) continue;
-          const { error } = await supabase.from("productos").insert(chunkPayload);
+          const { error } = await supabase
+            .from("productos")
+            .upsert(chunkPayload, { onConflict: "sku" });
           if (error) {
-            // Fall back to per-row insert so we can attribute the failure.
+            // Fall back to per-row upsert so we can attribute the failure without
+            // generating one 409 request per product when an SKU already exists.
             for (let j = 0; j < chunkRows.length; j++) {
               const payload = buildPayload(chunkRows[j]);
               if (!payload) {
@@ -2540,7 +2587,7 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
               }
               const { error: rowErr } = await supabase
                 .from("productos")
-                .insert(payload);
+                .upsert(payload, { onConflict: "sku" });
               if (rowErr) {
                 failures.push({ row: chunkRows[j], error: rowErr.message });
               } else {
