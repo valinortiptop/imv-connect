@@ -342,7 +342,6 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
         from: z.string(),
         to: z.string(),
         rep_id: z.string().uuid().optional(),
-        laboratorio_id: z.string().uuid().optional(),
       })
       .parse(input),
   )
@@ -354,24 +353,27 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
 
     let visitsQ = context.supabase
       .from("rep_visits")
-      .select("id, representante_id, cliente_id, checkin_at, checkout_at, outcome, distance_m")
-      .gte("checkin_at", from)
-      .lt("checkin_at", to);
+      .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, distance_m")
+      .gte("check_in_at", from)
+      .lt("check_in_at", to);
     if (data.rep_id) visitsQ = visitsQ.eq("representante_id", data.rep_id);
 
     let ordersQ = context.supabase
       .from("pedidos")
-      .select("id, representante_id, cliente_id, total, created_at, laboratorio_id")
+      .select("id, representante_id, cliente_id, total, created_at")
       .gte("created_at", from)
       .lt("created_at", to);
     if (data.rep_id) ordersQ = ordersQ.eq("representante_id", data.rep_id);
-    if (data.laboratorio_id) ordersQ = ordersQ.eq("laboratorio_id", data.laboratorio_id);
 
-    const [{ data: visits }, { data: orders }, { data: reps }] = await Promise.all([
+    const [visitsRes, ordersRes, repsRes] = await Promise.all([
       visitsQ,
       ordersQ,
       context.supabase.from("representantes").select("id, nombre"),
     ]);
+    const visits = (visitsRes.data ?? []) as any[];
+    const orders = (ordersRes.data ?? []) as any[];
+    const reps = (repsRes.data ?? []) as any[];
+
 
     // Aggregate by rep
     const repMap = new Map((reps ?? []).map((r: any) => [r.id, r.nombre]));
