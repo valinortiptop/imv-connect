@@ -376,12 +376,12 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
 
 
     // Aggregate by rep
-    const repMap = new Map((reps ?? []).map((r: any) => [r.id, r.nombre]));
+    const repMap = new Map(reps.map((r: any) => [r.id, r.nombre]));
     const agg = new Map<
       string,
       { rep_id: string; rep_name: string; visits: number; orders: number; amount: number }
     >();
-    for (const v of visits ?? []) {
+    for (const v of visits) {
       const key = v.representante_id;
       if (!agg.has(key))
         agg.set(key, {
@@ -393,7 +393,7 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
         });
       agg.get(key)!.visits += 1;
     }
-    for (const o of orders ?? []) {
+    for (const o of orders) {
       const key = o.representante_id;
       if (!agg.has(key))
         agg.set(key, {
@@ -410,9 +410,10 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
     return {
       rows: [...agg.values()].sort((a, b) => b.amount - a.amount),
       totals: {
-        visits: (visits ?? []).length,
-        orders: (orders ?? []).length,
-        amount: (orders ?? []).reduce((a: number, x: any) => a + Number(x.total || 0), 0),
+        visits: visits.length,
+        orders: orders.length,
+        amount: orders.reduce((a: number, x: any) => a + Number(x.total || 0), 0),
       },
     };
   });
+
