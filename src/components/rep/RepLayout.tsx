@@ -59,6 +59,8 @@ export default function RepLayout({ children }: { children: ReactNode }) {
   };
 
   return (
+  return (
+    <AIProvider>
     <Ctx.Provider value={{ rep: data?.rep ?? null, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
