@@ -35,7 +35,10 @@ export type RepModule =
   | "rep-cobranza"
   | "rep-devoluciones"
   | "rep-prospectos"
-  | "rep-anaquel";
+  | "rep-anaquel"
+  | "rep-cierre"
+  | "rep-metas";
+
 
 const MODULE_LABEL: Record<RepModule, string> = {
   "rep-home": "Inicio del rep",
