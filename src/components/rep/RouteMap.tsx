@@ -180,19 +180,26 @@ export default function RouteMap() {
       overlaysRef.current.push(line);
     }
 
-    const fitPoints = geo ? [[geo.lat, geo.lng], ...allPoints] : allPoints;
-    if (fitPoints.length === 0) {
-      map.setCenter({ lat: center[0], lng: center[1] });
-      map.setZoom(11);
-    } else if (fitPoints.length === 1) {
-      map.setCenter({ lat: fitPoints[0][0], lng: fitPoints[0][1] });
-      map.setZoom(13);
-    } else {
-      const bounds = new maps.LatLngBounds();
-      fitPoints.forEach(([lat, lng]) => bounds.extend({ lat, lng }));
-      map.fitBounds(bounds, 48);
+    // Fit bounds ONLY on the first render after the map is ready, and only when
+    // the user hasn't already zoomed/panned. This prevents clicking a marker
+    // (which changes `selected`) from resetting the view.
+    if (!userInteractedRef.current && !didFitRef.current) {
+      const fitPoints = geo ? [[geo.lat, geo.lng], ...allPoints] : allPoints;
+      if (fitPoints.length === 0) {
+        map.setCenter({ lat: center[0], lng: center[1] });
+        map.setZoom(11);
+      } else if (fitPoints.length === 1) {
+        map.setCenter({ lat: fitPoints[0][0], lng: fitPoints[0][1] });
+        map.setZoom(13);
+      } else {
+        const bounds = new maps.LatLngBounds();
+        fitPoints.forEach(([lat, lng]) => bounds.extend({ lat, lng }));
+        map.fitBounds(bounds, 48);
+      }
+      if (allPoints.length > 0) didFitRef.current = true;
     }
-  }, [allPoints, center, clientsWithCoords, geo, heatQ.data, routeInfo, selected, showHeatmap]);
+  }, [allPoints, center, clientsWithCoords, geo, heatQ.data, routeInfo, selected, showHeatmap, mapStatus]);
+
 
   const doOptimize = useMutation({
     mutationFn: async () => {
