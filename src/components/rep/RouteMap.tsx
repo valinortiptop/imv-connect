@@ -15,9 +15,12 @@ import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route as RouteIcon, Locate, Flame } from "lucide-react";
+import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search } from "lucide-react";
 
 function decodePolyline(str: string): [number, number][] {
   // Google encoded polyline algorithm.
