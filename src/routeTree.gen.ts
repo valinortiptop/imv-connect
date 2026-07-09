@@ -25,6 +25,7 @@ import { Route as RepLaboratoriosRouteImport } from './routes/rep.laboratorios'
 import { Route as RepInventarioRouteImport } from './routes/rep.inventario'
 import { Route as RepDevolucionesRouteImport } from './routes/rep.devoluciones'
 import { Route as RepCotizacionesRouteImport } from './routes/rep.cotizaciones'
+import { Route as RepCompetenciaRouteImport } from './routes/rep.competencia'
 import { Route as RepCobranzaRouteImport } from './routes/rep.cobranza'
 import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
@@ -184,6 +185,11 @@ const RepDevolucionesRoute = RepDevolucionesRouteImport.update({
 const RepCotizacionesRoute = RepCotizacionesRouteImport.update({
   id: '/cotizaciones',
   path: '/cotizaciones',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCompetenciaRoute = RepCompetenciaRouteImport.update({
+  id: '/competencia',
+  path: '/competencia',
   getParentRoute: () => RepRoute,
 } as any)
 const RepCobranzaRoute = RepCobranzaRouteImport.update({
@@ -651,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
   '/rep/cobranza': typeof RepCobranzaRoute
+  '/rep/competencia': typeof RepCompetenciaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/devoluciones': typeof RepDevolucionesRoute
   '/rep/inventario': typeof RepInventarioRoute
@@ -746,6 +753,7 @@ export interface FileRoutesByTo {
   '/rep/cierre': typeof RepCierreRoute
   '/rep/coach': typeof RepCoachRoute
   '/rep/cobranza': typeof RepCobranzaRoute
+  '/rep/competencia': typeof RepCompetenciaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/devoluciones': typeof RepDevolucionesRoute
   '/rep/inventario': typeof RepInventarioRoute
@@ -845,6 +853,7 @@ export interface FileRoutesById {
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/coach': typeof RepCoachRoute
   '/rep/cobranza': typeof RepCobranzaRoute
+  '/rep/competencia': typeof RepCompetenciaRoute
   '/rep/cotizaciones': typeof RepCotizacionesRoute
   '/rep/devoluciones': typeof RepDevolucionesRoute
   '/rep/inventario': typeof RepInventarioRoute
@@ -945,6 +954,7 @@ export interface FileRouteTypes {
     | '/rep/clientes'
     | '/rep/coach'
     | '/rep/cobranza'
+    | '/rep/competencia'
     | '/rep/cotizaciones'
     | '/rep/devoluciones'
     | '/rep/inventario'
@@ -1040,6 +1050,7 @@ export interface FileRouteTypes {
     | '/rep/cierre'
     | '/rep/coach'
     | '/rep/cobranza'
+    | '/rep/competencia'
     | '/rep/cotizaciones'
     | '/rep/devoluciones'
     | '/rep/inventario'
@@ -1138,6 +1149,7 @@ export interface FileRouteTypes {
     | '/rep/clientes'
     | '/rep/coach'
     | '/rep/cobranza'
+    | '/rep/competencia'
     | '/rep/cotizaciones'
     | '/rep/devoluciones'
     | '/rep/inventario'
@@ -1306,6 +1318,13 @@ declare module '@tanstack/react-router' {
       path: '/cotizaciones'
       fullPath: '/rep/cotizaciones'
       preLoaderRoute: typeof RepCotizacionesRouteImport
+      parentRoute: typeof RepRoute
+    }
+    '/rep/competencia': {
+      id: '/rep/competencia'
+      path: '/competencia'
+      fullPath: '/rep/competencia'
+      preLoaderRoute: typeof RepCompetenciaRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/cobranza': {
@@ -2107,6 +2126,7 @@ interface RepRouteChildren {
   RepClientesRoute: typeof RepClientesRouteWithChildren
   RepCoachRoute: typeof RepCoachRoute
   RepCobranzaRoute: typeof RepCobranzaRoute
+  RepCompetenciaRoute: typeof RepCompetenciaRoute
   RepCotizacionesRoute: typeof RepCotizacionesRoute
   RepDevolucionesRoute: typeof RepDevolucionesRoute
   RepInventarioRoute: typeof RepInventarioRoute
@@ -2127,6 +2147,7 @@ const RepRouteChildren: RepRouteChildren = {
   RepClientesRoute: RepClientesRouteWithChildren,
   RepCoachRoute: RepCoachRoute,
   RepCobranzaRoute: RepCobranzaRoute,
+  RepCompetenciaRoute: RepCompetenciaRoute,
   RepCotizacionesRoute: RepCotizacionesRoute,
   RepDevolucionesRoute: RepDevolucionesRoute,
   RepInventarioRoute: RepInventarioRoute,

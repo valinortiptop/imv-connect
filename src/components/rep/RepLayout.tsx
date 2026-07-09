@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
@@ -11,6 +11,7 @@ import NotificationBell from "./NotificationBell";
 import { AIProvider } from "@/components/ai/AIProvider";
 import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
+import IncidentQuickButton from "./IncidentQuickButton";
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
@@ -37,6 +38,7 @@ const NAV: NavItem[] = [
 
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
+  { to: "/rep/competencia", label: "Competencia", icon: Swords, desktopOnly: true },
   { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
   { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2, desktopOnly: true },
   { to: "/rep/coach", label: "Coach IA", icon: Sparkles, desktopOnly: true },
@@ -157,6 +159,8 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         <AICopilotButton />
+        <IncidentQuickButton />
+
       </div>
     </Ctx.Provider>
     </AIProvider>

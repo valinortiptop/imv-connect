@@ -839,6 +839,115 @@ export type Database = {
           },
         ]
       }
+      competitor_migrations: {
+        Row: {
+          cliente_id: string
+          competitor_name: string
+          created_at: string
+          created_by: string | null
+          detected_at: string
+          evidence_url: string | null
+          id: string
+          laboratorio_id: string | null
+          motivo: string | null
+          representante_id: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          competitor_name: string
+          created_at?: string
+          created_by?: string | null
+          detected_at?: string
+          evidence_url?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          motivo?: string | null
+          representante_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          competitor_name?: string
+          created_at?: string
+          created_by?: string | null
+          detected_at?: string
+          evidence_url?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          motivo?: string | null
+          representante_id?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       cuentas_contables: {
         Row: {
           activa: boolean
@@ -4606,6 +4715,163 @@ export type Database = {
           valid_to?: string | null
         }
         Relationships: []
+      }
+      product_substitutes: {
+        Row: {
+          created_at: string
+          id: string
+          motivo: string | null
+          prioridad: number
+          producto_id: string
+          sustituto_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          prioridad?: number
+          producto_id: string
+          sustituto_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          prioridad?: number
+          producto_id?: string
+          sustituto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
       }
       productos: {
         Row: {

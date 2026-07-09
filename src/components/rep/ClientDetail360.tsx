@@ -23,6 +23,9 @@ import {
 } from "recharts";
 import CheckInDialog from "./CheckInDialog";
 import OrderQuickCreate from "./OrderQuickCreate";
+import ClientBehaviorPanel from "./ClientBehaviorPanel";
+import MissedOpportunitiesList from "./MissedOpportunitiesList";
+import CompetitorCaptureDialog from "./CompetitorCaptureDialog";
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
@@ -137,14 +140,16 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
       </div>
 
       <Tabs defaultValue="ia" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-5 md:grid-cols-9">
           <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="pedido">Pedido</TabsTrigger>
           <TabsTrigger value="historial">Hist.</TabsTrigger>
+          <TabsTrigger value="sku">SKU</TabsTrigger>
           <TabsTrigger value="oportunidades">Oport.</TabsTrigger>
           <TabsTrigger value="inventario">Inv.</TabsTrigger>
           <TabsTrigger value="visitas">Visitas</TabsTrigger>
           <TabsTrigger value="labs">Labs</TabsTrigger>
+          <TabsTrigger value="competencia">Comp.</TabsTrigger>
         </TabsList>
 
         {/* Pedido rápido */}
@@ -270,8 +275,20 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
           </Card>
         </TabsContent>
 
+        {/* SKU behavior */}
+        <TabsContent value="sku">
+          <ClientBehaviorPanel clienteId={clienteId} />
+        </TabsContent>
+
         {/* Oportunidades */}
         <TabsContent value="oportunidades" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Oportunidades perdidas</CardTitle></CardHeader>
+            <CardContent>
+              <MissedOpportunitiesList clienteId={clienteId} />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Recompra probable</CardTitle></CardHeader>
             <CardContent className="space-y-1 text-sm">
@@ -410,7 +427,28 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Competencia */}
+        <TabsContent value="competencia" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Migraciones a competencia</CardTitle>
+              <CompetitorCaptureDialog clienteId={clienteId} />
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {(ins?.lost_labs ?? []).length > 0 && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">
+                  Detectado por IA: caída en {(ins?.lost_labs ?? []).map((l: any) => l.laboratorio_nombre).join(", ")}.
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Registra a qué competidor migró cada laboratorio para construir inteligencia competitiva.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
       <CheckInDialog
         open={checkInOpen}

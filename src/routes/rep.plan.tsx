@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, AlertOctagon, Phone } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
+import CollectionsPriorityCard from "@/components/rep/CollectionsPriorityCard";
+import MissedOpportunitiesList from "@/components/rep/MissedOpportunitiesList";
 
 export const Route = createFileRoute("/rep/plan")({
   head: () => ({ meta: [{ title: "Plan semanal · Panel Rep" }] }),
@@ -140,6 +142,19 @@ function WeeklyPlanRoute() {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <CollectionsPriorityCard />
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Oportunidades perdidas hoy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MissedOpportunitiesList compact />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+
