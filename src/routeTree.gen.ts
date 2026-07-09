@@ -24,7 +24,6 @@ import { Route as RepInventarioRouteImport } from './routes/rep.inventario'
 import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as RepCalendarioRouteImport } from './routes/rep.calendario'
-import { Route as RepCalendarioRouteImport } from './routes/rep.calendario'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
 import { Route as EntregaTokenRouteImport } from './routes/entrega.$token'
@@ -133,6 +132,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const RepVisitasRoute = RepVisitasRouteImport.update({
   id: '/visitas',
   path: '/visitas',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCalendarioRoute = RepCalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
   getParentRoute: () => RepRoute,
 } as any)
 const RepSupervisorRoute = RepSupervisorRouteImport.update({
