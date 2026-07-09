@@ -10,6 +10,7 @@ import {
   optimizeRouteFn,
   geocodeClientFn,
   getOpportunityHeatmapFn,
+  suggestRouteWithAIFn,
 } from "@/lib/rep.functions";
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search } from "lucide-react";
+import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search, Sparkles } from "lucide-react";
 
 function decodePolyline(str: string): [number, number][] {
   // Google encoded polyline algorithm.
