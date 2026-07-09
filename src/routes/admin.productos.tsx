@@ -2324,8 +2324,10 @@ Responde con: {"rows":[{"sku":"","nombre":"","marca":"","proveedor":"","peso_kg"
           precio_lista: r.precio_lista ?? 0,
           laboratorio_id: resolveLab(r),
           sat_clave: r.sat_clave,
-          ...(r.iva_pct != null ? { iva_pct: r.iva_pct } : {}),
-          ...(r.ieps_pct != null ? { ieps_pct: r.ieps_pct } : {}),
+          // iva_pct / ieps_pct are NOT NULL in DB — always include a value so
+          // heterogeneous rows in a batch don't emit NULLs for these columns.
+          iva_pct: r.iva_pct ?? 16,
+          ieps_pct: r.ieps_pct ?? 0,
           activo: true,
         }));
         setProgress({ done: 0, total: payloadAll.length, label: "Insertando productos nuevos…" });
