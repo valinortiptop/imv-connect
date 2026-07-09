@@ -1926,10 +1926,14 @@ function parseTaxFromColumns(row: Record<string, unknown>): { iva_pct: number; i
 
     if (
       iva == null &&
-      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax")) &&
-      /EXENTO|IVA\s*0|IVA\s*CERO/i.test(value)
+      (header.includes("impuesto") || header.includes("tax") || header.includes("suitetax") || header.includes("item") || header.includes("grupo"))
     ) {
-      iva = 0;
+      if (/EXENTO|IVA\s*0|IVA\s*CERO|TASA\s*0/i.test(value)) {
+        iva = 0;
+      } else if (/\bNORMAL\b|TASA\s*(GENERAL|16)|GENERAL\s*16/i.test(value)) {
+        // NetSuite "ITEM Normal" / "Normal" tax group = 16% IVA (Mexico general rate)
+        iva = 16;
+      }
     }
   }
 
@@ -2229,7 +2233,7 @@ Campos canónicos:
 - peso_kg (número en kg; null si no se sabe)
 - precio_lista (número en MXN; en NetSuite es "Precio base"; null si no se sabe)
 - sat_clave (código numérico SAT de "SAT Clave Producto Servicio"; solo los dígitos; null si no aplica)
-- iva_pct (número: 0, 8 o 16; extráelo de CUALQUIER columna relacionada con impuestos: "IVA", "% IVA", "Impuesto", "Tax", "Grupo de impuestos", "Código de artículo de SuiteTax", "ITEM IVA X%", "Clave impuestos", etc. Devuelve null SOLO si no hay ninguna columna de impuestos)
+- iva_pct (número: 0, 8 o 16; extráelo de CUALQUIER columna relacionada con impuestos: "IVA", "% IVA", "Impuesto", "Tax", "Grupo de impuestos", "Código de artículo de SuiteTax", "ITEM IVA X%", "Clave impuestos", etc. REGLAS ESPECIALES NetSuite: valores como "ITEM Normal", "Normal", "Tasa general", "General 16" = 16 (IVA general en México). "Exento", "IVA 0", "Tasa 0" = 0. Devuelve null SOLO si no hay ninguna columna de impuestos)
 - ieps_pct (número: 0, 6, 7, 8, ...; extráelo de columnas tipo "IEPS", "% IEPS", "ITEM IEPS X%". Si no hay columna de IEPS, devuelve 0)
 - laboratorio (nombre del laboratorio; en NetSuite suele ser "Clase")
 - confidence: "high" | "medium" | "low" según qué tan seguro estás del mapeo
