@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Users, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin/compras/caducidades")({
   component: CaducidadesPage,
