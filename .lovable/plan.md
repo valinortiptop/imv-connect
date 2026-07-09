@@ -1,60 +1,51 @@
 
-## Goal
+## What's actually happening
 
-Make the Excel catalog import truly AI-driven: the AI maps every incoming column to the existing catalog schema (including `iva_pct` / `ieps_pct`), flags rows it can't confidently map, and the save step never silently defaults critical tax fields. Errors are surfaced per row before insert.
+Two separate issues, neither is a failed publish.
 
-## Changes
+### 1. The changes exist but are not on the live domain
 
-### 1. Expand the AI mapping prompt (`ImportExcelDialog.parseFile`)
+All the edits from this hour (merged "Importar imágenes" CTA, "No timbrada" badge + Timbrar action, catalog import IVA validation, Gemini model fix) are in the **preview** build. Your `imv.valinor.studio` / `imv-catalogo-digital.lovable.app` sites still serve the last published version. Frontend changes require clicking **Publish → Update** in the publish dialog to go live — they don't auto-deploy. Nothing failed; nothing was pushed.
 
-In `src/routes/admin.productos.tsx` (~line 2145), extend the system prompt so the AI must return, per row:
+### 2. The 404 on `/rpc/get_my_role` is real
 
-- Existing canonical fields (sku, nombre, marca, proveedor, peso_kg, precio_lista, sat_clave, laboratorio) — unchanged.
-- **`iva_pct`** (number: 0, 8, or 16) and **`ieps_pct`** (number: 0, 6, 7, 8, …) parsed from any tax column — not just the raw `tax_code` string. The AI must inspect columns like "IVA", "IEPS", "Impuesto", "Tax", "Grupo de impuestos", "% IVA", etc., not only `ITEM IVA X%` strings.
-- **`confidence`**: `"high" | "medium" | "low"` per row.
-- **`issues`**: array of strings describing anything the AI could not map (e.g. `"no se detectó IVA"`, `"columna 'Categoría' sin campo destino"`).
-- **`extra_fields`**: object with any source columns that don't fit the canonical schema, so we can report them.
+`src/hooks/use-auth.tsx` calls `supabase.rpc("get_my_role")` in two places (lines 61 and 137). I queried the database directly — the function does not exist. Only `has_role(uuid, app_role)` exists. The earlier migration that would have created `get_my_role` was never approved, so it never ran.
 
-Send the actual column headers + a larger sample (already 800 rows) and keep temperature 0.
+## Plan
 
-### 2. Row-level validation before save
+**Step 1 — Create the missing `get_my_role` RPC**
 
-Right after the AI response is normalized into `ImportRow[]`:
+Add a migration creating a `SECURITY DEFINER` function that returns the current user's highest-priority role from `public.user_roles`:
 
-- If `iva_pct` is `null` after AI parsing AND the row has no tax-related source column value at all → mark row `status: "error"` with `errorMsg: "Fila N: IVA no detectado — corrige la columna de impuestos o edita manualmente"`.
-- Same treatment for `ieps_pct` only when the source clearly has an IEPS column but the AI couldn't parse it (missing IEPS defaults to 0 silently is OK — that's the real-world default).
-- Collect all rows with `issues` from the AI and expose them in the preview table via a new "Observaciones" column and a summary banner.
+```sql
+create or replace function public.get_my_role()
+returns public.app_role
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select role from public.user_roles
+   where user_id = auth.uid()
+   order by case role
+     when 'admin' then 1
+     when 'moderator' then 2
+     when 'user' then 3
+     else 99
+   end
+   limit 1
+$$;
 
-### 3. Remove silent defaults in `save()`
+grant execute on function public.get_my_role() to authenticated;
+```
 
-In the insert payload (~lines 2318–2332):
+This matches the shape `use-auth.tsx` already expects (a single role string or null). Once created, the 404s in every page disappear.
 
-- Stop coercing `iva_pct` to `16` and `ieps_pct` to `0` unconditionally.
-- Instead: block save if any `status === "new"` row still has `iva_pct == null`. Show a toast and highlight offending rows.
-- Only rows that pass validation are sent to Supabase. Batch size stays at 500; because every row now guarantees a non-null `iva_pct`, PostgREST won't emit `NULL` columns across the batch.
+**Step 2 — Tell the user to publish**
 
-Update the update path (~lines 2360–2362) the same way: if the diff flagged `iva`/`ieps` but the value is null, mark the row as error rather than skipping.
-
-### 4. Surface AI/DB errors instead of swallowing them
-
-- In `parseFile`, when the AI call fails (`aiChatFn` throws or returns non-JSON), show `toast.error("La IA no pudo mapear el archivo: <mensaje>")` and fall back to the heuristic only for recognised NetSuite headers. For unknown layouts, keep the rows but mark all as `status: "error"` so nothing is imported silently.
-- In `save`, replace the single top-level `catch` with per-batch error handling that logs the offending rows and keeps a `failedRows[]` array; final toast reports `X insertados · Y fallidos` with a "Ver detalles" action opening a small dialog listing the failures.
-
-### 5. Optional schema extension for unmapped fields
-
-Only if the AI consistently reports the same `extra_fields` key across ≥ 20% of rows (e.g. `categoria`, `presentacion`, `unidad`):
-
-- Prompt the user in the preview dialog: *"La IA detectó campos nuevos que no existen en el catálogo: `categoria`, `presentacion`. ¿Deseas crearlos como columnas?"*
-- On confirm, run a `supabase--migration` adding nullable `text` columns to `public.productos` with proper GRANTs preserved (table already has RLS). The migration only runs after user approval, so nothing schema-changing happens implicitly.
-
-If the user declines, the extra fields are stored in the row's `errorMsg`/observations for reference and not persisted.
+After the migration lands, click **Publish → Update** so the merged imágenes button, "No timbrada" badge, catalog import fixes, and Gemini model update reach the live domain. The migration itself (backend) deploys immediately and does not need a re-publish.
 
 ## Files touched
 
-- `src/routes/admin.productos.tsx` — prompt, parsing, validation, save, preview UI (new "Observaciones" column + failures dialog).
-- Optional migration (only on user confirm in step 5) adding nullable text columns to `public.productos`.
-
-## Non-goals
-
-- No changes to the images import, NetSuite heuristic path, or other pages.
-- No change to the existing 500-batch insert strategy — only what goes into each row.
+- New migration creating `public.get_my_role()` (via the migration tool, requires your approval).
+- No frontend edits are needed for the 404 — the client code is already correct.
