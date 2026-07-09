@@ -285,7 +285,7 @@ export default function CalendarView() {
                     key={key}
                     onClick={() => setSelectedDay(d)}
                     className={cn(
-                      "min-h-[76px] rounded-md border p-1 text-left text-xs transition",
+                      "min-h-[56px] rounded-md border p-1 text-left text-xs transition md:min-h-[76px]",
                       isCurMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
                       isSelected && "ring-2 ring-primary",
                       isToday && "border-primary",
