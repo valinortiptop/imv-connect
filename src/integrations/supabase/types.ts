@@ -654,6 +654,20 @@ export type Database = {
             foreignKeyName: "client_price_overrides_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -933,6 +947,13 @@ export type Database = {
             referencedColumns: ["laboratorio_id"]
           },
           {
+            foreignKeyName: "competitor_migrations_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
             foreignKeyName: "competitor_migrations_representante_id_fkey"
             columns: ["representante_id"]
             isOneToOne: false
@@ -945,6 +966,162 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_comisiones_representante"
             referencedColumns: ["representante_id"]
+          },
+        ]
+      }
+      cost_history: {
+        Row: {
+          costo_anterior: number | null
+          costo_unitario: number
+          created_at: string
+          fecha: string
+          id: string
+          laboratorio_id: string | null
+          oc_id: string | null
+          producto_id: string
+          variacion_pct: number | null
+        }
+        Insert: {
+          costo_anterior?: number | null
+          costo_unitario: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          laboratorio_id?: string | null
+          oc_id?: string | null
+          producto_id: string
+          variacion_pct?: number | null
+        }
+        Update: {
+          costo_anterior?: number | null
+          costo_unitario?: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          laboratorio_id?: string | null
+          oc_id?: string | null
+          producto_id?: string
+          variacion_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "cost_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "cost_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "cost_history_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
           },
         ]
       }
@@ -1123,6 +1300,20 @@ export type Database = {
             foreignKeyName: "damaged_batches_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -1250,6 +1441,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "delivery_trip_items_product_id_fkey"
@@ -1426,6 +1631,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "devolucion_items_producto_id_fkey"
@@ -2033,6 +2252,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "factura_items_producto_id_fkey"
@@ -2808,6 +3041,20 @@ export type Database = {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -3005,6 +3252,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "oc_items_producto_id_fkey"
@@ -3253,6 +3514,13 @@ export type Database = {
             referencedColumns: ["laboratorio_id"]
           },
           {
+            foreignKeyName: "ordenes_compra_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
             foreignKeyName: "ordenes_compra_poliza_id_fkey"
             columns: ["poliza_id"]
             isOneToOne: false
@@ -3316,6 +3584,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "order_adjustments_product_id_fkey"
@@ -3930,6 +4212,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4449,6 +4745,20 @@ export type Database = {
             foreignKeyName: "precios_cliente_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4550,6 +4860,20 @@ export type Database = {
             foreignKeyName: "price_list_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4619,6 +4943,161 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      product_batches: {
+        Row: {
+          almacen_id: string
+          caducidad: string | null
+          cantidad: number
+          costo_unitario: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lote: string | null
+          oc_id: string | null
+          producto_id: string
+          updated_at: string
+        }
+        Insert: {
+          almacen_id: string
+          caducidad?: string | null
+          cantidad?: number
+          costo_unitario?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lote?: string | null
+          oc_id?: string | null
+          producto_id: string
+          updated_at?: string
+        }
+        Update: {
+          almacen_id?: string
+          caducidad?: string | null
+          cantidad?: number
+          costo_unitario?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lote?: string | null
+          oc_id?: string | null
+          producto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_batches_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "product_batches_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_batches_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
       }
       product_prices: {
         Row: {
@@ -4716,6 +5195,117 @@ export type Database = {
         }
         Relationships: []
       }
+      product_stock_params: {
+        Row: {
+          dias_cobertura_objetivo: number
+          dias_seguridad: number
+          lead_time_dias: number
+          producto_id: string
+          punto_reorden: number | null
+          stock_max: number | null
+          stock_min: number
+          updated_at: string
+        }
+        Insert: {
+          dias_cobertura_objetivo?: number
+          dias_seguridad?: number
+          lead_time_dias?: number
+          producto_id: string
+          punto_reorden?: number | null
+          stock_max?: number | null
+          stock_min?: number
+          updated_at?: string
+        }
+        Update: {
+          dias_cobertura_objetivo?: number
+          dias_seguridad?: number
+          lead_time_dias?: number
+          producto_id?: string
+          punto_reorden?: number | null
+          stock_max?: number | null
+          stock_min?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
       product_substitutes: {
         Row: {
           created_at: string
@@ -4765,6 +5355,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "product_substitutes_producto_id_fkey"
@@ -4828,6 +5432,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "product_substitutes_sustituto_id_fkey"
@@ -5019,6 +5637,13 @@ export type Database = {
             referencedRelation: "v_stock_productos"
             referencedColumns: ["laboratorio_id"]
           },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
         ]
       }
       prospect_calls: {
@@ -5158,6 +5783,199 @@ export type Database = {
           status?: string
           updated_at?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      purchase_alerts: {
+        Row: {
+          created_at: string
+          detalle: string | null
+          id: string
+          laboratorio_id: string | null
+          oc_id: string | null
+          payload: Json | null
+          producto_id: string | null
+          resuelto: boolean
+          resuelto_at: string | null
+          resuelto_por: string | null
+          severidad: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          detalle?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          oc_id?: string | null
+          payload?: Json | null
+          producto_id?: string | null
+          resuelto?: boolean
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          severidad?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          detalle?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          oc_id?: string | null
+          payload?: Json | null
+          producto_id?: string | null
+          resuelto?: boolean
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          severidad?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_alerts_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      purchase_config: {
+        Row: {
+          clave: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          clave: string
+          updated_at?: string
+          valor: Json
+        }
+        Update: {
+          clave?: string
+          updated_at?: string
+          valor?: Json
         }
         Relationships: []
       }
@@ -5868,6 +6686,224 @@ export type Database = {
           },
         ]
       }
+      shortage_events: {
+        Row: {
+          cantidad: number | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          fecha: string
+          id: string
+          motivo_id: string | null
+          notas: string | null
+          pedido_id: string | null
+          producto_id: string | null
+        }
+        Insert: {
+          cantidad?: number | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fecha?: string
+          id?: string
+          motivo_id?: string | null
+          notas?: string | null
+          pedido_id?: string | null
+          producto_id?: string | null
+        }
+        Update: {
+          cantidad?: number | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fecha?: string
+          id?: string
+          motivo_id?: string | null
+          notas?: string | null
+          pedido_id?: string | null
+          producto_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_motivo_id_fkey"
+            columns: ["motivo_id"]
+            isOneToOne: false
+            referencedRelation: "shortage_reasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      shortage_reasons: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          label: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          label: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          label?: string
+        }
+        Relationships: []
+      }
       sku_aliases: {
         Row: {
           alias_clave: string
@@ -5911,6 +6947,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "sku_aliases_product_id_fkey"
@@ -6020,6 +7070,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "slot_contents_product_id_fkey"
@@ -6142,6 +7206,20 @@ export type Database = {
             foreignKeyName: "slot_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6255,6 +7333,20 @@ export type Database = {
             foreignKeyName: "stock_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6356,6 +7448,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "stock_adjustments_product_id_fkey"
@@ -6593,6 +7699,20 @@ export type Database = {
             foreignKeyName: "stock_entries_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6630,6 +7750,160 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_productos"
             referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      supplier_incidents: {
+        Row: {
+          cantidad: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          laboratorio_id: string
+          monto: number | null
+          motivo: string | null
+          notas: string | null
+          oc_id: string | null
+          tipo: string
+        }
+        Insert: {
+          cantidad?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          laboratorio_id: string
+          monto?: number | null
+          motivo?: string | null
+          notas?: string | null
+          oc_id?: string | null
+          tipo: string
+        }
+        Update: {
+          cantidad?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          laboratorio_id?: string
+          monto?: number | null
+          motivo?: string | null
+          notas?: string | null
+          oc_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_incidents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_metrics: {
+        Row: {
+          fill_rate_pct: number
+          id: string
+          incidencias: number
+          laboratorio_id: string
+          lead_time_prom_dias: number
+          ocs: number
+          on_time_pct: number
+          periodo: string
+          updated_at: string
+        }
+        Insert: {
+          fill_rate_pct?: number
+          id?: string
+          incidencias?: number
+          laboratorio_id: string
+          lead_time_prom_dias?: number
+          ocs?: number
+          on_time_pct?: number
+          periodo: string
+          updated_at?: string
+        }
+        Update: {
+          fill_rate_pct?: number
+          id?: string
+          incidencias?: number
+          laboratorio_id?: string
+          lead_time_prom_dias?: number
+          ocs?: number
+          on_time_pct?: number
+          periodo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_metrics_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_metrics_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "supplier_metrics_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "supplier_metrics_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
           },
         ]
       }
@@ -7246,6 +8520,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -7496,6 +8784,274 @@ export type Database = {
             referencedRelation: "v_stock_productos"
             referencedColumns: ["laboratorio_id"]
           },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+        ]
+      }
+      v_baja_rotacion: {
+        Row: {
+          clasificacion: string | null
+          costo: number | null
+          dias_sin_venta: number | null
+          laboratorio: string | null
+          nombre: string | null
+          producto_id: string | null
+          sku: string | null
+          stock_fisico: number | null
+          ultima_venta: string | null
+          valor_inmovilizado: number | null
+        }
+        Relationships: []
+      }
+      v_caducidades: {
+        Row: {
+          almacen: string | null
+          almacen_id: string | null
+          batch_id: string | null
+          caducidad: string | null
+          cantidad: number | null
+          costo_unitario: number | null
+          dias_restantes: number | null
+          laboratorio: string | null
+          lote: string | null
+          nombre: string | null
+          producto_id: string | null
+          semaforo: string | null
+          sku: string | null
+          valor_economico: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_batches_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      v_caducidades_clientes: {
+        Row: {
+          cantidad_prom: number | null
+          cliente: string | null
+          cliente_id: string | null
+          nombre_comercial: string | null
+          pedidos_count: number | null
+          producto_id: string | null
+          representante: string | null
+          representante_id: string | null
+          total_comprado: number | null
+          ultima_compra: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
         ]
       }
       v_comisiones_representante: {
@@ -7507,6 +9063,65 @@ export type Database = {
           representante_id: string | null
         }
         Relationships: []
+      }
+      v_compras_planeacion: {
+        Row: {
+          cantidad_sugerida: number | null
+          categoria: string | null
+          consumo_diario: number | null
+          costo: number | null
+          dias_cobertura: number | null
+          dias_cobertura_objetivo: number | null
+          en_camino: number | null
+          laboratorio: string | null
+          laboratorio_id: string | null
+          lead_time_dias: number | null
+          nombre: string | null
+          precio_lista: number | null
+          producto_id: string | null
+          promo: boolean | null
+          punto_reorden: number | null
+          sku: string | null
+          stock_comprometido: number | null
+          stock_disponible: number | null
+          stock_fisico: number | null
+          stock_min: number | null
+          tendencia_pct: number | null
+          ventas_30d: number | null
+          ventas_365d: number | null
+          ventas_60d: number | null
+          ventas_90d: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+        ]
       }
       v_dashboard_resumen: {
         Row: {
@@ -7789,6 +9404,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -7918,6 +9547,13 @@ export type Database = {
             referencedRelation: "v_stock_productos"
             referencedColumns: ["laboratorio_id"]
           },
+          {
+            foreignKeyName: "productos_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
         ]
       }
       v_purchase_by_order: {
@@ -8011,6 +9647,18 @@ export type Database = {
           stock_minimo: number | null
           stock_total: number | null
           unidad: string | null
+        }
+        Relationships: []
+      }
+      v_supplier_kpis: {
+        Row: {
+          fill_rate_pct: number | null
+          incidencias_12m: number | null
+          laboratorio: string | null
+          laboratorio_id: string | null
+          lead_time_prom_dias: number | null
+          ocs_12m: number | null
+          on_time_pct: number | null
         }
         Relationships: []
       }
