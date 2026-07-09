@@ -279,7 +279,7 @@ Reglas:
 
       const resp = await aiChatFn({
         data: {
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-flash-latest",
           temperature: 0.2,
           messages: [
             { role: "system", content: system },

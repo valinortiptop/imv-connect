@@ -42,7 +42,7 @@ export function AIToggle({ compact = false }: { compact?: boolean }) {
           Los datos siguen funcionando igual.
         </p>
         <p className="text-[11px] text-muted-foreground">
-          Modelo: <span className="font-mono">gemini-2.5-flash</span> vía Valinor · sólo lectura.
+          Modelo: <span className="font-mono">gemini-flash-latest</span> vía Valinor · sólo lectura.
         </p>
       </div>
       <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Activar IA" />

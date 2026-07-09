@@ -180,7 +180,7 @@ async function parsePdfWithAI(bytes: Uint8Array): Promise<{
   }
   const b64 = btoa(bin);
   const res = await geminiGenerateInline({
-    model: "gemini-2.5-flash",
+    model: "gemini-flash-latest",
     parts: [
       { text: PDF_EXTRACT_PROMPT },
       { inline_data: { mime_type: "application/pdf", data: b64 } },
@@ -264,7 +264,7 @@ Reglas:
 
   try {
     const res = await geminiGenerateInline({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       parts: [{ text: prompt }],
       jsonMode: true,
     });
