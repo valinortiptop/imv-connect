@@ -1846,3 +1846,143 @@ export const getVisitEvidenceUrlsFn = createServerFn({ method: "POST" })
       signedByName: (visit.signed_by_name as string | null) ?? null,
     };
   });
+
+/* ─── 11. suggestRouteWithAI: recomienda ruta según pedidos/ventas del rep ─── */
+export const suggestRouteWithAIFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        startLat: z.number().optional(),
+        startLng: z.number().optional(),
+        maxStops: z.number().int().min(3).max(15).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+
+    // 1. Clientes del rep con coordenadas
+    let clientsQ = context.supabase
+      .from("clientes")
+      .select("id, razon_social, nombre_comercial, lat, lng, representante_id")
+      .eq("active", true);
+    if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
+    const { data: clientes } = await clientsQ.limit(500);
+    const withCoords = (clientes ?? []).filter((c: any) => c.lat && c.lng);
+    if (withCoords.length === 0) {
+      return { ordered: [], rationale: "No hay clientes con coordenadas asignados al rep." };
+    }
+
+    // 2. Pedidos últimos 90 días
+    const clientIds = withCoords.map((c: any) => c.id);
+    const since90 = new Date();
+    since90.setDate(since90.getDate() - 90);
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("id, cliente_id, total, created_at")
+      .in("cliente_id", clientIds)
+      .gte("created_at", since90.toISOString());
+
+    // 3. Insights (churn)
+    const { data: insights } = await context.supabase
+      .from("rep_client_insights")
+      .select("cliente_id, churn_risk_score")
+      .in("cliente_id", clientIds);
+    const churnMap = new Map((insights ?? []).map((i: any) => [i.cliente_id, Number(i.churn_risk_score ?? 0)]));
+
+    // 4. Métricas por cliente
+    const now = Date.now();
+    const stats = new Map<string, { last: number | null; count: number; total: number }>();
+    for (const p of pedidos ?? []) {
+      const cur = stats.get(p.cliente_id) ?? { last: null, count: 0, total: 0 };
+      const t = new Date(p.created_at).getTime();
+      if (!cur.last || t > cur.last) cur.last = t;
+      cur.count += 1;
+      cur.total += Number(p.total ?? 0);
+      stats.set(p.cliente_id, cur);
+    }
+
+    function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+      const R = 6371;
+      const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+      const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+      const lat1 = (a.lat * Math.PI) / 180;
+      const lat2 = (b.lat * Math.PI) / 180;
+      const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    const origin = data.startLat != null && data.startLng != null
+      ? { lat: data.startLat, lng: data.startLng }
+      : { lat: Number(withCoords[0].lat), lng: Number(withCoords[0].lng) };
+
+    // 5. Candidatos ordenados por score determinista
+    const scored = withCoords.map((c: any) => {
+      const s = stats.get(c.id);
+      const daysSince = s?.last ? Math.floor((now - s.last) / 86400000) : 180;
+      const churn = churnMap.get(c.id) ?? 0;
+      const km = haversineKm(origin, { lat: Number(c.lat), lng: Number(c.lng) });
+      // Score: prioriza clientes con historial reciente, tickets altos, churn alto, y cercanía
+      const recency = Math.min(1, 1 - Math.min(daysSince, 90) / 90); // 0..1 (más reciente = mayor)
+      const volume = Math.log10(1 + (s?.total ?? 0)) / 5; // ~0..1
+      const proximity = Math.max(0, 1 - Math.min(km, 40) / 40); // 0..1
+      const priority = 0.35 * volume + 0.25 * recency + 0.20 * churn + 0.20 * proximity;
+      return {
+        cliente_id: c.id,
+        nombre: c.nombre_comercial ?? c.razon_social,
+        lat: Number(c.lat),
+        lng: Number(c.lng),
+        km_from_origin: Math.round(km * 10) / 10,
+        days_since_last_order: s?.last ? Math.floor((now - s.last) / 86400000) : null,
+        orders_90d: s?.count ?? 0,
+        total_90d: Math.round(s?.total ?? 0),
+        churn_risk: Math.round(churn * 100) / 100,
+        _priority: Math.round(priority * 1000) / 1000,
+      };
+    });
+
+    scored.sort((a, b) => b._priority - a._priority);
+    const maxStops = data.maxStops ?? 8;
+    const candidates = scored.slice(0, Math.min(20, scored.length));
+
+    // 6. Pide a Gemini que curate y ordene con reasoning
+    let ordered: string[] = candidates.slice(0, maxStops).map((c) => c.cliente_id);
+    let rationale = "Selección basada en ventas recientes, riesgo de pérdida y cercanía.";
+
+    try {
+      const prompt = `Eres el planificador de ruta del rep IMV. A partir de los candidatos (con métricas de pedidos 90d, riesgo de pérdida, cercanía al punto de origen), selecciona los ${maxStops} clientes más valiosos para visitar HOY y ordénalos en secuencia lógica (prioriza alto volumen y clientes en riesgo, luego optimiza por cercanía).
+
+Origen: lat=${origin.lat}, lng=${origin.lng}
+Candidatos JSON:
+${JSON.stringify(candidates)}
+
+Responde SOLO JSON con este esquema:
+{"ordered":["cliente_id",...], "rationale":"1-2 frases explicando la lógica"}`;
+
+      const res = await geminiGenerate({
+        model: "gemini-flash-latest",
+        contents: [
+          { role: "user", parts: [{ text: prompt }] },
+        ],
+      });
+      const text = (res as any)?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const validIds = new Set(candidates.map((c) => c.cliente_id));
+        const aiOrdered = (parsed.ordered ?? []).filter((id: string) => validIds.has(id));
+        if (aiOrdered.length >= 3) {
+          ordered = aiOrdered.slice(0, maxStops);
+          if (typeof parsed.rationale === "string" && parsed.rationale.trim()) {
+            rationale = parsed.rationale.trim();
+          }
+        }
+      }
+    } catch (e) {
+      // fallback deterministic
+    }
+
+    const detail = ordered.map((id) => candidates.find((c) => c.cliente_id === id)).filter(Boolean);
+    return { ordered, detail, rationale };
+  });
