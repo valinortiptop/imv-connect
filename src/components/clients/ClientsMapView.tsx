@@ -1,9 +1,8 @@
 // @ts-nocheck
 // Multi-client map view — plots clients on Google Maps loaded via Valinor.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, ExternalLink } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 
 type ClientPoint = {
