@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
