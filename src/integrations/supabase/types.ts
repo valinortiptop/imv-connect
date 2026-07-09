@@ -5205,9 +5205,11 @@ export type Database = {
           check_out_lng: number | null
           cliente_id: string
           created_at: string
+          distance_m: number | null
           id: string
           notes: string | null
           outcome: string | null
+          override_reason: string | null
           pedido_id: string | null
           photo_paths: string[] | null
           representante_id: string
@@ -5223,9 +5225,11 @@ export type Database = {
           check_out_lng?: number | null
           cliente_id: string
           created_at?: string
+          distance_m?: number | null
           id?: string
           notes?: string | null
           outcome?: string | null
+          override_reason?: string | null
           pedido_id?: string | null
           photo_paths?: string[] | null
           representante_id: string
@@ -5241,9 +5245,11 @@ export type Database = {
           check_out_lng?: number | null
           cliente_id?: string
           created_at?: string
+          distance_m?: number | null
           id?: string
           notes?: string | null
           outcome?: string | null
+          override_reason?: string | null
           pedido_id?: string | null
           photo_paths?: string[] | null
           representante_id?: string
@@ -6345,6 +6351,181 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_usuarios_roles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      visit_form_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          representante_id: string | null
+          template_id: string
+          visit_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          representante_id?: string | null
+          template_id: string
+          visit_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          representante_id?: string | null
+          template_id?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_form_responses_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_form_responses_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+          {
+            foreignKeyName: "visit_form_responses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "visit_form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_form_responses_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "rep_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_form_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      visit_shelf_photos: {
+        Row: {
+          category: string
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          photo_path: string
+          representante_id: string | null
+          visit_id: string
+        }
+        Insert: {
+          category?: string
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          photo_path: string
+          representante_id?: string | null
+          visit_id: string
+        }
+        Update: {
+          category?: string
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          photo_path?: string
+          representante_id?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "rep_visits"
+            referencedColumns: ["id"]
           },
         ]
       }
