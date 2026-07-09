@@ -1454,3 +1454,359 @@ export const getOpportunityHeatmapFn = createServerFn({ method: "POST" })
 
     return { rep, points };
   });
+
+/* ─── FASE 4: Ejecución en visita ────────────────────────────────────────── */
+
+/* 18. getReorderPrefillFn — sugerencias para levantar pedido rápido */
+export const getReorderPrefillFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ clienteId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    // 1. Toma predicciones cacheadas si existen
+    const { data: insights } = await context.supabase
+      .from("rep_client_insights")
+      .select("reorder_predictions, cross_sell")
+      .eq("cliente_id", data.clienteId)
+      .maybeSingle();
+
+    // 2. Toma últimos productos comprados 6 meses (más consumidos primero)
+    const since = new Date();
+    since.setMonth(since.getMonth() - 6);
+    const { data: pedidos } = await context.supabase
+      .from("pedidos")
+      .select("id")
+      .eq("cliente_id", data.clienteId)
+      .gte("created_at", since.toISOString());
+    const pedidoIds = (pedidos ?? []).map((p: any) => p.id);
+
+    const agg = new Map<string, { qty: number; last_price: number }>();
+    if (pedidoIds.length > 0) {
+      const { data: items } = await context.supabase
+        .from("pedido_items")
+        .select("producto_id, cantidad, precio_unitario")
+        .in("pedido_id", pedidoIds);
+      for (const it of items ?? []) {
+        if (!it.producto_id) continue;
+        const cur = agg.get(it.producto_id) ?? { qty: 0, last_price: 0 };
+        cur.qty += Number(it.cantidad ?? 0);
+        if (Number(it.precio_unitario) > 0) cur.last_price = Number(it.precio_unitario);
+        agg.set(it.producto_id, cur);
+      }
+    }
+
+    const productIds = Array.from(agg.keys());
+    let productos: any[] = [];
+    if (productIds.length > 0) {
+      const { data } = await context.supabase
+        .from("productos")
+        .select("id, nombre, sku, precio_lista, stock_disponible, unidad")
+        .in("id", productIds);
+      productos = data ?? [];
+    }
+
+    // Precios especiales por cliente (con IVA)
+    const [{ data: overrides }, { data: preciosCli }] = await Promise.all([
+      context.supabase
+        .from("client_price_overrides")
+        .select("product_id, price_with_iva")
+        .eq("client_id", data.clienteId),
+      context.supabase
+        .from("precios_cliente")
+        .select("producto_id, precio, vigente_hasta")
+        .eq("cliente_id", data.clienteId),
+    ]);
+    const ovMap = new Map((overrides ?? []).map((o: any) => [o.product_id, Number(o.price_with_iva)]));
+    const pcMap = new Map<string, number>();
+    for (const p of preciosCli ?? []) {
+      if (p.vigente_hasta && new Date(p.vigente_hasta) < new Date()) continue;
+      pcMap.set(p.producto_id, Number(p.precio));
+    }
+
+    const suggestions = productos
+      .map((p: any) => {
+        const s = agg.get(p.id)!;
+        const overrideWithIva = ovMap.get(p.id);
+        const preciosCliente = pcMap.get(p.id);
+        // precio sin IVA sugerido: override / 1.16, o precios_cliente (sin IVA), o último, o lista
+        const price = overrideWithIva
+          ? Number((overrideWithIva / 1.16).toFixed(4))
+          : preciosCliente ?? s.last_price ?? Number(p.precio_lista ?? 0);
+        return {
+          producto_id: p.id,
+          nombre: p.nombre,
+          sku: p.sku,
+          unidad: p.unidad ?? "PZA",
+          stock_disponible: Number(p.stock_disponible ?? 0),
+          precio_sugerido: price,
+          precio_lista: Number(p.precio_lista ?? 0),
+          suggested_qty: Math.max(1, Math.round(s.qty / Math.max(1, pedidoIds.length))),
+          source: overrideWithIva ? "override" : preciosCliente ? "precio_cliente" : "historico",
+        };
+      })
+      .sort((a, b) => b.suggested_qty - a.suggested_qty)
+      .slice(0, 30);
+
+    return {
+      suggestions,
+      reorder_predictions: (insights?.reorder_predictions ?? []) as any[],
+      cross_sell: (insights?.cross_sell ?? []) as any[],
+    };
+  });
+
+/* 19. searchProductsForRepFn — búsqueda rápida por sku/nombre con precio efectivo */
+export const searchProductsForRepFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ clienteId: z.string().uuid(), q: z.string().min(1).max(80) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const term = data.q.trim();
+    const like = `%${term}%`;
+    const { data: rows } = await context.supabase
+      .from("productos")
+      .select("id, nombre, sku, precio_lista, stock_disponible, unidad")
+      .or(`nombre.ilike.${like},sku.ilike.${like}`)
+      .limit(20);
+
+    const productIds = (rows ?? []).map((p: any) => p.id);
+    if (productIds.length === 0) return { results: [] };
+
+    const [{ data: overrides }, { data: preciosCli }] = await Promise.all([
+      context.supabase
+        .from("client_price_overrides")
+        .select("product_id, price_with_iva")
+        .eq("client_id", data.clienteId)
+        .in("product_id", productIds),
+      context.supabase
+        .from("precios_cliente")
+        .select("producto_id, precio, vigente_hasta")
+        .eq("cliente_id", data.clienteId)
+        .in("producto_id", productIds),
+    ]);
+    const ovMap = new Map((overrides ?? []).map((o: any) => [o.product_id, Number(o.price_with_iva)]));
+    const pcMap = new Map<string, number>();
+    for (const p of preciosCli ?? []) {
+      if (p.vigente_hasta && new Date(p.vigente_hasta) < new Date()) continue;
+      pcMap.set(p.producto_id, Number(p.precio));
+    }
+
+    const results = (rows ?? []).map((p: any) => {
+      const overrideWithIva = ovMap.get(p.id);
+      const preciosCliente = pcMap.get(p.id);
+      const price = overrideWithIva
+        ? Number((overrideWithIva / 1.16).toFixed(4))
+        : preciosCliente ?? Number(p.precio_lista ?? 0);
+      return {
+        producto_id: p.id,
+        nombre: p.nombre,
+        sku: p.sku,
+        unidad: p.unidad ?? "PZA",
+        stock_disponible: Number(p.stock_disponible ?? 0),
+        precio_sugerido: price,
+        precio_lista: Number(p.precio_lista ?? 0),
+        source: overrideWithIva ? "override" : preciosCliente ? "precio_cliente" : "lista",
+      };
+    });
+    return { results };
+  });
+
+/* 20. createRepOrderFn — inserta pedido + items desde una visita */
+const RepOrderItem = z.object({
+  producto_id: z.string().uuid(),
+  nombre_snapshot: z.string().min(1),
+  sku_snapshot: z.string().nullable().optional(),
+  unidad_snapshot: z.string().default("PZA"),
+  cantidad: z.number().positive(),
+  precio_unitario: z.number().nonnegative(),
+  iva_pct: z.number().min(0).max(1).default(0.16),
+});
+
+export const createRepOrderFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        clienteId: z.string().uuid(),
+        items: z.array(RepOrderItem).min(1),
+        notas_cliente: z.string().max(1000).optional(),
+        notas_internas: z.string().max(1000).optional(),
+        delivery_date: z.string().optional(),
+        urgency: z.boolean().optional(),
+        visitId: z.string().uuid().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+
+    // Totales
+    let subtotal = 0;
+    let iva = 0;
+    for (const it of data.items) {
+      const imp = it.cantidad * it.precio_unitario;
+      subtotal += imp;
+      iva += imp * it.iva_pct;
+    }
+    subtotal = Number(subtotal.toFixed(2));
+    iva = Number(iva.toFixed(2));
+    const total = Number((subtotal + iva).toFixed(2));
+
+    const folio = `PED-${Date.now().toString(36).toUpperCase()}`;
+
+    const { data: pedido, error } = await context.supabase
+      .from("pedidos")
+      .insert({
+        cliente_id: data.clienteId,
+        representante_id: rep?.id ?? null,
+        folio,
+        estado: "pendiente",
+        subtotal,
+        iva,
+        total,
+        notas_cliente: data.notas_cliente ?? null,
+        notas_internas: data.notas_internas ?? null,
+        delivery_date: data.delivery_date ?? null,
+        urgency: data.urgency ?? false,
+      })
+      .select("id, folio")
+      .single();
+    if (error) throw error;
+
+    const itemRows = data.items.map((it) => ({
+      pedido_id: pedido.id,
+      producto_id: it.producto_id,
+      nombre_snapshot: it.nombre_snapshot,
+      sku_snapshot: it.sku_snapshot ?? null,
+      unidad_snapshot: it.unidad_snapshot,
+      cantidad: it.cantidad,
+      precio_unitario: it.precio_unitario,
+      iva_pct: it.iva_pct,
+      importe: Number((it.cantidad * it.precio_unitario).toFixed(2)),
+    }));
+    const { error: itemsErr } = await context.supabase.from("pedido_items").insert(itemRows);
+    if (itemsErr) throw itemsErr;
+
+    if (data.visitId) {
+      await context.supabase
+        .from("rep_visits")
+        .update({ pedido_id: pedido.id, outcome: "pedido" })
+        .eq("id", data.visitId);
+    }
+
+    return { pedido };
+  });
+
+/* 21. createRepQuoteFn — cotización rápida */
+export const createRepQuoteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        clienteId: z.string().uuid(),
+        items: z
+          .array(
+            z.object({
+              product_id: z.string().uuid(),
+              product_name: z.string().min(1),
+              quantity: z.number().positive(),
+              unit_price: z.number().nonnegative(),
+            }),
+          )
+          .min(1),
+        notes: z.string().max(1000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const subtotal = Number(
+      data.items.reduce((s, i) => s + i.quantity * i.unit_price, 0).toFixed(2),
+    );
+    const total = Number((subtotal * 1.16).toFixed(2));
+
+    const { data: quote, error } = await context.supabase
+      .from("quotes")
+      .insert({
+        client_id: data.clienteId,
+        created_by: context.userId,
+        source: "rep",
+        status: "draft",
+        notes: data.notes ?? null,
+        subtotal,
+        total,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+
+    const rows = data.items.map((i) => ({
+      quote_id: quote.id,
+      product_id: i.product_id,
+      product_name: i.product_name,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+    }));
+    const { error: iErr } = await context.supabase.from("quote_items").insert(rows);
+    if (iErr) throw iErr;
+
+    return { quote };
+  });
+
+/* 22. attachVisitEvidenceFn — asocia fotos/firma a una visita */
+export const attachVisitEvidenceFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        visitId: z.string().uuid(),
+        photoPaths: z.array(z.string()).optional(),
+        signaturePath: z.string().optional(),
+        signedByName: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: any = {};
+    if (data.photoPaths !== undefined) patch.photo_paths = data.photoPaths;
+    if (data.signaturePath !== undefined) patch.signature_path = data.signaturePath;
+    if (data.signedByName !== undefined) patch.signed_by_name = data.signedByName;
+    if (Object.keys(patch).length === 0) return { ok: true };
+
+    const { error } = await context.supabase
+      .from("rep_visits")
+      .update(patch)
+      .eq("id", data.visitId);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+/* 23. getVisitEvidenceUrlsFn — signed read URLs para mostrar fotos/firma */
+export const getVisitEvidenceUrlsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ visitId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: visit } = await context.supabase
+      .from("rep_visits")
+      .select("photo_paths, signature_path, signed_by_name")
+      .eq("id", data.visitId)
+      .maybeSingle();
+    if (!visit) return { photos: [], signatureUrl: null, signedByName: null };
+
+    const paths: string[] = [
+      ...((visit.photo_paths as string[]) ?? []),
+      ...(visit.signature_path ? [visit.signature_path as string] : []),
+    ];
+    const urls = new Map<string, string>();
+    if (paths.length > 0) {
+      const { data: signed } = await context.supabase.storage
+        .from("rep-evidence")
+        .createSignedUrls(paths, 60 * 30);
+      for (const s of signed ?? []) {
+        if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+      }
+    }
+    return {
+      photos: ((visit.photo_paths as string[]) ?? []).map((p) => ({ path: p, url: urls.get(p) ?? null })),
+      signatureUrl: visit.signature_path ? urls.get(visit.signature_path as string) ?? null : null,
+      signedByName: (visit.signed_by_name as string | null) ?? null,
+    };
+  });
