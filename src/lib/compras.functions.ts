@@ -155,10 +155,12 @@ export const registerSupplierIncident = createServerFn({ method: "POST" })
     z
       .object({
         laboratorio_id: z.string().uuid(),
-        tipo: z.enum(["retraso", "faltante", "calidad", "documentacion", "otro"]),
+        tipo: z.enum(["retraso", "faltante", "dano", "calidad", "otro"]),
         oc_id: z.string().uuid().nullable().optional(),
-        severidad: z.enum(["baja", "media", "alta"]).default("media"),
-        descripcion: z.string().min(3).max(1000),
+        motivo: z.string().max(200).optional(),
+        cantidad: z.number().nonnegative().optional(),
+        monto: z.number().nonnegative().optional(),
+        notas: z.string().min(3).max(1000),
       })
       .parse(input),
   )
@@ -168,8 +170,10 @@ export const registerSupplierIncident = createServerFn({ method: "POST" })
       laboratorio_id: data.laboratorio_id,
       tipo: data.tipo,
       oc_id: data.oc_id ?? null,
-      severidad: data.severidad,
-      descripcion: data.descripcion,
+      motivo: data.motivo ?? null,
+      cantidad: data.cantidad ?? null,
+      monto: data.monto ?? null,
+      notas: data.notas,
       created_by: userId,
     });
     if (error) throw new Error(error.message);
