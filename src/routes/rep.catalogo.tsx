@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getRepCatalogFn } from "@/lib/rep-field.functions";
-import { listRepClientsFn } from "@/lib/rep.functions";
+import { getMyClientsFn } from "@/lib/rep.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
