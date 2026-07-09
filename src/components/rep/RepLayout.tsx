@@ -29,6 +29,8 @@ const NAV: NavItem[] = [
   { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText, desktopOnly: true },
   { to: "/rep/cobranza", label: "Cobranza", icon: Banknote, desktopOnly: true },
   { to: "/rep/devoluciones", label: "Devoluciones", icon: RotateCcw, desktopOnly: true },
+  { to: "/rep/prospectos", label: "Prospectos", icon: UserPlus, desktopOnly: true },
+
   { to: "/rep/calendario", label: "Calendario", icon: CalendarDays, desktopOnly: true },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
   { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
