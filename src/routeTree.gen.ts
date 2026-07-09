@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RepIndexRouteImport } from './routes/rep.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as RepVisitasRouteImport } from './routes/rep.visitas'
 import { Route as RepRutaRouteImport } from './routes/rep.ruta'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
@@ -118,6 +119,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const RepVisitasRoute = RepVisitasRouteImport.update({
+  id: '/visitas',
+  path: '/visitas',
+  getParentRoute: () => RepRoute,
 } as any)
 const RepRutaRoute = RepRutaRouteImport.update({
   id: '/ruta',
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -624,6 +631,7 @@ export interface FileRoutesByTo {
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/visitas': typeof RepVisitasRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -706,6 +714,7 @@ export interface FileRoutesById {
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
@@ -789,6 +798,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/rep/clientes'
     | '/rep/ruta'
+    | '/rep/visitas'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -868,6 +878,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/rep/clientes'
     | '/rep/ruta'
+    | '/rep/visitas'
     | '/admin'
     | '/rep'
     | '/admin/bancos/estados'
@@ -949,6 +960,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/rep/clientes'
     | '/rep/ruta'
+    | '/rep/visitas'
     | '/admin/'
     | '/rep/'
     | '/admin/bancos/estados'
@@ -1033,6 +1045,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/rep/visitas': {
+      id: '/rep/visitas'
+      path: '/visitas'
+      fullPath: '/rep/visitas'
+      preLoaderRoute: typeof RepVisitasRouteImport
+      parentRoute: typeof RepRoute
     }
     '/rep/ruta': {
       id: '/rep/ruta'
@@ -1778,12 +1797,14 @@ const RepClientesRouteWithChildren = RepClientesRoute._addFileChildren(
 interface RepRouteChildren {
   RepClientesRoute: typeof RepClientesRouteWithChildren
   RepRutaRoute: typeof RepRutaRoute
+  RepVisitasRoute: typeof RepVisitasRoute
   RepIndexRoute: typeof RepIndexRoute
 }
 
 const RepRouteChildren: RepRouteChildren = {
   RepClientesRoute: RepClientesRouteWithChildren,
   RepRutaRoute: RepRutaRoute,
+  RepVisitasRoute: RepVisitasRoute,
   RepIndexRoute: RepIndexRoute,
 }
 
