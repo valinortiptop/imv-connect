@@ -16,10 +16,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RepIndexRouteImport } from './routes/rep.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as RepVisitasRouteImport } from './routes/rep.visitas'
+import { Route as RepSupervisorRouteImport } from './routes/rep.supervisor'
 import { Route as RepRutaRouteImport } from './routes/rep.ruta'
 import { Route as RepPlanRouteImport } from './routes/rep.plan'
 import { Route as RepLaboratoriosRouteImport } from './routes/rep.laboratorios'
 import { Route as RepInventarioRouteImport } from './routes/rep.inventario'
+import { Route as RepCoachRouteImport } from './routes/rep.coach'
 import { Route as RepClientesRouteImport } from './routes/rep.clientes'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ManiobraTokenRouteImport } from './routes/maniobra.$token'
@@ -128,6 +130,11 @@ const RepVisitasRoute = RepVisitasRouteImport.update({
   path: '/visitas',
   getParentRoute: () => RepRoute,
 } as any)
+const RepSupervisorRoute = RepSupervisorRouteImport.update({
+  id: '/supervisor',
+  path: '/supervisor',
+  getParentRoute: () => RepRoute,
+} as any)
 const RepRutaRoute = RepRutaRouteImport.update({
   id: '/ruta',
   path: '/ruta',
@@ -146,6 +153,11 @@ const RepLaboratoriosRoute = RepLaboratoriosRouteImport.update({
 const RepInventarioRoute = RepInventarioRouteImport.update({
   id: '/inventario',
   path: '/inventario',
+  getParentRoute: () => RepRoute,
+} as any)
+const RepCoachRoute = RepCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
   getParentRoute: () => RepRoute,
 } as any)
 const RepClientesRoute = RepClientesRouteImport.update({
@@ -568,10 +580,12 @@ export interface FileRoutesByFullPath {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/supervisor': typeof RepSupervisorRoute
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
@@ -651,10 +665,12 @@ export interface FileRoutesByTo {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/supervisor': typeof RepSupervisorRoute
   '/rep/visitas': typeof RepVisitasRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
@@ -737,10 +753,12 @@ export interface FileRoutesById {
   '/maniobra/$token': typeof ManiobraTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/rep/clientes': typeof RepClientesRouteWithChildren
+  '/rep/coach': typeof RepCoachRoute
   '/rep/inventario': typeof RepInventarioRoute
   '/rep/laboratorios': typeof RepLaboratoriosRoute
   '/rep/plan': typeof RepPlanRoute
   '/rep/ruta': typeof RepRutaRoute
+  '/rep/supervisor': typeof RepSupervisorRoute
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
@@ -824,10 +842,12 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
     | '/rep/ruta'
+    | '/rep/supervisor'
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
@@ -907,10 +927,12 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
     | '/rep/ruta'
+    | '/rep/supervisor'
     | '/rep/visitas'
     | '/admin'
     | '/rep'
@@ -992,10 +1014,12 @@ export interface FileRouteTypes {
     | '/maniobra/$token'
     | '/portal/$token'
     | '/rep/clientes'
+    | '/rep/coach'
     | '/rep/inventario'
     | '/rep/laboratorios'
     | '/rep/plan'
     | '/rep/ruta'
+    | '/rep/supervisor'
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
@@ -1089,6 +1113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RepVisitasRouteImport
       parentRoute: typeof RepRoute
     }
+    '/rep/supervisor': {
+      id: '/rep/supervisor'
+      path: '/supervisor'
+      fullPath: '/rep/supervisor'
+      preLoaderRoute: typeof RepSupervisorRouteImport
+      parentRoute: typeof RepRoute
+    }
     '/rep/ruta': {
       id: '/rep/ruta'
       path: '/ruta'
@@ -1115,6 +1146,13 @@ declare module '@tanstack/react-router' {
       path: '/inventario'
       fullPath: '/rep/inventario'
       preLoaderRoute: typeof RepInventarioRouteImport
+      parentRoute: typeof RepRoute
+    }
+    '/rep/coach': {
+      id: '/rep/coach'
+      path: '/coach'
+      fullPath: '/rep/coach'
+      preLoaderRoute: typeof RepCoachRouteImport
       parentRoute: typeof RepRoute
     }
     '/rep/clientes': {
@@ -1853,20 +1891,24 @@ const RepClientesRouteWithChildren = RepClientesRoute._addFileChildren(
 
 interface RepRouteChildren {
   RepClientesRoute: typeof RepClientesRouteWithChildren
+  RepCoachRoute: typeof RepCoachRoute
   RepInventarioRoute: typeof RepInventarioRoute
   RepLaboratoriosRoute: typeof RepLaboratoriosRoute
   RepPlanRoute: typeof RepPlanRoute
   RepRutaRoute: typeof RepRutaRoute
+  RepSupervisorRoute: typeof RepSupervisorRoute
   RepVisitasRoute: typeof RepVisitasRoute
   RepIndexRoute: typeof RepIndexRoute
 }
 
 const RepRouteChildren: RepRouteChildren = {
   RepClientesRoute: RepClientesRouteWithChildren,
+  RepCoachRoute: RepCoachRoute,
   RepInventarioRoute: RepInventarioRoute,
   RepLaboratoriosRoute: RepLaboratoriosRoute,
   RepPlanRoute: RepPlanRoute,
   RepRutaRoute: RepRutaRoute,
+  RepSupervisorRoute: RepSupervisorRoute,
   RepVisitasRoute: RepVisitasRoute,
   RepIndexRoute: RepIndexRoute,
 }
