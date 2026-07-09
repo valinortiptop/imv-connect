@@ -225,6 +225,44 @@ export async function googleGeocode(input: {
   }>({ provider: "google", endpoint, method: "GET" });
 }
 
+export async function googleDirections(input: {
+  origin: string;
+  destination: string;
+  waypoints?: string[];
+  optimize?: boolean;
+  mode?: "driving" | "walking" | "bicycling" | "transit";
+  language?: string;
+}) {
+  const wp =
+    input.waypoints && input.waypoints.length > 0
+      ? `${input.optimize ? "optimize:true|" : ""}${input.waypoints.join("|")}`
+      : undefined;
+  const endpoint = buildMapsEndpoint("/maps/api/directions/json", {
+    origin: input.origin,
+    destination: input.destination,
+    waypoints: wp,
+    mode: input.mode ?? "driving",
+    language: input.language ?? "es",
+    region: "mx",
+  });
+  return callValinor<{
+    status: string;
+    routes?: Array<{
+      overview_polyline?: { points?: string };
+      waypoint_order?: number[];
+      legs?: Array<{
+        distance?: { text?: string; value?: number };
+        duration?: { text?: string; value?: number };
+        start_address?: string;
+        end_address?: string;
+      }>;
+    }>;
+    error_message?: string;
+  }>({ provider: "google", endpoint, method: "GET" });
+}
+
+
+
 
 /**
  * Lee el reporte de uso del proyecto desde Valinor.
