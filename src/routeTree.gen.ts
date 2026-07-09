@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RepRouteImport } from './routes/rep'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -84,6 +85,11 @@ import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.es
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 
+const RepRoute = RepRouteImport.update({
+  id: '/rep',
+  path: '/rep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -468,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/rep': typeof RepRoute
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -543,6 +550,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/rep': typeof RepRoute
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -620,6 +628,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/rep': typeof RepRoute
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
@@ -698,6 +707,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
@@ -773,6 +783,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
     | '/admin/almacenes'
@@ -926,6 +938,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RepRoute: typeof RepRoute
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
@@ -933,6 +946,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rep': {
+      id: '/rep'
+      path: '/rep'
+      fullPath: '/rep'
+      preLoaderRoute: typeof RepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -1673,6 +1693,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
+  RepRoute: RepRoute,
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
