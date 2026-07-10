@@ -234,3 +234,133 @@ function firstDayOfMonth() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
+
+function FlujoComprasCard() {
+  const { data } = useQuery({
+    queryKey: ["compras-flujo"],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const horizonEnd = new Date(today);
+      horizonEnd.setDate(horizonEnd.getDate() + 7 * 8);
+
+      const [ocsRes, accountsRes] = await Promise.all([
+        supabase
+          .from("ordenes_compra")
+          .select("id, folio, total, fecha_emision, fecha_esperada, estado, laboratorio_id")
+          .in("estado", ["borrador", "enviada", "parcial"])
+          .lte("fecha_esperada", horizonEnd.toISOString().slice(0, 10)),
+        supabase.from("bank_accounts").select("id, saldo_inicial, moneda, activa").eq("activa", true),
+      ]);
+
+      const mxnAccts = (accountsRes.data ?? []).filter((a: any) => (a.moneda ?? "MXN") === "MXN");
+      const saldos = await Promise.all(
+        mxnAccts.map(async (a: any) => {
+          const { data: s } = await supabase.rpc("bank_account_saldo" as any, { _cuenta: a.id });
+          return Number(s ?? a.saldo_inicial ?? 0);
+        }),
+      );
+      const saldoActual = saldos.reduce((s, v) => s + v, 0);
+
+      // Bucket by ISO week starting Monday
+      const weeks: { label: string; start: Date; total: number; ocs: number }[] = [];
+      const dayOfWeek = today.getDay(); // 0 Sun ... 6 Sat
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(today);
+      monday.setDate(monday.getDate() + mondayOffset);
+      for (let i = 0; i < 8; i++) {
+        const start = new Date(monday);
+        start.setDate(start.getDate() + i * 7);
+        const label = `${start.getDate()}/${start.getMonth() + 1}`;
+        weeks.push({ label, start, total: 0, ocs: 0 });
+      }
+      let vencidas = 0;
+      let vencidasCount = 0;
+      for (const oc of (ocsRes.data ?? []) as any[]) {
+        const fecha = oc.fecha_esperada ? new Date(oc.fecha_esperada) : null;
+        const monto = Number(oc.total || 0);
+        if (!fecha || fecha < monday) {
+          vencidas += monto;
+          vencidasCount += fecha ? 1 : 0;
+          continue;
+        }
+        const idx = Math.min(7, Math.floor((fecha.getTime() - monday.getTime()) / (7 * 24 * 3600 * 1000)));
+        weeks[idx].total += monto;
+        weeks[idx].ocs += 1;
+      }
+      const totalHorizonte = weeks.reduce((s, w) => s + w.total, 0) + vencidas;
+      const max = Math.max(1, ...weeks.map((w) => w.total));
+
+      // Running projected balance
+      let running = saldoActual - vencidas;
+      const withRunning = weeks.map((w) => {
+        running -= w.total;
+        return { ...w, saldoProyectado: running };
+      });
+
+      return { saldoActual, vencidas, vencidasCount, totalHorizonte, weeks: withRunning, max };
+    },
+  });
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Wallet className="size-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase text-muted-foreground">Flujo de compras · próximas 8 semanas</h2>
+        </div>
+        <Link to="/admin/bancos" className="text-xs text-muted-foreground hover:text-foreground">Bancos →</Link>
+      </div>
+      {!data ? (
+        <p className="text-sm text-muted-foreground">Cargando…</p>
+      ) : (
+        <>
+          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Saldo actual MXN</p>
+              <p className="font-bold tabular-nums">{mxn.format(data.saldoActual)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Compromisos 8 sem.</p>
+              <p className="font-bold tabular-nums">{mxn.format(data.totalHorizonte)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Vencidos sin recibir</p>
+              <p className={`font-bold tabular-nums ${data.vencidas > 0 ? "text-rose-500" : ""}`}>
+                {mxn.format(data.vencidas)} {data.vencidasCount > 0 ? `· ${data.vencidasCount}` : ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase text-muted-foreground">Saldo proyectado 8 sem.</p>
+              <p className={`font-bold tabular-nums ${data.weeks.at(-1)!.saldoProyectado < 0 ? "text-rose-500" : "text-emerald-500"}`}>
+                {mxn.format(data.weeks.at(-1)!.saldoProyectado)}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-8 items-end gap-1 h-24">
+            {data.weeks.map((w, i) => {
+              const h = w.total > 0 ? Math.max(6, Math.round((w.total / data.max) * 100)) : 2;
+              return (
+                <div key={i} className="flex flex-col items-center justify-end gap-1" title={`Semana ${w.label}: ${mxn.format(w.total)} · ${w.ocs} OC`}>
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {w.total > 0 ? Math.round(w.total / 1000) + "k" : ""}
+                  </span>
+                  <div
+                    className={`w-full rounded-t ${w.saldoProyectado < 0 ? "bg-rose-500/70" : "bg-primary/70"}`}
+                    style={{ height: `${h}%` }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-1 grid grid-cols-8 gap-1 text-[10px] text-muted-foreground">
+            {data.weeks.map((w, i) => (
+              <div key={i} className="text-center tabular-nums">{w.label}</div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
