@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Package, DollarSign, TrendingDown, Clock, Truck, RefreshCw, Check, Sparkles } from "lucide-react";
+import { AlertTriangle, Package, DollarSign, TrendingDown, Clock, Truck, RefreshCw, Check, Sparkles, Wallet } from "lucide-react";
 import { regenerarAlertasCompras, resolverAlertaCompras, aiInsightCompras } from "@/lib/compras.functions";
 import { toast } from "sonner";
 
