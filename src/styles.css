@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /*
  * Design system definition.
  *
