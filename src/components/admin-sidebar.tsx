@@ -28,7 +28,7 @@ import {
 type NavItem = { key: string; label: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
 
-const ADMIN_BUILD_MARKER = "Build 2026.07.09-2";
+const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
 
 const navGroups: NavGroup[] = [
   {

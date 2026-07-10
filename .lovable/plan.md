@@ -1,51 +1,52 @@
-## Fix "BULTOS DISPONIBLES" white panel on mobile catálogo
+## Two fixes: auto-updating build marker + verify mobile catálogo dialog
 
-### Diagnosis
+### 1. Build marker auto-updates on every publish
 
-The stray white panel showing only "BULTOS DISPONIBLES" is the **Availability dialog** (`AvailabilityDownloadDialog`) opened from the catálogo toolbar. It was built for desktop only:
+Today `src/components/admin-sidebar.tsx` hardcodes:
 
-- `DialogContent` uses `max-w-5xl` with `!overflow-hidden` and no mobile width strategy.
-- Internal preview uses `<div className="min-w-[700px]">` with a 6-column grid (`grid-cols-[36px_100px_1fr_80px_110px_130px]`). On a ~390px mobile viewport this forces horizontal overflow that gets clipped, leaving mostly whitespace with just a fragment of the header (the "Bultos disponibles" column label) and the last column visible.
-- Date picker `SelectTrigger` is `w-[320px]` (fixed) — pushes the dialog wider than needed on small screens.
-- Header row and footer buttons are `flex flex-wrap` with desktop spacing.
+```ts
+const ADMIN_BUILD_MARKER = "Build 2026.07.09-2";
+```
 
-Nothing else on `/admin/catalogo` renders the phrase "bultos disponibles" (`rg` confirmed), so this is the source.
+That literal only changes when I edit it by hand, so publishing a new deploy doesn't move it. Fix by injecting the build timestamp at build time via Vite `define`.
 
-### Changes (single file: `src/components/AvailabilityDownloadDialog.tsx`)
+**Changes:**
 
-1. **Dialog shell** — make it phone-friendly:
-   - `DialogContent` classes: `w-[calc(100vw-1rem)] sm:w-full sm:max-w-5xl max-h-[90vh] p-4 sm:p-6 flex flex-col`.
-   - Keep `!overflow-hidden` so only the middle region scrolls.
+- `vite.config.ts` — pass a `define` through `@lovable.dev/vite-tanstack-config`:
+  ```ts
+  export default defineConfig({
+    tanstackStart: { server: { entry: "server" } },
+    vite: {
+      define: {
+        __BUILD_ID__: JSON.stringify(
+          new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC"
+        ),
+      },
+    },
+  });
+  ```
+  (If the wrapper doesn't forward `vite.define`, fall back to setting it via a small custom plugin inside the same config; verified before writing.)
 
-2. **Header/date row** — stack on mobile:
-   - Wrap the date `Select` and count in `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end`.
-   - `SelectTrigger` becomes `w-full sm:w-[320px]`.
-   - Title font: `text-lg sm:text-xl`, allow wrap.
+- `src/vite-env.d.ts` (or a new `src/types/build.d.ts`) — declare `declare const __BUILD_ID__: string;` so TS accepts it.
 
-3. **Preview area** — dual layout (mirrors the pattern already used across admin routes):
-   - Wrap the current 6-column grid in `<div className="hidden sm:block">` and drop `min-w-[700px]` (or replace with `sm:min-w-[700px]` inside an `overflow-x-auto` wrapper for desktop-only horizontal scroll).
-   - Add a `sm:hidden space-y-2` card list below `sm`. Each card:
-     ```
-     ┌──────────────────────────────────────────┐
-     │ [thumb]  CLAVE (mono, primary)           │
-     │          Producto name (wraps, 2 lines)  │
-     │ ─────────────────────────────────────    │
-     │ Peso   ·   Precio   ·   Bultos [badge]   │
-     └──────────────────────────────────────────┘
-     ```
-     Uses the same `bucketTextClass` color for the bultos badge, `tabular-nums` for numbers, `truncate` / `line-clamp-2` for text.
-   - Reuse `ProductThumb size="sm"` (leaves size unchanged).
+- `src/components/admin-sidebar.tsx` — replace the constant:
+  ```ts
+  const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
+  ```
 
-4. **Footer buttons** — reflow:
-   - `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-3 border-t border-border`.
-   - Buttons become `w-full sm:w-auto`.
+Every publish reruns Vite, so `__BUILD_ID__` becomes the fresh deploy timestamp. Combined with the existing `useBuildVersionCheck` hook, open tabs will reload and show the new marker.
+
+### 2. Mobile catálogo "Bultos disponibles" dialog
+
+The `AvailabilityDownloadDialog.tsx` fix from last turn IS in the file (mobile card layout, responsive dialog shell, stacked footer). If it still looks broken in the user's mobile preview, it's a stale cache — the `useBuildVersionCheck` hook should have reloaded, but a fresh publish (which fix #1 above will trigger anyway) plus a hard refresh confirms.
+
+**Verification steps after both changes:**
+
+1. `bunx tsgo --noEmit`.
+2. Publish, then load `/admin/catalogo` on 390×844 mobile: click **Disponibilidad** → dialog fills the viewport with padding, product rows render as stacked cards, no floating "BULTOS DISPONIBLES" fragment.
+3. Confirm the sidebar footer shows a build marker matching the new deploy time, and that publishing again changes it.
 
 ### Out of scope
 
-- No changes to catálogo page itself, to logic, to queries, or to Excel/PNG export code. The PNG export renders via `printRef` which we don't touch — it still exports at desktop width (that's intentional for the shareable image).
-
-### Verification
-
-- `bunx tsgo --noEmit`.
-- Open `/admin/catalogo` at 390×844, click **Disponibilidad**: confirm dialog fills viewport with padding, date picker is full-width, product rows render as stacked cards (no horizontal clipping, no floating "BULTOS DISPONIBLES" fragment), and the Excel / Imagen buttons stack full-width.
-- At `≥sm`, confirm the original table layout and button row are unchanged.
+- No changes to catálogo page logic, queries, or PNG export.
+- No new UI beyond swapping the hardcoded build string.
