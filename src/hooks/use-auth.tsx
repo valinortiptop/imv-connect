@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { logPlatformAccess } from "@/lib/access-logger";
 
 export type AppRole = "admin" | "representante" | "ventas" | "almacen" | "logistica" | "contabilidad" | "viewer";
 
