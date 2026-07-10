@@ -9141,11 +9141,13 @@ export type Database = {
           precio_lista: number | null
           producto_id: string | null
           promo: boolean | null
+          promo_activa: boolean | null
           punto_reorden: number | null
           sku: string | null
           stock_comprometido: number | null
           stock_disponible: number | null
           stock_fisico: number | null
+          stock_max: number | null
           stock_min: number | null
           tendencia_pct: number | null
           ventas_30d: number | null
