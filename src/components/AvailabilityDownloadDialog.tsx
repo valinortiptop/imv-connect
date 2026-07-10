@@ -313,20 +313,22 @@ export function AvailabilityDownloadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col !overflow-hidden">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-5xl max-h-[90vh] p-4 sm:p-6 flex flex-col !overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-xl">
-            Disponibilidad de Inventario
-            <span className="ml-2 text-sm font-normal text-muted-foreground">· {priceListLabel}</span>
+          <DialogTitle className="text-lg sm:text-xl leading-tight">
+            <span className="block sm:inline">Disponibilidad de Inventario</span>
+            <span className="mt-1 block text-sm font-normal text-muted-foreground sm:ml-2 sm:mt-0 sm:inline">
+              · {priceListLabel}
+            </span>
           </DialogTitle>
         </DialogHeader>
 
         {/* Date picker */}
-        <div className="flex flex-wrap gap-4 items-end border-b border-border pb-4">
-          <div className="space-y-1.5">
+        <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
+          <div className="space-y-1.5 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Fecha de disponibilidad</Label>
             <Select value={selectedDate} onValueChange={setSelectedDate}>
-              <SelectTrigger className="w-[320px]">
+              <SelectTrigger className="w-full sm:w-[320px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -336,7 +338,7 @@ export function AvailabilityDownloadDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="text-sm text-muted-foreground pb-1">
+          <div className="text-sm text-muted-foreground sm:pb-1">
             {availabilityRows.length} productos disponibles
           </div>
         </div>
@@ -353,49 +355,91 @@ export function AvailabilityDownloadDialog({
               No hay productos disponibles para esta fecha.
             </div>
           ) : (
-            <div className="min-w-[700px]">
-              <div className="grid grid-cols-[36px_100px_1fr_80px_110px_130px] gap-4 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
-                <div />
-                <div>Clave</div>
-                <div>Producto</div>
-                <div className="text-right">Peso</div>
-                <div className="text-right">Precio</div>
-                <div className="text-right">Bultos disponibles</div>
-              </div>
-              {availabilityRows.map((row) => (
-                <div
-                  key={row.clave}
-                  className="grid grid-cols-[36px_100px_1fr_80px_110px_130px] gap-4 px-4 py-2.5 items-center border-b border-border/30 hover:bg-muted/30"
-                >
-                  <ProductThumb src={row.image_url} size="sm" />
-                  <div className="font-mono text-sm font-medium text-primary">{row.clave}</div>
-                  <div className="text-sm text-foreground truncate">{row.name}</div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    {row.weight_kg ? `${row.weight_kg} kg` : "—"}
-                  </div>
-                  <div className="text-right text-sm font-semibold tabular-nums text-foreground">
-                    {formatPrice(row.price)}
-                  </div>
-                  <div className={`text-right text-sm font-bold tabular-nums ${bucketTextClass[row.bucketColor]}`}>
-                    {row.bucket}
-                  </div>
+            <>
+              {/* Desktop: table grid */}
+              <div className="hidden sm:block">
+                <div className="grid grid-cols-[36px_100px_1fr_80px_110px_130px] gap-4 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <div />
+                  <div>Clave</div>
+                  <div>Producto</div>
+                  <div className="text-right">Peso</div>
+                  <div className="text-right">Precio</div>
+                  <div className="text-right">Bultos disponibles</div>
                 </div>
-              ))}
-            </div>
+                {availabilityRows.map((row) => (
+                  <div
+                    key={row.clave}
+                    className="grid grid-cols-[36px_100px_1fr_80px_110px_130px] gap-4 px-4 py-2.5 items-center border-b border-border/30 hover:bg-muted/30"
+                  >
+                    <ProductThumb src={row.image_url} size="sm" />
+                    <div className="font-mono text-sm font-medium text-primary">{row.clave}</div>
+                    <div className="text-sm text-foreground truncate">{row.name}</div>
+                    <div className="text-right text-sm text-muted-foreground">
+                      {row.weight_kg ? `${row.weight_kg} kg` : "—"}
+                    </div>
+                    <div className="text-right text-sm font-semibold tabular-nums text-foreground">
+                      {formatPrice(row.price)}
+                    </div>
+                    <div className={`text-right text-sm font-bold tabular-nums ${bucketTextClass[row.bucketColor]}`}>
+                      {row.bucket}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile: card list */}
+              <div className="sm:hidden space-y-2 py-2">
+                {availabilityRows.map((row) => (
+                  <div
+                    key={row.clave}
+                    className="rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <ProductThumb src={row.image_url} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-mono text-xs font-medium text-primary">{row.clave}</div>
+                        <div className="mt-0.5 text-sm text-foreground line-clamp-2">{row.name}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border/60 pt-2 text-xs">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Peso</div>
+                        <div className="text-foreground tabular-nums">
+                          {row.weight_kg ? `${row.weight_kg} kg` : "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Precio</div>
+                        <div className="font-semibold text-foreground tabular-nums">
+                          {formatPrice(row.price)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Bultos</div>
+                        <div className={`font-bold tabular-nums ${bucketTextClass[row.bucketColor]}`}>
+                          {row.bucket}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
         {/* Export buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-          <Button variant="outline" size="sm" onClick={handleExcel} disabled={availabilityRows.length === 0}>
+        <div className="flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <Button variant="outline" size="sm" onClick={handleExcel} disabled={availabilityRows.length === 0} className="w-full sm:w-auto">
             <FileSpreadsheet className="h-4 w-4 mr-2" />
             Excel
           </Button>
-          <Button variant="outline" size="sm" onClick={handleImage} disabled={availabilityRows.length === 0 || exporting}>
+          <Button variant="outline" size="sm" onClick={handleImage} disabled={availabilityRows.length === 0 || exporting} className="w-full sm:w-auto">
             {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             Descargar imagen
           </Button>
         </div>
+
       </DialogContent>
 
       {/* Offscreen print card */}
