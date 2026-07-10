@@ -1,0 +1,306 @@
+// @ts-nocheck
+// Supervisor map — shows every platform sign-in event pinned on Google Maps.
+// Loaded through the Valinor proxy, matching RouteMap.tsx.
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listRepAccessEventsFn, type RepAccessEvent } from "@/lib/rep-access.functions";
+import { listRepresentantesFn } from "@/lib/rep-calendar.functions";
+import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { MapPin, Clock, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type RangeKey = "today" | "7d" | "30d";
+
+function rangeToDates(r: RangeKey) {
+  const to = new Date();
+  const from = new Date();
+  if (r === "today") from.setHours(0, 0, 0, 0);
+  else if (r === "7d") from.setDate(from.getDate() - 7);
+  else from.setDate(from.getDate() - 30);
+  return { from: from.toISOString(), to: to.toISOString() };
+}
+
+function colorForAge(iso: string): string {
+  const ageH = (Date.now() - new Date(iso).getTime()) / 3_600_000;
+  if (ageH < 6) return "#16a34a"; // green
+  if (ageH < 24) return "#0ea5e9"; // blue
+  if (ageH < 24 * 7) return "#f59e0b"; // amber
+  return "#94a3b8"; // slate
+}
+
+const fmtDT = (iso: string) =>
+  new Date(iso).toLocaleString("es-MX", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+export default function RepAccessMap() {
+  const fetchEvents = useServerFn(listRepAccessEventsFn);
+  const fetchReps = useServerFn(listRepresentantesFn);
+
+  const [range, setRange] = useState<RangeKey>("7d");
+  const [selectedRepIds, setSelectedRepIds] = useState<string[]>([]);
+  const [onlyWithLocation, setOnlyWithLocation] = useState(false);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const infoRef = useRef<any>(null);
+
+  const { from, to } = useMemo(() => rangeToDates(range), [range]);
+
+  const repsQuery = useQuery({
+    queryKey: ["rep-access-reps"],
+    queryFn: () => fetchReps(),
+  });
+
+  const eventsQuery = useQuery({
+    queryKey: ["rep-access-events", from, to, selectedRepIds.join(","), onlyWithLocation],
+    queryFn: () =>
+      fetchEvents({
+        data: {
+          from,
+          to,
+          repIds: selectedRepIds.length ? selectedRepIds : undefined,
+          onlyWithLocation,
+        },
+      }),
+  });
+
+  const events: RepAccessEvent[] = eventsQuery.data?.events ?? [];
+  const withLoc = events.filter((e) => e.has_location && e.lat != null && e.lng != null);
+  const withoutLoc = events.filter((e) => !e.has_location || e.lat == null || e.lng == null);
+
+  // Init map
+  useEffect(() => {
+    let cancelled = false;
+    loadGoogleMapsViaValinor()
+      .then((maps: any) => {
+        if (cancelled || !mapElRef.current) return;
+        if (!mapRef.current) {
+          mapRef.current = new maps.Map(mapElRef.current, {
+            center: { lat: 19.4326, lng: -99.1332 },
+            zoom: 5,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            clickableIcons: false,
+            gestureHandling: "greedy",
+          });
+          infoRef.current = new maps.InfoWindow();
+        }
+        setMapStatus("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setMapStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Render markers
+  useEffect(() => {
+    const maps = (window as any).google?.maps;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+
+    for (const m of markersRef.current) m.setMap(null);
+    markersRef.current = [];
+
+    if (!withLoc.length) return;
+
+    const bounds = new maps.LatLngBounds();
+    for (const e of withLoc) {
+      const pos = { lat: e.lat!, lng: e.lng! };
+      const color = colorForAge(e.signed_in_at);
+      const marker = new maps.Marker({
+        position: pos,
+        map,
+        title: `${e.representante_nombre ?? "Rep"} · ${fmtDT(e.signed_in_at)}`,
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: color,
+          fillOpacity: 0.9,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+      });
+      marker.addListener("click", () => {
+        infoRef.current?.setContent(
+          `<div style="font-family:system-ui;font-size:12px;min-width:180px">
+            <div style="font-weight:600;margin-bottom:2px">${
+              e.representante_nombre ?? "Representante"
+            }</div>
+            <div>${fmtDT(e.signed_in_at)}</div>
+            ${
+              e.accuracy != null
+                ? `<div style="color:#64748b">±${Math.round(e.accuracy)} m</div>`
+                : ""
+            }
+          </div>`,
+        );
+        infoRef.current?.open({ anchor: marker, map });
+      });
+      markersRef.current.push(marker);
+      bounds.extend(pos);
+    }
+    if (withLoc.length === 1) {
+      map.setCenter(withLoc[0] as any);
+      map.setZoom(13);
+    } else {
+      map.fitBounds(bounds, 60);
+    }
+  }, [withLoc, mapStatus]);
+
+  const toggleRep = (id: string) =>
+    setSelectedRepIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MapPin className="h-4 w-4 text-primary" /> Mapa de accesos de representantes
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-md border">
+            {(["today", "7d", "30d"] as RangeKey[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={cn(
+                  "px-3 py-1.5 text-xs",
+                  range === r ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                )}
+              >
+                {r === "today" ? "Hoy" : r === "7d" ? "7 días" : "30 días"}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-xs ml-2">
+            <Switch checked={onlyWithLocation} onCheckedChange={setOnlyWithLocation} />
+            Solo con ubicación
+          </label>
+          <div className="ml-auto text-xs text-muted-foreground">
+            {events.length} acceso{events.length === 1 ? "" : "s"} · {withLoc.length} con ubicación
+          </div>
+        </div>
+
+        {/* Rep filter */}
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedRepIds([])}
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-xs",
+              selectedRepIds.length === 0 ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+            )}
+          >
+            <Users className="inline h-3 w-3 mr-1" /> Todos
+          </button>
+          {(repsQuery.data?.representantes ?? []).map((r: any) => {
+            const active = selectedRepIds.includes(r.id);
+            return (
+              <button
+                key={r.id}
+                onClick={() => toggleRep(r.id)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs",
+                  active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                )}
+              >
+                {r.nombre}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Map + list */}
+        <div className="grid gap-3 md:grid-cols-[1fr,320px]">
+          <div className="relative rounded-md overflow-hidden border" style={{ minHeight: 420 }}>
+            <div ref={mapElRef} className="absolute inset-0" />
+            {mapStatus !== "ready" && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/40 text-sm text-muted-foreground">
+                {mapStatus === "loading"
+                  ? "Cargando Google Maps vía Valinor..."
+                  : "No se pudo cargar Google Maps"}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-md border overflow-hidden max-h-[420px] overflow-y-auto">
+            <div className="px-3 py-2 border-b text-xs font-medium bg-muted/40 flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" /> Historial reciente
+            </div>
+            {events.length === 0 ? (
+              <div className="p-4 text-xs text-muted-foreground">Sin accesos en el rango.</div>
+            ) : (
+              <ul className="divide-y">
+                {events.slice(0, 100).map((e) => (
+                  <li key={e.id} className="px-3 py-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium truncate">
+                        {e.representante_nombre ?? "—"}
+                      </span>
+                      {e.has_location ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5"
+                          style={{ borderColor: colorForAge(e.signed_in_at) }}
+                        >
+                          <MapPin className="h-2.5 w-2.5 mr-0.5" /> ubic
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px] px-1.5">
+                          sin ubic
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">{fmtDT(e.signed_in_at)}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {withoutLoc.length > 0 && (
+              <div className="px-3 py-2 border-t text-[11px] text-muted-foreground bg-muted/20">
+                {withoutLoc.length} acceso{withoutLoc.length === 1 ? "" : "s"} sin ubicación
+                (permiso denegado o no disponible).
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+          <LegendDot color="#16a34a" label="< 6h" />
+          <LegendDot color="#0ea5e9" label="< 24h" />
+          <LegendDot color="#f59e0b" label="< 7d" />
+          <LegendDot color="#94a3b8" label="más antiguo" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-full border border-white"
+        style={{ background: color }}
+      />
+      {label}
+    </span>
+  );
+}
