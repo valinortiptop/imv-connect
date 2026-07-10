@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/compras/$id")({
   component: OCDetail,
@@ -337,6 +338,8 @@ function AddItemModal({ ocId, laboratorioId, onClose, onSaved }: {
   );
 }
 
+type LoteRow = { lote: string; caducidad: string; cantidad: number };
+
 function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
   ocId: string;
   almacenId: string;
@@ -348,32 +351,65 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
   const [qty, setQty] = useState<Record<string, number>>(
     Object.fromEntries(pendientes.map((i) => [i.id, i.cantidad - i.cantidad_recibida])),
   );
-  const [lotes, setLotes] = useState<Record<string, string>>({});
-  const [caducs, setCaducs] = useState<Record<string, string>>({});
+  const [lotesByItem, setLotesByItem] = useState<Record<string, LoteRow[]>>(
+    Object.fromEntries(pendientes.map((i) => [i.id, [{ lote: "", caducidad: "", cantidad: i.cantidad - i.cantidad_recibida }]])),
+  );
+
+  const addLote = (itemId: string) => {
+    setLotesByItem((s) => ({ ...s, [itemId]: [...(s[itemId] ?? []), { lote: "", caducidad: "", cantidad: 0 }] }));
+  };
+  const removeLote = (itemId: string, idx: number) => {
+    setLotesByItem((s) => ({ ...s, [itemId]: (s[itemId] ?? []).filter((_, i) => i !== idx) }));
+  };
+  const updateLote = (itemId: string, idx: number, patch: Partial<LoteRow>) => {
+    setLotesByItem((s) => ({
+      ...s,
+      [itemId]: (s[itemId] ?? []).map((l, i) => (i === idx ? { ...l, ...patch } : l)),
+    }));
+  };
+
+  const today = new Date();
+  const dayMs = 86400000;
+  const daysUntil = (iso: string) => Math.floor((new Date(iso).getTime() - today.getTime()) / dayMs);
 
   const recibir = useMutation({
     mutationFn: async () => {
-      const payload = Object.entries(qty)
-        .filter(([, v]) => v > 0)
-        .map(([item_id, cantidad_recibir]) => ({ item_id, cantidad_recibir }));
+      const payload: { item_id: string; cantidad_recibir: number }[] = [];
+      const allBatches: any[] = [];
+
+      for (const i of pendientes) {
+        const cantidad = qty[i.id] ?? 0;
+        if (cantidad <= 0) continue;
+        const lotes = (lotesByItem[i.id] ?? []).filter((l) => l.lote || l.caducidad || l.cantidad > 0);
+
+        // If user filled any lote data, require sum match cantidad
+        if (lotes.length > 0) {
+          const sum = lotes.reduce((s, l) => s + Number(l.cantidad || 0), 0);
+          if (Math.abs(sum - cantidad) > 0.001) {
+            throw new Error(`${i.productos?.nombre}: la suma de lotes (${sum}) no coincide con la cantidad a recibir (${cantidad}).`);
+          }
+          for (const l of lotes) {
+            if (l.cantidad <= 0) continue;
+            allBatches.push({
+              producto_id: i.producto_id,
+              almacen_id: almacenId,
+              lote: l.lote || null,
+              caducidad: l.caducidad || null,
+              cantidad: l.cantidad,
+              costo_unitario: Number(i.costo_unitario),
+              oc_id: ocId,
+            });
+          }
+        }
+
+        payload.push({ item_id: i.id, cantidad_recibir: cantidad });
+      }
+
       if (payload.length === 0) throw new Error("Nada que recibir");
       const { error } = await supabase.rpc("recibir_oc", { _oc: ocId, _items: payload });
       if (error) throw error;
-
-      // Register batches (lote + caducidad) for lines that provided them
-      const batchRows = pendientes
-        .filter((i) => (qty[i.id] ?? 0) > 0 && (lotes[i.id] || caducs[i.id]))
-        .map((i) => ({
-          producto_id: i.producto_id,
-          almacen_id: almacenId,
-          lote: lotes[i.id] || null,
-          caducidad: caducs[i.id] || null,
-          cantidad: qty[i.id],
-          costo_unitario: Number(i.costo_unitario),
-          oc_id: ocId,
-        }));
-      if (batchRows.length > 0) {
-        const { error: eB } = await supabase.from("product_batches").insert(batchRows);
+      if (allBatches.length > 0) {
+        const { error: eB } = await supabase.from("product_batches").insert(allBatches);
         if (eB) throw eB;
       }
     },
@@ -386,17 +422,21 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-card p-6">
+      <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-card p-6">
         <h2 className="mb-1 text-lg font-semibold">Recibir mercancía</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Indica cantidad, lote y caducidad por línea. Se generarán entradas a inventario y se registrarán los lotes para trazabilidad.
+          Puedes registrar múltiples lotes por línea. Si capturas lotes, la suma debe coincidir con la cantidad recibida.
         </p>
         {pendientes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay items pendientes.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {pendientes.map((i) => {
               const pend = Number(i.cantidad) - Number(i.cantidad_recibida);
+              const lotes = lotesByItem[i.id] ?? [];
+              const sumLotes = lotes.reduce((s, l) => s + Number(l.cantidad || 0), 0);
+              const hasLoteData = lotes.some((l) => l.lote || l.caducidad || l.cantidad > 0);
+              const mismatch = hasLoteData && Math.abs(sumLotes - (qty[i.id] ?? 0)) > 0.001;
               return (
                 <div key={i.id} className="rounded-md border border-border p-3">
                   <div className="flex items-start justify-between gap-3">
@@ -417,21 +457,69 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
                       placeholder="Cant."
                     />
                   </div>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={lotes[i.id] ?? ""}
-                      onChange={(e) => setLotes({ ...lotes, [i.id]: e.target.value })}
-                      className="input"
-                      placeholder="Lote"
-                      maxLength={60}
-                    />
-                    <input
-                      type="date"
-                      value={caducs[i.id] ?? ""}
-                      onChange={(e) => setCaducs({ ...caducs, [i.id]: e.target.value })}
-                      className="input"
-                    />
+
+                  <div className="mt-3 space-y-1.5">
+                    {lotes.map((l, idx) => {
+                      const dias = l.caducidad ? daysUntil(l.caducidad) : null;
+                      const vencido = dias != null && dias < 0;
+                      const corto = dias != null && dias >= 0 && dias < 90;
+                      return (
+                        <div key={idx} className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="text"
+                            value={l.lote}
+                            onChange={(e) => updateLote(i.id, idx, { lote: e.target.value })}
+                            className="input flex-1 min-w-[100px]"
+                            placeholder="Lote"
+                            maxLength={60}
+                          />
+                          <input
+                            type="date"
+                            value={l.caducidad}
+                            onChange={(e) => updateLote(i.id, idx, { caducidad: e.target.value })}
+                            className={cn("input w-40", vencido && "border-rose-500", corto && "border-amber-500")}
+                          />
+                          <input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            value={l.cantidad}
+                            onChange={(e) => updateLote(i.id, idx, { cantidad: Number(e.target.value) })}
+                            className="input w-24 text-right"
+                            placeholder="Cant."
+                          />
+                          {lotes.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeLote(i.id, idx)}
+                              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                            >
+                              −
+                            </button>
+                          )}
+                          {dias != null && (
+                            <span className={cn("text-xs tabular-nums",
+                              vencido ? "text-rose-600 font-medium" : corto ? "text-amber-600" : "text-muted-foreground")}>
+                              {vencido ? `Vencido (${Math.abs(dias)}d)` : `${dias}d`}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => addLote(i.id)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        + Agregar lote
+                      </button>
+                      {mismatch && (
+                        <span className="text-xs text-rose-600">
+                          Σ lotes = {sumLotes} ≠ recibido {qty[i.id] ?? 0}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
