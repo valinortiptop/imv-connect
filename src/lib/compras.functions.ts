@@ -343,7 +343,25 @@ export const regenerarAlertasCompras = createServerFn({ method: "POST" })
       .from("purchase_alerts")
       .delete()
       .eq("resuelto", false)
-      .in("tipo", ["stock_critico", "reorden", "caducidad", "sobrestock"]);
+      .in("tipo", [
+        "stock_critico",
+        "reorden",
+        "caducidad",
+        "sobrestock",
+        "incremento_costo",
+        "prov_incumple",
+        "oc_vencida",
+        "promo_sin_stock",
+      ]);
+
+    // Read config thresholds
+    const { data: cfgRow } = await supabase
+      .from("purchase_config")
+      .select("costo_variacion_umbral_pct")
+      .limit(1)
+      .maybeSingle();
+    const costoUmbral = Number((cfgRow as any)?.costo_variacion_umbral_pct ?? 10);
+
 
     const inserts: any[] = [];
 
