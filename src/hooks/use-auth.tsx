@@ -76,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
 
         if (s) {
+          // Fire-and-forget: record platform access with optional geolocation.
+          // Deduped per browser session inside logPlatformAccess.
+          void logPlatformAccess(s.user?.id);
           // Defer role fetch to avoid Supabase lock contention
           setTimeout(async () => {
             try {
