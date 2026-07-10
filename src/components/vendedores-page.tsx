@@ -53,6 +53,7 @@ export default function VendedoresPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState<Partial<Representante> | null>(null);
   const [toDelete, setToDelete] = useState<Representante | null>(null);
+  const [view360Id, setView360Id] = useState<string | null>(null);
 
   /* ── Queries ── */
   const { data: reps = [], isLoading } = useQuery({
