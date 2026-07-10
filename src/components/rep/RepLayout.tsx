@@ -109,7 +109,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
               <AIToggle compact />
             </div>
             <Button asChild variant="outline" size="sm" className="w-full justify-start">
-              <Link to="/">
+              <Link to="/admin">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la app
               </Link>
             </Button>
