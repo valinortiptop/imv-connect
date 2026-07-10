@@ -113,6 +113,7 @@ import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.es
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
+import { Route as AdminComprasFaltantesMotivosRouteImport } from './routes/admin.compras.faltantes.motivos'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
 import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
 
@@ -646,6 +647,12 @@ const AdminContabilidadPolizasIdRoute =
     path: '/$id',
     getParentRoute: () => AdminContabilidadPolizasRoute,
   } as any)
+const AdminComprasFaltantesMotivosRoute =
+  AdminComprasFaltantesMotivosRouteImport.update({
+    id: '/motivos',
+    path: '/motivos',
+    getParentRoute: () => AdminComprasFaltantesRoute,
+  } as any)
 const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   id: '/precios',
   path: '/precios',
@@ -733,7 +740,7 @@ export interface FileRoutesByFullPath {
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
   '/admin/compras/costos': typeof AdminComprasCostosRoute
-  '/admin/compras/faltantes': typeof AdminComprasFaltantesRoute
+  '/admin/compras/faltantes': typeof AdminComprasFaltantesRouteWithChildren
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -760,6 +767,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
+  '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
@@ -837,7 +845,7 @@ export interface FileRoutesByTo {
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
   '/admin/compras/costos': typeof AdminComprasCostosRoute
-  '/admin/compras/faltantes': typeof AdminComprasFaltantesRoute
+  '/admin/compras/faltantes': typeof AdminComprasFaltantesRouteWithChildren
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -864,6 +872,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad': typeof AdminContabilidadIndexRoute
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
+  '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
@@ -946,7 +955,7 @@ export interface FileRoutesById {
   '/admin/compras/$id': typeof AdminComprasIdRoute
   '/admin/compras/caducidades': typeof AdminComprasCaducidadesRoute
   '/admin/compras/costos': typeof AdminComprasCostosRoute
-  '/admin/compras/faltantes': typeof AdminComprasFaltantesRoute
+  '/admin/compras/faltantes': typeof AdminComprasFaltantesRouteWithChildren
   '/admin/compras/ordenes': typeof AdminComprasOrdenesRoute
   '/admin/compras/planeacion': typeof AdminComprasPlaneacionRoute
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
@@ -973,6 +982,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
+  '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
@@ -1083,6 +1093,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
+    | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
@@ -1187,6 +1198,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad'
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
+    | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
@@ -1295,6 +1307,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
+    | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
@@ -2044,6 +2057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadPolizasIdRouteImport
       parentRoute: typeof AdminContabilidadPolizasRoute
     }
+    '/admin/compras/faltantes/motivos': {
+      id: '/admin/compras/faltantes/motivos'
+      path: '/motivos'
+      fullPath: '/admin/compras/faltantes/motivos'
+      preLoaderRoute: typeof AdminComprasFaltantesMotivosRouteImport
+      parentRoute: typeof AdminComprasFaltantesRoute
+    }
     '/admin/clientes/$id/precios': {
       id: '/admin/clientes/$id/precios'
       path: '/precios'
@@ -2085,11 +2105,24 @@ const AdminClientesRouteWithChildren = AdminClientesRoute._addFileChildren(
   AdminClientesRouteChildren,
 )
 
+interface AdminComprasFaltantesRouteChildren {
+  AdminComprasFaltantesMotivosRoute: typeof AdminComprasFaltantesMotivosRoute
+}
+
+const AdminComprasFaltantesRouteChildren: AdminComprasFaltantesRouteChildren = {
+  AdminComprasFaltantesMotivosRoute: AdminComprasFaltantesMotivosRoute,
+}
+
+const AdminComprasFaltantesRouteWithChildren =
+  AdminComprasFaltantesRoute._addFileChildren(
+    AdminComprasFaltantesRouteChildren,
+  )
+
 interface AdminComprasRouteChildren {
   AdminComprasIdRoute: typeof AdminComprasIdRoute
   AdminComprasCaducidadesRoute: typeof AdminComprasCaducidadesRoute
   AdminComprasCostosRoute: typeof AdminComprasCostosRoute
-  AdminComprasFaltantesRoute: typeof AdminComprasFaltantesRoute
+  AdminComprasFaltantesRoute: typeof AdminComprasFaltantesRouteWithChildren
   AdminComprasOrdenesRoute: typeof AdminComprasOrdenesRoute
   AdminComprasPlaneacionRoute: typeof AdminComprasPlaneacionRoute
   AdminComprasProveedoresRoute: typeof AdminComprasProveedoresRoute
@@ -2101,7 +2134,7 @@ const AdminComprasRouteChildren: AdminComprasRouteChildren = {
   AdminComprasIdRoute: AdminComprasIdRoute,
   AdminComprasCaducidadesRoute: AdminComprasCaducidadesRoute,
   AdminComprasCostosRoute: AdminComprasCostosRoute,
-  AdminComprasFaltantesRoute: AdminComprasFaltantesRoute,
+  AdminComprasFaltantesRoute: AdminComprasFaltantesRouteWithChildren,
   AdminComprasOrdenesRoute: AdminComprasOrdenesRoute,
   AdminComprasPlaneacionRoute: AdminComprasPlaneacionRoute,
   AdminComprasProveedoresRoute: AdminComprasProveedoresRoute,
