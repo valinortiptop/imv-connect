@@ -258,8 +258,8 @@ function FacturaDetalle() {
         )}
       </div>
       <div>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-2xl font-bold font-mono">{data.folio}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold font-mono break-all">{data.folio}</h1>
           <span className={`rounded px-2 py-0.5 text-xs ${
             data.estado === "pagada" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             : data.estado === "parcial" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -273,6 +273,7 @@ function FacturaDetalle() {
           )}
         </div>
       </div>
+
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
