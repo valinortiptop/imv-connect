@@ -282,6 +282,9 @@ export default function VendedoresPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 justify-end">
+                          <Button size="icon" variant="ghost" onClick={() => setView360Id(r.id)} title="Ver 360">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => setEditing(r)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
