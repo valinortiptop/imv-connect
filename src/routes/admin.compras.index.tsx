@@ -147,6 +147,54 @@ function ComprasDashboard() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Análisis IA</h2>
+          </div>
+          <button
+            onClick={() => insightMut.mutate()}
+            disabled={insightMut.isPending}
+            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+          >
+            {insightMut.isPending ? "Generando…" : insightMut.data ? "Regenerar" : "Generar análisis"}
+          </button>
+        </div>
+        {!insightMut.data && !insightMut.isPending && (
+          <p className="text-sm text-muted-foreground">
+            Genera un resumen priorizado con acciones recomendadas basado en planeación, caducidades, baja rotación y desempeño de proveedores.
+          </p>
+        )}
+        {insightMut.data && (
+          <div className="space-y-3 text-sm">
+            {insightMut.data.resumen && <p className="leading-relaxed">{insightMut.data.resumen}</p>}
+            {insightMut.data.riesgos?.length > 0 && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Riesgos</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {insightMut.data.riesgos.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                </ul>
+              </div>
+            )}
+            {insightMut.data.acciones?.length > 0 && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Acciones prioritarias</p>
+                <div className="space-y-1.5">
+                  {insightMut.data.acciones.map((a: any, i: number) => (
+                    <div key={i} className="rounded-md border border-border p-2">
+                      <p className="text-sm font-medium">{a.titulo}</p>
+                      <p className="text-xs text-muted-foreground">{a.detalle}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
       <div className="flex flex-wrap gap-2">
         <Link to="/admin/compras/planeacion" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-90">Ir a Planeación</Link>
         <Link to="/admin/compras/ordenes" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Ver órdenes</Link>
