@@ -16,6 +16,7 @@ export const Route = createFileRoute("/admin/compras/proveedores")({
 
 function ProveedoresPage() {
   const [incidentFor, setIncidentFor] = useState<{ id: string; nombre: string } | null>(null);
+  const [drawerFor, setDrawerFor] = useState<{ id: string; nombre: string; kpi: any } | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["v_supplier_kpis"],
@@ -46,8 +47,12 @@ function ProveedoresPage() {
               </thead>
               <tbody>
                 {(data ?? []).map((p: any) => (
-                  <tr key={p.laboratorio_id} className="border-t border-border">
-                    <td className="px-3 py-2 font-medium">{p.laboratorio}</td>
+                  <tr key={p.laboratorio_id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-3 py-2 font-medium">
+                      <button className="text-left hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>
+                        {p.laboratorio}
+                      </button>
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums">{p.ocs_12m}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{Number(p.fill_rate_pct).toFixed(1)}%</td>
                     <td className="px-3 py-2 text-right tabular-nums">{Number(p.on_time_pct).toFixed(1)}%</td>
@@ -70,7 +75,9 @@ function ProveedoresPage() {
             {(data ?? []).map((p: any) => (
               <div key={p.laboratorio_id} className="rounded-md border border-border p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{p.laboratorio}</p>
+                  <button className="text-left font-medium hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>
+                    {p.laboratorio}
+                  </button>
                   <Button variant="outline" size="sm" onClick={() => setIncidentFor({ id: p.laboratorio_id, nombre: p.laboratorio })}>
                     <Plus className="size-3.5" />
                   </Button>
@@ -92,6 +99,13 @@ function ProveedoresPage() {
           lab={incidentFor}
           onClose={() => setIncidentFor(null)}
           onSaved={() => { setIncidentFor(null); refetch(); }}
+        />
+      )}
+      {drawerFor && (
+        <SupplierDrawer
+          lab={drawerFor}
+          onClose={() => setDrawerFor(null)}
+          onOpenIncident={() => { setIncidentFor({ id: drawerFor.id, nombre: drawerFor.nombre }); setDrawerFor(null); }}
         />
       )}
     </div>
@@ -169,6 +183,148 @@ function IncidentDialog({ lab, onClose, onSaved }: any) {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SupplierDrawer({ lab, onClose, onOpenIncident }: {
+  lab: { id: string; nombre: string; kpi: any };
+  onClose: () => void;
+  onOpenIncident: () => void;
+}) {
+  const [tab, setTab] = useState<"kpi" | "ocs" | "incidencias">("kpi");
+  const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
+
+  const { data: ocs } = useQuery({
+    queryKey: ["supplier-ocs", lab.id],
+    enabled: tab === "ocs",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ordenes_compra")
+        .select("id, folio, estado, fecha_emision, fecha_esperada, total")
+        .eq("laboratorio_id", lab.id)
+        .order("fecha_emision", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: incidencias } = useQuery({
+    queryKey: ["supplier-incidencias", lab.id],
+    enabled: tab === "incidencias",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("supplier_incidents")
+        .select("id, tipo, motivo, notas, monto, cantidad, oc_id, created_at")
+        .eq("laboratorio_id", lab.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const k = lab.kpi;
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={onClose}>
+      <div
+        className="flex h-full w-full max-w-xl flex-col overflow-hidden border-l border-border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-semibold">{lab.nombre}</h2>
+            <p className="text-xs text-muted-foreground">Detalle de proveedor</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={onOpenIncident}>
+              <AlertTriangle className="mr-1 size-3.5" /> Incidencia
+            </Button>
+            <button onClick={onClose} className="rounded-md p-1 hover:bg-muted"><X className="size-5" /></button>
+          </div>
+        </div>
+
+        <div className="flex gap-1 border-b border-border px-3 pt-2">
+          {[
+            { k: "kpi", l: "KPIs" },
+            { k: "ocs", l: "OCs" },
+            { k: "incidencias", l: "Incidencias" },
+          ].map((t) => (
+            <button
+              key={t.k}
+              onClick={() => setTab(t.k as any)}
+              className={
+                "rounded-t-md px-3 py-1.5 text-sm " +
+                (tab === (t.k as any) ? "border border-b-transparent border-border bg-card font-medium" : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {tab === "kpi" && (
+            <div className="grid grid-cols-2 gap-2">
+              <KpiTile label="Fill rate" value={`${Number(k.fill_rate_pct).toFixed(1)}%`} />
+              <KpiTile label="On-time" value={`${Number(k.on_time_pct).toFixed(1)}%`} />
+              <KpiTile label="Lead time" value={`${Number(k.lead_time_prom_dias).toFixed(1)}d`} />
+              <KpiTile label="OCs 12m" value={String(k.ocs_12m ?? 0)} />
+              <KpiTile label="Incidencias 12m" value={String(k.incidencias_12m ?? 0)} />
+              <KpiTile label="Monto 12m" value={mxn.format(Number(k.monto_12m ?? 0))} />
+            </div>
+          )}
+          {tab === "ocs" && (
+            <div className="space-y-2">
+              {(ocs ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin órdenes.</p>}
+              {(ocs ?? []).map((o: any) => (
+                <a
+                  key={o.id}
+                  href={`/admin/compras/${o.id}`}
+                  className="flex items-center justify-between gap-2 rounded-md border border-border p-2 text-sm hover:bg-muted"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{o.folio ?? o.id.slice(0, 8)}</p>
+                    <p className="text-xs text-muted-foreground">{o.fecha_emision} · {o.estado}</p>
+                  </div>
+                  <span className="shrink-0 tabular-nums">{mxn.format(Number(o.total || 0))}</span>
+                </a>
+              ))}
+            </div>
+          )}
+          {tab === "incidencias" && (
+            <div className="space-y-2">
+              {(incidencias ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin incidencias registradas.</p>}
+              {(incidencias ?? []).map((i: any) => (
+                <div key={i.id} className="rounded-md border border-border p-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase">{i.tipo}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleDateString("es-MX")}</span>
+                  </div>
+                  {i.motivo && <p className="mt-1 font-medium">{i.motivo}</p>}
+                  {i.notas && <p className="text-xs text-muted-foreground">{i.notas}</p>}
+                  {(i.monto || i.cantidad) && (
+                    <div className="mt-1 flex gap-3 text-xs text-muted-foreground tabular-nums">
+                      {i.cantidad ? <span>{i.cantidad} u</span> : null}
+                      {i.monto ? <span>{mxn.format(Number(i.monto))}</span> : null}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KpiTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border p-3">
+      <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold tabular-nums">{value}</p>
     </div>
   );
 }
