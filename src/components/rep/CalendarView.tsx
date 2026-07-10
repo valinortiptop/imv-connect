@@ -70,7 +70,13 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export default function CalendarView() {
+type CalendarViewProps = {
+  repId?: string;
+  clienteId?: string;
+  embedded?: boolean;
+};
+
+export default function CalendarView({ repId, clienteId, embedded }: CalendarViewProps = {}) {
   const fetchEvents = useServerFn(getRepCalendarEventsFn);
   const fetchReps = useServerFn(listRepresentantesFn);
 
@@ -100,13 +106,23 @@ export default function CalendarView() {
   const repsQuery = useQuery({
     queryKey: ["rep-calendar-reps"],
     queryFn: () => fetchReps(),
+    enabled: !embedded,
   });
 
   const eventsQuery = useQuery({
-    queryKey: ["rep-calendar-events", from, to, selectedRepIds.join(",")],
+    queryKey: ["rep-calendar-events", from, to, selectedRepIds.join(","), repId ?? "", clienteId ?? ""],
     queryFn: () =>
-      fetchEvents({ data: { from, to, repIds: selectedRepIds.length ? selectedRepIds : undefined } }),
+      fetchEvents({
+        data: {
+          from,
+          to,
+          repIds: !repId && selectedRepIds.length ? selectedRepIds : undefined,
+          repId,
+          clienteId,
+        },
+      }),
   });
+
 
   const filteredEvents = useMemo(() => {
     const evts = eventsQuery.data?.events ?? [];
