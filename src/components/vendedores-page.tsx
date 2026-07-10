@@ -20,8 +20,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import {
   Plus, Pencil, Trash2, UserSquare2, Mail, Phone, Percent,
-  Users, ShoppingCart, DollarSign, Search,
+  Users, ShoppingCart, DollarSign, Search, Eye,
 } from "lucide-react";
+import Rep360Drawer from "@/components/vendedores/Rep360Drawer";
 
 interface Representante {
   id: string;
@@ -52,6 +53,7 @@ export default function VendedoresPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState<Partial<Representante> | null>(null);
   const [toDelete, setToDelete] = useState<Representante | null>(null);
+  const [view360Id, setView360Id] = useState<string | null>(null);
 
   /* ── Queries ── */
   const { data: reps = [], isLoading } = useQuery({
@@ -256,7 +258,14 @@ export default function VendedoresPage() {
                   const s = stats.get(r.id) ?? { clientes: 0, pedidos: 0, ventas: 0, comision: 0 };
                   return (
                     <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.nombre}</TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          className="text-left hover:underline focus:outline-none focus:ring-2 focus:ring-primary/40 rounded"
+                          onClick={() => setView360Id(r.id)}
+                        >
+                          {r.nombre}
+                        </button>
+                      </TableCell>
                       <TableCell>
                         <div className="text-xs text-muted-foreground space-y-0.5">
                           {r.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</div>}
@@ -280,6 +289,9 @@ export default function VendedoresPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 justify-end">
+                          <Button size="icon" variant="ghost" onClick={() => setView360Id(r.id)} title="Ver 360">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => setEditing(r)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -372,6 +384,12 @@ export default function VendedoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Rep360Drawer
+        repId={view360Id}
+        open={!!view360Id}
+        onOpenChange={(o) => { if (!o) setView360Id(null); }}
+      />
     </div>
   );
 }

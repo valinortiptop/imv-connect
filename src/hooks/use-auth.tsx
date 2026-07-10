@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { logPlatformAccess } from "@/lib/access-logger";
 
 export type AppRole = "admin" | "representante" | "ventas" | "almacen" | "logistica" | "contabilidad" | "viewer";
 
@@ -75,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
 
         if (s) {
+          // Fire-and-forget: record platform access with optional geolocation.
+          // Deduped per browser session inside logPlatformAccess.
+          void logPlatformAccess(s.user?.id);
           // Defer role fetch to avoid Supabase lock contention
           setTimeout(async () => {
             try {

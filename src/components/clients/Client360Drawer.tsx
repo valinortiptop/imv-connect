@@ -27,6 +27,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ClientCalendarPanel from "@/components/clients/ClientCalendarPanel";
 
 type Props = {
   clientId: string | null;
@@ -184,11 +185,12 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
 
 
             <Tabs defaultValue="general" className="mt-6">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
                 <TabsTrigger value="pagos">Facturas</TabsTrigger>
+                <TabsTrigger value="calendario">Calendario</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-3 pt-4">
@@ -327,6 +329,10 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                     ))}
                   </ul>
                 )}
+              </TabsContent>
+
+              <TabsContent value="calendario" className="pt-4">
+                <ClientCalendarPanel clienteId={clientId!} />
               </TabsContent>
             </Tabs>
           </>
