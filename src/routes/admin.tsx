@@ -48,13 +48,13 @@ function AdminLayout() {
       <div className="flex min-h-screen w-full bg-background text-foreground">
         <AdminSidebar email={email} onSignOut={signOut} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-12 items-center gap-2 border-b border-border px-4">
+          <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4">
             <SidebarTrigger />
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="truncate text-sm font-medium text-muted-foreground">
               Panel de administración
             </span>
           </header>
-          <main className="w-full min-w-0 flex-1 px-6 py-8 overflow-x-hidden">
+          <main className="w-full min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-8">
             <Outlet />
           </main>
         </div>
