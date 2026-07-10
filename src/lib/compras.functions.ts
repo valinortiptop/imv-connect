@@ -713,14 +713,21 @@ export const bestPurchaseDate = createServerFn({ method: "POST" })
     const horizonte = new Date(today);
     horizonte.setDate(horizonte.getDate() + data.dias);
 
-    // Current bank balance
-    let bqAcc = supabase.from("bank_accounts").select("saldo_actual, empresa_id");
+    // Current bank balance (sum of live saldos across active accounts)
+    let bqAcc = supabase
+      .from("bank_accounts")
+      .select("id, saldo_inicial, empresa_id, activa")
+      .eq("activa", true);
     if (data.empresa_id) bqAcc = bqAcc.eq("empresa_id", data.empresa_id);
     const { data: accts } = await bqAcc;
-    const saldoActual = (accts ?? []).reduce(
-      (s, a: any) => s + Number(a.saldo_actual ?? 0),
-      0,
+    const saldos = await Promise.all(
+      (accts ?? []).map(async (a: any) => {
+        const { data: s } = await supabase.rpc("bank_account_saldo" as any, { _cuenta: a.id });
+        return Number(s ?? a.saldo_inicial ?? 0);
+      }),
     );
+    const saldoActual = saldos.reduce((s, v) => s + v, 0);
+
 
     // Projected movements
     let bqMov = supabase
