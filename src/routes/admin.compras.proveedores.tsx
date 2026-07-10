@@ -47,8 +47,12 @@ function ProveedoresPage() {
               </thead>
               <tbody>
                 {(data ?? []).map((p: any) => (
-                  <tr key={p.laboratorio_id} className="border-t border-border">
-                    <td className="px-3 py-2 font-medium">{p.laboratorio}</td>
+                  <tr key={p.laboratorio_id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-3 py-2 font-medium">
+                      <button className="text-left hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>
+                        {p.laboratorio}
+                      </button>
+                    </td>
                     <td className="px-3 py-2 text-right tabular-nums">{p.ocs_12m}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{Number(p.fill_rate_pct).toFixed(1)}%</td>
                     <td className="px-3 py-2 text-right tabular-nums">{Number(p.on_time_pct).toFixed(1)}%</td>
