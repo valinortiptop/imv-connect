@@ -384,6 +384,12 @@ export default function VendedoresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Rep360Drawer
+        repId={view360Id}
+        open={!!view360Id}
+        onOpenChange={(o) => { if (!o) setView360Id(null); }}
+      />
     </div>
   );
 }
