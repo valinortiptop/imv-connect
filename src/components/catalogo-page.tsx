@@ -801,29 +801,28 @@ export default function Catalogo() {
   }, [selectedProducts, mode, toast, clientId, runDownload]);
 
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="space-y-3 sm:space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Catálogo</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Catálogo</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
             {mode === "catalog"
               ? "Selecciona productos y genera un catálogo PDF descargable"
               : "Genera una lista de precios en PDF (SKU, producto, peso, precio)"}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Cliente picker — sits side-by-side with the tier picker.
-              Picking a client also auto-jumps the tier to whatever
-              that client's price_list_id points at, and turns on
-              per-product override resolution. */}
-          <div className="inline-flex items-center gap-1.5 rounded-lg border bg-card pl-2 pr-1 py-1 text-sm">
-            <UserRound className={cn("h-4 w-4", clientId ? "text-amber-500" : "text-muted-foreground")} />
+
+        {/* Controls row — stacks on mobile, wraps on desktop */}
+        <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          {/* Cliente picker */}
+          <div className="inline-flex items-center gap-1.5 rounded-lg border bg-card pl-2 pr-1 py-1 text-sm w-full sm:w-auto min-w-0">
+            <UserRound className={cn("h-4 w-4 shrink-0", clientId ? "text-amber-500" : "text-muted-foreground")} />
             <Select
               value={clientId ?? "__none__"}
               onValueChange={(v) => setClientId(v === "__none__" ? null : v)}
             >
-              <SelectTrigger className="h-8 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 min-w-[180px]">
+              <SelectTrigger className="h-8 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 flex-1 sm:flex-none sm:min-w-[180px] min-w-0">
                 <SelectValue placeholder="Sin cliente (genérico)" />
               </SelectTrigger>
               <SelectContent>
@@ -841,7 +840,7 @@ export default function Catalogo() {
               <button
                 type="button"
                 onClick={() => setClientId(null)}
-                className="rounded-md p-1 hover:bg-muted/40 text-muted-foreground"
+                className="rounded-md p-1 hover:bg-muted/40 text-muted-foreground shrink-0"
                 title="Quitar cliente"
               >
                 <X className="h-3.5 w-3.5" />
@@ -849,72 +848,78 @@ export default function Catalogo() {
             )}
           </div>
 
-          {/* Mayoreo / Menudeo / other-list picker */}
-          <div className="inline-flex rounded-lg border bg-card p-1 text-sm">
-            <button
-              type="button"
-              onClick={() => setPriceListId("mayoreo")}
-              className={cn(
-                "px-3 py-1.5 rounded-md font-medium transition-colors",
-                priceListId === "mayoreo"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Mayoreo
-            </button>
-            {priceLists.map((pl) => (
+          {/* Mayoreo / other-list picker — scrolls horizontally on mobile */}
+          <div className="-mx-3 sm:mx-0 overflow-x-auto sm:overflow-visible px-3 sm:px-0">
+            <div className="inline-flex rounded-lg border bg-card p-1 text-sm whitespace-nowrap">
               <button
-                key={pl.id}
                 type="button"
-                onClick={() => setPriceListId(pl.id)}
+                onClick={() => setPriceListId("mayoreo")}
                 className={cn(
                   "px-3 py-1.5 rounded-md font-medium transition-colors",
-                  priceListId === pl.id
+                  priceListId === "mayoreo"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {pl.name}
+                Mayoreo
               </button>
-            ))}
+              {priceLists.map((pl) => (
+                <button
+                  key={pl.id}
+                  type="button"
+                  onClick={() => setPriceListId(pl.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md font-medium transition-colors",
+                    priceListId === pl.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {pl.name}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAvailabilityOpen(true)}
-          >
-            <ClipboardList className="h-4 w-4 mr-2" />
-            Disponibilidad
-          </Button>
-        <div className="inline-flex rounded-lg border bg-card p-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setMode("catalog")}
-            className={cn(
-              "px-3 py-1.5 rounded-md font-medium transition-colors",
-              mode === "catalog" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Catálogo
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("pricelist")}
-            className={cn(
-              "px-3 py-1.5 rounded-md font-medium transition-colors",
-              mode === "pricelist" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Lista de precios
-          </button>
-        </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAvailabilityOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <ClipboardList className="h-4 w-4 mr-2" />
+              <span className="hidden xs:inline sm:inline">Disponibilidad</span>
+              <span className="xs:hidden sm:hidden">Stock</span>
+            </Button>
+            <div className="inline-flex rounded-lg border bg-card p-1 text-sm w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setMode("catalog")}
+                className={cn(
+                  "flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium transition-colors",
+                  mode === "catalog" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Catálogo
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("pricelist")}
+                className={cn(
+                  "flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium transition-colors",
+                  mode === "pricelist" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Lista
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="rounded-xl border bg-card p-4 space-y-3">
+      <div className="rounded-xl border bg-card p-3 sm:p-4 space-y-3">
         {/* Search row */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -927,9 +932,9 @@ export default function Catalogo() {
         </div>
 
         {/* Filters row */}
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <Select value={brandFilter} onValueChange={setBrandFilter}>
-            <SelectTrigger className="w-[160px] h-9 text-sm">
+            <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm min-w-0">
               <SelectValue placeholder="Todas las marcas" />
             </SelectTrigger>
             <SelectContent>
@@ -943,7 +948,7 @@ export default function Catalogo() {
           </Select>
 
           <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-            <SelectTrigger className="w-[170px] h-9 text-sm">
+            <SelectTrigger className="w-full sm:w-[170px] h-9 text-sm min-w-0">
               <SelectValue placeholder="Todos los proveedores" />
             </SelectTrigger>
             <SelectContent>
@@ -959,22 +964,20 @@ export default function Catalogo() {
           <Button
             variant={promoFilter === "promo" ? "default" : "outline"}
             size="sm"
-            className={cn("h-9", promoFilter === "promo" ? "bg-orange-600 hover:bg-orange-700 text-white" : "")}
+            className={cn("h-9 w-full sm:w-auto", promoFilter === "promo" ? "bg-orange-600 hover:bg-orange-700 text-white" : "")}
             onClick={() => setPromoFilter(promoFilter === "promo" ? "all" : "promo")}
           >
+            <BadgePercent className="h-3.5 w-3.5 mr-1.5 sm:hidden" />
             Promo
           </Button>
 
-          {/* Solo cambios — only meaningful when a client is selected.
-              Loose definition: any row whose effective price differs
-              from base for this client (override OR tier shift). */}
           {clientId && (
             <>
               <Button
                 variant={showOnlyChanges ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-9 gap-1.5",
+                  "h-9 gap-1.5 w-full sm:w-auto",
                   showOnlyChanges && "bg-amber-500 hover:bg-amber-600 text-white",
                 )}
                 onClick={() => setShowOnlyChanges((v) => !v)}
@@ -985,7 +988,7 @@ export default function Catalogo() {
               </Button>
               <Badge
                 variant="outline"
-                className="h-9 px-2.5 gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/40"
+                className="h-9 px-2.5 gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/40 justify-center w-full sm:w-auto"
                 title="Productos cuyo precio cambia respecto al catálogo base para este cliente"
               >
                 <span className="tabular-nums font-bold">{personalizedCount}</span>
@@ -994,14 +997,11 @@ export default function Catalogo() {
             </>
           )}
 
-          <div className="flex gap-2 ml-auto">
+          <div className="col-span-2 flex flex-wrap gap-2 sm:ml-auto sm:col-span-1">
             {clientId && selected.size > 0 && (
               <Button
                 size="sm"
                 onClick={() => {
-                  // Pre-build the EditableProduct[] from the currently
-                  // selected products. Each one carries its tier
-                  // price so the editor can show the right context.
                   const items: EditableProduct[] = filtered
                     .filter((p) => selected.has(p.id))
                     .map((p) => ({
@@ -1015,17 +1015,18 @@ export default function Catalogo() {
                   if (items.length === 0) return;
                   setEditorProducts(items);
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-white gap-1.5"
+                className="bg-amber-500 hover:bg-amber-600 text-white gap-1.5 flex-1 sm:flex-none"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                Editar precios ({selected.size})
+                Editar ({selected.size})
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={selectAll}>
-              Seleccionar todos ({filtered.length})
+            <Button variant="outline" size="sm" onClick={selectAll} className="flex-1 sm:flex-none">
+              <span className="sm:hidden">Todos ({filtered.length})</span>
+              <span className="hidden sm:inline">Seleccionar todos ({filtered.length})</span>
             </Button>
             {selected.size > 0 && (
-              <Button variant="ghost" size="sm" onClick={deselectAll}>
+              <Button variant="ghost" size="sm" onClick={deselectAll} className="flex-1 sm:flex-none">
                 <X className="h-4 w-4 mr-1" />
                 Limpiar ({selected.size})
               </Button>
@@ -1033,6 +1034,7 @@ export default function Catalogo() {
           </div>
         </div>
       </div>
+
 
       {/* Product grid */}
       {isLoading ? (
@@ -1322,37 +1324,48 @@ export default function Catalogo() {
 
       {/* Sticky bottom bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t p-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="text-sm">
-              <span className="font-semibold">{selected.size}</span> productos seleccionados
-              {" · "}
-              <span className="text-muted-foreground">
-                {mode === "catalog"
-                  ? `${Math.ceil(selected.size / 6)} páginas`
-                  : `${Math.ceil(selected.size / 32)} páginas · lista de precios`}
-              </span>
+        <>
+          {/* Spacer so the last row of cards is never hidden behind the bar */}
+          <div aria-hidden className="h-24 sm:h-20" />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 px-3 py-3 backdrop-blur sm:px-4"
+            style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+          >
+            <div className="max-w-7xl mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs sm:text-sm min-w-0">
+                <span className="font-semibold">{selected.size}</span> seleccionados
+                <span className="text-muted-foreground">
+                  {" · "}
+                  {mode === "catalog"
+                    ? `${Math.ceil(selected.size / 6)} pág.`
+                    : `${Math.ceil(selected.size / 32)} pág. · lista de precios`}
+                </span>
+              </div>
+              <Button
+                className="gradient-button w-full sm:w-auto"
+                onClick={handleGenerate}
+                disabled={generating}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span className="truncate">{progress || "Generando..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    <span className="sm:hidden">Descargar PDF</span>
+                    <span className="hidden sm:inline">
+                      {mode === "catalog" ? "Descargar catálogo PDF" : "Descargar lista de precios"}
+                    </span>
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              className="gradient-button"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {progress || "Generando..."}
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  {mode === "catalog" ? "Descargar catálogo PDF" : "Descargar lista de precios"}
-                </>
-              )}
-            </Button>
           </div>
-        </div>
+        </>
       )}
+
 
       {/* Confirm pre-download — fires only when a client is active so
           the staff can sanity-check who they're generating for. The
