@@ -3533,6 +3533,9 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          credit_amount: number
+          damaged_batch_id: string | null
+          faltante_destino: string | null
           id: string
           notes: string | null
           order_id: string
@@ -3540,10 +3543,15 @@ export type Database = {
           product_id: string | null
           quantity: number
           reason: string | null
+          tipo: string | null
+          unit_price: number | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          credit_amount?: number
+          damaged_batch_id?: string | null
+          faltante_destino?: string | null
           id?: string
           notes?: string | null
           order_id: string
@@ -3551,10 +3559,15 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           reason?: string | null
+          tipo?: string | null
+          unit_price?: number | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          credit_amount?: number
+          damaged_batch_id?: string | null
+          faltante_destino?: string | null
           id?: string
           notes?: string | null
           order_id?: string
@@ -3562,8 +3575,73 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           reason?: string | null
+          tipo?: string | null
+          unit_price?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_adjustments_damaged_batch_id_fkey"
+            columns: ["damaged_batch_id"]
+            isOneToOne: false
+            referencedRelation: "damaged_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "pedido_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_order_item_breakdown"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_adjustments_product_id_fkey"
             columns: ["product_id"]
