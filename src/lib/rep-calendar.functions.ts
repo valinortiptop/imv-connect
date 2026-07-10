@@ -25,12 +25,15 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         from: z.string(),
         to: z.string(),
         repIds: z.array(z.string()).optional(),
+        repId: z.string().optional(),
+        clienteId: z.string().optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }): Promise<{ events: CalendarEvent[] }> => {
     const supabase = context.supabase as any;
-    const { from, to, repIds } = data;
+    const { from, to, clienteId } = data;
+    const repIds = data.repId ? [data.repId] : data.repIds;
 
     const [repsRes, clientsRes, visitsRes, agreementsRes, callsRes, tripsRes, ordersRes] = await Promise.all([
       supabase.from("representantes").select("id, nombre"),
@@ -42,6 +45,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
           .gte("check_in_at", from)
           .lte("check_in_at", to);
         if (repIds?.length) q = q.in("representante_id", repIds);
+        if (clienteId) q = q.eq("cliente_id", clienteId);
         return q;
       })(),
       supabase
@@ -65,6 +69,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
           .gte("created_at", from)
           .lte("created_at", to);
         if (repIds?.length) q = q.in("representante_id", repIds);
+        if (clienteId) q = q.eq("cliente_id", clienteId);
         return q;
       })(),
     ]);
