@@ -525,10 +525,11 @@ export const regenerarAlertasCompras = createServerFn({ method: "POST" })
       }
     }
 
-
+    if (inserts.length > 0) {
       const { error } = await supabase.from("purchase_alerts").insert(inserts);
       if (error) throw new Error(error.message);
     }
+
 
     return { generadas: inserts.length };
   });
