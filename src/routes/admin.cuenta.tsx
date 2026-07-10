@@ -72,16 +72,16 @@ function CuentaPage() {
           <CardDescription>Datos básicos de tu sesión.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-muted-foreground">User ID</span>
-            <span className="font-mono text-xs">{userId}</span>
+            <span className="font-mono text-xs break-all text-right">{userId}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-muted-foreground">Email actual</span>
-            <span>{email}</span>
+            <span className="break-all text-right">{email}</span>
           </div>
           {createdAt && (
-            <div className="flex justify-between">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="text-muted-foreground">Creado</span>
               <span>{new Date(createdAt).toLocaleDateString()}</span>
             </div>

@@ -1,77 +1,81 @@
-# Compras — Coverage Audit & Gap Closure
+# Mobile Responsiveness — Main Admin App
 
-## Where we stand
+Match the treatment we did in the rep panel: shell adapts to phones, tables collapse into stacked cards below `sm`, headers/toolbars reflow, spacing tightens.
 
-Most of the 13 requirements are shipped. Below is the honest scorecard, followed by the work needed to fully close it out.
+## Scope
 
-**✅ Fully done (7):**
-- (2) Inventory admin — física/disp/comprometido/tránsito, cobertura, consumo, seguridad, reorden
-- (3) Órdenes de compra — auto-propuesta, editar, historial, estatus, recepción total/parcial → entradas de almacén
-- (4) Evaluación de proveedores — lead time, on-time, fill rate, incidencias, drawer con KPIs
-- (6) Historial de costos — trigger auto, variación %, página de consulta *(falta la alerta por umbral)*
-- (8) Recomendación comercial caducidades — clientes, frecuencia, última compra, vendedor
-- (10) Baja rotación — buckets 60/90/180, valor inmovilizado, días sin venta
-- (13) Asistente IA — refinamiento de planeación + insight narrativo del dashboard
+**Shell (applies to every admin route):**
+- `src/routes/admin.tsx` — header, main padding, mobile trigger.
+- `src/components/admin-sidebar.tsx` — offcanvas drawer on mobile, sticky trigger always visible.
 
-**🟡 Parcial (5):**
-- (1) Planeación — falta considerar **promociones activas/programadas** y **stock máximo** en la fórmula
-- (7) Caducidades — vista con thresholds hardcoded (30/90d) en lugar de leer `purchase_config`
-- (9) Flujo de efectivo — sólo proyección de saldo; falta **presupuesto**, **mejor fecha de compra** y **alerta de compromiso**
-- (11) Centro de alertas — 4 de 9 tipos generados; falta **responsable/prioridad configurable**
-- (12) Dashboard — falta **vs presupuesto**, **compras por laboratorio**, **conteo de lotes por vencer**
+**Top 15 routes to hand-tune:**
+1. `admin.index` (dashboard)
+2. `admin.pedidos` + `admin.pedidos.$id`
+3. `admin.clientes` + `admin.clientes.$id`
+4. `admin.inventario`
+5. `admin.compras.index`
+6. `admin.cobranza`
+7. `admin.facturas` + `admin.facturas.$id`
+8. `admin.productos`
+9. `admin.catalogo`
+10. `admin.promos`
+11. `admin.tareas`
+12. `admin.almacen`
+13. `admin.bancos.index`
+14. `admin.prospectos`
+15. `admin.cuenta`
 
-**❌ Faltante (1):**
-- (5) Control de faltantes — tablas `shortage_reasons` / `shortage_events` existen pero **no hay UI ni server fn**; usuario no puede capturar ni ver estadísticas
+Any other admin route inherits the shell + shared table/card primitive automatically, but is not individually hand-tuned in this pass.
 
----
+## Approach
 
-## Plan de cierre (5 tandas)
+### 1. Shared responsive primitives (new)
 
-### Fase 1 — Control de faltantes (req #5)
-- `admin.compras.faltantes.tsx`: pantalla con dos tabs
-  - **Registrar**: form (producto, cantidad no surtida, motivo del catálogo, pedido opcional, notas) → insert en `shortage_events`
-  - **Estadísticas**: agregado por `reason_id` con % y tendencia últimos 90d, top productos afectados
-- `admin.compras.faltantes.motivos.tsx`: CRUD del catálogo `shortage_reasons` (activo/inactivo, nombre, descripción)
-- Server fns en `compras.functions.ts`: `listShortageReasons`, `upsertShortageReason`, `logShortageEvent`, `shortageStats`
-- Sidebar: nueva entrada "Faltantes" bajo Compras
+Create `src/components/ui/responsive-table.tsx` exporting:
+- `<ResponsiveTable>` — renders a real `<table>` at `sm+`, and a stacked card list under `sm`.
+- Column config: `{ key, label, render?, priority?: 'primary' | 'secondary' }`. Primary column becomes the card title; the rest become label/value rows.
+- Row action slot (`renderActions`) rendered as a footer strip in card mode, action cell in table mode.
 
-### Fase 2 — Alertas faltantes (req #11) + Costos (req #6)
-Ampliar `regenerate-compras-alerts.ts` y `compras.functions.ts` con 4 tipos:
-- **`incremento_costo`** — leer `cost_history` últimos 30d, comparar contra `purchase_config.costo_variacion_umbral_pct`
-- **`prov_incumple`** — proveedores con fill-rate < 85% o on-time < 80% en 90d (desde `v_supplier_kpis`)
-- **`oc_vencida`** — OCs con `fecha_esperada < hoy` y estado ≠ `recibida`
-- **`promo_sin_stock`** — promociones activas cuya cobertura de stock proyectado < duración de la promo
-- Agregar columna `responsable_user_id` + `prioridad` a `purchase_alerts`; página `admin.compras.alertas.tsx` con filtros y asignación
+Create `src/components/ui/page-header.tsx`:
+- Responsive header row: title + actions. Uses the grid pattern from responsive-layout knowledge (`grid-cols-[minmax(0,1fr)_auto]` on mobile → `flex` at `sm`). Actions wrap to a second row on mobile.
 
-### Fase 3 — Flujo de efectivo (req #9)
-- Nueva tabla `purchase_budgets` (empresa_id, mes, monto_mxn) + CRUD simple en `admin.compras.presupuesto.tsx`
-- Server fn `bestPurchaseDate(ocId)`: cruza monto de OC × `bank_movements` proyectados × compromisos → devuelve fecha sugerida con mayor holgura en próximos 30d
-- Alerta nueva `flujo_comprometido` cuando una OC borrador supere el saldo proyectado en su semana
-- En `admin.compras.$id.tsx`: chip "Sugerimos programar pago: {fecha}" antes de emitir
+Create `src/components/ui/filter-bar.tsx`:
+- Wraps toolbar filters: horizontally scrolls on mobile (`flex flex-nowrap overflow-x-auto -mx-4 px-4 snap-x`), collapses into a full-width stack when the caller opts in.
 
-### Fase 4 — Planeación completa (req #1)
-- Extender `v_compras_planeacion`:
-  - Sumar `product_promotions.uplift_pct` cuando promo activa/programada cae en la ventana de cobertura
-  - Considerar `stock_max` como techo del sugerido (no proponer arriba del máximo configurado)
-- Leer `purchase_config` en las vistas `v_caducidades` y `v_baja_rotacion` (thresholds dinámicos)
-- Página `admin.compras.configuracion.tsx`: editar `purchase_config` (thresholds, umbrales, días objetivo)
+### 2. Shell changes
 
-### Fase 5 — Dashboard gerencial (req #12)
-En `admin.compras.index.tsx`:
-- KPI "Compras del mes vs presupuesto" (bar chart mes actual/anterior con línea de meta)
-- Widget "Compras por laboratorio" (top 10, últimos 90d)
-- Split "Inventario crítico / Sobreinventario" con MXN separado
-- Card caducidades: agregar "N lotes por vencer" además del monto
+`src/routes/admin.tsx`:
+- Header: keep `SidebarTrigger` (already visible with offcanvas).
+- Main: `px-3 sm:px-6 py-4 sm:py-8`.
+- Add a bottom safe-area padding so the sidebar drawer overlay doesn't clip content.
 
-## Technical notes
+`admin-sidebar.tsx`:
+- Already `collapsible="offcanvas"` — good for mobile. Verify the drawer closes on route change (add `onOpenChange` reset via `useEffect` on pathname if needed).
+- Tighten section labels and menu button font sizes at mobile.
 
-- Nuevas tablas siguen el patrón obligatorio: `CREATE TABLE` → `GRANT SELECT,INSERT,UPDATE,DELETE ... TO authenticated` + `GRANT ALL ... TO service_role` → `ENABLE RLS` → `CREATE POLICY`
-- Todas las alertas nuevas usan el enum documentado en `purchase_alerts.tipo` (comentario ya lista los 9 tipos)
-- AI (req #13) ya está; los nuevos datos (presupuesto, faltantes, flujo) se agregarán al contexto de `aiInsightCompras` automáticamente porque lee de las vistas
+### 3. Per-route hand-tuning pattern
 
-## Questions before I start
+For each of the 15 routes:
+- Replace ad-hoc `<table>` blocks with `<ResponsiveTable>` (columns declared once).
+- Wrap top-of-page title/actions with `<PageHeader>`.
+- Wrap filter/search toolbars with `<FilterBar>`.
+- Convert grid stat cards to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` with condensed padding on mobile.
+- Detail pages (`pedidos.$id`, `clientes.$id`, `facturas.$id`): 2-column layouts become single column under `md`; tab strips become horizontally scrollable.
+- Dialogs / sheets: verify `max-h-[90vh] overflow-y-auto` and full-width on mobile.
 
-1. ¿Empezamos por **Fase 1 (faltantes)** que es el único requisito completamente faltante, o prefieres que aborde todo el listado en orden?
-2. Para presupuesto de compras (Fase 3) — ¿un monto global por mes/empresa, o desglosado por laboratorio/proveedor?
-3. Para "responsable" de alerta (Fase 2) — ¿asignación manual, o auto-asignar por rol (ej: compras=usuario X)?
+### 4. Global CSS tweaks
 
+`src/styles.css`:
+- Add a utility `.no-scrollbar` for horizontally-scrolling toolbars.
+- Ensure body `overflow-x-hidden` to prevent stray horizontal scroll on phones.
+
+## Non-goals
+
+- Not redesigning any module's information architecture.
+- Not touching business logic, queries, or server functions.
+- Contabilidad, admin utilities, gandalf, estado-apis, and other lower-traffic pages are not hand-tuned this pass — they inherit the shell only.
+
+## Verification
+
+- `bunx tsgo --noEmit` after edits.
+- Playwright screenshot check at 390×844 (iPhone) on: `/admin`, `/admin/pedidos`, `/admin/clientes`, `/admin/inventario`, `/admin/compras`, `/admin/cobranza` — confirm no horizontal scroll, drawer opens/closes, tables render as cards.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Calculator, ShoppingCart, Users, Package, Warehouse,
   ClipboardList, Settings, Truck, Tag, TrendingUp, Route as RouteIcon, BookOpen,
@@ -22,6 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 type NavItem = { key: string; label: string; url: string; icon: typeof LayoutDashboard; exact?: boolean };
@@ -145,6 +146,13 @@ export function AdminSidebar({
 }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { canAccessKey, loading } = usePermissions();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const isItemActive = (url: string, exact?: boolean) =>
     exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
