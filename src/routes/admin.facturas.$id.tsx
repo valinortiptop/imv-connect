@@ -335,11 +335,11 @@ function FacturaDetalle() {
           </div>
 
 
-          <div className="rounded-md border border-border bg-card p-4">
+          <div className="rounded-md border border-border bg-card p-3 sm:p-4">
             <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Pagos</h2>
 
             {data.estado !== "cancelada" && data.estado !== "pagada" && (
-              <div className="mb-4 grid gap-2 sm:grid-cols-5">
+              <div className="mb-4 grid gap-2 grid-cols-2 sm:grid-cols-5">
                 <input
                   type="number" step="0.01" min="0"
                   value={pagoMonto} onChange={(e) => setPagoMonto(e.target.value)}
@@ -354,7 +354,7 @@ function FacturaDetalle() {
                 </select>
                 <input
                   value={pagoRef} onChange={(e) => setPagoRef(e.target.value)}
-                  placeholder="Referencia" className="input"
+                  placeholder="Referencia" className="input col-span-2 sm:col-span-1"
                 />
                 <input
                   type="date" value={pagoFecha}
@@ -370,42 +370,70 @@ function FacturaDetalle() {
               </div>
             )}
 
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 text-left">Fecha</th>
-                  <th className="py-2 text-left">Método</th>
-                  <th className="py-2 text-left">Referencia</th>
-                  <th className="py-2 text-right">Monto</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.pagos
-                  .slice()
-                  .sort((a, b) => b.fecha.localeCompare(a.fecha))
-                  .map((p) => (
-                    <tr key={p.id} className="border-t border-border">
-                      <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
-                      <td className="py-2 text-xs">{p.metodo}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{p.referencia ?? "—"}</td>
-                      <td className="py-2 text-right font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</td>
-                      <td className="py-2 text-right">
-                        <button
-                          onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
-                          className="text-xs text-destructive hover:underline"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                {data.pagos.length === 0 && (
-                  <tr><td colSpan={5} className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</td></tr>
-                )}
-              </tbody>
-            </table>
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 text-left">Fecha</th>
+                    <th className="py-2 text-left">Método</th>
+                    <th className="py-2 text-left">Referencia</th>
+                    <th className="py-2 text-right">Monto</th>
+                    <th className="py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.pagos
+                    .slice()
+                    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+                    .map((p) => (
+                      <tr key={p.id} className="border-t border-border">
+                        <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
+                        <td className="py-2 text-xs">{p.metodo}</td>
+                        <td className="py-2 text-xs text-muted-foreground">{p.referencia ?? "—"}</td>
+                        <td className="py-2 text-right font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</td>
+                        <td className="py-2 text-right">
+                          <button
+                            onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {data.pagos.length === 0 && (
+                    <tr><td colSpan={5} className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="sm:hidden divide-y divide-border">
+              {data.pagos.length === 0 ? (
+                <li className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</li>
+              ) : data.pagos
+                .slice()
+                .sort((a, b) => b.fecha.localeCompare(a.fecha))
+                .map((p) => (
+                  <li key={p.id} className="py-2 first:pt-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm">{new Date(p.fecha).toLocaleDateString("es-MX")}</span>
+                      <span className="text-sm font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                      <span>{p.metodo} · {p.referencia ?? "—"}</span>
+                      <button
+                        onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
+                        className="text-destructive hover:underline"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+            </ul>
           </div>
+
         </div>
 
         <div className="space-y-4">
