@@ -180,6 +180,157 @@ export const registerSupplierIncident = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ── Faltantes (shortage capture + stats) ──────────────────────────
+export const listShortageReasons = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("shortage_reasons")
+      .select("id, codigo, label, activo, created_at")
+      .order("label", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { motivos: data ?? [] };
+  });
+
+export const upsertShortageReason = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        codigo: z.string().min(2).max(50),
+        label: z.string().min(2).max(120),
+        activo: z.boolean().default(true),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const payload = { codigo: data.codigo, label: data.label, activo: data.activo };
+    if (data.id) {
+      const { error } = await context.supabase.from("shortage_reasons").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, id: data.id };
+    }
+    const { data: row, error } = await context.supabase
+      .from("shortage_reasons")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: (row as any).id };
+  });
+
+export const deleteShortageReason = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("shortage_reasons").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const logShortageEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        producto_id: z.string().uuid(),
+        motivo_id: z.string().uuid(),
+        cantidad: z.number().positive(),
+        cliente_id: z.string().uuid().nullable().optional(),
+        pedido_id: z.string().uuid().nullable().optional(),
+        fecha: z.string().optional(),
+        notas: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { error } = await supabase.from("shortage_events").insert({
+      producto_id: data.producto_id,
+      motivo_id: data.motivo_id,
+      cantidad: data.cantidad,
+      cliente_id: data.cliente_id ?? null,
+      pedido_id: data.pedido_id ?? null,
+      fecha: data.fecha ?? new Date().toISOString().slice(0, 10),
+      notas: data.notas ?? null,
+      created_by: userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listShortageEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ days: z.number().int().min(1).max(365).default(90) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const since = new Date();
+    since.setDate(since.getDate() - data.days);
+    const { data: rows, error } = await context.supabase
+      .from("shortage_events")
+      .select(
+        "id, fecha, cantidad, notas, producto:productos(id, sku, nombre), motivo:shortage_reasons(id, label), cliente:clientes(id, nombre_comercial, razon_social)",
+      )
+      .gte("fecha", since.toISOString().slice(0, 10))
+      .order("fecha", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return { eventos: rows ?? [] };
+  });
+
+export const shortageStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ days: z.number().int().min(1).max(365).default(90) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const since = new Date();
+    since.setDate(since.getDate() - data.days);
+    const sinceIso = since.toISOString().slice(0, 10);
+
+    const { data: rows, error } = await context.supabase
+      .from("shortage_events")
+      .select("cantidad, fecha, motivo:shortage_reasons(id, label), producto:productos(id, sku, nombre)")
+      .gte("fecha", sinceIso)
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const byReason = new Map<string, { label: string; eventos: number; unidades: number }>();
+    const byProduct = new Map<string, { sku: string; nombre: string; eventos: number; unidades: number }>();
+    let totalEventos = 0;
+    let totalUnidades = 0;
+    for (const r of (rows ?? []) as any[]) {
+      const qty = Number(r.cantidad ?? 0);
+      totalEventos += 1;
+      totalUnidades += qty;
+      const mLabel = r.motivo?.label ?? "Sin motivo";
+      const mId = r.motivo?.id ?? "none";
+      const cur = byReason.get(mId) ?? { label: mLabel, eventos: 0, unidades: 0 };
+      cur.eventos += 1;
+      cur.unidades += qty;
+      byReason.set(mId, cur);
+      if (r.producto?.id) {
+        const pId = r.producto.id;
+        const cp = byProduct.get(pId) ?? {
+          sku: r.producto.sku ?? "",
+          nombre: r.producto.nombre ?? "",
+          eventos: 0,
+          unidades: 0,
+        };
+        cp.eventos += 1;
+        cp.unidades += qty;
+        byProduct.set(pId, cp);
+      }
+    }
+
+    const motivos = Array.from(byReason.values()).sort((a, b) => b.eventos - a.eventos);
+    const productos = Array.from(byProduct.values()).sort((a, b) => b.unidades - a.unidades).slice(0, 20);
+    return { totalEventos, totalUnidades, motivos, productos };
+  });
+
+
 // Regenerate purchase alerts by scanning planeacion + caducidades.
 // Clears previous auto-generated (unresolved) alerts and inserts fresh ones.
 export const regenerarAlertasCompras = createServerFn({ method: "POST" })
