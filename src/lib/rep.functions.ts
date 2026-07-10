@@ -913,12 +913,26 @@ export const quickInventoryLookupFn = createServerFn({ method: "POST" })
     const { data: rows } = await context.supabase
       .from("productos")
       .select(
-        "id, nombre, sku, marca, laboratorio_id, precio_lista, stock_disponible, stock_en_camino, stock_comprometido, imagen_url",
+        "id, nombre, sku, marca, laboratorio_id, precio_lista, stock_comprometido, imagen_url",
       )
       .eq("activo", true)
       .or(`nombre.ilike.${term},sku.ilike.${term},marca.ilike.${term}`)
       .limit(30);
     const productIds = (rows ?? []).map((r: any) => r.id);
+
+    // Sum real availability across warehouses from `stock` table
+    const stockMap = new Map<string, number>();
+    if (productIds.length > 0) {
+      const { data: stockRows } = await context.supabase
+        .from("stock")
+        .select("producto_id, cantidad")
+        .in("producto_id", productIds);
+      for (const s of stockRows ?? []) {
+        if (!s.producto_id) continue;
+        stockMap.set(s.producto_id, (stockMap.get(s.producto_id) ?? 0) + Number(s.cantidad ?? 0));
+      }
+    }
+
     let entryMap = new Map<string, { qty: number; eta: string | null }>();
     if (productIds.length > 0) {
       const { data: entries } = await context.supabase
@@ -938,11 +952,14 @@ export const quickInventoryLookupFn = createServerFn({ method: "POST" })
     }
     const enriched = (rows ?? []).map((p: any) => ({
       ...p,
+      stock_disponible: stockMap.get(p.id) ?? 0,
+      stock_en_camino: entryMap.get(p.id)?.qty ?? 0,
       transit_qty: entryMap.get(p.id)?.qty ?? 0,
       transit_eta: entryMap.get(p.id)?.eta ?? null,
     }));
     return { productos: enriched };
   });
+
 
 /* ─── FASE 2 ─────────────────────────────────────────────────────────────── */
 
