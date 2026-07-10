@@ -277,35 +277,37 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
               })}
             </div>
           </div>
-          <div>
-            <div className="text-xs font-medium mb-1 text-muted-foreground">Representantes</div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setSelectedRepIds([])}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-xs",
-                  selectedRepIds.length === 0 ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                )}
-              >
-                Todos
-              </button>
-              {(repsQuery.data?.representantes ?? []).map((r) => {
-                const active = selectedRepIds.includes(r.id);
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => toggleRep(r.id)}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs",
-                      active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                    )}
-                  >
-                    {r.nombre}
-                  </button>
-                );
-              })}
+          {!embedded && (
+            <div>
+              <div className="text-xs font-medium mb-1 text-muted-foreground">Representantes</div>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedRepIds([])}
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-xs",
+                    selectedRepIds.length === 0 ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                  )}
+                >
+                  Todos
+                </button>
+                {(repsQuery.data?.representantes ?? []).map((r) => {
+                  const active = selectedRepIds.includes(r.id);
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => toggleRep(r.id)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs",
+                        active ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                      )}
+                    >
+                      {r.nombre}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
