@@ -181,32 +181,65 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-xl font-semibold md:text-2xl">
-            <CalendarDays className="h-5 w-5 shrink-0 text-primary md:h-6 md:w-6" /> Calendario
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Visitas, acuerdos, llamadas, pedidos y entregas.
-          </p>
+      {!embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-2 text-xl font-semibold md:text-2xl">
+              <CalendarDays className="h-5 w-5 shrink-0 text-primary md:h-6 md:w-6" /> Calendario
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Visitas, acuerdos, llamadas, pedidos y entregas.
+            </p>
+          </div>
+          <div className="flex w-full items-center gap-2 md:w-auto">
+            <Button variant="outline" size="sm" onClick={() => step(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCursor(startOfDay(new Date()))} className="flex-1 md:flex-none">
+              Hoy
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => step(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className="ml-auto flex rounded-md border md:ml-2">
+              {(["month", "week", "day"] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs capitalize",
+                    view === v ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                  )}
+                >
+                  {v === "month" ? "Mes" : v === "week" ? "Sem" : "Día"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex w-full items-center gap-2 md:w-auto">
+      )}
+
+      {embedded && (
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => step(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCursor(startOfDay(new Date()))} className="flex-1 md:flex-none">
+          <Button variant="outline" size="sm" onClick={() => setCursor(startOfDay(new Date()))}>
             Hoy
           </Button>
           <Button variant="outline" size="sm" onClick={() => step(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <div className="ml-auto flex rounded-md border md:ml-2">
+          <span className="ml-1 text-sm font-medium capitalize">
+            {view === "month" ? monthLabel : view === "day" ? dayLabel : `Semana`}
+          </span>
+          <div className="ml-auto flex rounded-md border">
             {(["month", "week", "day"] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={cn(
-                  "px-3 py-1.5 text-xs capitalize",
+                  "px-2.5 py-1 text-xs capitalize",
                   view === v ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                 )}
               >
@@ -215,9 +248,10 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
             ))}
           </div>
         </div>
-      </div>
+      )}
 
-      <AIPageInsights module="rep-calendario" title="Análisis de agenda" />
+      {!embedded && <AIPageInsights module="rep-calendario" title="Análisis de agenda" />}
+
 
       {/* Filters */}
       <Card>
