@@ -120,8 +120,77 @@ function ComprasDashboard() {
         <KpiCard icon={<DollarSign className="size-5" />} label="Compras del mes" value={mxn.format(kpis?.comprasMes ?? 0)} />
         <KpiCard icon={<Package className="size-5" />} label="Productos críticos" value={String(kpis?.criticos ?? 0)} accent="rose" />
         <KpiCard icon={<TrendingDown className="size-5" />} label="A sugerir compra" value={String(kpis?.sugerir ?? 0)} accent="amber" />
-        <KpiCard icon={<Clock className="size-5" />} label="Caducidad crítica" value={mxn.format(kpis?.caducRojo ?? 0)} accent="rose" />
+        <KpiCard icon={<Clock className="size-5" />} label="Caducidad crítica" value={mxn.format(kpis?.caducRojo ?? 0)} sub={`${kpis?.lotesPorVencer ?? 0} lotes`} accent="rose" />
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Presupuesto vs comprometido */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Presupuesto del mes</h2>
+            <Link to="/admin/compras/presupuesto" className="text-xs text-primary hover:underline">Editar</Link>
+          </div>
+          {(() => {
+            const budget = Number(budgetActual ?? 0);
+            const spent = Number(kpis?.comprasMes ?? 0);
+            const pct = budget > 0 ? (spent / budget) * 100 : 0;
+            const color = pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
+            return (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-2xl font-bold tabular-nums">{mxn.format(spent)}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">/ {mxn.format(budget)}</span>
+                </div>
+                {budget > 0 ? (
+                  <>
+                    <div className="h-2 overflow-hidden rounded bg-muted">
+                      <div className={`h-full ${color}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {pct.toFixed(0)}% del presupuesto · {mxn.format(Math.max(0, budget - spent))} disponible
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Sin presupuesto configurado.{" "}
+                    <Link to="/admin/compras/presupuesto" className="text-primary hover:underline">Configurar</Link>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Compras por laboratorio */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Compras por laboratorio (90d)</h2>
+            <span className="text-xs text-muted-foreground">Top 10</span>
+          </div>
+          {(porLab ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin órdenes en los últimos 90 días.</p>
+          ) : (() => {
+            const max = Math.max(...(porLab ?? []).map((r: any) => r.total));
+            return (
+              <div className="space-y-1.5">
+                {(porLab ?? []).map((r: any) => (
+                  <div key={r.nombre} className="space-y-0.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="truncate">{r.nombre}</span>
+                      <span className="tabular-nums text-muted-foreground">{mxn.format(r.total)}</span>
+                    </div>
+                    <div className="h-1 overflow-hidden rounded bg-muted">
+                      <div className="h-full bg-primary/70" style={{ width: `${(r.total / max) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4">
