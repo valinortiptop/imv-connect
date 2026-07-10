@@ -5974,6 +5974,54 @@ export type Database = {
           },
         ]
       }
+      purchase_budgets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          empresa_id: string | null
+          id: string
+          mes: string
+          monto_mxn: number
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string | null
+          id?: string
+          mes: string
+          monto_mxn?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string | null
+          id?: string
+          mes?: string
+          monto_mxn?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "purchase_budgets_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_config: {
         Row: {
           clave: string
