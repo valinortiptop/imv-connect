@@ -79,7 +79,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
           .limit(50),
         supabase
           .from("product_promotions")
-          .select("id, name, discount_pct, valid_from, valid_to, active")
+          .select("id, promo_name, description, valid_from, valid_to, active")
           .eq("product_id", productId)
           .eq("active", true),
         supabase
