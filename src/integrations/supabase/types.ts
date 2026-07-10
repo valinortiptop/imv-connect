@@ -6219,6 +6219,60 @@ export type Database = {
         }
         Relationships: []
       }
+      rep_access_events: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          has_location: boolean
+          id: string
+          lat: number | null
+          lng: number | null
+          representante_id: string | null
+          signed_in_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          has_location?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          representante_id?: string | null
+          signed_in_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          has_location?: boolean
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          representante_id?: string | null
+          signed_in_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_access_events_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_access_events_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_achievements: {
         Row: {
           badge_code: string
