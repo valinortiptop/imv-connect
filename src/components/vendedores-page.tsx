@@ -20,8 +20,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import {
   Plus, Pencil, Trash2, UserSquare2, Mail, Phone, Percent,
-  Users, ShoppingCart, DollarSign, Search,
+  Users, ShoppingCart, DollarSign, Search, Eye,
 } from "lucide-react";
+import Rep360Drawer from "@/components/vendedores/Rep360Drawer";
 
 interface Representante {
   id: string;
