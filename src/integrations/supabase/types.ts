@@ -5794,7 +5794,9 @@ export type Database = {
           laboratorio_id: string | null
           oc_id: string | null
           payload: Json | null
+          prioridad: string | null
           producto_id: string | null
+          responsable_user_id: string | null
           resuelto: boolean
           resuelto_at: string | null
           resuelto_por: string | null
@@ -5809,7 +5811,9 @@ export type Database = {
           laboratorio_id?: string | null
           oc_id?: string | null
           payload?: Json | null
+          prioridad?: string | null
           producto_id?: string | null
+          responsable_user_id?: string | null
           resuelto?: boolean
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -5824,7 +5828,9 @@ export type Database = {
           laboratorio_id?: string | null
           oc_id?: string | null
           payload?: Json | null
+          prioridad?: string | null
           producto_id?: string | null
+          responsable_user_id?: string | null
           resuelto?: boolean
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -5953,11 +5959,66 @@ export type Database = {
             referencedColumns: ["producto_id"]
           },
           {
+            foreignKeyName: "purchase_alerts_responsable_user_id_fkey"
+            columns: ["responsable_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "purchase_alerts_resuelto_por_fkey"
             columns: ["resuelto_por"]
             isOneToOne: false
             referencedRelation: "v_usuarios_roles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      purchase_budgets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          empresa_id: string | null
+          id: string
+          mes: string
+          monto_mxn: number
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string | null
+          id?: string
+          mes: string
+          monto_mxn?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string | null
+          id?: string
+          mes?: string
+          monto_mxn?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "purchase_budgets_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -9080,11 +9141,13 @@ export type Database = {
           precio_lista: number | null
           producto_id: string | null
           promo: boolean | null
+          promo_activa: boolean | null
           punto_reorden: number | null
           sku: string | null
           stock_comprometido: number | null
           stock_disponible: number | null
           stock_fisico: number | null
+          stock_max: number | null
           stock_min: number | null
           tendencia_pct: number | null
           ventas_30d: number | null

@@ -48,7 +48,7 @@ function ComprasDashboard() {
         supabase.from("ordenes_compra").select("total, estado, fecha_emision").gte("fecha_emision", firstDayOfMonth()),
         supabase.from("v_stock_productos").select("stock_total"),
         supabase.from("v_compras_planeacion").select("producto_id, cantidad_sugerida, stock_disponible, punto_reorden, dias_cobertura"),
-        supabase.from("v_caducidades").select("valor_economico, semaforo").in("semaforo", ["rojo", "amarillo"]),
+        supabase.from("v_caducidades").select("valor_economico, semaforo, lote"),
         supabase.from("purchase_alerts").select("id, tipo, severidad, titulo, created_at").eq("resuelto", false).order("created_at", { ascending: false }).limit(10),
       ]);
 
@@ -57,6 +57,7 @@ function ComprasDashboard() {
       const sugerir = (planeacion.data ?? []).filter((p: any) => Number(p.cantidad_sugerida) > 0).length;
       const caducRojo = (caducidades.data ?? []).filter((c: any) => c.semaforo === "rojo").reduce((s: number, c: any) => s + Number(c.valor_economico || 0), 0);
       const caducAmarillo = (caducidades.data ?? []).filter((c: any) => c.semaforo === "amarillo").reduce((s: number, c: any) => s + Number(c.valor_economico || 0), 0);
+      const lotesPorVencer = new Set((caducidades.data ?? []).filter((c: any) => c.lote).map((c: any) => c.lote)).size;
 
       return {
         comprasMes: totalMes,
@@ -64,6 +65,7 @@ function ComprasDashboard() {
         sugerir,
         caducRojo,
         caducAmarillo,
+        lotesPorVencer,
         alertas: alertas.data ?? [],
       };
     },
@@ -77,14 +79,118 @@ function ComprasDashboard() {
     },
   });
 
+  // Budget for current month
+  const { data: budgetActual } = useQuery({
+    queryKey: ["compras-budget-mes"],
+    queryFn: async () => {
+      const mes = firstDayOfMonth();
+      const { data } = await supabase.from("purchase_budgets").select("monto_mxn").eq("mes", mes).maybeSingle();
+      return Number((data as any)?.monto_mxn ?? 0);
+    },
+  });
+
+  // Compras por laboratorio (últimos 90d)
+  const { data: porLab } = useQuery({
+    queryKey: ["compras-por-lab-90d"],
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
+      const { data } = await supabase
+        .from("ordenes_compra")
+        .select("total, laboratorio_id, laboratorio:laboratorios(nombre)")
+        .gte("fecha_emision", since.toISOString().slice(0, 10))
+        .not("estado", "eq", "cancelada")
+        .limit(2000);
+      const map = new Map<string, { nombre: string; total: number }>();
+      for (const r of (data ?? []) as any[]) {
+        const k = r.laboratorio_id ?? "sin";
+        const name = r.laboratorio?.nombre ?? "Sin proveedor";
+        const cur = map.get(k) ?? { nombre: name, total: 0 };
+        cur.total += Number(r.total ?? 0);
+        map.set(k, cur);
+      }
+      return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+    },
+  });
+
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard icon={<DollarSign className="size-5" />} label="Compras del mes" value={mxn.format(kpis?.comprasMes ?? 0)} />
         <KpiCard icon={<Package className="size-5" />} label="Productos críticos" value={String(kpis?.criticos ?? 0)} accent="rose" />
         <KpiCard icon={<TrendingDown className="size-5" />} label="A sugerir compra" value={String(kpis?.sugerir ?? 0)} accent="amber" />
-        <KpiCard icon={<Clock className="size-5" />} label="Caducidad crítica" value={mxn.format(kpis?.caducRojo ?? 0)} accent="rose" />
+        <KpiCard icon={<Clock className="size-5" />} label="Caducidad crítica" value={mxn.format(kpis?.caducRojo ?? 0)} sub={`${kpis?.lotesPorVencer ?? 0} lotes`} accent="rose" />
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Presupuesto vs comprometido */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Presupuesto del mes</h2>
+            <Link to="/admin/compras/presupuesto" className="text-xs text-primary hover:underline">Editar</Link>
+          </div>
+          {(() => {
+            const budget = Number(budgetActual ?? 0);
+            const spent = Number(kpis?.comprasMes ?? 0);
+            const pct = budget > 0 ? (spent / budget) * 100 : 0;
+            const color = pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
+            return (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-2xl font-bold tabular-nums">{mxn.format(spent)}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">/ {mxn.format(budget)}</span>
+                </div>
+                {budget > 0 ? (
+                  <>
+                    <div className="h-2 overflow-hidden rounded bg-muted">
+                      <div className={`h-full ${color}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {pct.toFixed(0)}% del presupuesto · {mxn.format(Math.max(0, budget - spent))} disponible
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Sin presupuesto configurado.{" "}
+                    <Link to="/admin/compras/presupuesto" className="text-primary hover:underline">Configurar</Link>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Compras por laboratorio */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Compras por laboratorio (90d)</h2>
+            <span className="text-xs text-muted-foreground">Top 10</span>
+          </div>
+          {(porLab ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin órdenes en los últimos 90 días.</p>
+          ) : (() => {
+            const max = Math.max(...(porLab ?? []).map((r: any) => r.total));
+            return (
+              <div className="space-y-1.5">
+                {(porLab ?? []).map((r: any) => (
+                  <div key={r.nombre} className="space-y-0.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="truncate">{r.nombre}</span>
+                      <span className="tabular-nums text-muted-foreground">{mxn.format(r.total)}</span>
+                    </div>
+                    <div className="h-1 overflow-hidden rounded bg-muted">
+                      <div className="h-full bg-primary/70" style={{ width: `${(r.total / max) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4">
@@ -208,7 +314,7 @@ function ComprasDashboard() {
   );
 }
 
-function KpiCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: "rose" | "amber" | "emerald" }) {
+function KpiCard({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: "rose" | "amber" | "emerald" }) {
   const color =
     accent === "rose" ? "text-rose-500" :
     accent === "amber" ? "text-amber-500" :
@@ -217,9 +323,11 @@ function KpiCard({ icon, label, value, accent }: { icon: React.ReactNode; label:
     <div className="rounded-lg border border-border bg-card p-3">
       <div className={`mb-1 flex items-center gap-1.5 ${color}`}>{icon}<span className="text-xs font-medium uppercase">{label}</span></div>
       <p className="text-lg md:text-xl font-bold tabular-nums">{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground tabular-nums">{sub}</p>}
     </div>
   );
 }
+
 
 function sevDot(sev: string) {
   switch (sev) {
