@@ -277,56 +277,63 @@ function FacturaDetalle() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
-          <div className="rounded-md border border-border bg-card p-4">
+          <div className="rounded-md border border-border bg-card p-3 sm:p-4">
             <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Conceptos</h2>
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 text-left">Concepto</th>
-                  <th className="py-2 text-right">Cant.</th>
-                  <th className="py-2 text-right">P. Unit.</th>
-                  <th className="py-2 text-right">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.factura_items.map((it) => (
-                  <tr key={it.id} className="border-t border-border">
-                    <td className="py-2">
-                      <div className="font-medium">{it.nombre_snapshot}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
-                      </div>
-                    </td>
-                    <td className="py-2 text-right tabular-nums">{Number(it.cantidad)}</td>
-                    <td className="py-2 text-right tabular-nums">${Number(it.precio_unitario).toFixed(2)}</td>
-                    <td className="py-2 text-right tabular-nums">${Number(it.importe).toFixed(2)}</td>
+
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 text-left">Concepto</th>
+                    <th className="py-2 text-right">Cant.</th>
+                    <th className="py-2 text-right">P. Unit.</th>
+                    <th className="py-2 text-right">Importe</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="text-sm">
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right text-muted-foreground">Subtotal</td>
-                  <td className="py-2 text-right tabular-nums">${Number(data.subtotal).toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="py-1 text-right text-muted-foreground">IVA</td>
-                  <td className="py-1 text-right tabular-nums">${Number(data.iva).toFixed(2)}</td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right font-semibold">Total</td>
-                  <td className="py-2 text-right font-bold tabular-nums">${Number(data.total).toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="py-1 text-right text-muted-foreground">Pagado</td>
-                  <td className="py-1 text-right tabular-nums">${Number(data.pagado).toFixed(2)}</td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right font-semibold text-primary">Saldo</td>
-                  <td className="py-2 text-right font-bold tabular-nums text-primary">${saldo.toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
+                </thead>
+                <tbody>
+                  {data.factura_items.map((it) => (
+                    <tr key={it.id} className="border-t border-border">
+                      <td className="py-2">
+                        <div className="font-medium">{it.nombre_snapshot}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
+                        </div>
+                      </td>
+                      <td className="py-2 text-right tabular-nums">{Number(it.cantidad)}</td>
+                      <td className="py-2 text-right tabular-nums">${Number(it.precio_unitario).toFixed(2)}</td>
+                      <td className="py-2 text-right tabular-nums">${Number(it.importe).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="sm:hidden divide-y divide-border">
+              {data.factura_items.map((it) => (
+                <li key={it.id} className="py-2 first:pt-0">
+                  <div className="text-sm font-medium break-words">{it.nombre_snapshot}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
+                  </div>
+                  <div className="mt-1 flex justify-between text-xs tabular-nums">
+                    <span className="text-muted-foreground">
+                      {Number(it.cantidad)} × ${Number(it.precio_unitario).toFixed(2)}
+                    </span>
+                    <span className="font-semibold">${Number(it.importe).toFixed(2)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <dl className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="tabular-nums">${Number(data.subtotal).toFixed(2)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">IVA</dt><dd className="tabular-nums">${Number(data.iva).toFixed(2)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-1 font-semibold"><dt>Total</dt><dd className="tabular-nums">${Number(data.total).toFixed(2)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Pagado</dt><dd className="tabular-nums">${Number(data.pagado).toFixed(2)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-1 font-semibold text-primary"><dt>Saldo</dt><dd className="tabular-nums">${saldo.toFixed(2)}</dd></div>
+            </dl>
           </div>
+
 
           <div className="rounded-md border border-border bg-card p-4">
             <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Pagos</h2>
