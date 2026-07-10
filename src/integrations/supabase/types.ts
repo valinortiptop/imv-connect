@@ -7337,8 +7337,11 @@ export type Database = {
       slot_movements: {
         Row: {
           created_at: string
+          delta: number | null
           from_slot_id: string | null
           id: string
+          lote: string | null
+          note: string | null
           product_id: string | null
           quantity: number
           reason: string | null
@@ -7349,8 +7352,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delta?: number | null
           from_slot_id?: string | null
           id?: string
+          lote?: string | null
+          note?: string | null
           product_id?: string | null
           quantity?: number
           reason?: string | null
@@ -7361,8 +7367,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delta?: number | null
           from_slot_id?: string | null
           id?: string
+          lote?: string | null
+          note?: string | null
           product_id?: string | null
           quantity?: number
           reason?: string | null
@@ -10168,6 +10177,25 @@ export type Database = {
           total: number
         }[]
       }
+      list_recent_reubicaciones: {
+        Args: { p_limit?: number }
+        Returns: {
+          can_undo: boolean
+          created_at: string
+          description: string
+          dest_slot_code: string
+          id: string
+          lote: string
+          minutes_ago: number
+          note: string
+          product_clave: string
+          product_image_url: string
+          product_name: string
+          quantity: number
+          source_slot_code: string
+          user_id: string
+        }[]
+      }
       listar_usuarios: {
         Args: never
         Returns: {
@@ -10210,6 +10238,10 @@ export type Database = {
           updated: number
         }[]
       }
+      revert_movement: {
+        Args: { p_movement_id: string; p_note?: string }
+        Returns: string
+      }
       seed_cuentas_empresa: { Args: { _empresa: string }; Returns: undefined }
       suggest_source_slots_for_picking: {
         Args: { p_product_id: string; p_quantity?: number }
@@ -10224,6 +10256,7 @@ export type Database = {
           slot_id: string
         }[]
       }
+      undo_movement: { Args: { p_movement_id: string }; Returns: undefined }
     }
     Enums: {
       app_role:
