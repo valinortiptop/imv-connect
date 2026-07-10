@@ -5794,7 +5794,9 @@ export type Database = {
           laboratorio_id: string | null
           oc_id: string | null
           payload: Json | null
+          prioridad: string | null
           producto_id: string | null
+          responsable_user_id: string | null
           resuelto: boolean
           resuelto_at: string | null
           resuelto_por: string | null
@@ -5809,7 +5811,9 @@ export type Database = {
           laboratorio_id?: string | null
           oc_id?: string | null
           payload?: Json | null
+          prioridad?: string | null
           producto_id?: string | null
+          responsable_user_id?: string | null
           resuelto?: boolean
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -5824,7 +5828,9 @@ export type Database = {
           laboratorio_id?: string | null
           oc_id?: string | null
           payload?: Json | null
+          prioridad?: string | null
           producto_id?: string | null
+          responsable_user_id?: string | null
           resuelto?: boolean
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -5951,6 +5957,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_productos"
             referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_responsable_user_id_fkey"
+            columns: ["responsable_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "purchase_alerts_resuelto_por_fkey"
