@@ -32,6 +32,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+import { PageHeader } from "@/components/ui/page-header";
+import { ResponsiveTable, type ResponsiveColumn } from "@/components/ui/responsive-table";
 
 export const Route = createFileRoute("/admin/bancos/")({
   head: () => ({
@@ -185,30 +187,70 @@ function BancosIndex() {
     return out;
   }, [accounts, saldos]);
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Banknote className="h-7 w-7 text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold">Cuentas bancarias</h1>
-            <p className="text-sm text-muted-foreground">
-              Administra tus cuentas y consulta saldos actuales.
-            </p>
+  const columns: ResponsiveColumn<BankAccount>[] = [
+    {
+      key: "alias",
+      label: "Banco / Alias",
+      primary: true,
+      render: (a) => (
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <div className="truncate font-medium">{a.alias}</div>
+            <div className="truncate text-xs text-muted-foreground">{a.banco}</div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <EmpresaSelector />
-          <Button
-            onClick={() =>
-              setEditing({ moneda: "MXN", saldo_inicial: 0, activa: true })
-            }
-            disabled={!empresaId}
-          >
-            <Plus className="h-4 w-4 mr-1" /> Nueva cuenta
-          </Button>
-        </div>
-      </div>
+      ),
+    },
+    {
+      key: "clabe",
+      label: "CLABE / Cuenta",
+      className: "font-mono text-xs break-all",
+      render: (a) => a.clabe ?? a.numero_cuenta ?? "—",
+    },
+    { key: "moneda", label: "Moneda", render: (a) => a.moneda },
+    {
+      key: "saldo_inicial",
+      label: "Saldo inicial",
+      className: "text-right tabular-nums",
+      render: (a) => fmtMoney(a.saldo_inicial, a.moneda),
+    },
+    {
+      key: "saldo_actual",
+      label: "Saldo actual",
+      className: "text-right tabular-nums font-semibold",
+      render: (a) => fmtMoney(saldos[a.id] ?? a.saldo_inicial, a.moneda),
+    },
+    {
+      key: "estado",
+      label: "Estado",
+      render: (a) =>
+        a.activa ? <Badge variant="default">Activa</Badge> : <Badge variant="secondary">Inactiva</Badge>,
+    },
+  ];
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <Banknote className="h-6 w-6 shrink-0 text-blue-600" />
+            <span className="truncate">Cuentas bancarias</span>
+          </span>
+        }
+        description="Administra tus cuentas y consulta saldos actuales."
+        actions={
+          <>
+            <EmpresaSelector />
+            <Button
+              onClick={() => setEditing({ moneda: "MXN", saldo_inicial: 0, activa: true })}
+              disabled={!empresaId}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Nueva cuenta
+            </Button>
+          </>
+        }
+      />
 
       {!empresaId ? (
         <p className="text-muted-foreground">
@@ -217,106 +259,53 @@ function BancosIndex() {
       ) : (
         <>
           {Object.keys(totalPorMoneda).length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
               {Object.entries(totalPorMoneda).map(([m, v]) => (
                 <div
                   key={m}
-                  className="rounded-lg border bg-card p-4 flex items-center gap-3"
+                  className="flex items-center gap-3 rounded-lg border bg-card p-3 sm:p-4"
                 >
-                  <Wallet className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <div className="text-xs uppercase text-muted-foreground">
+                  <Wallet className="h-6 w-6 shrink-0 text-blue-600 sm:h-8 sm:w-8" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase text-muted-foreground sm:text-xs">
                       Total {m}
                     </div>
-                    <div className="text-xl font-bold">{fmtMoney(v, m)}</div>
+                    <div className="truncate text-base font-bold sm:text-xl">
+                      {fmtMoney(v, m)}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="rounded-lg border bg-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="p-3">Banco / Alias</th>
-                  <th className="p-3">CLABE / Cuenta</th>
-                  <th className="p-3">Moneda</th>
-                  <th className="p-3 text-right">Saldo inicial</th>
-                  <th className="p-3 text-right">Saldo actual</th>
-                  <th className="p-3">Estado</th>
-                  <th className="p-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading && (
-                  <tr>
-                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                      Cargando…
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && accounts.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                      No hay cuentas registradas todavía.
-                    </td>
-                  </tr>
-                )}
-                {accounts.map((a) => (
-                  <tr key={a.id} className="border-t hover:bg-muted/30">
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{a.alias}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {a.banco}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-3 font-mono text-xs">
-                      {a.clabe ?? a.numero_cuenta ?? "—"}
-                    </td>
-                    <td className="p-3">{a.moneda}</td>
-                    <td className="p-3 text-right tabular-nums">
-                      {fmtMoney(a.saldo_inicial, a.moneda)}
-                    </td>
-                    <td className="p-3 text-right tabular-nums font-semibold">
-                      {fmtMoney(saldos[a.id] ?? a.saldo_inicial, a.moneda)}
-                    </td>
-                    <td className="p-3">
-                      {a.activa ? (
-                        <Badge variant="default">Activa</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactiva</Badge>
-                      )}
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setEditing(a)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm(`¿Eliminar cuenta "${a.alias}"?`))
-                            deleteMutation.mutate(a.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando…</p>
+          ) : (
+            <ResponsiveTable
+              columns={columns}
+              data={accounts}
+              rowKey={(a) => a.id}
+              empty="No hay cuentas registradas todavía."
+              renderActions={(a) => (
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(a)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm(`¿Eliminar cuenta "${a.alias}"?`))
+                        deleteMutation.mutate(a.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </>
+              )}
+            />
+          )}
         </>
       )}
 
@@ -327,7 +316,7 @@ function BancosIndex() {
               {editing?.id ? "Editar cuenta bancaria" : "Nueva cuenta bancaria"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Banco</Label>
               <Input
@@ -397,7 +386,7 @@ function BancosIndex() {
                 }
               />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Cuenta contable</Label>
               <Select
                 value={editing?.cuenta_contable_id ?? "none"}
@@ -421,7 +410,7 @@ function BancosIndex() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Notas</Label>
               <Input
                 value={editing?.notas ?? ""}
@@ -430,7 +419,7 @@ function BancosIndex() {
                 }
               />
             </div>
-            <div className="flex items-center gap-2 col-span-2">
+            <div className="flex items-center gap-2 sm:col-span-2">
               <Switch
                 checked={editing?.activa ?? true}
                 onCheckedChange={(v) =>
