@@ -314,7 +314,7 @@ function ComprasDashboard() {
   );
 }
 
-function KpiCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: "rose" | "amber" | "emerald" }) {
+function KpiCard({ icon, label, value, sub, accent }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: "rose" | "amber" | "emerald" }) {
   const color =
     accent === "rose" ? "text-rose-500" :
     accent === "amber" ? "text-amber-500" :
@@ -323,9 +323,11 @@ function KpiCard({ icon, label, value, accent }: { icon: React.ReactNode; label:
     <div className="rounded-lg border border-border bg-card p-3">
       <div className={`mb-1 flex items-center gap-1.5 ${color}`}>{icon}<span className="text-xs font-medium uppercase">{label}</span></div>
       <p className="text-lg md:text-xl font-bold tabular-nums">{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground tabular-nums">{sub}</p>}
     </div>
   );
 }
+
 
 function sevDot(sev: string) {
   switch (sev) {
