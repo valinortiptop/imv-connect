@@ -319,13 +319,13 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                         <div>
                           <div className="font-medium flex items-center gap-1.5">
                             <BadgePercent className="size-3.5 text-amber-500" />
-                            {pr.name ?? "Promoción"}
+                            {pr.promo_name ?? "Promoción"}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {fmtDate(pr.valid_from)} – {fmtDate(pr.valid_to)}
                           </div>
                         </div>
-                        <Badge variant="secondary">−{Number(pr.discount_pct ?? 0)}%</Badge>
+                        {pr.description && <Badge variant="secondary">{pr.description}</Badge>}
                       </li>
                     ))}
                   </ul>
