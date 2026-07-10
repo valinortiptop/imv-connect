@@ -329,6 +329,10 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                   </ul>
                 )}
               </TabsContent>
+
+              <TabsContent value="calendario" className="pt-4">
+                <ClientCalendarPanel clienteId={clientId!} />
+              </TabsContent>
             </Tabs>
           </>
         )}
