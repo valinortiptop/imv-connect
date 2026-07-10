@@ -48,7 +48,7 @@ function ComprasDashboard() {
         supabase.from("ordenes_compra").select("total, estado, fecha_emision").gte("fecha_emision", firstDayOfMonth()),
         supabase.from("v_stock_productos").select("stock_total"),
         supabase.from("v_compras_planeacion").select("producto_id, cantidad_sugerida, stock_disponible, punto_reorden, dias_cobertura"),
-        supabase.from("v_caducidades").select("valor_economico, semaforo").in("semaforo", ["rojo", "amarillo"]),
+        supabase.from("v_caducidades").select("valor_economico, semaforo, lote"),
         supabase.from("purchase_alerts").select("id, tipo, severidad, titulo, created_at").eq("resuelto", false).order("created_at", { ascending: false }).limit(10),
       ]);
 
@@ -57,6 +57,7 @@ function ComprasDashboard() {
       const sugerir = (planeacion.data ?? []).filter((p: any) => Number(p.cantidad_sugerida) > 0).length;
       const caducRojo = (caducidades.data ?? []).filter((c: any) => c.semaforo === "rojo").reduce((s: number, c: any) => s + Number(c.valor_economico || 0), 0);
       const caducAmarillo = (caducidades.data ?? []).filter((c: any) => c.semaforo === "amarillo").reduce((s: number, c: any) => s + Number(c.valor_economico || 0), 0);
+      const lotesPorVencer = new Set((caducidades.data ?? []).filter((c: any) => c.lote).map((c: any) => c.lote)).size;
 
       return {
         comprasMes: totalMes,
@@ -64,6 +65,7 @@ function ComprasDashboard() {
         sugerir,
         caducRojo,
         caducAmarillo,
+        lotesPorVencer,
         alertas: alertas.data ?? [],
       };
     },
@@ -76,6 +78,41 @@ function ComprasDashboard() {
       return data ?? [];
     },
   });
+
+  // Budget for current month
+  const { data: budgetActual } = useQuery({
+    queryKey: ["compras-budget-mes"],
+    queryFn: async () => {
+      const mes = firstDayOfMonth();
+      const { data } = await supabase.from("purchase_budgets").select("monto_mxn").eq("mes", mes).maybeSingle();
+      return Number((data as any)?.monto_mxn ?? 0);
+    },
+  });
+
+  // Compras por laboratorio (últimos 90d)
+  const { data: porLab } = useQuery({
+    queryKey: ["compras-por-lab-90d"],
+    queryFn: async () => {
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
+      const { data } = await supabase
+        .from("ordenes_compra")
+        .select("total, laboratorio_id, laboratorio:laboratorios(nombre)")
+        .gte("fecha_emision", since.toISOString().slice(0, 10))
+        .not("estado", "eq", "cancelada")
+        .limit(2000);
+      const map = new Map<string, { nombre: string; total: number }>();
+      for (const r of (data ?? []) as any[]) {
+        const k = r.laboratorio_id ?? "sin";
+        const name = r.laboratorio?.nombre ?? "Sin proveedor";
+        const cur = map.get(k) ?? { nombre: name, total: 0 };
+        cur.total += Number(r.total ?? 0);
+        map.set(k, cur);
+      }
+      return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+    },
+  });
+
 
   return (
     <div className="space-y-6">
