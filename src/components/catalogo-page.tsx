@@ -10,7 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Search, Download, Package, Eye, X, Loader2, ClipboardList, UserRound, AlertTriangle, BadgePercent, ArrowDown, ArrowUp, Pencil } from "lucide-react";
 import {
   AlertDialog,
@@ -1248,6 +1249,10 @@ export default function Catalogo() {
       {/* Product preview dialog */}
       <Dialog open={!!previewProduct} onOpenChange={(open) => !open && setPreviewProduct(null)}>
         <DialogContent className="sm:max-w-md">
+          <VisuallyHidden>
+            <DialogTitle>{previewProduct?.name ?? "Vista previa de producto"}</DialogTitle>
+            <DialogDescription>Detalle rápido del producto seleccionado.</DialogDescription>
+          </VisuallyHidden>
           {previewProduct && (
             <div className="flex flex-col items-center gap-4 pt-2">
               {previewProduct.image_url ? (
