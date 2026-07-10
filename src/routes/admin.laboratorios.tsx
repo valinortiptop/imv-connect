@@ -219,8 +219,9 @@ function LabModal({
   const [v, setV] = useState<Partial<Lab>>(value);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+      <div className="my-8 w-full max-w-md rounded-lg border border-border bg-card p-6">
+
         <h2 className="mb-4 text-lg font-semibold">
           {value.id ? "Editar laboratorio" : "Nuevo laboratorio"}
         </h2>
