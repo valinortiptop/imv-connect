@@ -83,14 +83,14 @@ function LaboratoriosPage() {
 
   return (
     <section>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Laboratorios</h1>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Laboratorios</h1>
           <p className="text-sm text-muted-foreground">Marcas/fabricantes del catálogo IMV.</p>
         </div>
         <button
           onClick={() => setEditing({ orden: 0, activo: true })}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           Nuevo
         </button>
@@ -104,65 +104,94 @@ function LaboratoriosPage() {
       )}
 
       {data && (
-        <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 w-16">Orden</th>
-                <th className="px-4 py-2">Nombre</th>
-                <th className="px-4 py-2">Logo URL</th>
-                <th className="px-4 py-2">Estado</th>
-                <th className="px-4 py-2 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((l) => (
-                <tr key={l.id} className="border-t border-border">
-                  <td className="px-4 py-2 tabular-nums">{l.orden}</td>
-                  <td className="px-4 py-2 font-medium">{l.nombre}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-xs">
-                    {l.logo_url ?? "—"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={
-                        l.activo
-                          ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600"
-                          : "rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                      }
-                    >
-                      {l.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      onClick={() => setEditing(l)}
-                      className="mr-2 text-xs text-primary hover:underline"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`¿Eliminar ${l.nombre}?`)) remove.mutate(l.id);
-                      }}
-                      className="text-xs text-destructive hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {data.length === 0 && (
+        <>
+          {/* Table view */}
+          <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    Sin laboratorios todavía.
-                  </td>
+                  <th className="px-4 py-2 w-16">Orden</th>
+                  <th className="px-4 py-2">Nombre</th>
+                  <th className="px-4 py-2">Logo URL</th>
+                  <th className="px-4 py-2">Estado</th>
+                  <th className="px-4 py-2 text-right">Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.map((l) => (
+                  <tr key={l.id} className="border-t border-border">
+                    <td className="px-4 py-2 tabular-nums">{l.orden}</td>
+                    <td className="px-4 py-2 font-medium">{l.nombre}</td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-xs">
+                      {l.logo_url ?? "—"}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={l.activo
+                        ? "rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600"
+                        : "rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"}>
+                        {l.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <button onClick={() => setEditing(l)} className="mr-2 text-xs text-primary hover:underline">Editar</button>
+                      <button
+                        onClick={() => { if (confirm(`¿Eliminar ${l.nombre}?`)) remove.mutate(l.id); }}
+                        className="text-xs text-destructive hover:underline"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {data.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                      Sin laboratorios todavía.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Card view: mobile */}
+          <div className="sm:hidden space-y-2">
+            {data.map((l) => (
+              <div key={l.id} className="rounded-lg border border-border bg-card p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold truncate">{l.nombre}</div>
+                    <div className="text-xs text-muted-foreground">Orden {l.orden}</div>
+                  </div>
+                  <span className={l.activo
+                    ? "shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600"
+                    : "shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"}>
+                    {l.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+                {l.logo_url && (
+                  <div className="mt-1 truncate text-xs text-muted-foreground">{l.logo_url}</div>
+                )}
+                <div className="mt-2 flex gap-3 border-t border-border pt-2 text-xs">
+                  <button onClick={() => setEditing(l)} className="text-primary hover:underline">Editar</button>
+                  <button
+                    onClick={() => { if (confirm(`¿Eliminar ${l.nombre}?`)) remove.mutate(l.id); }}
+                    className="text-destructive hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+            {data.length === 0 && (
+              <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                Sin laboratorios todavía.
+              </div>
+            )}
+          </div>
+        </>
       )}
+
 
       {editing && (
         <LabModal
@@ -190,8 +219,9 @@ function LabModal({
   const [v, setV] = useState<Partial<Lab>>(value);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+      <div className="my-8 w-full max-w-md rounded-lg border border-border bg-card p-6">
+
         <h2 className="mb-4 text-lg font-semibold">
           {value.id ? "Editar laboratorio" : "Nuevo laboratorio"}
         </h2>

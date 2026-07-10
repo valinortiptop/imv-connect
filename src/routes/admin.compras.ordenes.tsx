@@ -56,20 +56,20 @@ function ComprasPage() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Compras a proveedores</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Compras a proveedores</h1>
           <p className="text-sm text-muted-foreground">
             Órdenes de compra a laboratorios. Al recibir se generan entradas a inventario.
           </p>
         </div>
-        <button onClick={() => setNueva(true)} className="btn-primary">
+        <button onClick={() => setNueva(true)} className="btn-primary shrink-0">
           + Nueva OC
         </button>
       </div>
 
       <div className="flex items-center gap-3">
-        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="input max-w-xs">
+        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="input w-full max-w-xs">
           <option value="">Todos los estados</option>
           <option value="borrador">Borrador</option>
           <option value="enviada">Enviada</option>
@@ -81,7 +81,8 @@ function ComprasPage() {
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
 
-      <div className="overflow-x-auto rounded-md border border-border">
+      {/* Table view: sm+ */}
+      <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -124,6 +125,42 @@ function ComprasPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Card view: mobile */}
+      <div className="sm:hidden space-y-2">
+        {filtered.map((o) => (
+          <Link
+            key={o.id}
+            to="/admin/compras/$id"
+            params={{ id: o.id }}
+            className="block rounded-lg border border-border bg-card p-3 active:bg-muted/40"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-mono text-xs text-muted-foreground">{o.folio}</div>
+                <div className="text-sm font-semibold truncate">{o.laboratorio}</div>
+                <div className="text-xs text-muted-foreground truncate">{o.almacen}</div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${ESTADOS[o.estado] ?? "bg-muted"}`}>
+                {o.estado}
+              </span>
+            </div>
+            <div className="mt-2 flex items-baseline justify-between text-xs">
+              <span className="text-muted-foreground">{o.fecha_emision}</span>
+              <span className="tabular-nums">
+                {o.items} it. · pend {Number(o.pendiente_unidades)} ·{" "}
+                <span className="font-semibold">${Number(o.total).toFixed(2)}</span>
+              </span>
+            </div>
+          </Link>
+        ))}
+        {filtered.length === 0 && !isLoading && (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+            Sin órdenes.
+          </div>
+        )}
+      </div>
+
 
       {nueva && (
         <NuevaOCModal
@@ -187,8 +224,9 @@ function NuevaOCModal({ onClose, onSaved }: { onClose: () => void; onSaved: (id:
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+      <div className="my-8 w-full max-w-md rounded-lg border border-border bg-card p-6">
+
         <h2 className="mb-3 text-lg font-semibold">Nueva orden de compra</h2>
         <div className="space-y-3">
           <div>
