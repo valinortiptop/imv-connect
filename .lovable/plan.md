@@ -1,81 +1,51 @@
-# Mobile Responsiveness — Main Admin App
+## Fix "BULTOS DISPONIBLES" white panel on mobile catálogo
 
-Match the treatment we did in the rep panel: shell adapts to phones, tables collapse into stacked cards below `sm`, headers/toolbars reflow, spacing tightens.
+### Diagnosis
 
-## Scope
+The stray white panel showing only "BULTOS DISPONIBLES" is the **Availability dialog** (`AvailabilityDownloadDialog`) opened from the catálogo toolbar. It was built for desktop only:
 
-**Shell (applies to every admin route):**
-- `src/routes/admin.tsx` — header, main padding, mobile trigger.
-- `src/components/admin-sidebar.tsx` — offcanvas drawer on mobile, sticky trigger always visible.
+- `DialogContent` uses `max-w-5xl` with `!overflow-hidden` and no mobile width strategy.
+- Internal preview uses `<div className="min-w-[700px]">` with a 6-column grid (`grid-cols-[36px_100px_1fr_80px_110px_130px]`). On a ~390px mobile viewport this forces horizontal overflow that gets clipped, leaving mostly whitespace with just a fragment of the header (the "Bultos disponibles" column label) and the last column visible.
+- Date picker `SelectTrigger` is `w-[320px]` (fixed) — pushes the dialog wider than needed on small screens.
+- Header row and footer buttons are `flex flex-wrap` with desktop spacing.
 
-**Top 15 routes to hand-tune:**
-1. `admin.index` (dashboard)
-2. `admin.pedidos` + `admin.pedidos.$id`
-3. `admin.clientes` + `admin.clientes.$id`
-4. `admin.inventario`
-5. `admin.compras.index`
-6. `admin.cobranza`
-7. `admin.facturas` + `admin.facturas.$id`
-8. `admin.productos`
-9. `admin.catalogo`
-10. `admin.promos`
-11. `admin.tareas`
-12. `admin.almacen`
-13. `admin.bancos.index`
-14. `admin.prospectos`
-15. `admin.cuenta`
+Nothing else on `/admin/catalogo` renders the phrase "bultos disponibles" (`rg` confirmed), so this is the source.
 
-Any other admin route inherits the shell + shared table/card primitive automatically, but is not individually hand-tuned in this pass.
+### Changes (single file: `src/components/AvailabilityDownloadDialog.tsx`)
 
-## Approach
+1. **Dialog shell** — make it phone-friendly:
+   - `DialogContent` classes: `w-[calc(100vw-1rem)] sm:w-full sm:max-w-5xl max-h-[90vh] p-4 sm:p-6 flex flex-col`.
+   - Keep `!overflow-hidden` so only the middle region scrolls.
 
-### 1. Shared responsive primitives (new)
+2. **Header/date row** — stack on mobile:
+   - Wrap the date `Select` and count in `flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end`.
+   - `SelectTrigger` becomes `w-full sm:w-[320px]`.
+   - Title font: `text-lg sm:text-xl`, allow wrap.
 
-Create `src/components/ui/responsive-table.tsx` exporting:
-- `<ResponsiveTable>` — renders a real `<table>` at `sm+`, and a stacked card list under `sm`.
-- Column config: `{ key, label, render?, priority?: 'primary' | 'secondary' }`. Primary column becomes the card title; the rest become label/value rows.
-- Row action slot (`renderActions`) rendered as a footer strip in card mode, action cell in table mode.
+3. **Preview area** — dual layout (mirrors the pattern already used across admin routes):
+   - Wrap the current 6-column grid in `<div className="hidden sm:block">` and drop `min-w-[700px]` (or replace with `sm:min-w-[700px]` inside an `overflow-x-auto` wrapper for desktop-only horizontal scroll).
+   - Add a `sm:hidden space-y-2` card list below `sm`. Each card:
+     ```
+     ┌──────────────────────────────────────────┐
+     │ [thumb]  CLAVE (mono, primary)           │
+     │          Producto name (wraps, 2 lines)  │
+     │ ─────────────────────────────────────    │
+     │ Peso   ·   Precio   ·   Bultos [badge]   │
+     └──────────────────────────────────────────┘
+     ```
+     Uses the same `bucketTextClass` color for the bultos badge, `tabular-nums` for numbers, `truncate` / `line-clamp-2` for text.
+   - Reuse `ProductThumb size="sm"` (leaves size unchanged).
 
-Create `src/components/ui/page-header.tsx`:
-- Responsive header row: title + actions. Uses the grid pattern from responsive-layout knowledge (`grid-cols-[minmax(0,1fr)_auto]` on mobile → `flex` at `sm`). Actions wrap to a second row on mobile.
+4. **Footer buttons** — reflow:
+   - `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-3 border-t border-border`.
+   - Buttons become `w-full sm:w-auto`.
 
-Create `src/components/ui/filter-bar.tsx`:
-- Wraps toolbar filters: horizontally scrolls on mobile (`flex flex-nowrap overflow-x-auto -mx-4 px-4 snap-x`), collapses into a full-width stack when the caller opts in.
+### Out of scope
 
-### 2. Shell changes
+- No changes to catálogo page itself, to logic, to queries, or to Excel/PNG export code. The PNG export renders via `printRef` which we don't touch — it still exports at desktop width (that's intentional for the shareable image).
 
-`src/routes/admin.tsx`:
-- Header: keep `SidebarTrigger` (already visible with offcanvas).
-- Main: `px-3 sm:px-6 py-4 sm:py-8`.
-- Add a bottom safe-area padding so the sidebar drawer overlay doesn't clip content.
+### Verification
 
-`admin-sidebar.tsx`:
-- Already `collapsible="offcanvas"` — good for mobile. Verify the drawer closes on route change (add `onOpenChange` reset via `useEffect` on pathname if needed).
-- Tighten section labels and menu button font sizes at mobile.
-
-### 3. Per-route hand-tuning pattern
-
-For each of the 15 routes:
-- Replace ad-hoc `<table>` blocks with `<ResponsiveTable>` (columns declared once).
-- Wrap top-of-page title/actions with `<PageHeader>`.
-- Wrap filter/search toolbars with `<FilterBar>`.
-- Convert grid stat cards to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` with condensed padding on mobile.
-- Detail pages (`pedidos.$id`, `clientes.$id`, `facturas.$id`): 2-column layouts become single column under `md`; tab strips become horizontally scrollable.
-- Dialogs / sheets: verify `max-h-[90vh] overflow-y-auto` and full-width on mobile.
-
-### 4. Global CSS tweaks
-
-`src/styles.css`:
-- Add a utility `.no-scrollbar` for horizontally-scrolling toolbars.
-- Ensure body `overflow-x-hidden` to prevent stray horizontal scroll on phones.
-
-## Non-goals
-
-- Not redesigning any module's information architecture.
-- Not touching business logic, queries, or server functions.
-- Contabilidad, admin utilities, gandalf, estado-apis, and other lower-traffic pages are not hand-tuned this pass — they inherit the shell only.
-
-## Verification
-
-- `bunx tsgo --noEmit` after edits.
-- Playwright screenshot check at 390×844 (iPhone) on: `/admin`, `/admin/pedidos`, `/admin/clientes`, `/admin/inventario`, `/admin/compras`, `/admin/cobranza` — confirm no horizontal scroll, drawer opens/closes, tables render as cards.
+- `bunx tsgo --noEmit`.
+- Open `/admin/catalogo` at 390×844, click **Disponibilidad**: confirm dialog fills viewport with padding, date picker is full-width, product rows render as stacked cards (no horizontal clipping, no floating "BULTOS DISPONIBLES" fragment), and the Excel / Imagen buttons stack full-width.
+- At `≥sm`, confirm the original table layout and button row are unchanged.
