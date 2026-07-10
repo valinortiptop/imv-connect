@@ -1249,6 +1249,10 @@ export default function Catalogo() {
       {/* Product preview dialog */}
       <Dialog open={!!previewProduct} onOpenChange={(open) => !open && setPreviewProduct(null)}>
         <DialogContent className="sm:max-w-md">
+          <VisuallyHidden>
+            <DialogTitle>{previewProduct?.name ?? "Vista previa de producto"}</DialogTitle>
+            <DialogDescription>Detalle rápido del producto seleccionado.</DialogDescription>
+          </VisuallyHidden>
           {previewProduct && (
             <div className="flex flex-col items-center gap-4 pt-2">
               {previewProduct.image_url ? (
