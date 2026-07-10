@@ -258,8 +258,8 @@ function FacturaDetalle() {
         )}
       </div>
       <div>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-2xl font-bold font-mono">{data.folio}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold font-mono break-all">{data.folio}</h1>
           <span className={`rounded px-2 py-0.5 text-xs ${
             data.estado === "pagada" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             : data.estado === "parcial" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -274,64 +274,72 @@ function FacturaDetalle() {
         </div>
       </div>
 
+
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2 space-y-6">
-          <div className="rounded-md border border-border bg-card p-4">
+          <div className="rounded-md border border-border bg-card p-3 sm:p-4">
             <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Conceptos</h2>
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 text-left">Concepto</th>
-                  <th className="py-2 text-right">Cant.</th>
-                  <th className="py-2 text-right">P. Unit.</th>
-                  <th className="py-2 text-right">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.factura_items.map((it) => (
-                  <tr key={it.id} className="border-t border-border">
-                    <td className="py-2">
-                      <div className="font-medium">{it.nombre_snapshot}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
-                      </div>
-                    </td>
-                    <td className="py-2 text-right tabular-nums">{Number(it.cantidad)}</td>
-                    <td className="py-2 text-right tabular-nums">${Number(it.precio_unitario).toFixed(2)}</td>
-                    <td className="py-2 text-right tabular-nums">${Number(it.importe).toFixed(2)}</td>
+
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 text-left">Concepto</th>
+                    <th className="py-2 text-right">Cant.</th>
+                    <th className="py-2 text-right">P. Unit.</th>
+                    <th className="py-2 text-right">Importe</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="text-sm">
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right text-muted-foreground">Subtotal</td>
-                  <td className="py-2 text-right tabular-nums">${Number(data.subtotal).toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="py-1 text-right text-muted-foreground">IVA</td>
-                  <td className="py-1 text-right tabular-nums">${Number(data.iva).toFixed(2)}</td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right font-semibold">Total</td>
-                  <td className="py-2 text-right font-bold tabular-nums">${Number(data.total).toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td colSpan={3} className="py-1 text-right text-muted-foreground">Pagado</td>
-                  <td className="py-1 text-right tabular-nums">${Number(data.pagado).toFixed(2)}</td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td colSpan={3} className="py-2 text-right font-semibold text-primary">Saldo</td>
-                  <td className="py-2 text-right font-bold tabular-nums text-primary">${saldo.toFixed(2)}</td>
-                </tr>
-              </tfoot>
-            </table>
+                </thead>
+                <tbody>
+                  {data.factura_items.map((it) => (
+                    <tr key={it.id} className="border-t border-border">
+                      <td className="py-2">
+                        <div className="font-medium">{it.nombre_snapshot}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
+                        </div>
+                      </td>
+                      <td className="py-2 text-right tabular-nums">{Number(it.cantidad)}</td>
+                      <td className="py-2 text-right tabular-nums">${Number(it.precio_unitario).toFixed(2)}</td>
+                      <td className="py-2 text-right tabular-nums">${Number(it.importe).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="sm:hidden divide-y divide-border">
+              {data.factura_items.map((it) => (
+                <li key={it.id} className="py-2 first:pt-0">
+                  <div className="text-sm font-medium break-words">{it.nombre_snapshot}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {it.sku_snapshot ?? "—"} · {it.unidad_snapshot}
+                  </div>
+                  <div className="mt-1 flex justify-between text-xs tabular-nums">
+                    <span className="text-muted-foreground">
+                      {Number(it.cantidad)} × ${Number(it.precio_unitario).toFixed(2)}
+                    </span>
+                    <span className="font-semibold">${Number(it.importe).toFixed(2)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <dl className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="tabular-nums">${Number(data.subtotal).toFixed(2)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">IVA</dt><dd className="tabular-nums">${Number(data.iva).toFixed(2)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-1 font-semibold"><dt>Total</dt><dd className="tabular-nums">${Number(data.total).toFixed(2)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Pagado</dt><dd className="tabular-nums">${Number(data.pagado).toFixed(2)}</dd></div>
+              <div className="flex justify-between border-t border-border pt-1 font-semibold text-primary"><dt>Saldo</dt><dd className="tabular-nums">${saldo.toFixed(2)}</dd></div>
+            </dl>
           </div>
 
-          <div className="rounded-md border border-border bg-card p-4">
+
+          <div className="rounded-md border border-border bg-card p-3 sm:p-4">
             <h2 className="mb-3 text-sm font-semibold uppercase text-muted-foreground">Pagos</h2>
 
             {data.estado !== "cancelada" && data.estado !== "pagada" && (
-              <div className="mb-4 grid gap-2 sm:grid-cols-5">
+              <div className="mb-4 grid gap-2 grid-cols-2 sm:grid-cols-5">
                 <input
                   type="number" step="0.01" min="0"
                   value={pagoMonto} onChange={(e) => setPagoMonto(e.target.value)}
@@ -346,7 +354,7 @@ function FacturaDetalle() {
                 </select>
                 <input
                   value={pagoRef} onChange={(e) => setPagoRef(e.target.value)}
-                  placeholder="Referencia" className="input"
+                  placeholder="Referencia" className="input col-span-2 sm:col-span-1"
                 />
                 <input
                   type="date" value={pagoFecha}
@@ -362,42 +370,70 @@ function FacturaDetalle() {
               </div>
             )}
 
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="py-2 text-left">Fecha</th>
-                  <th className="py-2 text-left">Método</th>
-                  <th className="py-2 text-left">Referencia</th>
-                  <th className="py-2 text-right">Monto</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.pagos
-                  .slice()
-                  .sort((a, b) => b.fecha.localeCompare(a.fecha))
-                  .map((p) => (
-                    <tr key={p.id} className="border-t border-border">
-                      <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
-                      <td className="py-2 text-xs">{p.metodo}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{p.referencia ?? "—"}</td>
-                      <td className="py-2 text-right font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</td>
-                      <td className="py-2 text-right">
-                        <button
-                          onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
-                          className="text-xs text-destructive hover:underline"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                {data.pagos.length === 0 && (
-                  <tr><td colSpan={5} className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</td></tr>
-                )}
-              </tbody>
-            </table>
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="py-2 text-left">Fecha</th>
+                    <th className="py-2 text-left">Método</th>
+                    <th className="py-2 text-left">Referencia</th>
+                    <th className="py-2 text-right">Monto</th>
+                    <th className="py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.pagos
+                    .slice()
+                    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+                    .map((p) => (
+                      <tr key={p.id} className="border-t border-border">
+                        <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
+                        <td className="py-2 text-xs">{p.metodo}</td>
+                        <td className="py-2 text-xs text-muted-foreground">{p.referencia ?? "—"}</td>
+                        <td className="py-2 text-right font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</td>
+                        <td className="py-2 text-right">
+                          <button
+                            onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {data.pagos.length === 0 && (
+                    <tr><td colSpan={5} className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="sm:hidden divide-y divide-border">
+              {data.pagos.length === 0 ? (
+                <li className="py-4 text-center text-sm text-muted-foreground">Sin pagos registrados.</li>
+              ) : data.pagos
+                .slice()
+                .sort((a, b) => b.fecha.localeCompare(a.fecha))
+                .map((p) => (
+                  <li key={p.id} className="py-2 first:pt-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm">{new Date(p.fecha).toLocaleDateString("es-MX")}</span>
+                      <span className="text-sm font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                      <span>{p.metodo} · {p.referencia ?? "—"}</span>
+                      <button
+                        onClick={() => { if (confirm("¿Eliminar pago?")) delPago.mutate(p.id); }}
+                        className="text-destructive hover:underline"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+            </ul>
           </div>
+
         </div>
 
         <div className="space-y-4">
