@@ -743,6 +743,7 @@ export type Database = {
           razon_social: string
           regimen_fiscal: string | null
           representante_id: string | null
+          required_documents: Json
           rfc: string | null
           telefono: string | null
           token_portal: string
@@ -783,6 +784,7 @@ export type Database = {
           razon_social: string
           regimen_fiscal?: string | null
           representante_id?: string | null
+          required_documents?: Json
           rfc?: string | null
           telefono?: string | null
           token_portal?: string
@@ -823,6 +825,7 @@ export type Database = {
           razon_social?: string
           regimen_fiscal?: string | null
           representante_id?: string | null
+          required_documents?: Json
           rfc?: string | null
           telefono?: string | null
           token_portal?: string
