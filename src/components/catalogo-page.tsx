@@ -1324,37 +1324,48 @@ export default function Catalogo() {
 
       {/* Sticky bottom bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t p-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="text-sm">
-              <span className="font-semibold">{selected.size}</span> productos seleccionados
-              {" · "}
-              <span className="text-muted-foreground">
-                {mode === "catalog"
-                  ? `${Math.ceil(selected.size / 6)} páginas`
-                  : `${Math.ceil(selected.size / 32)} páginas · lista de precios`}
-              </span>
+        <>
+          {/* Spacer so the last row of cards is never hidden behind the bar */}
+          <div aria-hidden className="h-24 sm:h-20" />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 px-3 py-3 backdrop-blur sm:px-4"
+            style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+          >
+            <div className="max-w-7xl mx-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs sm:text-sm min-w-0">
+                <span className="font-semibold">{selected.size}</span> seleccionados
+                <span className="text-muted-foreground">
+                  {" · "}
+                  {mode === "catalog"
+                    ? `${Math.ceil(selected.size / 6)} pág.`
+                    : `${Math.ceil(selected.size / 32)} pág. · lista de precios`}
+                </span>
+              </div>
+              <Button
+                className="gradient-button w-full sm:w-auto"
+                onClick={handleGenerate}
+                disabled={generating}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span className="truncate">{progress || "Generando..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    <span className="sm:hidden">Descargar PDF</span>
+                    <span className="hidden sm:inline">
+                      {mode === "catalog" ? "Descargar catálogo PDF" : "Descargar lista de precios"}
+                    </span>
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              className="gradient-button"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {progress || "Generando..."}
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  {mode === "catalog" ? "Descargar catálogo PDF" : "Descargar lista de precios"}
-                </>
-              )}
-            </Button>
           </div>
-        </div>
+        </>
       )}
+
 
       {/* Confirm pre-download — fires only when a client is active so
           the staff can sanity-check who they're generating for. The
