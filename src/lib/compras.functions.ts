@@ -598,3 +598,171 @@ Datos:
       acciones: Array.isArray(parsed.acciones) ? parsed.acciones.slice(0, 3) : [],
     };
   });
+
+// ── Alert assignment / listing ─────────────────────────────────────
+export const listPurchaseAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        onlyOpen: z.boolean().default(true),
+        mine: z.boolean().default(false),
+        tipos: z.array(z.string()).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("purchase_alerts")
+      .select(
+        "id, tipo, severidad, prioridad, titulo, detalle, payload, resuelto, resuelto_at, created_at, responsable_user_id, producto_id, laboratorio_id",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (data.onlyOpen) q = q.eq("resuelto", false);
+    if (data.mine) q = q.eq("responsable_user_id", context.userId);
+    if (data.tipos && data.tipos.length > 0) q = q.in("tipo", data.tipos);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return { alertas: rows ?? [] };
+  });
+
+export const assignAlerta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        responsable_user_id: z.string().uuid().nullable(),
+        prioridad: z.enum(["baja", "media", "alta", "critica"]).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const payload: any = { responsable_user_id: data.responsable_user_id };
+    if (data.prioridad !== undefined) payload.prioridad = data.prioridad;
+    const { error } = await context.supabase
+      .from("purchase_alerts")
+      .update(payload)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ── Purchase budgets ────────────────────────────────────────────────
+export const listPurchaseBudgets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("purchase_budgets")
+      .select("id, empresa_id, mes, monto_mxn, notas, created_at")
+      .order("mes", { ascending: false })
+      .limit(24);
+    if (error) throw new Error(error.message);
+    return { budgets: data ?? [] };
+  });
+
+export const upsertPurchaseBudget = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        empresa_id: z.string().uuid().nullable().optional(),
+        mes: z.string(), // YYYY-MM-01
+        monto_mxn: z.number().nonnegative(),
+        notas: z.string().max(300).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const row = {
+      empresa_id: data.empresa_id ?? null,
+      mes: data.mes,
+      monto_mxn: data.monto_mxn,
+      notas: data.notas ?? null,
+      updated_at: new Date().toISOString(),
+      created_by: userId,
+    };
+    const { error } = await supabase
+      .from("purchase_budgets")
+      .upsert(row, { onConflict: "empresa_id,mes" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ── Best purchase date suggestion ──────────────────────────────────
+// Given a purchase amount and empresa, project bank balance across the next
+// 30 days by summing all future/scheduled bank_movements, and pick the date
+// with the highest projected buffer that also stays above zero.
+export const bestPurchaseDate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        monto: z.number().positive(),
+        empresa_id: z.string().uuid().nullable().optional(),
+        dias: z.number().int().min(7).max(90).default(30),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const today = new Date();
+    const todayIso = today.toISOString().slice(0, 10);
+    const horizonte = new Date(today);
+    horizonte.setDate(horizonte.getDate() + data.dias);
+
+    // Current bank balance
+    let bqAcc = supabase.from("bank_accounts").select("saldo_actual, empresa_id");
+    if (data.empresa_id) bqAcc = bqAcc.eq("empresa_id", data.empresa_id);
+    const { data: accts } = await bqAcc;
+    const saldoActual = (accts ?? []).reduce(
+      (s, a: any) => s + Number(a.saldo_actual ?? 0),
+      0,
+    );
+
+    // Projected movements
+    let bqMov = supabase
+      .from("bank_movements")
+      .select("fecha, monto, tipo, empresa_id")
+      .gte("fecha", todayIso)
+      .lte("fecha", horizonte.toISOString().slice(0, 10));
+    if (data.empresa_id) bqMov = bqMov.eq("empresa_id", data.empresa_id);
+    const { data: movs } = await bqMov;
+
+    // Build daily running balance
+    const days: { date: string; balance: number; buffer: number }[] = [];
+    let bal = saldoActual;
+    const byDate = new Map<string, number>();
+    for (const m of (movs ?? []) as any[]) {
+      const delta = m.tipo === "cargo" || m.tipo === "salida" ? -Number(m.monto ?? 0) : Number(m.monto ?? 0);
+      byDate.set(m.fecha, (byDate.get(m.fecha) ?? 0) + delta);
+    }
+    for (let i = 0; i < data.dias; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      bal += byDate.get(iso) ?? 0;
+      const buffer = bal - data.monto;
+      days.push({ date: iso, balance: bal, buffer });
+    }
+
+    // Pick date with max buffer among viable (buffer >= 0); if none, pick max
+    const viables = days.filter((d) => d.buffer >= 0);
+    const pool = viables.length > 0 ? viables : days;
+    const best = pool.reduce((a, b) => (a.buffer >= b.buffer ? a : b), pool[0]);
+
+    return {
+      saldo_actual: saldoActual,
+      dias: days.slice(0, 30),
+      recomendacion: best
+        ? {
+            fecha: best.date,
+            saldo_proyectado: best.balance,
+            buffer: best.buffer,
+            viable: best.buffer >= 0,
+          }
+        : null,
+    };
+  });
