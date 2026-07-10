@@ -32,6 +32,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+import { PageHeader } from "@/components/ui/page-header";
+import { ResponsiveTable, type ResponsiveColumn } from "@/components/ui/responsive-table";
 
 export const Route = createFileRoute("/admin/bancos/")({
   head: () => ({
