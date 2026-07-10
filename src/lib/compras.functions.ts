@@ -432,7 +432,100 @@ export const regenerarAlertasCompras = createServerFn({ method: "POST" })
       });
     }
 
-    if (inserts.length > 0) {
+    // 4) Incremento de costo por encima del umbral (últimos 60 días)
+    const cost60 = new Date();
+    cost60.setDate(cost60.getDate() - 60);
+    const { data: costs } = await supabase
+      .from("cost_history")
+      .select("producto_id, costo_anterior, costo_nuevo, variacion_pct, fecha, producto:productos(nombre, sku)")
+      .gte("fecha", cost60.toISOString().slice(0, 10))
+      .order("fecha", { ascending: false })
+      .limit(200);
+    const seenCost = new Set<string>();
+    for (const c of (costs ?? []) as any[]) {
+      if (!c.producto_id || seenCost.has(c.producto_id)) continue;
+      seenCost.add(c.producto_id);
+      const pct = Number(c.variacion_pct ?? 0);
+      if (pct >= costoUmbral) {
+        inserts.push({
+          tipo: "incremento_costo",
+          severidad: pct >= costoUmbral * 2 ? "alta" : "media",
+          producto_id: c.producto_id,
+          titulo: `Incremento de costo: ${c.producto?.nombre ?? ""}`,
+          detalle: `${pct.toFixed(1)}% (${Number(c.costo_anterior || 0).toFixed(2)} → ${Number(c.costo_nuevo || 0).toFixed(2)})`,
+          payload: { sku: c.producto?.sku, variacion_pct: pct, umbral: costoUmbral },
+        });
+      }
+    }
+
+    // 5) Proveedor con bajo cumplimiento (fill rate < 85% o on-time < 80%)
+    const { data: kpis } = await supabase
+      .from("v_supplier_kpis")
+      .select("laboratorio_id, laboratorio, fill_rate_pct, on_time_pct, lead_time_prom_dias, ordenes")
+      .limit(200);
+    for (const k of (kpis ?? []) as any[]) {
+      if (!k.laboratorio_id || Number(k.ordenes ?? 0) < 3) continue;
+      const fr = Number(k.fill_rate_pct ?? 100);
+      const ot = Number(k.on_time_pct ?? 100);
+      if (fr < 85 || ot < 80) {
+        inserts.push({
+          tipo: "prov_incumple",
+          severidad: fr < 70 || ot < 60 ? "alta" : "media",
+          laboratorio_id: k.laboratorio_id,
+          titulo: `Bajo cumplimiento: ${k.laboratorio ?? ""}`,
+          detalle: `Fill ${fr.toFixed(0)}% · Puntualidad ${ot.toFixed(0)}% · Lead ${Number(k.lead_time_prom_dias ?? 0).toFixed(0)}d`,
+          payload: { fill_rate_pct: fr, on_time_pct: ot },
+        });
+      }
+    }
+
+    // 6) OCs vencidas (fecha esperada pasada y no recibidas)
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: ocsV } = await supabase
+      .from("ordenes_compra")
+      .select("id, folio, fecha_esperada, estado, laboratorio_id, laboratorio:laboratorios(nombre)")
+      .lt("fecha_esperada", today)
+      .not("estado", "in", "(recibida,cancelada,recibida_parcial)")
+      .limit(200);
+    for (const o of (ocsV ?? []) as any[]) {
+      const dias = Math.floor(
+        (Date.now() - new Date(o.fecha_esperada).getTime()) / 86400000,
+      );
+      inserts.push({
+        tipo: "oc_vencida",
+        severidad: dias > 14 ? "alta" : "media",
+        laboratorio_id: o.laboratorio_id,
+        titulo: `OC vencida: ${o.folio ?? o.id.slice(0, 8)}`,
+        detalle: `${o.laboratorio?.nombre ?? "Proveedor"} · ${dias}d de retraso`,
+        payload: { oc_id: o.id, dias_retraso: dias },
+      });
+    }
+
+    // 7) Promoción activa sin stock suficiente
+    const in14 = new Date();
+    in14.setDate(in14.getDate() + 14);
+    const { data: promos } = await supabase
+      .from("product_promotions")
+      .select("id, promo_name, producto_id, valid_from, valid_to, producto:productos(nombre, sku, stock_disponible)")
+      .eq("active", true)
+      .lte("valid_from", today)
+      .gte("valid_to", today)
+      .limit(100);
+    for (const p of (promos ?? []) as any[]) {
+      const disp = Number(p.producto?.stock_disponible ?? 0);
+      if (disp <= 5) {
+        inserts.push({
+          tipo: "promo_sin_stock",
+          severidad: disp === 0 ? "critica" : "alta",
+          producto_id: p.producto_id,
+          titulo: `Promo sin stock: ${p.producto?.nombre ?? ""}`,
+          detalle: `${p.promo_name ?? "Promoción"} activa · Disp ${disp}`,
+          payload: { sku: p.producto?.sku, promo_id: p.id },
+        });
+      }
+    }
+
+
       const { error } = await supabase.from("purchase_alerts").insert(inserts);
       if (error) throw new Error(error.message);
     }
