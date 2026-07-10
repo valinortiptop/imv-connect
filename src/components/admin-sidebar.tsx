@@ -81,6 +81,9 @@ const navGroups: NavGroup[] = [
       { key: "navComprasCostos",       label: "Costos",               url: "/admin/compras/costos",       icon: DollarSign },
       { key: "navComprasRotacion",     label: "Rotación",             url: "/admin/compras/rotacion",     icon: Snowflake },
       { key: "navComprasFaltantes",    label: "Faltantes",            url: "/admin/compras/faltantes",    icon: AlertOctagon },
+      { key: "navComprasAlertas",      label: "Alertas",              url: "/admin/compras/alertas",      icon: Bell },
+      { key: "navComprasPresupuesto",  label: "Presupuesto",          url: "/admin/compras/presupuesto",  icon: Wallet },
+
 
       { key: "navDevoluciones",  label: "Devoluciones",         url: "/admin/devoluciones/lista", icon: Undo2 },
       { key: "navDamaged",       label: "Dañados",              url: "/admin/danados",            icon: AlertOctagon },
