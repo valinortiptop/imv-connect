@@ -6,6 +6,8 @@ import {
   AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
   Calculator as CalcIcon, BookText, Scale, Receipt, Landmark, ShieldCheck, PieChart, ScrollText,
   Banknote, ArrowLeftRight, ArrowDownUp, Wallet, FileSpreadsheet, Sparkles, Trophy,
+  CalendarClock, DollarSign, Snowflake, ClipboardCheck, Building,
+
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
