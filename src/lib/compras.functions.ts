@@ -283,3 +283,55 @@ export const resolverAlertaCompras = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// AI insight for Compras dashboard — narrative summary + top 3 acciones
+export const aiInsightCompras = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { geminiGenerateInline } = await import("./valinor-proxy.server");
+
+    const [plan, cad, rot, kpi] = await Promise.all([
+      supabase.from("v_compras_planeacion")
+        .select("sku, nombre, laboratorio, stock_disponible, punto_reorden, cantidad_sugerida, dias_cobertura, ventas_30d, tendencia_pct")
+        .order("cantidad_sugerida", { ascending: false })
+        .limit(15),
+      supabase.from("v_caducidades")
+        .select("nombre, sku, cantidad, valor_economico, dias_restantes, semaforo")
+        .in("semaforo", ["rojo", "amarillo"])
+        .order("dias_restantes", { ascending: true })
+        .limit(10),
+      supabase.from("v_baja_rotacion")
+        .select("nombre, sku, valor_inmovilizado, dias_sin_venta, clasificacion")
+        .in("clasificacion", ["180d", "sin_venta"])
+        .order("valor_inmovilizado", { ascending: false })
+        .limit(10),
+      supabase.from("v_supplier_kpis")
+        .select("laboratorio, fill_rate_pct, on_time_pct, lead_time_prom_dias")
+        .order("fill_rate_pct", { ascending: true })
+        .limit(5),
+    ]);
+
+    const prompt = `Eres analista senior de compras farmacéuticas. Genera un análisis breve y accionable en español para el equipo de compras.
+Devuelve JSON estricto: {"resumen":"<2-3 líneas>","riesgos":["...","...","..."],"acciones":[{"titulo":"...","detalle":"..."}]} (máx 3 acciones priorizadas).
+
+Datos:
+- Planeación top-15: ${JSON.stringify(plan.data ?? [])}
+- Caducidades: ${JSON.stringify(cad.data ?? [])}
+- Baja rotación: ${JSON.stringify(rot.data ?? [])}
+- Proveedores con menor fill rate: ${JSON.stringify(kpi.data ?? [])}`;
+
+    const resp = await geminiGenerateInline({
+      model: "gemini-flash-latest",
+      parts: [{ text: prompt }],
+      jsonMode: true,
+    });
+    const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+    let parsed: { resumen?: string; riesgos?: string[]; acciones?: { titulo: string; detalle: string }[] } = {};
+    try { parsed = JSON.parse(text); } catch { parsed = {}; }
+    return {
+      resumen: parsed.resumen ?? "",
+      riesgos: Array.isArray(parsed.riesgos) ? parsed.riesgos.slice(0, 5) : [],
+      acciones: Array.isArray(parsed.acciones) ? parsed.acciones.slice(0, 3) : [],
+    };
+  });
