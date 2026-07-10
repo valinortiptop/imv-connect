@@ -7112,6 +7112,62 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "pedido_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_contents_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_order_item_breakdown"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "slot_contents_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
