@@ -224,8 +224,9 @@ function NuevaOCModal({ onClose, onSaved }: { onClose: () => void; onSaved: (id:
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+      <div className="my-8 w-full max-w-md rounded-lg border border-border bg-card p-6">
+
         <h2 className="mb-3 text-lg font-semibold">Nueva orden de compra</h2>
         <div className="space-y-3">
           <div>
