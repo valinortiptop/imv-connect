@@ -136,7 +136,8 @@ function UsuariosPage() {
         <p className="text-sm text-muted-foreground">Cargando usuarios…</p>
       )}
 
-      <div className="overflow-x-auto rounded-md border border-border">
+      {/* Table view: sm+ */}
+      <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -157,30 +158,15 @@ function UsuariosPage() {
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {u.last_sign_in_at
-                      ? new Date(u.last_sign_in_at).toLocaleDateString()
-                      : "—"}
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "—"}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
-                      {u.roles.length === 0 && (
-                        <span className="text-xs text-muted-foreground">(sin rol)</span>
-                      )}
+                      {u.roles.length === 0 && <span className="text-xs text-muted-foreground">(sin rol)</span>}
                       {u.roles.map((r) => (
-                        <span
-                          key={r}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
-                        >
+                        <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                           {ROLE_LABEL[r]}
-                          <button
-                            onClick={() =>
-                              remover.mutate({ user_id: u.user_id, role: r })
-                            }
-                            className="text-primary/70 hover:text-primary"
-                            title="Remover"
-                          >
-                            ✕
-                          </button>
+                          <button onClick={() => remover.mutate({ user_id: u.user_id, role: r })} className="text-primary/70 hover:text-primary" title="Remover">✕</button>
                         </span>
                       ))}
                     </div>
@@ -200,11 +186,7 @@ function UsuariosPage() {
                         className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                       >
                         <option value="">+ rol…</option>
-                        {faltantes.map((r) => (
-                          <option key={r} value={r}>
-                            {ROLE_LABEL[r]}
-                          </option>
-                        ))}
+                        {faltantes.map((r) => (<option key={r} value={r}>{ROLE_LABEL[r]}</option>))}
                       </select>
                     )}
                   </td>
@@ -212,15 +194,57 @@ function UsuariosPage() {
               );
             })}
             {(usuariosQ.data ?? []).length === 0 && !usuariosQ.isLoading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
-                  Sin usuarios.
-                </td>
-              </tr>
+              <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Sin usuarios.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Card view: mobile */}
+      <div className="sm:hidden space-y-2">
+        {(usuariosQ.data ?? []).map((u) => {
+          const faltantes = ROLES.filter((r) => !u.roles.includes(r));
+          return (
+            <div key={u.user_id} className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold break-all">{u.email}</div>
+                <div className="text-xs text-muted-foreground">
+                  Alta {new Date(u.created_at).toLocaleDateString()}
+                  {u.last_sign_in_at && <> · último {new Date(u.last_sign_in_at).toLocaleDateString()}</>}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {u.roles.length === 0 && <span className="text-xs text-muted-foreground">(sin rol)</span>}
+                {u.roles.map((r) => (
+                  <span key={r} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                    {ROLE_LABEL[r]}
+                    <button onClick={() => remover.mutate({ user_id: u.user_id, role: r })} className="text-primary/70 hover:text-primary" title="Remover">✕</button>
+                  </span>
+                ))}
+              </div>
+              {faltantes.length > 0 && (
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const v = e.target.value as AppRole | "";
+                    if (!v) return;
+                    asignar.mutate({ user_id: u.user_id, role: v });
+                    e.currentTarget.value = "";
+                  }}
+                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                >
+                  <option value="">+ rol…</option>
+                  {faltantes.map((r) => (<option key={r} value={r}>{ROLE_LABEL[r]}</option>))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+        {(usuariosQ.data ?? []).length === 0 && !usuariosQ.isLoading && (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin usuarios.</div>
+        )}
+      </div>
+
 
       <p className="text-xs text-muted-foreground">
         Los usuarios se crean desde Supabase → Authentication → Users. Aquí
