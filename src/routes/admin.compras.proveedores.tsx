@@ -16,6 +16,7 @@ export const Route = createFileRoute("/admin/compras/proveedores")({
 
 function ProveedoresPage() {
   const [incidentFor, setIncidentFor] = useState<{ id: string; nombre: string } | null>(null);
+  const [drawerFor, setDrawerFor] = useState<{ id: string; nombre: string; kpi: any } | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["v_supplier_kpis"],
