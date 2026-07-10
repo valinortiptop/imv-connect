@@ -8476,6 +8476,7 @@ export type Database = {
           price_list_id: string | null
           razon_social: string | null
           representante_id: string | null
+          required_documents: Json | null
           rfc: string | null
           token_portal: string | null
           updated_at: string | null
@@ -8511,6 +8512,7 @@ export type Database = {
           price_list_id?: string | null
           razon_social?: string | null
           representante_id?: string | null
+          required_documents?: Json | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
@@ -8546,6 +8548,7 @@ export type Database = {
           price_list_id?: string | null
           razon_social?: string | null
           representante_id?: string | null
+          required_documents?: Json | null
           rfc?: string | null
           token_portal?: string | null
           updated_at?: string | null
