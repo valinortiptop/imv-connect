@@ -75,7 +75,9 @@ function ProveedoresPage() {
             {(data ?? []).map((p: any) => (
               <div key={p.laboratorio_id} className="rounded-md border border-border p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{p.laboratorio}</p>
+                  <button className="text-left font-medium hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>
+                    {p.laboratorio}
+                  </button>
                   <Button variant="outline" size="sm" onClick={() => setIncidentFor({ id: p.laboratorio_id, nombre: p.laboratorio })}>
                     <Plus className="size-3.5" />
                   </Button>
@@ -97,6 +99,13 @@ function ProveedoresPage() {
           lab={incidentFor}
           onClose={() => setIncidentFor(null)}
           onSaved={() => { setIncidentFor(null); refetch(); }}
+        />
+      )}
+      {drawerFor && (
+        <SupplierDrawer
+          lab={drawerFor}
+          onClose={() => setDrawerFor(null)}
+          onOpenIncident={() => { setIncidentFor({ id: drawerFor.id, nombre: drawerFor.nombre }); setDrawerFor(null); }}
         />
       )}
     </div>
