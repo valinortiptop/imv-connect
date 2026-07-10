@@ -33,6 +33,14 @@ function ComprasDashboard() {
     onError: (e: any) => toast.error(e?.message ?? "Error"),
   });
 
+  const insight = useServerFn(aiInsightCompras);
+  const insightMut = useMutation({
+    mutationFn: () => insight({}),
+    onError: (e: any) => toast.error(e?.message ?? "Error IA"),
+  });
+
+
+
   const { data: kpis } = useQuery({
     queryKey: ["compras-kpis"],
     queryFn: async () => {
