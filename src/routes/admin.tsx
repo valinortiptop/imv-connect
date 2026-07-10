@@ -54,7 +54,7 @@ function AdminLayout() {
               Panel de administración
             </span>
           </header>
-          <main className="w-full min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-8">
+          <main data-mobile-safe className="w-full min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-8">
             <Outlet />
           </main>
         </div>

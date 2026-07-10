@@ -144,9 +144,53 @@
     border-color: var(--color-border);
   }
 
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile safety net for the admin/rep panel:
+   * Any un-wrapped <table> inside a page gets horizontal scroll on phones,
+   * and cell padding tightens so dense grids stay readable.
+   * Scoped via [data-mobile-safe] on <main> to avoid touching auth/marketing. */
+  @media (max-width: 639px) {
+    [data-mobile-safe] table {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    [data-mobile-safe] table thead,
+    [data-mobile-safe] table tbody,
+    [data-mobile-safe] table tr {
+      display: table;
+      width: 100%;
+      table-layout: auto;
+    }
+    [data-mobile-safe] table th,
+    [data-mobile-safe] table td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8125rem;
+    }
+    /* Any grid with hardcoded >=2 cols and no responsive prefix collapses. */
+    [data-mobile-safe] [class~="grid-cols-2"]:not([class*="sm:grid-cols"]):not([class*="md:grid-cols"]):not([class*="lg:grid-cols"]) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    /* Long inline flex toolbars: allow wrap. */
+    [data-mobile-safe] .flex.items-center:not([class*="flex-nowrap"]) {
+      flex-wrap: wrap;
+    }
+    /* Dialog / sheet content: allow scroll on short screens. */
+    [data-mobile-safe] [role="dialog"] {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
   }
 }
 
