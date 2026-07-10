@@ -158,7 +158,8 @@ function PresupuestoPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-border">
+      {/* Table view: sm+ */}
+      <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -199,6 +200,39 @@ function PresupuestoPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Card view: mobile */}
+      <div className="sm:hidden space-y-2">
+        {isLoading ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Cargando…</div>
+        ) : budgets.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin presupuestos capturados.</div>
+        ) : budgets.map((b: any) => {
+          const spent = Number(gastado?.get(b.mes) ?? 0);
+          const budget = Number(b.monto_mxn);
+          const pct = budget > 0 ? (spent / budget) * 100 : 0;
+          const color = pct >= 100 ? "bg-rose-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
+          return (
+            <div key={b.id} className="rounded-lg border border-border bg-card p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="text-sm font-semibold capitalize">{labelMonth(b.mes)}</div>
+                <div className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(0)}%</div>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded bg-muted">
+                <div className={`h-full ${color}`} style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+              <dl className="mt-2 grid grid-cols-2 gap-1 text-xs">
+                <dt className="text-muted-foreground">Presupuesto</dt>
+                <dd className="text-right tabular-nums">{mxn.format(budget)}</dd>
+                <dt className="text-muted-foreground">Comprometido</dt>
+                <dd className="text-right tabular-nums">{mxn.format(spent)}</dd>
+              </dl>
+              {b.notas && <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground break-words">{b.notas}</div>}
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }

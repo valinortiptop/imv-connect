@@ -132,7 +132,8 @@ function AlertasPage() {
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-border">
+      {/* Table view: sm+ */}
+      <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -199,6 +200,59 @@ function AlertasPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Card view: mobile */}
+      <div className="sm:hidden space-y-2">
+        {isLoading ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Cargando…</div>
+        ) : alertas.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin alertas abiertas.</div>
+        ) : alertas.map((a: any) => {
+          const t = TIPOS[a.tipo] ?? { label: a.tipo, color: "bg-muted text-muted-foreground" };
+          const prio = a.prioridad ?? a.severidad ?? "media";
+          return (
+            <div key={a.id} className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className={`shrink-0 rounded px-2 py-0.5 text-xs ${t.color}`}>{t.label}</span>
+                <Button size="sm" variant="outline" className="h-7 shrink-0 text-xs" onClick={() => mResolve.mutate(a.id)}>
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Resolver
+                </Button>
+              </div>
+              <div>
+                <div className="text-sm font-semibold break-words">{a.titulo}</div>
+                {a.detalle && <div className="text-xs text-muted-foreground break-words">{a.detalle}</div>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={prio}
+                  onValueChange={(v) => mAssign.mutate({ id: a.id, responsable_user_id: a.responsable_user_id, prioridad: v })}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critica">Crítica</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="media">Media</SelectItem>
+                    <SelectItem value="baja">Baja</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={a.responsable_user_id ?? "none"}
+                  onValueChange={(v) => mAssign.mutate({ id: a.id, responsable_user_id: v === "none" ? null : v, prioridad: a.prioridad })}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin asignar</SelectItem>
+                    {(usersQ.data ?? []).map((u: any) => (
+                      <SelectItem key={u.id} value={u.id}>{u.email ?? u.full_name ?? u.id.slice(0, 8)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
