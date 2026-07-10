@@ -27,6 +27,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ClientCalendarPanel from "@/components/clients/ClientCalendarPanel";
 
 type Props = {
   clientId: string | null;
