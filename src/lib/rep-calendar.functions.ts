@@ -109,6 +109,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
       const cli = visit ? clientMap.get(visit.cliente_id) : null;
       const repId = visit?.representante_id ?? null;
       if (repIds?.length && repId && !repIds.includes(repId)) continue;
+      if (clienteId && visit?.cliente_id !== clienteId) continue;
       events.push({
         id: `a-${a.id}`,
         type: "acuerdo",
@@ -123,40 +124,45 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
       });
     }
 
-    // Prospect calls
-    for (const c of callsRes.data ?? []) {
-      if (c.called_at && c.called_at >= from && c.called_at <= to) {
-        events.push({
-          id: `c-${c.id}`,
-          type: "llamada",
-          title: `Llamada realizada`,
-          subtitle: c.outcome ?? c.notes ?? undefined,
-          start: c.called_at,
-          outcome: c.outcome,
-        });
+    // Prospect calls (not tied to a cliente; hide when clienteId filter is active)
+    if (!clienteId) {
+      for (const c of callsRes.data ?? []) {
+        if (c.called_at && c.called_at >= from && c.called_at <= to) {
+          events.push({
+            id: `c-${c.id}`,
+            type: "llamada",
+            title: `Llamada realizada`,
+            subtitle: c.outcome ?? c.notes ?? undefined,
+            start: c.called_at,
+            outcome: c.outcome,
+          });
+        }
+        if (c.next_action_at && c.next_action_at >= from && c.next_action_at <= to) {
+          events.push({
+            id: `cn-${c.id}`,
+            type: "llamada",
+            title: `Seguimiento programado`,
+            subtitle: c.notes ?? undefined,
+            start: c.next_action_at,
+          });
+        }
       }
-      if (c.next_action_at && c.next_action_at >= from && c.next_action_at <= to) {
+    }
+
+    // Delivery trips (no cliente linkage; hide when filtering by cliente)
+    if (!clienteId) {
+      for (const t of tripsRes.data ?? []) {
         events.push({
-          id: `cn-${c.id}`,
-          type: "llamada",
-          title: `Seguimiento programado`,
-          subtitle: c.notes ?? undefined,
-          start: c.next_action_at,
+          id: `t-${t.id}`,
+          type: "entrega",
+          title: `Ruta de entrega${t.truck_provider ? ` · ${t.truck_provider}` : ""}`,
+          subtitle: t.notes ?? undefined,
+          start: `${t.trip_date}T08:00:00`,
+          status: t.status,
         });
       }
     }
 
-    // Delivery trips
-    for (const t of tripsRes.data ?? []) {
-      events.push({
-        id: `t-${t.id}`,
-        type: "entrega",
-        title: `Ruta de entrega${t.truck_provider ? ` · ${t.truck_provider}` : ""}`,
-        subtitle: t.notes ?? undefined,
-        start: `${t.trip_date}T08:00:00`,
-        status: t.status,
-      });
-    }
 
     // Orders
     for (const p of ordersRes.data ?? []) {
