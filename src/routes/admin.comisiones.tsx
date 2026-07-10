@@ -126,30 +126,48 @@ function ComisionesPage() {
       </div>
 
       {totales.byRep.length > 0 && (
-        <div className="mb-6 overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2">Representante</th>
-                <th className="px-3 py-2 text-right">Pedidos</th>
-                <th className="px-3 py-2 text-right">Subtotal</th>
-                <th className="px-3 py-2 text-right">Comisión</th>
-              </tr>
-            </thead>
-            <tbody>
-              {totales.byRep
-                .sort((a, b) => b.comision - a.comision)
-                .map((r) => (
-                  <tr key={r.nombre} className="border-t border-border">
-                    <td className="px-3 py-2 font-medium">{r.nombre}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{r.pedidos}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">${r.subtotal.toFixed(2)}</td>
-                    <td className="px-3 py-2 text-right font-semibold tabular-nums">${r.comision.toFixed(2)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="mb-6 hidden sm:block overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2">Representante</th>
+                  <th className="px-3 py-2 text-right">Pedidos</th>
+                  <th className="px-3 py-2 text-right">Subtotal</th>
+                  <th className="px-3 py-2 text-right">Comisión</th>
+                </tr>
+              </thead>
+              <tbody>
+                {totales.byRep
+                  .sort((a, b) => b.comision - a.comision)
+                  .map((r) => (
+                    <tr key={r.nombre} className="border-t border-border">
+                      <td className="px-3 py-2 font-medium">{r.nombre}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{r.pedidos}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">${r.subtotal.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums">${r.comision.toFixed(2)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mb-6 sm:hidden space-y-2">
+            {totales.byRep
+              .sort((a, b) => b.comision - a.comision)
+              .map((r) => (
+                <div key={r.nombre} className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="text-sm font-semibold truncate">{r.nombre}</div>
+                    <div className="font-semibold tabular-nums">${r.comision.toFixed(2)}</div>
+                  </div>
+                  <div className="mt-1 flex justify-between text-xs text-muted-foreground tabular-nums">
+                    <span>{r.pedidos} pedidos</span>
+                    <span>${r.subtotal.toFixed(2)} subtotal</span>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </>
       )}
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
@@ -160,60 +178,81 @@ function ComisionesPage() {
       )}
 
       {data && (
-        <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2">Folio</th>
-                <th className="px-3 py-2">Cliente</th>
-                <th className="px-3 py-2">Representante</th>
-                <th className="px-3 py-2">Estado</th>
-                <th className="px-3 py-2 text-right">Subtotal</th>
-                <th className="px-3 py-2 text-right">%</th>
-                <th className="px-3 py-2 text-right">Comisión</th>
-                <th className="px-3 py-2">Fecha</th>
-                <th className="px-3 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((p) => (
-                <tr key={p.id} className="border-t border-border">
-                  <td className="px-3 py-2 font-mono text-xs">{p.folio}</td>
-                  <td className="px-3 py-2">
-                    {p.cliente?.nombre_comercial ?? p.cliente?.razon_social ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">{p.representante?.nombre ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs">{p.estado}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    ${Number(p.subtotal ?? 0).toFixed(2)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {p.comision_pct != null ? `${Number(p.comision_pct).toFixed(2)}%` : "—"}
-                  </td>
-                  <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                    ${Number(p.comision_monto ?? 0).toFixed(2)}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {new Date(p.created_at).toLocaleDateString("es-MX")}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Link to="/admin/pedidos/$id" params={{ id: p.id }} className="text-xs text-primary hover:underline">
-                      Ver
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {data.length === 0 && (
+        <>
+          <div className="hidden sm:block overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                    Sin pedidos con representante en este rango.
-                  </td>
+                  <th className="px-3 py-2">Folio</th>
+                  <th className="px-3 py-2">Cliente</th>
+                  <th className="px-3 py-2">Representante</th>
+                  <th className="px-3 py-2">Estado</th>
+                  <th className="px-3 py-2 text-right">Subtotal</th>
+                  <th className="px-3 py-2 text-right">%</th>
+                  <th className="px-3 py-2 text-right">Comisión</th>
+                  <th className="px-3 py-2">Fecha</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data.map((p) => (
+                  <tr key={p.id} className="border-t border-border">
+                    <td className="px-3 py-2 font-mono text-xs">{p.folio}</td>
+                    <td className="px-3 py-2">{p.cliente?.nombre_comercial ?? p.cliente?.razon_social ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{p.representante?.nombre ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs">{p.estado}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">${Number(p.subtotal ?? 0).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {p.comision_pct != null ? `${Number(p.comision_pct).toFixed(2)}%` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums">${Number(p.comision_monto ?? 0).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX")}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Link to="/admin/pedidos/$id" params={{ id: p.id }} className="text-xs text-primary hover:underline">Ver</Link>
+                    </td>
+                  </tr>
+                ))}
+                {data.length === 0 && (
+                  <tr><td colSpan={9} className="px-4 py-6 text-center text-sm text-muted-foreground">Sin pedidos con representante en este rango.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="sm:hidden space-y-2">
+            {data.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                Sin pedidos con representante en este rango.
+              </div>
+            ) : data.map((p) => (
+              <Link
+                key={p.id}
+                to="/admin/pedidos/$id"
+                params={{ id: p.id }}
+                className="block rounded-lg border border-border bg-card p-3 active:bg-muted/40"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-mono text-xs text-muted-foreground">{p.folio}</div>
+                    <div className="text-sm font-semibold truncate">{p.cliente?.nombre_comercial ?? p.cliente?.razon_social ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {p.representante?.nombre ?? "—"} · {p.estado}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm font-semibold tabular-nums">${Number(p.comision_monto ?? 0).toFixed(2)}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      {p.comision_pct != null ? `${Number(p.comision_pct).toFixed(2)}%` : "—"} · ${Number(p.subtotal ?? 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX")}</div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
+
     </section>
   );
 }

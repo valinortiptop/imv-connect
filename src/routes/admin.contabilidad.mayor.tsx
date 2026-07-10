@@ -93,37 +93,70 @@ function MayorPage() {
           {!cuentaId ? (
             <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Elige una cuenta para ver su mayor.</div>
           ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-2 py-2 w-24">Fecha</th>
-                    <th className="text-left px-2 py-2 w-24">Folio</th>
-                    <th className="text-left px-2 py-2">Concepto</th>
-                    <th className="text-right px-2 py-2 w-28">Cargo</th>
-                    <th className="text-right px-2 py-2 w-28">Abono</th>
-                    <th className="text-right px-2 py-2 w-32">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
-                  ) : mayor.length === 0 ? (
-                    <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Sin movimientos.</td></tr>
-                  ) : mayor.map((r: any, i: number) => (
-                    <tr key={i} className="border-t border-border hover:bg-muted/20">
-                      <td className="px-2 py-1.5 text-xs">{r.fecha}</td>
-                      <td className="px-2 py-1.5 font-mono text-xs">{r.folio}</td>
-                      <td className="px-2 py-1.5 truncate max-w-[380px]">{r.concepto}</td>
-                      <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(r.cargo) > 0 ? mxn.format(Number(r.cargo)) : ""}</td>
-                      <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(r.abono) > 0 ? mxn.format(Number(r.abono)) : ""}</td>
-                      <td className="px-2 py-1.5 text-right font-mono text-xs font-semibold">{mxn.format(Number(r.saldo))}</td>
+            <>
+              <div className="hidden sm:block rounded-lg border border-border overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-2 py-2 w-24">Fecha</th>
+                      <th className="text-left px-2 py-2 w-24">Folio</th>
+                      <th className="text-left px-2 py-2">Concepto</th>
+                      <th className="text-right px-2 py-2 w-28">Cargo</th>
+                      <th className="text-right px-2 py-2 w-28">Abono</th>
+                      <th className="text-right px-2 py-2 w-32">Saldo</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                    ) : mayor.length === 0 ? (
+                      <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Sin movimientos.</td></tr>
+                    ) : mayor.map((r: any, i: number) => (
+                      <tr key={i} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-2 py-1.5 text-xs">{r.fecha}</td>
+                        <td className="px-2 py-1.5 font-mono text-xs">{r.folio}</td>
+                        <td className="px-2 py-1.5 truncate max-w-[380px]">{r.concepto}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(r.cargo) > 0 ? mxn.format(Number(r.cargo)) : ""}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(r.abono) > 0 ? mxn.format(Number(r.abono)) : ""}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-xs font-semibold">{mxn.format(Number(r.saldo))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="sm:hidden space-y-2">
+                {isLoading ? (
+                  <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Cargando…</div>
+                ) : mayor.length === 0 ? (
+                  <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin movimientos.</div>
+                ) : mayor.map((r: any, i: number) => (
+                  <div key={i} className="rounded-lg border border-border bg-card p-3">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-mono text-xs">{r.folio}</span>
+                      <span className="text-xs text-muted-foreground">{r.fecha}</span>
+                    </div>
+                    {r.concepto && <div className="mt-1 text-xs break-words">{r.concepto}</div>}
+                    <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2 text-xs font-mono tabular-nums">
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Cargo</div>
+                        <div className="text-emerald-600">{Number(r.cargo) > 0 ? mxn.format(Number(r.cargo)) : "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground">Abono</div>
+                        <div className="text-rose-600">{Number(r.abono) > 0 ? mxn.format(Number(r.abono)) : "—"}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase text-muted-foreground">Saldo</div>
+                        <div className="font-semibold">{mxn.format(Number(r.saldo))}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
+
         </>
       )}
     </section>

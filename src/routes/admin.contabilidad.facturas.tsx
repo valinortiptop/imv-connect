@@ -124,7 +124,7 @@ function FacturasContPage() {
             </Select>
           </div>
 
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="hidden sm:block rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
@@ -168,6 +168,40 @@ function FacturasContPage() {
               </tbody>
             </table>
           </div>
+
+          <div className="sm:hidden space-y-2">
+            {isLoading ? (
+              <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Cargando…</div>
+            ) : facturas.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin facturas.</div>
+            ) : facturas.map((f: any) => (
+              <div key={f.id} className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-mono text-xs text-muted-foreground">{f.folio}</div>
+                    <div className="text-sm font-semibold truncate">{f.clientes?.nombre_comercial || f.clientes?.razon_social || "—"}</div>
+                    <div className="text-xs text-muted-foreground">{f.fecha_emision}</div>
+                  </div>
+                  <div className="shrink-0 text-right font-mono text-sm">{mxn.format(Number(f.total))}</div>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+                  {f.poliza_id
+                    ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 gap-1"><CheckCircle2 className="h-3 w-3" /> Contabilizada</Badge>
+                    : <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> Pendiente</Badge>}
+                  {f.poliza_id ? (
+                    <Link to="/admin/contabilidad/polizas/$id" params={{ id: f.poliza_id }} className="text-primary text-xs hover:underline">
+                      Ver póliza
+                    </Link>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => contabilizar.mutate(f)} disabled={contabilizar.isPending}>
+                      Contabilizar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
         </>
       )}
     </section>
