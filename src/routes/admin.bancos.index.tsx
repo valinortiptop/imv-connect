@@ -386,7 +386,7 @@ function BancosIndex() {
                 }
               />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Cuenta contable</Label>
               <Select
                 value={editing?.cuenta_contable_id ?? "none"}
@@ -410,7 +410,7 @@ function BancosIndex() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Notas</Label>
               <Input
                 value={editing?.notas ?? ""}
@@ -419,7 +419,7 @@ function BancosIndex() {
                 }
               />
             </div>
-            <div className="flex items-center gap-2 col-span-2">
+            <div className="flex items-center gap-2 sm:col-span-2">
               <Switch
                 checked={editing?.activa ?? true}
                 onCheckedChange={(v) =>
