@@ -801,7 +801,7 @@ export default function Catalogo() {
   }, [selectedProducts, mode, toast, clientId, runDownload]);
 
   return (
-    <div className="p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="mx-auto w-full max-w-7xl min-w-0 overflow-x-hidden p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="space-y-3 sm:space-y-4">
         <div>
@@ -849,8 +849,8 @@ export default function Catalogo() {
           </div>
 
           {/* Mayoreo / other-list picker — scrolls horizontally on mobile */}
-          <div className="-mx-3 sm:mx-0 overflow-x-auto sm:overflow-visible px-3 sm:px-0">
-            <div className="inline-flex rounded-lg border bg-card p-1 text-sm whitespace-nowrap">
+          <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-auto sm:overflow-visible">
+            <div className="inline-flex w-max rounded-lg border bg-card p-1 text-sm whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setPriceListId("mayoreo")}
@@ -1049,14 +1049,14 @@ export default function Catalogo() {
           <p>No hay productos con imagen que coincidan</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
           {filtered.map((p) => {
             const isSelected = selected.has(p.id);
             return (
               <div
                 key={p.id}
                 className={cn(
-                  "relative rounded-xl border bg-card p-3 text-left transition-all hover:shadow-md cursor-pointer overflow-hidden",
+                  "relative min-w-0 rounded-xl border bg-card p-3 text-left transition-all hover:shadow-md cursor-pointer overflow-hidden",
                   isSelected
                     ? "border-primary ring-2 ring-primary/20 shadow-md"
                     : "border-border hover:border-muted-foreground/30"

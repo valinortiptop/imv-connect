@@ -442,12 +442,15 @@ export function AvailabilityDownloadDialog({
 
       </DialogContent>
 
-      {/* Offscreen print card */}
-      <AvailabilityPrintCard
-        ref={printRef}
-        rows={availabilityRows}
-        dateLabel={dateLabelShort}
-      />
+      {/* Offscreen print card — mounted only while the dialog is open so it
+          never contributes to mobile page overflow on the catálogo screen. */}
+      {open && (
+        <AvailabilityPrintCard
+          ref={printRef}
+          rows={availabilityRows}
+          dateLabel={dateLabelShort}
+        />
+      )}
     </Dialog>
   );
 }
@@ -485,8 +488,9 @@ const AvailabilityPrintCard = React.forwardRef<HTMLDivElement, {
     <div
       ref={ref}
       style={{
-        position: "fixed", top: 0, left: 0, transform: "translateX(-200vw)",
-        pointerEvents: "none", zIndex: 0, width: 1000, minHeight: 700,
+        position: "fixed", top: 0, left: -10000,
+        pointerEvents: "none", zIndex: -1, width: 1000, maxWidth: "none", minHeight: 700,
+        contain: "layout paint style", overflow: "hidden",
         backgroundColor: bg, color: fg,
         fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
         padding: 48, boxSizing: "border-box",

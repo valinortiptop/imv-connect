@@ -1,52 +1,19 @@
-## Two fixes: auto-updating build marker + verify mobile catálogo dialog
+Plan to fix the mobile catálogo blockage:
 
-### 1. Build marker auto-updates on every publish
+1. Fix the real source of the left-side “Bultos disponibles” panel
+   - The exported availability image component is currently positioned as a fixed 1000px-wide element and moved left with `translateX(-200vw)`.
+   - On mobile Safari, that can still affect the page’s scrollable layout, creating a huge horizontal canvas where only the right side of the catálogo remains visible and the availability table header (“Bultos disponibles”) appears as a blocking white strip.
+   - I’ll change that hidden print/export node so it is truly isolated from mobile layout: hidden visual box, clipped, non-interactive, and not contributing to horizontal page width.
 
-Today `src/components/admin-sidebar.tsx` hardcodes:
+2. Add mobile overflow guards on catálogo itself
+   - Make the catálogo page root explicitly `w-full min-w-0 overflow-x-hidden`.
+   - Remove remaining negative-margin horizontal breakout behavior in the mobile controls that can make the page wider than the viewport.
+   - Keep horizontal scrolling only where intended, inside bounded containers.
 
-```ts
-const ADMIN_BUILD_MARKER = "Build 2026.07.09-2";
-```
+3. Keep desktop behavior and exports intact
+   - The visible availability dialog will stay responsive with the mobile card layout.
+   - The PNG export will still render from the hidden print card, only with safer offscreen positioning.
+   - No changes to inventory math, pricing logic, PDF generation, or database queries.
 
-That literal only changes when I edit it by hand, so publishing a new deploy doesn't move it. Fix by injecting the build timestamp at build time via Vite `define`.
-
-**Changes:**
-
-- `vite.config.ts` — pass a `define` through `@lovable.dev/vite-tanstack-config`:
-  ```ts
-  export default defineConfig({
-    tanstackStart: { server: { entry: "server" } },
-    vite: {
-      define: {
-        __BUILD_ID__: JSON.stringify(
-          new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC"
-        ),
-      },
-    },
-  });
-  ```
-  (If the wrapper doesn't forward `vite.define`, fall back to setting it via a small custom plugin inside the same config; verified before writing.)
-
-- `src/vite-env.d.ts` (or a new `src/types/build.d.ts`) — declare `declare const __BUILD_ID__: string;` so TS accepts it.
-
-- `src/components/admin-sidebar.tsx` — replace the constant:
-  ```ts
-  const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
-  ```
-
-Every publish reruns Vite, so `__BUILD_ID__` becomes the fresh deploy timestamp. Combined with the existing `useBuildVersionCheck` hook, open tabs will reload and show the new marker.
-
-### 2. Mobile catálogo "Bultos disponibles" dialog
-
-The `AvailabilityDownloadDialog.tsx` fix from last turn IS in the file (mobile card layout, responsive dialog shell, stacked footer). If it still looks broken in the user's mobile preview, it's a stale cache — the `useBuildVersionCheck` hook should have reloaded, but a fresh publish (which fix #1 above will trigger anyway) plus a hard refresh confirms.
-
-**Verification steps after both changes:**
-
-1. `bunx tsgo --noEmit`.
-2. Publish, then load `/admin/catalogo` on 390×844 mobile: click **Disponibilidad** → dialog fills the viewport with padding, product rows render as stacked cards, no floating "BULTOS DISPONIBLES" fragment.
-3. Confirm the sidebar footer shows a build marker matching the new deploy time, and that publishing again changes it.
-
-### Out of scope
-
-- No changes to catálogo page logic, queries, or PNG export.
-- No new UI beyond swapping the hardcoded build string.
+4. Verify on mobile width
+   - Check the `/admin/catalogo` mobile layout after the changes to confirm there is no horizontal offset, no left-side white panel, and the product grid starts within the viewport.
