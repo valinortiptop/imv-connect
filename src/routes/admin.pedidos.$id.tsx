@@ -144,12 +144,13 @@ function PedidoDetalle() {
         <Link to="/admin/pedidos" className="text-xs text-primary hover:underline">
           ← Pedidos
         </Link>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-2xl font-bold font-mono">{data.folio}</h1>
-          <span className="text-sm text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold font-mono break-all">{data.folio}</h1>
+          <span className="text-xs sm:text-sm text-muted-foreground">
             {new Date(data.created_at).toLocaleString("es-MX")}
           </span>
         </div>
+
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
