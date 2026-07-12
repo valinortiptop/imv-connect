@@ -1,79 +1,101 @@
-# Calendario 360 + Mapa de accesos de representantes
+## Objetivo
 
-## 1. Backend
+Subir el archivo NetSuite `IMV VENTAS DESGLOSADAS` (enero–julio 2026, ~2,860 líneas de factura) desde la página de Empresa › Configuración, guardarlo en la base y hacer que todas las pantallas que muestran ventas lo consuman junto con los pedidos nativos.
 
-### 1.1 Nueva tabla `rep_access_events` (migración)
-Registra cada inicio de sesión de un representante.
-- `user_id uuid` (auth.users), `representante_id uuid` (nullable, resuelto por trigger o desde el cliente), `signed_in_at timestamptz default now()`, `lat numeric`, `lng numeric`, `accuracy numeric`, `has_location boolean`, `user_agent text`, `ip inet` (opcional).
-- Índices por `(representante_id, signed_in_at desc)` y `(signed_in_at desc)`.
-- GRANTs: `INSERT` para `authenticated` (registrar su propio acceso), `SELECT` para `service_role`; policies:
-  - INSERT: `auth.uid() = user_id`.
-  - SELECT: solo admin/supervisor vía `has_role(auth.uid(),'admin')` OR el propio usuario.
+## Formato del archivo detectado
 
-### 1.2 Extender `getRepCalendarEventsFn`
-Añadir a `inputValidator`:
-- `clienteId?: string` — filtra `rep_visits.cliente_id`, `pedidos.cliente_id`, agreements por sus visitas, y omite entregas/llamadas no ligadas.
-- `repId?: string` — atajo equivalente a `repIds: [repId]`.
-Sin romper llamadas existentes (todos opcionales).
+XML SpreadsheetML de NetSuite con estas columnas por fila:
+`Representante | Clase (laboratorio) | Cliente/proyecto | Nº documento (INV…) | Fecha | SKU | Descripción | Cantidad vendida | Ingresos totales`
 
-### 1.3 Nuevo `listRepAccessEventsFn` (server fn)
-`.middleware([requireSupabaseAuth])` + verificación `has_role('admin')`.
-- Input: `{ from: string; to: string; repIds?: string[] }`.
-- Devuelve `[{ id, representante_id, representante_nombre, signed_in_at, lat, lng, accuracy, has_location }]`.
+Reutilizamos `xlsx` (ya en el proyecto) — soporta SpreadsheetML.
 
-## 2. Logger de accesos (cliente)
+## 1. Base de datos (migración)
 
-- Nuevo `src/lib/access-logger.ts` con `logPlatformAccess()`:
-  - Corre una vez por sesión (flag en `sessionStorage`).
-  - Pide `navigator.geolocation.getCurrentPosition` con timeout corto.
-  - Inserta fila en `rep_access_events` (con o sin lat/lng).
-- Se llama desde `src/routes/__root.tsx` dentro de `onAuthStateChange` cuando `event === "SIGNED_IN"` y del boot si hay sesión activa.
+Nueva tabla **`sales_history`** (una fila por línea de factura histórica):
 
-## 3. UI
+```text
+id uuid pk
+empresa_id uuid → empresas (para importar por empresa)
+source text  ('netsuite_2026' por ahora)
+import_batch_id uuid  (agrupa por importación)
+invoice_no text
+invoice_date date
+rep_name_raw text          representante_id uuid → representantes (nullable, resuelto)
+lab_name_raw text          laboratorio_id uuid   → laboratorios   (nullable)
+client_name_raw text       client_id uuid        → clientes       (nullable)
+sku text                   product_id uuid       → productos      (nullable)
+description text
+quantity numeric
+revenue numeric            (ingresos totales, sin IVA como viene de NetSuite)
+created_at, updated_at
+UNIQUE (empresa_id, invoice_no, sku, rep_name_raw, client_name_raw)  -- idempotencia
+```
 
-### 3.1 Cliente 360 — nueva tab "Calendario"
-`src/components/clients/Client360Drawer.tsx`: agregar `TabsTrigger value="calendario"` y `TabsContent` que renderiza un nuevo `<ClientCalendarPanel clienteId={c.id} />` (miniversión reutilizable extraída de `CalendarView`, filtrando por `clienteId`).
+Índices: `(empresa_id, invoice_date)`, `(client_id)`, `(product_id)`, `(representante_id)`, `(laboratorio_id)`.
+RLS: SELECT/INSERT/UPDATE/DELETE a `authenticated`. GRANT a `authenticated` y `service_role`.
+Trigger de resolución que rellena FKs por nombre/SKU al insertar (mismo patrón que `rep_access_events`).
 
-### 3.2 Vendedor 360 — nuevo drawer
-Nuevo `src/components/vendedores/Rep360Drawer.tsx` con tabs:
-- **Resumen**: KPIs (clientes, pedidos, ventas, comisión, último acceso).
-- **Clientes**: lista de clientes asignados.
-- **Pedidos**: últimos pedidos del rep.
-- **Calendario**: `CalendarView` filtrado por `repId`.
-Se abre desde `vendedores-page.tsx` al hacer click en el nombre/fila (nuevo botón "Ver 360"), sin quitar el modal de edición existente.
+**Vista `v_ventas_unified`** — une pedidos entregados y sales_history en una forma común:
+```text
+fuente ('pedido' | 'historico')
+fecha, empresa_id, client_id, client_name,
+representante_id, rep_name, laboratorio_id, lab_name,
+product_id, sku, description,
+quantity, revenue, invoice_no
+```
+Sobre esta vista se apoyan los reportes; los pedidos siguen alimentando logística/inventario como hoy.
 
-### 3.3 Refactor menor de `CalendarView`
-Aceptar props opcionales `{ clienteId?: string; repId?: string; embedded?: boolean }`. Cuando `embedded`, oculta el header grande y usa alto acotado. Pasa el filtro al `fetchEvents`.
+## 2. Importador
 
-### 3.4 Supervisor — mapa de accesos
-Nuevo `src/components/rep/RepAccessMap.tsx`:
-- Usa `loadGoogleMapsViaValinor()` como `RouteMap.tsx`.
-- Controles: rango de fechas (hoy/7d/30d), multiselect de reps, toggle "solo con ubicación".
-- Renderiza `google.maps.Marker` por evento; color por recencia; `InfoWindow` con rep, fecha/hora y precisión.
-- Panel lateral con lista de accesos (incluye los sin ubicación).
-Se añade a `src/routes/rep.supervisor.tsx` como sección debajo de `SupervisorDashboard`.
+**`src/lib/sales-history-import.ts`** (client-side, como `onboarding-import.ts`):
+- `parseNetSuiteSalesXml(file)` → filas normalizadas (detecta las 9 columnas, salta encabezados/totales).
+- `importSalesHistory(empresaId, rows)` → inserta en lotes de 500 con upsert por la clave única; devuelve `{inserted, updated, skipped, errors}`.
 
-## 4. Notas técnicas
+Resolución de FKs (server-side vía trigger):
+- `client_id`: match por `client_name_raw` contra `clientes.nombre_comercial`/`razon_social` (case-insensitive, trim del prefijo numérico "1471 …").
+- `product_id`: match exacto de `sku` contra `productos.sku`.
+- `representante_id`: match por `rep_name_raw` normalizado contra `representantes.nombre`.
+- `laboratorio_id`: match por `lab_name_raw` contra `laboratorios.nombre`.
+- Los no resueltos quedan con FK null pero conservan los `*_raw`, para que la UI aún muestre datos.
 
-- Todas las llamadas a Google Maps siguen usando `loadGoogleMapsViaValinor` (proxy Valinor), como pediste.
-- Trigger opcional en migración: al insertar en `rep_access_events`, si `representante_id` es null, resolverlo con `SELECT id FROM representantes WHERE user_id = NEW.user_id`.
-- No se modifica el auth flow ni el layout `_authenticated`.
-- `rep_visits` ya tiene lat/lng por visita — no lo tocamos; los accesos son eventos separados.
+## 3. UI de importación
 
-## 5. Archivos afectados
+En **`src/routes/admin.empresas.tsx` → pestaña Configuración**:
+- Nuevo bloque "Historial de ventas" con:
+  - Botón **Importar ventas (NetSuite)** que abre un diálogo.
+  - Diálogo (`SalesHistoryImportDialog.tsx`): drop-zone .xls/.xlsx, preview de las 5 primeras filas mapeadas, badge de la empresa activa, botón Importar.
+  - Resumen post-import: total filas, insertadas, ya existentes, sin cliente/producto resuelto (con lista descargable de rezagos).
+  - Tabla de lotes previos (`import_batch_id`, fecha, filas, usuario) con acción "eliminar lote".
 
-Crear:
-- `supabase/migrations/<ts>_rep_access_events.sql`
-- `src/lib/access-logger.ts`
-- `src/lib/rep-access.functions.ts`
-- `src/components/clients/ClientCalendarPanel.tsx`
-- `src/components/vendedores/Rep360Drawer.tsx`
-- `src/components/rep/RepAccessMap.tsx`
+## 4. Páginas que se alimentan del histórico
 
-Editar:
-- `src/lib/rep-calendar.functions.ts` (filtros `clienteId` / `repId`)
-- `src/components/rep/CalendarView.tsx` (props embebidas)
-- `src/components/clients/Client360Drawer.tsx` (tab Calendario)
-- `src/components/vendedores-page.tsx` (abrir Rep360Drawer)
-- `src/routes/__root.tsx` (registrar logger en `onAuthStateChange`)
-- `src/routes/rep.supervisor.tsx` (montar `RepAccessMap`)
+Cambio: consumir `v_ventas_unified` (con filtro de fecha) en lugar de solo `orders/order_items` en:
+
+- **`ventas-page.tsx`** — tabla y KPIs de ventas.
+- **`sales-page.tsx`** — ventas por rep/lab/cliente.
+- **`pnl-page.tsx`** — ingresos del waterfall y P&L mensual.
+- **`dashboard-page.tsx`** — tarjeta "Ventas del mes" / gráfica.
+- **`vendedores-page.tsx`** y **`Rep360Drawer.tsx`** — ventas por representante.
+- **`Client360Drawer.tsx`** — histórico de compras del cliente.
+- **`catalogo-page.tsx` / `Product360Drawer.tsx`** — ventas por SKU.
+
+No se tocan páginas operativas (logística, maniobra, inventario, facturación) — el histórico no debe generar movimientos de stock ni CFDIs.
+
+## 5. Detalles técnicos
+
+- El archivo (~42 MB de XML) se parsea en cliente con `XLSX.read({ type: 'string' })` en modo SpreadsheetML; probamos con streaming si tarda demasiado.
+- Inserción en lotes de 500 vía `supabase.from('sales_history').upsert(...)` para no exceder límites.
+- Multi-empresa: usa la empresa seleccionada en el selector global (`useSelectedEmpresa`); si no hay, forzamos elegir una antes de importar.
+- Todos los importes de NetSuite son "sin IVA"; en `v_ventas_unified` guardamos `revenue` tal cual y agregamos una columna calculada `revenue_con_iva = revenue * 1.16` para las vistas que hoy asumen "con IVA" (documentado en un comentario de la vista).
+
+## Archivos
+
+**Crear**
+- `supabase/migrations/<ts>_sales_history.sql`
+- `src/lib/sales-history-import.ts`
+- `src/components/empresas/SalesHistoryImportDialog.tsx`
+
+**Editar**
+- `src/routes/admin.empresas.tsx` (o el tab Configuración correspondiente) para añadir la sección.
+- `src/components/ventas-page.tsx`, `sales-page.tsx`, `pnl-page.tsx`, `dashboard-page.tsx`, `vendedores-page.tsx`, `Rep360Drawer.tsx`, `Client360Drawer.tsx`, `catalogo-page.tsx`, `Product360Drawer.tsx` — cambiar la fuente a `v_ventas_unified`.
+- `src/integrations/supabase/types.ts` se regenera tras la migración.
