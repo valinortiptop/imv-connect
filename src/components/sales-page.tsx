@@ -359,6 +359,12 @@ export default function Sales() {
           onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
         />
 
+        <HistoricalSalesPanel
+          from={dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined}
+          to={dateTo ? format(dateTo, "yyyy-MM-dd") : undefined}
+        />
+
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {/* Ventas totales */}
