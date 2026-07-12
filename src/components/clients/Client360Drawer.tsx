@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ClientCalendarPanel from "@/components/clients/ClientCalendarPanel";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 
 type Props = {
   clientId: string | null;
@@ -185,9 +186,10 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
 
 
             <Tabs defaultValue="general" className="mt-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+                <TabsTrigger value="historial">Historial</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
                 <TabsTrigger value="pagos">Facturas</TabsTrigger>
                 <TabsTrigger value="calendario">Calendario</TabsTrigger>
@@ -287,6 +289,12 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                   </ul>
                 )}
               </TabsContent>
+
+              <TabsContent value="historial" className="pt-4">
+                <HistoricalSalesPanel clientId={clientId!} title="Ventas históricas del cliente" compact />
+              </TabsContent>
+
+
 
               <TabsContent value="precios" className="pt-4">
                 <Section

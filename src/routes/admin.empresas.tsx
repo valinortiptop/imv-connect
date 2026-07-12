@@ -24,6 +24,7 @@ import {
   listEmpresaDocsFn,
   deleteEmpresaDocFn,
 } from "@/lib/empresa-docs.functions";
+import { SalesHistoryImportDialog } from "@/components/empresas/SalesHistoryImportDialog";
 
 
 export const Route = createFileRoute("/admin/empresas")({
@@ -337,10 +338,18 @@ function EmpresaDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="pt-2">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="datos">Datos</TabsTrigger>
             <TabsTrigger value="documentos" disabled={!v.id}>
               Documentos
+              {!v.id && (
+                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  (guarda primero)
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="ventas" disabled={!v.id}>
+              Ventas históricas
               {!v.id && (
                 <span className="ml-1.5 text-[10px] text-muted-foreground">
                   (guarda primero)
@@ -539,6 +548,27 @@ function EmpresaDialog({
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Guarda la empresa para poder subir documentos.
+              </p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="ventas" className="mt-4 space-y-3">
+            {v.id ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Sube el reporte NetSuite "Ventas desglosadas" para alimentar las
+                  pantallas de ventas, P&amp;L, comisiones y el 360 de clientes,
+                  representantes y productos. Puedes re-importar el mismo archivo
+                  sin duplicar líneas.
+                </p>
+                <SalesHistoryImportDialog
+                  empresaId={v.id}
+                  empresaNombre={v.nombre_comercial || v.razon_social || "Empresa"}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Guarda la empresa para poder importar ventas.
               </p>
             )}
           </TabsContent>

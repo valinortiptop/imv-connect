@@ -22,6 +22,7 @@ import { AnalisisTab, type PnlSnapshot } from "@/components/pnl/AnalisisTab";
 import { EntradasBultoTab } from "@/components/pnl/EntradasBultoTab";
 import { IngresosVsEgresos, type IngresoRow, type EgresoRow } from "@/components/pnl/IngresosVsEgresos";
 import { previousPeriod } from "@/components/pnl/pnlHelpers";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 
 /* ── Helpers ── */
 const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
@@ -701,6 +702,10 @@ export default function PnL() {
               </div>
               <IngresosVsEgresos ingresos={ingresosRows} egresos={egresosRows} />
             </div>
+
+            <HistoricalSalesPanel from={dateFrom} to={dateTo} title="Historial de ventas — NetSuite" />
+
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-xl border p-5 space-y-3">

@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 
 /* ── Helpers ── */
 
@@ -357,6 +358,12 @@ export default function Sales() {
           dateTo={dateTo}
           onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
         />
+
+        <HistoricalSalesPanel
+          from={dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined}
+          to={dateTo ? format(dateTo, "yyyy-MM-dd") : undefined}
+        />
+
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

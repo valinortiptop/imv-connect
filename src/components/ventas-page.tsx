@@ -31,6 +31,7 @@ import {
 import { downloadVentasPdf } from "@/lib/ventasPdf";
 import { downloadVentasPresentationPdf } from "@/lib/ventasPresentationPdf";
 import { Presentation } from "lucide-react";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 import {
   MONTHS_ES,
   buildMonthlySales,
@@ -216,6 +217,8 @@ export default function Ventas() {
           {tx("Canal misceláneas ADM · Naucalpan y 4 municipios aledaños.")}
         </p>
       </div>
+
+      <HistoricalSalesPanel />
 
       {/* Parámetros */}
       <Card>
