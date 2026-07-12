@@ -158,23 +158,35 @@ function extractRows(ws: XLSX.WorkSheet): Record<string, unknown>[] {
 
 export async function parseNetSuiteSalesFile(file: File): Promise<SalesHistoryRow[]> {
   const buf = await file.arrayBuffer();
-  // xlsx handles both XLSX (zip) and legacy SpreadsheetML 2003 XML.
-  const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+  const wb = XLSX.read(new Uint8Array(buf), { type: "array", cellDates: false });
   const parsed: SalesHistoryRow[] = [];
+  let candidates = 0;
+  let droppedByDate = 0;
+  const dateSamples: string[] = [];
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     const rows = extractRows(ws);
     for (const r of rows) {
       const invoice = pickRaw(r, HEADER_ALIASES._inv);
-      const date = toDate(pickRaw(r, HEADER_ALIASES._date));
-      if (!invoice || !date) continue;
+      const rawDateVal = pickRawVal(r, HEADER_ALIASES._date);
       const sku = pickRaw(r, HEADER_ALIASES._sku);
-      const qty = num(pickRaw(r, HEADER_ALIASES._qty));
-      const rev = num(pickRaw(r, HEADER_ALIASES._rev));
-      // Skip subtotal / grand total lines (no SKU + no rep)
       const rep = pickRaw(r, HEADER_ALIASES._rep);
       const client = pickRaw(r, HEADER_ALIASES._client);
+      // Skip subtotal / grand total lines (no invoice + no SKU + no rep + no client)
+      if (!invoice && !sku && !rep && !client) continue;
+      if (!invoice) continue;
+      candidates++;
+      const date = toDate(rawDateVal);
+      if (!date) {
+        droppedByDate++;
+        if (dateSamples.length < 5 && rawDateVal != null && String(rawDateVal).trim() !== "") {
+          dateSamples.push(String(rawDateVal));
+        }
+        continue;
+      }
       if (!sku && !rep && !client) continue;
+      const qty = num(pickRaw(r, HEADER_ALIASES._qty));
+      const rev = num(pickRaw(r, HEADER_ALIASES._rev));
       parsed.push({
         rep_name_raw: rep ?? null,
         lab_name_raw: pickRaw(r, HEADER_ALIASES._lab) ?? null,
@@ -187,6 +199,13 @@ export async function parseNetSuiteSalesFile(file: File): Promise<SalesHistoryRo
         revenue: rev,
       });
     }
+  }
+  if (candidates > 0 && droppedByDate / candidates > 0.05) {
+    throw new Error(
+      `No se pudo interpretar la columna de fecha (${droppedByDate} de ${candidates} filas). ` +
+      `Valores encontrados: ${dateSamples.join(" | ") || "vacíos"}. ` +
+      `El sistema espera "Fecha de creación" en formato ISO o DD/MM/YYYY.`,
+    );
   }
   return parsed;
 }
