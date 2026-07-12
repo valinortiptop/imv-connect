@@ -14,6 +14,7 @@ import {
   type SalesHistoryRow,
   type ImportSummary,
 } from "@/lib/sales-history-import";
+import { fmtDateShort } from "@/lib/date-utils";
 
 type Props = { empresaId: string; empresaNombre: string };
 
