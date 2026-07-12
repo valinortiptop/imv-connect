@@ -289,6 +289,12 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
                 )}
               </TabsContent>
 
+              <TabsContent value="historial" className="pt-4">
+                <HistoricalSalesPanel clientId={clientId!} title="Ventas históricas del cliente" compact />
+              </TabsContent>
+
+
+
               <TabsContent value="precios" className="pt-4">
                 <Section
                   icon={<ClipboardList className="size-4" />}
