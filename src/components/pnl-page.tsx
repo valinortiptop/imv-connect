@@ -22,6 +22,7 @@ import { AnalisisTab, type PnlSnapshot } from "@/components/pnl/AnalisisTab";
 import { EntradasBultoTab } from "@/components/pnl/EntradasBultoTab";
 import { IngresosVsEgresos, type IngresoRow, type EgresoRow } from "@/components/pnl/IngresosVsEgresos";
 import { previousPeriod } from "@/components/pnl/pnlHelpers";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 
 /* ── Helpers ── */
 const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
