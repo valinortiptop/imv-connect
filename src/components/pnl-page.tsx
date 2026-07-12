@@ -703,6 +703,10 @@ export default function PnL() {
               <IngresosVsEgresos ingresos={ingresosRows} egresos={egresosRows} />
             </div>
 
+            <HistoricalSalesPanel from={dateFrom} to={dateTo} title="Historial de ventas — NetSuite" />
+
+
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-xl border p-5 space-y-3">
                 <p className="text-sm font-semibold">Composición de gastos</p>
