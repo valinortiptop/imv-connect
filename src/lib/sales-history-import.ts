@@ -107,7 +107,7 @@ const HEADER_ALIASES: Record<keyof SalesHistoryRow | "_rep" | "_lab" | "_client"
   _lab: ["clase_nombre", "clase", "laboratorio", "class"],
   _client: ["cliente_proyecto", "cliente", "client", "customer"],
   _inv: ["numero_de_documento", "documento", "invoice_no", "invoice", "factura", "folio"],
-  _date: ["fecha_de_creacion", "fecha", "date", "invoice_date"],
+  _date: ["fecha_de_creacion", "fecha_de_transaccion", "fecha_de_documento", "fecha_de_factura", "fecha"],
   _sku: ["articulo", "sku", "clave", "item", "codigo"],
   _desc: ["descripcion_del_articulo", "descripcion", "description"],
   _qty: ["cantidad_vendida", "cantidad", "quantity", "qty"],
