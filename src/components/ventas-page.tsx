@@ -31,6 +31,7 @@ import {
 import { downloadVentasPdf } from "@/lib/ventasPdf";
 import { downloadVentasPresentationPdf } from "@/lib/ventasPresentationPdf";
 import { Presentation } from "lucide-react";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 import {
   MONTHS_ES,
   buildMonthlySales,
