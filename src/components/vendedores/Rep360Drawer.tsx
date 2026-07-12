@@ -178,6 +178,10 @@ export default function Rep360Drawer({ repId, open, onOpenChange }: Props) {
                 )}
               </TabsContent>
 
+              <TabsContent value="historial" className="pt-4">
+                <HistoricalSalesPanel repId={repId!} title="Ventas históricas del representante" compact />
+              </TabsContent>
+
               <TabsContent value="calendario" className="pt-4">
                 <CalendarView repId={repId!} embedded />
               </TabsContent>
