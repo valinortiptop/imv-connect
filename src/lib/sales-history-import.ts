@@ -124,6 +124,16 @@ function pickRaw(row: Record<string, unknown>, keys: string[]): string | undefin
   return undefined;
 }
 
+function pickRawVal(row: Record<string, unknown>, keys: string[]): unknown {
+  const map: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) map[norm(k)] = v;
+  for (const k of keys) {
+    const v = map[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+  }
+  return undefined;
+}
+
 /** Detecta el rango con encabezados en un sheet de NetSuite y devuelve filas normalizadas. */
 function extractRows(ws: XLSX.WorkSheet): Record<string, unknown>[] {
   // NetSuite exports drop header row(s) with company title/subtitle before the real
