@@ -14,6 +14,7 @@ import {
   type SalesHistoryRow,
   type ImportSummary,
 } from "@/lib/sales-history-import";
+import { fmtDateShort } from "@/lib/date-utils";
 
 type Props = { empresaId: string; empresaNombre: string };
 
@@ -178,7 +179,7 @@ export function SalesHistoryImportDialog({ empresaId, empresaNombre }: Props) {
                     <tbody>
                       {preview.slice(0, 20).map((r, i) => (
                         <tr key={i} className="border-t border-border/50">
-                          <td className="px-2 py-1">{r.invoice_date}</td>
+                          <td className="px-2 py-1">{fmtDateShort(r.invoice_date)}</td>
                           <td className="px-2 py-1">{r.invoice_no}</td>
                           <td className="px-2 py-1 truncate max-w-[16ch]">{r.client_name_raw}</td>
                           <td className="px-2 py-1">{r.lab_name_raw}</td>

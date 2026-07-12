@@ -42,18 +42,48 @@ function norm(k: string): string {
 
 function toDate(v: unknown): string | null {
   if (v == null || v === "") return null;
-  const s = String(v);
-  // NetSuite format: "2026-04-22T00:00:00.000"
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  // fallbacks: dd/mm/yyyy
-  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (dmy) {
-    const y = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
-    return `${y}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+
+  // Excel serial number (some NetSuite exports emit numeric dates)
+  if (typeof v === "number" && Number.isFinite(v) && v > 20000 && v < 90000) {
+    const parsed = (XLSX as any).SSF?.parse_date_code?.(v);
+    if (parsed && parsed.y && parsed.m && parsed.d) {
+      const yyyy = String(parsed.y).padStart(4, "0");
+      const mm = String(parsed.m).padStart(2, "0");
+      const dd = String(parsed.d).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
   }
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+
+  const s = String(v).trim();
+  if (!s) return null;
+
+  // ISO: YYYY-MM-DD (optionally with time)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/);
+  if (iso) {
+    const y = +iso[1], m = +iso[2], d = +iso[3];
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const chk = new Date(Date.UTC(y, m - 1, d));
+      if (chk.getUTCFullYear() === y && chk.getUTCMonth() === m - 1 && chk.getUTCDate() === d) {
+        return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      }
+    }
+    return null;
+  }
+
+  // Mexican format: DD/MM/YYYY or DD-MM-YYYY (year 2 or 4 digits)
+  const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (dmy) {
+    const d = +dmy[1], m = +dmy[2];
+    let y = +dmy[3];
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    const chk = new Date(Date.UTC(y, m - 1, d));
+    if (chk.getUTCFullYear() !== y || chk.getUTCMonth() !== m - 1 || chk.getUTCDate() !== d) {
+      return null;
+    }
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+
   return null;
 }
 
@@ -77,7 +107,7 @@ const HEADER_ALIASES: Record<keyof SalesHistoryRow | "_rep" | "_lab" | "_client"
   _lab: ["clase_nombre", "clase", "laboratorio", "class"],
   _client: ["cliente_proyecto", "cliente", "client", "customer"],
   _inv: ["numero_de_documento", "documento", "invoice_no", "invoice", "factura", "folio"],
-  _date: ["fecha_de_creacion", "fecha", "date", "invoice_date"],
+  _date: ["fecha_de_creacion", "fecha_de_transaccion", "fecha_de_documento", "fecha_de_factura", "fecha"],
   _sku: ["articulo", "sku", "clave", "item", "codigo"],
   _desc: ["descripcion_del_articulo", "descripcion", "description"],
   _qty: ["cantidad_vendida", "cantidad", "quantity", "qty"],
@@ -90,6 +120,16 @@ function pickRaw(row: Record<string, unknown>, keys: string[]): string | undefin
   for (const k of keys) {
     const v = map[k];
     if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+  }
+  return undefined;
+}
+
+function pickRawVal(row: Record<string, unknown>, keys: string[]): unknown {
+  const map: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) map[norm(k)] = v;
+  for (const k of keys) {
+    const v = map[k];
+    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
   }
   return undefined;
 }
@@ -128,23 +168,35 @@ function extractRows(ws: XLSX.WorkSheet): Record<string, unknown>[] {
 
 export async function parseNetSuiteSalesFile(file: File): Promise<SalesHistoryRow[]> {
   const buf = await file.arrayBuffer();
-  // xlsx handles both XLSX (zip) and legacy SpreadsheetML 2003 XML.
-  const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
+  const wb = XLSX.read(new Uint8Array(buf), { type: "array", cellDates: false });
   const parsed: SalesHistoryRow[] = [];
+  let candidates = 0;
+  let droppedByDate = 0;
+  const dateSamples: string[] = [];
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     const rows = extractRows(ws);
     for (const r of rows) {
       const invoice = pickRaw(r, HEADER_ALIASES._inv);
-      const date = toDate(pickRaw(r, HEADER_ALIASES._date));
-      if (!invoice || !date) continue;
+      const rawDateVal = pickRawVal(r, HEADER_ALIASES._date);
       const sku = pickRaw(r, HEADER_ALIASES._sku);
-      const qty = num(pickRaw(r, HEADER_ALIASES._qty));
-      const rev = num(pickRaw(r, HEADER_ALIASES._rev));
-      // Skip subtotal / grand total lines (no SKU + no rep)
       const rep = pickRaw(r, HEADER_ALIASES._rep);
       const client = pickRaw(r, HEADER_ALIASES._client);
+      // Skip subtotal / grand total lines (no invoice + no SKU + no rep + no client)
+      if (!invoice && !sku && !rep && !client) continue;
+      if (!invoice) continue;
+      candidates++;
+      const date = toDate(rawDateVal);
+      if (!date) {
+        droppedByDate++;
+        if (dateSamples.length < 5 && rawDateVal != null && String(rawDateVal).trim() !== "") {
+          dateSamples.push(String(rawDateVal));
+        }
+        continue;
+      }
       if (!sku && !rep && !client) continue;
+      const qty = num(pickRaw(r, HEADER_ALIASES._qty));
+      const rev = num(pickRaw(r, HEADER_ALIASES._rev));
       parsed.push({
         rep_name_raw: rep ?? null,
         lab_name_raw: pickRaw(r, HEADER_ALIASES._lab) ?? null,
@@ -157,6 +209,13 @@ export async function parseNetSuiteSalesFile(file: File): Promise<SalesHistoryRo
         revenue: rev,
       });
     }
+  }
+  if (candidates > 0 && droppedByDate / candidates > 0.05) {
+    throw new Error(
+      `No se pudo interpretar la columna de fecha (${droppedByDate} de ${candidates} filas). ` +
+      `Valores encontrados: ${dateSamples.join(" | ") || "vacíos"}. ` +
+      `El sistema espera "Fecha de creación" en formato ISO o DD/MM/YYYY.`,
+    );
   }
   return parsed;
 }
