@@ -109,10 +109,11 @@ export default function Rep360Drawer({ repId, open, onOpenChange }: Props) {
             </div>
 
             <Tabs defaultValue="resumen">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="resumen">Resumen</TabsTrigger>
                 <TabsTrigger value="clientes">Clientes</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+                <TabsTrigger value="historial">Historial</TabsTrigger>
                 <TabsTrigger value="calendario">Calendario</TabsTrigger>
               </TabsList>
 
