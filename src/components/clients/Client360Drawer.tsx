@@ -185,9 +185,10 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
 
 
             <Tabs defaultValue="general" className="mt-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+                <TabsTrigger value="historial">Historial</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
                 <TabsTrigger value="pagos">Facturas</TabsTrigger>
                 <TabsTrigger value="calendario">Calendario</TabsTrigger>
