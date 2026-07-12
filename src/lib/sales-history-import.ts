@@ -260,23 +260,55 @@ export async function importSalesHistory(
 
 /** Lista los lotes previamente importados, más recientes primero. */
 export async function listSalesHistoryBatches(empresaId?: string) {
-  let q = supabase
-    .from("sales_history" as any)
-    .select("import_batch_id, source, created_at, empresa_id");
-  if (empresaId) q = q.eq("empresa_id", empresaId);
-  const { data, error } = await q.limit(20000);
-  if (error) throw error;
-  const map = new Map<string, { batch_id: string; rows: number; first: string; last: string; source: string }>();
-  for (const r of (data as any[]) || []) {
-    const id = r.import_batch_id;
-    if (!id) continue;
-    const cur = map.get(id) || { batch_id: id, rows: 0, first: r.created_at, last: r.created_at, source: r.source };
-    cur.rows += 1;
-    if (r.created_at < cur.first) cur.first = r.created_at;
-    if (r.created_at > cur.last) cur.last = r.created_at;
-    map.set(id, cur);
+  // Paginate a lightweight projection to discover distinct batch ids + timestamp bounds.
+  // PostgREST caps rows per request (default 1000), so we page through until exhausted.
+  const map = new Map<
+    string,
+    { batch_id: string; rows: number; first: string; last: string; source: string }
+  >();
+  const PAGE = 1000;
+  let from = 0;
+  // Safety upper bound to avoid runaway loops on unexpectedly huge tables.
+  const HARD_MAX = 500_000;
+  while (from < HARD_MAX) {
+    let q = supabase
+      .from("sales_history" as any)
+      .select("import_batch_id, source, created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (empresaId) q = q.eq("empresa_id", empresaId);
+    const { data, error } = await q;
+    if (error) throw error;
+    const rows = (data as any[]) || [];
+    for (const r of rows) {
+      const id = r.import_batch_id;
+      if (!id) continue;
+      const cur =
+        map.get(id) || { batch_id: id, rows: 0, first: r.created_at, last: r.created_at, source: r.source };
+      if (r.created_at < cur.first) cur.first = r.created_at;
+      if (r.created_at > cur.last) cur.last = r.created_at;
+      map.set(id, cur);
+    }
+    if (rows.length < PAGE) break;
+    from += PAGE;
   }
-  return Array.from(map.values()).sort((a, b) => (b.last > a.last ? 1 : -1));
+
+  // Fetch exact row counts per batch via HEAD requests (not subject to max-rows cap).
+  const batches = Array.from(map.values());
+  await Promise.all(
+    batches.map(async (b) => {
+      let q = supabase
+        .from("sales_history" as any)
+        .select("*", { count: "exact", head: true })
+        .eq("import_batch_id", b.batch_id);
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { count, error } = await q;
+      if (error) throw error;
+      b.rows = count ?? 0;
+    }),
+  );
+
+  return batches.sort((a, b) => (b.last > a.last ? 1 : -1));
 }
 
 export async function deleteSalesHistoryBatch(batchId: string) {

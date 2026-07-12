@@ -1,56 +1,34 @@
 ## Problem
 
-En la importación de historial de ventas NetSuite:
+The "Resumen de importación" shows **62,010 insertadas** (correct) but the "Lotes importados" table shows **1,000 filas** for the same batch. All 62,010 rows were actually imported — only the display count is wrong.
 
-1. La vista previa muestra `+046134-01` bajo **Fecha** — eso es un ID interno de NetSuite, no una fecha. El parser `pickRaw` usa alias difusos (`"fecha_de_creacion", "fecha", "date", "invoice_date"`) y termina agarrando una columna que contiene la palabra "fecha" en el header pero cuyo contenido es un ID.
-2. El fallback `new Date(s)` en `toDate()` acepta cualquier string que parezca válido para JS y produce fechas absurdas (año 46134) o `Invalid Date` silencioso, así que filas mal mapeadas se cuelan como fechas "válidas".
-3. No hay soporte explícito para formato mexicano **DD/MM/YYYY** con validación estricta (día 1-31, mes 1-12, cero fila si no cuadra).
-4. El reporte NetSuite que se está subiendo ahora tiene 62,010 líneas — variante con columnas extra. La detección de encabezado también necesita ser estricta.
+## Root Cause
 
-## Fix Plan
+`listSalesHistoryBatches` in `src/lib/sales-history-import.ts` counts rows by fetching every `sales_history` row for the empresa and grouping them in JS:
 
-### 1. Reemplazar `toDate()` en `src/lib/sales-history-import.ts`
+```ts
+supabase.from("sales_history").select("import_batch_id, source, created_at, empresa_id").limit(20000)
+```
 
-Parser explícito, sin fallback a `new Date(string)`:
+PostgREST enforces a server-side `max-rows` cap (1000 in this project), so the client-side `.limit(20000)` is silently clamped to 1000 rows. The batch then reports `rows: 1000` regardless of the real count.
 
-- Acepta **ISO** `YYYY-MM-DD[T...]` → devuelve `YYYY-MM-DD`.
-- Acepta **DD/MM/YYYY** y **DD-MM-YYYY** (formato mexicano) con año de 2 o 4 dígitos.
-  - Valida rango día 1–31, mes 1–12.
-  - Construye en UTC con `Date.UTC(y, m-1, d)` y verifica que `getUTCDate/getUTCMonth` coincidan (rechaza 31/02, etc.).
-- Acepta **serial de Excel** (número) usando `XLSX.SSF.parse_date_code` cuando el cell viene como `Number`.
-- Si nada matchea → `null` (la fila se descarta en `parseNetSuiteSalesFile`).
+## Fix
 
-### 2. Encabezado de fecha estricto
+Replace the row-fetch-and-count approach with an aggregated count per batch. Two options — plan uses option A:
 
-En `HEADER_ALIASES._date` cambiar a match exacto contra estos labels normalizados:
-- `fecha_de_creacion`
-- `fecha_de_transaccion`
-- `fecha_de_documento`
-- `fecha_de_factura`
-- `fecha`
+**A. Per-batch HEAD count (simple, no migration).** Rewrite `listSalesHistoryBatches` to:
+1. Fetch distinct `import_batch_id` + `source` + min/max `created_at` using a small paginated scan of a lightweight projection (still capped, but we only need the batch IDs, not the row totals).
+2. For each batch id, run `supabase.from("sales_history").select("*", { count: "exact", head: true }).eq("import_batch_id", id)` which returns just the count without pulling rows and is not subject to `max-rows`.
+3. Return `{ batch_id, source, first, last, rows: count }`.
 
-Eliminar `date` e `invoice_date` (traen falsos positivos con IDs). Además, en `extractRows`, cuando el header contenga varias columnas con "fecha" en el nombre, preferir "Fecha de creación" > "Fecha".
+Since batches are few (a handful per empresa), the N small count queries are cheap.
 
-### 3. Validación al parsear
+**B. Alternative (only if A is too slow later):** create a `v_sales_history_batches` SQL view with `GROUP BY import_batch_id` and grant `SELECT` — one query, exact counts. Not needed for current volume.
 
-En `parseNetSuiteSalesFile`:
-- Contar filas descartadas por fecha inválida y exponerlas.
-- Si más del 5% de filas se descartan por fecha, lanzar error con muestra de valores encontrados en la columna de fecha para diagnosticar rápido.
+## Files
 
-### 4. Mostrar la fecha bien formateada en preview
+- `src/lib/sales-history-import.ts` — rewrite `listSalesHistoryBatches` per option A. No other changes.
 
-Usar `fmtDateShort` de `src/lib/date-utils.ts` en `SalesHistoryImportDialog.tsx` para que la tabla muestre `dd/MM/yy` local sin corrimiento de zona horaria.
+## Verification
 
-### 5. Verificación
-
-Con archivo que ya está en importación (62,010 líneas): correr localmente el parser y confirmar que:
-- Todas las fechas caen en 2025-2026.
-- Ninguna fila tiene `+046134-01` u otros IDs bajo Fecha.
-- El resumen post-import muestra 0 filas descartadas por fecha inválida.
-
-## Archivos a tocar
-
-- `src/lib/sales-history-import.ts` — parser de fecha, aliases estrictos, contador de descartes.
-- `src/components/empresas/SalesHistoryImportDialog.tsx` — formato de fecha en preview + mostrar descartes.
-
-Sin cambios de base de datos ni de otras páginas.
+After the fix, re-open the import dialog: the existing batch should show **62,010 filas** instead of 1,000, and future imports display the true count.
