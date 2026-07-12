@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import CalendarView from "@/components/rep/CalendarView";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 import { UserSquare2, Mail, Phone, Percent, Users, ShoppingCart, DollarSign, Clock } from "lucide-react";
 
 type Props = {
