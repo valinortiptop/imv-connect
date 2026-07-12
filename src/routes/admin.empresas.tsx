@@ -563,7 +563,7 @@ function EmpresaDialog({
                 </p>
                 <SalesHistoryImportDialog
                   empresaId={v.id}
-                  empresaNombre={v.nombre_comercial || v.razon_social}
+                  empresaNombre={v.nombre_comercial || v.razon_social || "Empresa"}
                 />
               </>
             ) : (
