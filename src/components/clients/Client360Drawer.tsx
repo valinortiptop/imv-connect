@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ClientCalendarPanel from "@/components/clients/ClientCalendarPanel";
+import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 
 type Props = {
   clientId: string | null;
