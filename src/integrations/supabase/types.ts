@@ -6847,6 +6847,230 @@ export type Database = {
           },
         ]
       }
+      sales_history: {
+        Row: {
+          client_id: string | null
+          client_name_raw: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          empresa_id: string | null
+          id: string
+          import_batch_id: string | null
+          invoice_date: string
+          invoice_no: string
+          lab_name_raw: string | null
+          laboratorio_id: string | null
+          product_id: string | null
+          quantity: number
+          rep_name_raw: string | null
+          representante_id: string | null
+          revenue: number
+          sku: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name_raw?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id?: string | null
+          id?: string
+          import_batch_id?: string | null
+          invoice_date: string
+          invoice_no: string
+          lab_name_raw?: string | null
+          laboratorio_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          rep_name_raw?: string | null
+          representante_id?: string | null
+          revenue?: number
+          sku?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name_raw?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          empresa_id?: string | null
+          id?: string
+          import_batch_id?: string | null
+          invoice_date?: string
+          invoice_no?: string
+          lab_name_raw?: string | null
+          laboratorio_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          rep_name_raw?: string | null
+          representante_id?: string | null
+          revenue?: number
+          sku?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "sales_history_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "sales_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "sales_history_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_history_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       sat_codigo_agrupador: {
         Row: {
           codigo: string
@@ -9981,6 +10205,27 @@ export type Database = {
           pagado: number | null
           subtotal: number | null
           total: number | null
+        }
+        Relationships: []
+      }
+      v_ventas_unified: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          description: string | null
+          empresa_id: string | null
+          fecha: string | null
+          fuente: string | null
+          id: string | null
+          invoice_no: string | null
+          lab_name: string | null
+          laboratorio_id: string | null
+          product_id: string | null
+          quantity: number | null
+          rep_name: string | null
+          representante_id: string | null
+          revenue: number | null
+          sku: string | null
         }
         Relationships: []
       }
