@@ -24,6 +24,7 @@ import {
   listEmpresaDocsFn,
   deleteEmpresaDocFn,
 } from "@/lib/empresa-docs.functions";
+import { SalesHistoryImportDialog } from "@/components/empresas/SalesHistoryImportDialog";
 
 
 export const Route = createFileRoute("/admin/empresas")({
