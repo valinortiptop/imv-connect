@@ -42,18 +42,48 @@ function norm(k: string): string {
 
 function toDate(v: unknown): string | null {
   if (v == null || v === "") return null;
-  const s = String(v);
-  // NetSuite format: "2026-04-22T00:00:00.000"
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  // fallbacks: dd/mm/yyyy
-  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (dmy) {
-    const y = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
-    return `${y}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+
+  // Excel serial number (some NetSuite exports emit numeric dates)
+  if (typeof v === "number" && Number.isFinite(v) && v > 20000 && v < 90000) {
+    const parsed = (XLSX as any).SSF?.parse_date_code?.(v);
+    if (parsed && parsed.y && parsed.m && parsed.d) {
+      const yyyy = String(parsed.y).padStart(4, "0");
+      const mm = String(parsed.m).padStart(2, "0");
+      const dd = String(parsed.d).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
   }
-  const d = new Date(s);
-  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+
+  const s = String(v).trim();
+  if (!s) return null;
+
+  // ISO: YYYY-MM-DD (optionally with time)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/);
+  if (iso) {
+    const y = +iso[1], m = +iso[2], d = +iso[3];
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const chk = new Date(Date.UTC(y, m - 1, d));
+      if (chk.getUTCFullYear() === y && chk.getUTCMonth() === m - 1 && chk.getUTCDate() === d) {
+        return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      }
+    }
+    return null;
+  }
+
+  // Mexican format: DD/MM/YYYY or DD-MM-YYYY (year 2 or 4 digits)
+  const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (dmy) {
+    const d = +dmy[1], m = +dmy[2];
+    let y = +dmy[3];
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    const chk = new Date(Date.UTC(y, m - 1, d));
+    if (chk.getUTCFullYear() !== y || chk.getUTCMonth() !== m - 1 || chk.getUTCDate() !== d) {
+      return null;
+    }
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+
   return null;
 }
 
