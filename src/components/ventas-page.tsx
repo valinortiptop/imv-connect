@@ -218,6 +218,8 @@ export default function Ventas() {
         </p>
       </div>
 
+      <HistoricalSalesPanel />
+
       {/* Parámetros */}
       <Card>
         <CardHeader>
