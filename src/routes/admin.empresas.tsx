@@ -338,10 +338,18 @@ function EmpresaDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="pt-2">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="datos">Datos</TabsTrigger>
             <TabsTrigger value="documentos" disabled={!v.id}>
               Documentos
+              {!v.id && (
+                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  (guarda primero)
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="ventas" disabled={!v.id}>
+              Ventas históricas
               {!v.id && (
                 <span className="ml-1.5 text-[10px] text-muted-foreground">
                   (guarda primero)
