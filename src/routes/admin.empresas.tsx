@@ -551,6 +551,27 @@ function EmpresaDialog({
               </p>
             )}
           </TabsContent>
+
+          <TabsContent value="ventas" className="mt-4 space-y-3">
+            {v.id ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Sube el reporte NetSuite "Ventas desglosadas" para alimentar las
+                  pantallas de ventas, P&amp;L, comisiones y el 360 de clientes,
+                  representantes y productos. Puedes re-importar el mismo archivo
+                  sin duplicar líneas.
+                </p>
+                <SalesHistoryImportDialog
+                  empresaId={v.id}
+                  empresaNombre={v.nombre_comercial || v.razon_social}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Guarda la empresa para poder importar ventas.
+              </p>
+            )}
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
