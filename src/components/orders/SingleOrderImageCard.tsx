@@ -528,6 +528,7 @@ async function renderOrderSnapshotBlob(orderId: string, hideMoney: boolean = fal
         clientPhone={client?.phone ?? null}
         clientAddress={client?.address ?? null}
         order={pdfOrder}
+        empresa={empresa}
         hideMoney={hideMoney}
       />
     );
