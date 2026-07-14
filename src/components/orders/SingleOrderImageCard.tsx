@@ -541,12 +541,10 @@ async function renderOrderSnapshotBlob(orderId: string, hideMoney: boolean = fal
     container.remove();
     return null;
   }
-  const isDark = document.documentElement.classList.contains("dark");
-  const bg = isDark ? "#020817" : "#ffffff";
   const height = node.scrollHeight || 900;
   const canvas = await html2canvas(node, {
-    backgroundColor: bg, scale: 2, useCORS: true, allowTaint: true, logging: false,
-    width: 1200, height, windowWidth: 1200, windowHeight: height,
+    backgroundColor: "#ffffff", scale: 2, useCORS: true, allowTaint: true, logging: false,
+    width: 1100, height, windowWidth: 1100, windowHeight: height,
   });
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   root.unmount();
