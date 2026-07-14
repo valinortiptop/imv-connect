@@ -74,7 +74,7 @@ function PresupuestoPage() {
   const gastado = gastadoQ.data;
 
   const [form, setForm] = useState<{ empresa_id: string; mes: string; monto: string; notas: string }>({
-    empresa_id: "",
+    empresa_id: "global",
     mes: firstOfMonth(0),
     monto: "",
     notas: "",
