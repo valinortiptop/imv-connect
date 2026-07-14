@@ -117,7 +117,7 @@ function PresupuestoPage() {
             <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
               <SelectTrigger><SelectValue placeholder="Todas / Global" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Global (sin empresa)</SelectItem>
+                <SelectItem value="global">Global (sin empresa)</SelectItem>
                 {(empresas.data ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.razon_social}</SelectItem>
                 ))}
