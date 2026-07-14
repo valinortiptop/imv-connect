@@ -86,7 +86,7 @@ function PresupuestoPage() {
       if (!monto || monto < 0) throw new Error("Monto inválido");
       return fnUpsert({
         data: {
-          empresa_id: form.empresa_id || null,
+          empresa_id: form.empresa_id && form.empresa_id !== "global" ? form.empresa_id : null,
           mes: form.mes,
           monto_mxn: monto,
           notas: form.notas.trim() || undefined,
