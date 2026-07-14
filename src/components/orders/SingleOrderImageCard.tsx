@@ -9,13 +9,10 @@ const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MX
 export type PdfOrderItem = {
   clave: string;
   name: string;
+  unit: string | null;
   quantity: number;
   price: number;
   subtotal: number;
-  /** Pre-fetched data URL for the product thumbnail. Lives on the row
-   *  so html2canvas can paint it without going to the network during
-   *  the snapshot (network requests during snapshot frequently fail
-   *  due to CORS or timing). */
   thumbDataUrl?: string | null;
   is_damaged?: boolean;
   damaged_condition?: "leve" | "moderado" | "severo" | null;
@@ -27,6 +24,17 @@ const DAMAGED_LABELS: Record<"leve" | "moderado" | "severo", string> = {
   severo: "Producto con empaque con daño visible — precio especial",
 };
 
+export type PdfEmpresa = {
+  razon_social: string | null;
+  nombre_comercial: string | null;
+  rfc: string | null;
+  direccion_fiscal: string | null;
+  cp_fiscal: string | null;
+  telefono: string | null;
+  logo_url: string | null;
+  logoDataUrl?: string | null;
+};
+
 export type PdfOrder = {
   id: string;
   order_code: string;
@@ -34,29 +42,18 @@ export type PdfOrder = {
   delivery_date: string | null;
   status: string;
   notes: string | null;
-  /** Pre-discount sum of all line subtotals. Always equal to the sum of
-   *  items[].subtotal — kept as a separate field so the renderer doesn't
-   *  have to recalculate. */
   subtotal: number;
-  /** Manual discount in MXN. 0 (or undefined) means no discount line is
-   *  rendered. Capped to subtotal at the call site so total never goes
-   *  negative. */
   discount?: number;
-  /** Free-text reason printed next to the discount line (e.g.
-   *  "compensación P-0038"). Optional even when discount > 0. */
   discountReason?: string | null;
-  /** Final amount the client pays. = subtotal - discount. */
   total: number;
   items: PdfOrderItem[];
-  /** Optional signature block. When present, the card renders a
-   *  "FIRMADO" section at the bottom with the signature image and
-   *  metadata. signatureDataUrl is a pre-fetched data URL so html2canvas
-   *  can paint it deterministically (same trick as product thumbnails). */
   signature?: {
     dataUrl: string;
-    signedAt: string;          // ISO timestamp
+    signedAt: string;
     signedByName: string | null;
   } | null;
+  vence?: string | null;
+  vendedor?: string | null;
 };
 
 type Props = {
@@ -65,117 +62,152 @@ type Props = {
   clientPhone: string | null;
   clientAddress: string | null;
   order: PdfOrder;
-  /** When true, hides every $ value (unit price, subtotal, total,
-   *  discount). Used when downloading from the maniobra plan view —
-   *  drivers shouldn't see prices and the user explicitly didn't
-   *  want monetary info on the driver-facing handout. The image
-   *  still shows products + bulto counts + total bulto count. */
+  empresa?: PdfEmpresa | null;
   hideMoney?: boolean;
 };
 
+const IMPORTANTE_TEXT =
+  "IMPORTANTE: NO CORTAR ESTE MATERIAL ANTES DE COMPROBAR TODO LO RELACIONADO A CALIDAD, METRAJE, SOLIDEZ DE COLOR, ENCOGIMIENTO, ARRUGA Y TODO TIPO DE DEFECTO POSIBLES. NO NOS HACEMOS RESPONSABLES, NO ACEPTAREMOS RECLAMACIONES NI OTORGAREMOS BONIFICACIONES SI LA TELA HA SIDO CORTADA.";
+
+function numberToSpanish(n: number): string {
+  if (!isFinite(n) || n < 0) return "";
+  if (n === 0) return "CERO";
+  const UNITS = ["", "UNO", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE", "DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE", "QUINCE", "DIECISEIS", "DIECISIETE", "DIECIOCHO", "DIECINUEVE", "VEINTE"];
+  const TENS = ["", "", "VEINTI", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"];
+  const HUNDREDS = ["", "CIENTO", "DOSCIENTOS", "TRESCIENTOS", "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS", "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"];
+  const under100 = (x: number): string => {
+    if (x <= 20) return UNITS[x];
+    if (x < 30) return "VEINTI" + UNITS[x - 20];
+    const t = Math.floor(x / 10), u = x % 10;
+    return TENS[t] + (u ? " Y " + UNITS[u] : "");
+  };
+  const under1000 = (x: number): string => {
+    if (x === 100) return "CIEN";
+    const h = Math.floor(x / 100), r = x % 100;
+    return (h ? HUNDREDS[h] + (r ? " " : "") : "") + (r ? under100(r) : "");
+  };
+  const millions = Math.floor(n / 1_000_000);
+  const thousands = Math.floor((n % 1_000_000) / 1000);
+  const rest = n % 1000;
+  let out = "";
+  if (millions) out += (millions === 1 ? "UN MILLON" : under1000(millions) + " MILLONES") + " ";
+  if (thousands) out += (thousands === 1 ? "MIL" : under1000(thousands) + " MIL") + " ";
+  if (rest) out += under1000(rest);
+  return out.trim();
+}
+
+function amountToLetters(total: number): string {
+  const entero = Math.floor(total);
+  const centavos = Math.round((total - entero) * 100);
+  const cent = String(centavos).padStart(2, "0");
+  return `( ${numberToSpanish(entero)} PESOS ${cent}/100 M.N. )`;
+}
+
 export const SingleOrderImageCard = React.forwardRef<HTMLDivElement, Props>(
-  ({ clientName, clientCompany, clientPhone, clientAddress, order, hideMoney }, ref) => {
-    const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
-    const bg = isDark ? "#020817" : "#ffffff";
-    const fg = isDark ? "#f8fafc" : "#020817";
-    const muted = isDark ? "#94a3b8" : "#64748b";
-    const accent = "#1e293b";
-    const separator = isDark ? "rgba(248,250,252,0.10)" : "rgba(2,8,23,0.10)";
-    const rowBg = isDark ? "rgba(248,250,252,0.03)" : "rgba(2,8,23,0.02)";
-    const codeColor = isDark ? "#60a5fa" : "#2563eb";
+  ({ clientName, clientCompany, clientPhone, clientAddress, order, empresa, hideMoney }, ref) => {
+    const fg = "#000000";
+    const border = "#000000";
+    const bg = "#ffffff";
 
-    const now = new Date();
-    const dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
     const tnum: React.CSSProperties = { fontVariantNumeric: "tabular-nums", fontFeatureSettings: '"tnum" 1, "lnum" 1' };
-    const fmtRowDate = (d: string | null) => {
-      if (!d) return "—";
-      try { return format(parseLocalDate(d), "dd/MM/yy"); } catch { return d; }
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return "";
+      try { return format(parseLocalDate(d), "dd-MM-yyyy"); } catch { return d; }
     };
-    const fmtMXN = (v: number) => mxnFmt.format(v);
-    const totalBultos = order.items.reduce((s, i) => s + i.quantity, 0);
+    const fmtMXN = (v: number) =>
+      Number(v ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    const cellBase: React.CSSProperties = {
-      padding: "14px 12px",
-      borderBottom: `1px solid ${separator}`,
-      verticalAlign: "middle",
-      fontSize: 15,
+    const empresaName = (empresa?.nombre_comercial || empresa?.razon_social || "").toUpperCase();
+    const empresaDir = empresa?.direccion_fiscal ?? "";
+    const empresaCp = empresa?.cp_fiscal ?? "";
+    const empresaTel = empresa?.telefono ?? "";
+    const empresaRfc = empresa?.rfc ?? "";
+
+    const clientDisplay = (clientCompany || clientName || "").toUpperCase();
+    const clientAddr = (clientAddress || "").toUpperCase();
+
+    const cellHead: React.CSSProperties = {
+      border: `1px solid ${border}`, padding: "6px 8px", fontSize: 12, fontWeight: 700,
+      textAlign: "left", verticalAlign: "middle", background: bg,
     };
+    const cellBody: React.CSSProperties = {
+      border: `1px solid ${border}`, padding: "6px 8px", fontSize: 12,
+      verticalAlign: "top",
+    };
+    const cellNum: React.CSSProperties = { ...cellBody, textAlign: "right", ...tnum };
+
+    const showMoney = !hideMoney;
 
     return (
       <div
         ref={ref}
         style={{
           position: "fixed", top: 0, left: 0, transform: "translateX(-200vw)",
-          pointerEvents: "none", zIndex: 0, width: 1200, minHeight: 900,
+          pointerEvents: "none", zIndex: 0, width: 1100, minHeight: 900,
           backgroundColor: bg, color: fg,
-          fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-          padding: 56, boxSizing: "border-box",
+          fontFamily: "'Arial', 'Helvetica', sans-serif",
+          padding: 40, boxSizing: "border-box",
+          lineHeight: 1.35,
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 }}>Pedido</div>
-            <div style={{ fontSize: 30, fontWeight: 700, fontFamily: "'SF Mono', Menlo, monospace", color: codeColor, marginTop: 6, lineHeight: 1.1 }}>
-              {order.order_code}
-            </div>
+        {/* HEADER — logo left, empresa data centered */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 16 }}>
+          <div style={{ width: 160, minHeight: 80, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {empresa?.logoDataUrl ? (
+              <img src={empresa.logoDataUrl} alt="" style={{ maxWidth: "100%", maxHeight: 80, objectFit: "contain" }} />
+            ) : null}
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Generado</div>
-            <div style={{ fontSize: 16, marginTop: 4, ...tnum }}>{dateStr}</div>
+          <div style={{ flex: 1, textAlign: "center", fontSize: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>{empresaName || "\u00A0"}</div>
+            {empresaRfc && <div>R.F.C. : {empresaRfc}</div>}
+            {empresaDir && <div>{empresaDir.toUpperCase()}</div>}
+            {empresaCp && <div>C.P. : {empresaCp}</div>}
+            {empresaTel && <div>TELS. : {empresaTel}</div>}
           </div>
-        </div>
-        <div style={{ height: 3, background: accent, borderRadius: 2, marginBottom: 24 }} />
-
-        {/* Client block */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Cliente</div>
-          <div style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.2 }}>{clientName}</div>
-          {clientCompany && <div style={{ fontSize: 14, color: muted, marginTop: 4, lineHeight: 1.3 }}>{clientCompany}</div>}
-          {clientPhone && <div style={{ fontSize: 14, color: muted, marginTop: 2, lineHeight: 1.3 }}>Tel: {clientPhone}</div>}
-          {clientAddress && <div style={{ fontSize: 14, color: muted, marginTop: 2, lineHeight: 1.3 }}>{clientAddress}</div>}
+          <div style={{ width: 160 }} />
         </div>
 
-        {/* Order meta grid */}
-        <div style={{ display: "flex", gap: 56, marginBottom: 32, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Fecha pedido</div>
-            <div style={{ fontSize: 18, fontWeight: 600, ...tnum }}>{fmtRowDate(order.order_date)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Fecha entrega</div>
-            <div style={{ fontSize: 18, fontWeight: 600, ...tnum }}>{fmtRowDate(order.delivery_date)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Estado</div>
-            <div style={{ fontSize: 18, fontWeight: 600 }}>{order.status}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Bultos totales</div>
-            <div style={{ fontSize: 18, fontWeight: 600, ...tnum }}>{totalBultos.toLocaleString("es-MX")}</div>
-          </div>
-        </div>
+        {/* Info grid */}
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <tbody>
+            <tr>
+              <td style={{ ...cellBody, width: "65%" }}>
+                <div><span style={{ fontWeight: 700 }}>VENDEDOR :</span> {(order.vendedor ?? "").toUpperCase()}</div>
+                <div style={{ marginTop: 4 }}><span style={{ fontWeight: 700 }}>CLIENTE :</span> {clientDisplay}</div>
+                <div style={{ marginTop: 4 }}>
+                  <span style={{ fontWeight: 700 }}>DIRECCION :</span>{" "}
+                  {clientAddr || "\u00A0"}
+                </div>
+                {clientPhone && <div style={{ marginTop: 4 }}><span style={{ fontWeight: 700 }}>TEL. :</span> {clientPhone}</div>}
+              </td>
+              <td style={{ ...cellBody, width: "35%" }}>
+                <div><span style={{ fontWeight: 700 }}>PEDIDO :</span> {order.order_code}</div>
+                <div style={{ marginTop: 4 }}><span style={{ fontWeight: 700 }}>FECHA :</span> <span style={tnum}>{fmtDate(order.order_date)}</span></div>
+                <div style={{ marginTop: 4 }}><span style={{ fontWeight: 700 }}>PED.CTE. :</span></div>
+                <div style={{ marginTop: 4 }}><span style={{ fontWeight: 700 }}>VENCE :</span> {order.vence ?? ""}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-        {/* Items table. When hideMoney is true, the two right-most
-            columns (P. Unit + Subtotal) are dropped — keeps the
-            driver from seeing the prices. */}
-        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        {/* Items table */}
+        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: -1 }}>
           <colgroup>
-            <col style={{ width: 64 }} />
             <col style={{ width: 90 }} />
-            <col style={{ width: 140 }} />
+            <col style={{ width: 130 }} />
             <col />
-            {!hideMoney && <col style={{ width: 140 }} />}
-            {!hideMoney && <col style={{ width: 160 }} />}
+            <col style={{ width: 90 }} />
+            {showMoney && <col style={{ width: 110 }} />}
+            {showMoney && <col style={{ width: 120 }} />}
           </colgroup>
           <thead>
             <tr>
-              <th style={{ textAlign: "left", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}></th>
-              <th style={{ textAlign: "left", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}>Bultos</th>
-              <th style={{ textAlign: "left", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}>SKU</th>
-              <th style={{ textAlign: "left", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}>Producto</th>
-              {!hideMoney && <th style={{ textAlign: "right", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}>P. Unit.</th>}
-              {!hideMoney && <th style={{ textAlign: "right", padding: "0 12px 10px", fontSize: 12, color: muted, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${separator}`, fontWeight: 600 }}>Subtotal</th>}
+              <th style={{ ...cellHead, textAlign: "right" }}>CANTIDAD</th>
+              <th style={cellHead}>CODIGO</th>
+              <th style={cellHead}>DESCRIPCION</th>
+              <th style={cellHead}>UNIDAD</th>
+              {showMoney && <th style={{ ...cellHead, textAlign: "right" }}>PRECIO</th>}
+              {showMoney && <th style={{ ...cellHead, textAlign: "right" }}>IMPORTE</th>}
             </tr>
           </thead>
           <tbody>
@@ -184,161 +216,87 @@ export const SingleOrderImageCard = React.forwardRef<HTMLDivElement, Props>(
                 ? (it.damaged_condition && DAMAGED_LABELS[it.damaged_condition]) || "Producto con empaque dañado — precio especial"
                 : null;
               return (
-                <tr key={i} style={{ background: i % 2 === 1 ? rowBg : "transparent" }}>
-                  <td style={{ ...cellBase, padding: "10px 12px" }}>
-                    {it.thumbDataUrl ? (
-                      // Theme-aware wrapper bg + thick padding so the
-                      // bg frame visibly surrounds the photo regardless
-                      // of how dark the source image is. Bigger box (56×56)
-                      // with 10px padding means the inner image sits at
-                      // ~36×36, and the page-colored frame around it is
-                      // ~10px on every side — that frame is what reads
-                      // as "white" on light pages and "dark" on dark.
-                      <div
-                        style={{
-                          width: 56,
-                          height: 56,
-                          background: bg,
-                          borderRadius: 8,
-                          border: `1px solid ${separator}`,
-                          padding: 10,
-                          boxSizing: "border-box",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <img
-                          src={it.thumbDataUrl}
-                          alt=""
-                          style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{ width: 56, height: 56, background: rowBg, borderRadius: 8, border: `1px solid ${separator}`, display: "flex", alignItems: "center", justifyContent: "center", color: muted, fontSize: 18 }}
-                      >
-                        {/* Tiny placeholder icon (squared box) */}
-                        <span style={{ display: "inline-block", width: 20, height: 20, border: `2px solid currentColor`, borderRadius: 3 }} />
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ ...cellBase, fontWeight: 600, ...tnum }}>{it.quantity.toLocaleString("es-MX")}</td>
-                  <td style={{ ...cellBase, fontFamily: "'SF Mono', Menlo, monospace", fontWeight: 600 }}>{it.clave}</td>
-                  <td style={{ ...cellBase, wordBreak: "break-word", lineHeight: 1.35 }}>
-                    <div>{it.name}</div>
+                <tr key={i}>
+                  <td style={cellNum}>{Number(it.quantity ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ ...cellBody, fontFamily: "'Courier New', monospace" }}>{it.clave}</td>
+                  <td style={cellBody}>
+                    <div>{(it.name || "").toUpperCase()}</div>
                     {damagedLabel && (
-                      <div style={{ fontSize: 12, color: muted, fontStyle: "italic", marginTop: 3, lineHeight: 1.3 }}>
-                        {damagedLabel}
-                      </div>
+                      <div style={{ fontSize: 10, fontStyle: "italic", marginTop: 2 }}>{damagedLabel}</div>
                     )}
                   </td>
-                  {!hideMoney && <td style={{ ...cellBase, textAlign: "right", ...tnum }}>{fmtMXN(it.price)}</td>}
-                  {!hideMoney && <td style={{ ...cellBase, textAlign: "right", fontWeight: 600, ...tnum }}>{fmtMXN(it.subtotal)}</td>}
+                  <td style={{ ...cellBody, textTransform: "uppercase" }}>{it.unit || ""}</td>
+                  {showMoney && <td style={cellNum}>{fmtMXN(it.price)}</td>}
+                  {showMoney && <td style={cellNum}>{fmtMXN(it.subtotal)}</td>}
                 </tr>
               );
             })}
-            {!hideMoney && (() => {
-              const discount = Math.max(0, Math.min(Number(order.discount) || 0, order.subtotal));
-              const reason = (order.discountReason ?? "").trim();
-              if (discount <= 0) {
-                return (
-                  <tr>
-                    <td colSpan={4} style={{ padding: "18px 12px 0", fontSize: 14, textTransform: "uppercase", letterSpacing: "0.08em", color: muted, fontWeight: 600, borderTop: `2px solid ${separator}` }}>Total</td>
-                    <td style={{ padding: "18px 12px 0", borderTop: `2px solid ${separator}` }} />
-                    <td style={{ padding: "18px 12px 0", textAlign: "right", fontSize: 26, fontWeight: 700, borderTop: `2px solid ${separator}`, ...tnum }}>{order.total.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                );
-              }
-              return (
-                <>
-                  <tr>
-                    <td colSpan={4} style={{ padding: "14px 12px 4px", fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: muted, fontWeight: 600, borderTop: `2px solid ${separator}` }}>Subtotal</td>
-                    <td style={{ padding: "14px 12px 4px", borderTop: `2px solid ${separator}` }} />
-                    <td style={{ padding: "14px 12px 4px", textAlign: "right", fontSize: 16, fontWeight: 600, color: muted, borderTop: `2px solid ${separator}`, ...tnum }}>{order.subtotal.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={4} style={{ padding: "4px 12px", fontSize: 13, color: "#d97706", fontWeight: 600 }}>
-                      Descuento{reason ? ` · ${reason}` : ""}
-                    </td>
-                    <td />
-                    <td style={{ padding: "4px 12px", textAlign: "right", fontSize: 16, fontWeight: 600, color: "#d97706", ...tnum }}>−{discount.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={4} style={{ padding: "8px 12px 0", fontSize: 14, textTransform: "uppercase", letterSpacing: "0.08em", color: muted, fontWeight: 700, borderTop: `1px solid ${separator}` }}>Total</td>
-                    <td style={{ padding: "8px 12px 0", borderTop: `1px solid ${separator}` }} />
-                    <td style={{ padding: "8px 12px 0", textAlign: "right", fontSize: 26, fontWeight: 700, borderTop: `1px solid ${separator}`, ...tnum }}>{order.total.toLocaleString("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                </>
-              );
-            })()}
+            {order.items.length < 4 && Array.from({ length: 4 - order.items.length }).map((_, i) => (
+              <tr key={`f${i}`}>
+                <td style={cellBody}>&nbsp;</td>
+                <td style={cellBody} />
+                <td style={cellBody} />
+                <td style={cellBody} />
+                {showMoney && <td style={cellBody} />}
+                {showMoney && <td style={cellBody} />}
+              </tr>
+            ))}
           </tbody>
         </table>
 
-        {order.notes && (
-          <div style={{ marginTop: 24, padding: 14, border: `1px solid ${separator}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Notas</div>
-            <div style={{ fontSize: 14 }}>{order.notes}</div>
+        {/* IMPORTANTE note */}
+        <div style={{ marginTop: 18, fontSize: 12, fontWeight: 700, lineHeight: 1.4 }}>
+          {IMPORTANTE_TEXT}
+        </div>
+
+        {/* Amount in letters + TOTAL */}
+        {showMoney && (
+          <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24 }}>
+            <div style={{ fontSize: 12 }}>{amountToLetters(order.total)}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, ...tnum }}>
+              {(() => {
+                const discount = Math.max(0, Math.min(Number(order.discount) || 0, order.subtotal));
+                if (discount <= 0) {
+                  return <div>TOTAL : &nbsp;&nbsp; {fmtMXN(order.total)}</div>;
+                }
+                return (
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 400 }}>SUBTOTAL : {fmtMXN(order.subtotal)}</div>
+                    <div style={{ fontWeight: 400, color: "#b45309" }}>
+                      DESCUENTO{order.discountReason ? ` · ${order.discountReason.toUpperCase()}` : ""} : −{fmtMXN(discount)}
+                    </div>
+                    <div style={{ marginTop: 4 }}>TOTAL : &nbsp;&nbsp; {fmtMXN(order.total)}</div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
 
-        {/* FIRMADO section — only when the order has been signed via the
-            /entrega/:token flow. Renders the signature image, the name
-            of who signed, and the timestamp, all on the same canvas as
-            the order summary so the snapshot becomes a complete
-            "comprobante de entrega firmado". */}
+        {order.notes && (
+          <div style={{ marginTop: 20, padding: 10, border: `1px solid ${border}`, fontSize: 11 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>NOTAS</div>
+            <div style={{ whiteSpace: "pre-wrap" }}>{order.notes}</div>
+          </div>
+        )}
+
         {order.signature && (
-          <div style={{
-            marginTop: 28,
-            padding: "16px 20px",
-            border: `2px solid #16a34a`,
-            borderRadius: 10,
-            backgroundColor: isDark ? "rgba(22,163,74,0.08)" : "rgba(22,163,74,0.04)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              {/* SVG check — explicit 18px line-height on the heading
-                  text below so the two boxes are the same height and
-                  the visual centers actually align. */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <div style={{ fontSize: 13, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, lineHeight: "18px" }}>
-                Entrega confirmada · Firmado
-              </div>
+          <div style={{ marginTop: 24, padding: "12px 16px", border: `2px solid #16a34a` }}>
+            <div style={{ fontSize: 12, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 10 }}>
+              Entrega confirmada · Firmado
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 24 }}>
               <div style={{
-                flexShrink: 0,
-                width: 220,
-                height: 110,
-                backgroundColor: "#ffffff",
-                border: `1px solid ${separator}`,
-                borderRadius: 8,
-                padding: 6,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                flexShrink: 0, width: 220, height: 100, backgroundColor: "#ffffff",
+                border: `1px solid ${border}`, padding: 4, display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <img
-                  src={order.signature.dataUrl}
-                  alt="firma"
-                  /* Defensive white background on the IMG itself in case
-                     the underlying PNG was saved with transparency
-                     (older signatures pre-fix). */
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", backgroundColor: "#ffffff" }}
-                />
+                <img src={order.signature.dataUrl} alt="firma" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", backgroundColor: "#ffffff" }} />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Firmó</div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>
-                  {order.signature.signedByName || "—"}
-                </div>
-                <div style={{ fontSize: 11, color: muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Fecha y hora</div>
-                {/* No `tnum` here — tabular-nums forces the colon into a
-                    digit-width slot which renders as a visible "12: 04"
-                    gap. Date is short enough that proportional digits
-                    look fine. */}
-                <div style={{ fontSize: 16, fontWeight: 500 }}>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 12 }}>
+                <div style={{ fontWeight: 700, textTransform: "uppercase" }}>Firmó</div>
+                <div style={{ fontSize: 14, marginBottom: 8 }}>{order.signature.signedByName || "—"}</div>
+                <div style={{ fontWeight: 700, textTransform: "uppercase" }}>Fecha y hora</div>
+                <div>
                   {(() => {
                     try {
                       const d = new Date(order.signature.signedAt);
