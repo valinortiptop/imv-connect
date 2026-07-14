@@ -415,7 +415,7 @@ async function renderOrderSnapshotBlob(orderId: string, hideMoney: boolean = fal
 
   const { data: items } = await (supabase as any)
     .from("order_items")
-    .select("quantity, unit_price_override, is_damaged, products(clave, name, sale_price_with_iva, image_url), damaged_batches(condition)")
+    .select("quantity, unit_price_override, is_damaged, products(clave, name, unidad, sale_price_with_iva, image_url), damaged_batches(condition)")
     .eq("order_id", orderId);
 
   const rawItems = (items ?? []) as any[];
@@ -429,6 +429,7 @@ async function renderOrderSnapshotBlob(orderId: string, hideMoney: boolean = fal
     return {
       clave: p?.clave ?? "",
       name: p?.name ?? "",
+      unit: p?.unidad ?? null,
       quantity: it.quantity ?? 0,
       price,
       subtotal: price * (it.quantity ?? 0),
@@ -437,6 +438,28 @@ async function renderOrderSnapshotBlob(orderId: string, hideMoney: boolean = fal
       damaged_condition: it.damaged_batches?.condition ?? null,
     };
   });
+
+  // Fetch default empresa for the header (razon social, RFC, direccion, tel, logo)
+  const { data: empresaRow } = await (supabase as any)
+    .from("empresas")
+    .select("razon_social, nombre_comercial, rfc, direccion_fiscal, cp_fiscal, telefono, logo_url")
+    .eq("active", true)
+    .order("is_default", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const empresa: PdfEmpresa | null = empresaRow
+    ? {
+        razon_social: empresaRow.razon_social ?? null,
+        nombre_comercial: empresaRow.nombre_comercial ?? null,
+        rfc: empresaRow.rfc ?? null,
+        direccion_fiscal: empresaRow.direccion_fiscal ?? null,
+        cp_fiscal: empresaRow.cp_fiscal ?? null,
+        telefono: empresaRow.telefono ?? null,
+        logo_url: empresaRow.logo_url ?? null,
+        logoDataUrl: empresaRow.logo_url ? await loadImageAsDataUrl(empresaRow.logo_url) : null,
+      }
+    : null;
+
   const subtotal = pdfItems.reduce((s, i) => s + i.subtotal, 0);
   const discountRaw = Number(orderData.discount_amount) || 0;
   const discount = Math.max(0, Math.min(discountRaw, subtotal));
