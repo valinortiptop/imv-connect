@@ -249,7 +249,7 @@ export async function importSalesHistory(
       .from("sales_history" as any)
       .upsert(batch, {
         onConflict: "empresa_id,invoice_no,sku,client_name_raw,rep_name_raw",
-        ignoreDuplicates: false,
+        ignoreDuplicates: true,
       })
       .select("id");
     if (error) {
