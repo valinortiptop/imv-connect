@@ -74,7 +74,7 @@ function PresupuestoPage() {
   const gastado = gastadoQ.data;
 
   const [form, setForm] = useState<{ empresa_id: string; mes: string; monto: string; notas: string }>({
-    empresa_id: "",
+    empresa_id: "global",
     mes: firstOfMonth(0),
     monto: "",
     notas: "",
@@ -86,7 +86,7 @@ function PresupuestoPage() {
       if (!monto || monto < 0) throw new Error("Monto inválido");
       return fnUpsert({
         data: {
-          empresa_id: form.empresa_id || null,
+          empresa_id: form.empresa_id && form.empresa_id !== "global" ? form.empresa_id : null,
           mes: form.mes,
           monto_mxn: monto,
           notas: form.notas.trim() || undefined,
@@ -117,7 +117,7 @@ function PresupuestoPage() {
             <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
               <SelectTrigger><SelectValue placeholder="Todas / Global" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Global (sin empresa)</SelectItem>
+                <SelectItem value="global">Global (sin empresa)</SelectItem>
                 {(empresas.data ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.razon_social}</SelectItem>
                 ))}
