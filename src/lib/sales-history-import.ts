@@ -198,12 +198,16 @@ export async function parseNetSuiteSalesFile(file: File): Promise<SalesHistoryRo
       const qty = num(pickRaw(r, HEADER_ALIASES._qty));
       const rev = num(pickRaw(r, HEADER_ALIASES._rev));
       parsed.push({
-        rep_name_raw: rep ?? null,
+        // Coalesce to empty string so the UNIQUE(empresa_id, invoice_no, sku,
+        // client_name_raw, rep_name_raw) constraint matches on re-import.
+        // Postgres treats NULLs as distinct by default, which would otherwise
+        // let rows with any empty field slip past ON CONFLICT and duplicate.
+        rep_name_raw: rep ?? "",
         lab_name_raw: pickRaw(r, HEADER_ALIASES._lab) ?? null,
-        client_name_raw: client ?? null,
+        client_name_raw: client ?? "",
         invoice_no: invoice,
         invoice_date: date,
-        sku: sku ?? null,
+        sku: sku ?? "",
         description: pickRaw(r, HEADER_ALIASES._desc) ?? null,
         quantity: qty,
         revenue: rev,
