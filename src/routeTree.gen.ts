@@ -112,7 +112,7 @@ import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.
 import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nomina'
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
-import { Route as AdminAlmacenMapaRouteImport } from './routes/admin.almacen.mapa'
+import { Route as AdminAlmacenOperacionRouteImport } from './routes/admin.almacen.operacion'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
@@ -643,9 +643,9 @@ const AdminBancosEstadosRoute = AdminBancosEstadosRouteImport.update({
   path: '/bancos/estados',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAlmacenMapaRoute = AdminAlmacenMapaRouteImport.update({
-  id: '/mapa',
-  path: '/mapa',
+const AdminAlmacenOperacionRoute = AdminAlmacenOperacionRouteImport.update({
+  id: '/operacion',
+  path: '/operacion',
   getParentRoute: () => AdminAlmacenRoute,
 } as any)
 const ApiPublicMapsScriptRoute = ApiPublicMapsScriptRouteImport.update({
@@ -750,7 +750,7 @@ export interface FileRoutesByFullPath {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
-  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
+  '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -858,7 +858,7 @@ export interface FileRoutesByTo {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
-  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
+  '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -971,7 +971,7 @@ export interface FileRoutesById {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
-  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
+  '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -1085,7 +1085,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
-    | '/admin/almacen/mapa'
+    | '/admin/almacen/operacion'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1193,7 +1193,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin'
     | '/rep'
-    | '/admin/almacen/mapa'
+    | '/admin/almacen/operacion'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1305,7 +1305,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
-    | '/admin/almacen/mapa'
+    | '/admin/almacen/operacion'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -2086,11 +2086,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBancosEstadosRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/almacen/mapa': {
-      id: '/admin/almacen/mapa'
-      path: '/mapa'
-      fullPath: '/admin/almacen/mapa'
-      preLoaderRoute: typeof AdminAlmacenMapaRouteImport
+    '/admin/almacen/operacion': {
+      id: '/admin/almacen/operacion'
+      path: '/operacion'
+      fullPath: '/admin/almacen/operacion'
+      preLoaderRoute: typeof AdminAlmacenOperacionRouteImport
       parentRoute: typeof AdminAlmacenRoute
     }
     '/api/public/maps/script': {
@@ -2139,11 +2139,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminAlmacenRouteChildren {
-  AdminAlmacenMapaRoute: typeof AdminAlmacenMapaRoute
+  AdminAlmacenOperacionRoute: typeof AdminAlmacenOperacionRoute
 }
 
 const AdminAlmacenRouteChildren: AdminAlmacenRouteChildren = {
-  AdminAlmacenMapaRoute: AdminAlmacenMapaRoute,
+  AdminAlmacenOperacionRoute: AdminAlmacenOperacionRoute,
 }
 
 const AdminAlmacenRouteWithChildren = AdminAlmacenRoute._addFileChildren(
@@ -2472,13 +2472,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
