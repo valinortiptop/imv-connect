@@ -112,6 +112,7 @@ import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.
 import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nomina'
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
+import { Route as AdminAlmacenMapaRouteImport } from './routes/admin.almacen.mapa'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
@@ -642,6 +643,11 @@ const AdminBancosEstadosRoute = AdminBancosEstadosRouteImport.update({
   path: '/bancos/estados',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAlmacenMapaRoute = AdminAlmacenMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => AdminAlmacenRoute,
+} as any)
 const ApiPublicMapsScriptRoute = ApiPublicMapsScriptRouteImport.update({
   id: '/api/public/maps/script',
   path: '/api/public/maps/script',
@@ -682,7 +688,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
-  '/admin/almacen': typeof AdminAlmacenRoute
+  '/admin/almacen': typeof AdminAlmacenRouteWithChildren
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -744,6 +750,7 @@ export interface FileRoutesByFullPath {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
+  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -791,7 +798,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/administracion': typeof AdminAdministracionRoute
-  '/admin/almacen': typeof AdminAlmacenRoute
+  '/admin/almacen': typeof AdminAlmacenRouteWithChildren
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -851,6 +858,7 @@ export interface FileRoutesByTo {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
+  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -901,7 +909,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
-  '/admin/almacen': typeof AdminAlmacenRoute
+  '/admin/almacen': typeof AdminAlmacenRouteWithChildren
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -963,6 +971,7 @@ export interface FileRoutesById {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
+  '/admin/almacen/mapa': typeof AdminAlmacenMapaRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -1076,6 +1085,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
+    | '/admin/almacen/mapa'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1183,6 +1193,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin'
     | '/rep'
+    | '/admin/almacen/mapa'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1294,6 +1305,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
+    | '/admin/almacen/mapa'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -2074,6 +2086,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBancosEstadosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/almacen/mapa': {
+      id: '/admin/almacen/mapa'
+      path: '/mapa'
+      fullPath: '/admin/almacen/mapa'
+      preLoaderRoute: typeof AdminAlmacenMapaRouteImport
+      parentRoute: typeof AdminAlmacenRoute
+    }
     '/api/public/maps/script': {
       id: '/api/public/maps/script'
       path: '/api/public/maps/script'
@@ -2118,6 +2137,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminAlmacenRouteChildren {
+  AdminAlmacenMapaRoute: typeof AdminAlmacenMapaRoute
+}
+
+const AdminAlmacenRouteChildren: AdminAlmacenRouteChildren = {
+  AdminAlmacenMapaRoute: AdminAlmacenMapaRoute,
+}
+
+const AdminAlmacenRouteWithChildren = AdminAlmacenRoute._addFileChildren(
+  AdminAlmacenRouteChildren,
+)
 
 interface AdminClientesIdRouteChildren {
   AdminClientesIdPreciosRoute: typeof AdminClientesIdPreciosRoute
@@ -2243,7 +2274,7 @@ const AdminContabilidadPolizasRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAdministracionRoute: typeof AdminAdministracionRoute
-  AdminAlmacenRoute: typeof AdminAlmacenRoute
+  AdminAlmacenRoute: typeof AdminAlmacenRouteWithChildren
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminCalculadoraRoute: typeof AdminCalculadoraRoute
   AdminCatalogoRoute: typeof AdminCatalogoRoute
@@ -2305,7 +2336,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdministracionRoute: AdminAdministracionRoute,
-  AdminAlmacenRoute: AdminAlmacenRoute,
+  AdminAlmacenRoute: AdminAlmacenRouteWithChildren,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminCalculadoraRoute: AdminCalculadoraRoute,
   AdminCatalogoRoute: AdminCatalogoRoute,
@@ -2441,13 +2472,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
