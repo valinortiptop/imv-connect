@@ -112,6 +112,8 @@ function Cliente360() {
         <Kpi title="Días pago prom." value={String(kpis?.dias_pago_prom || 0)} />
       </div>
 
+      <RiesgoIAPanel clienteId={id} />
+
       <Tabs defaultValue="credito" className="w-full">
         <TabsList>
           <TabsTrigger value="credito"><ShieldCheck className="h-3.5 w-3.5 mr-1" />Crédito</TabsTrigger>
@@ -122,7 +124,7 @@ function Cliente360() {
         </TabsList>
 
         <TabsContent value="credito">
-          <CreditoForm initial={credito} onSave={(p) => guardarCredito.mutate(p)} pending={guardarCredito.isPending} />
+          <CreditoForm initial={credito} clienteId={id} onSave={(p) => guardarCredito.mutate(p)} pending={guardarCredito.isPending} />
         </TabsContent>
 
         <TabsContent value="facturas"><FacturasTab clienteId={id} /></TabsContent>
@@ -130,6 +132,64 @@ function Cliente360() {
         <TabsContent value="promesas"><PromesasTab clienteId={id} /></TabsContent>
         <TabsContent value="autorizaciones"><AutorizacionesTab clienteId={id} /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function RiesgoIAPanel({ clienteId }: { clienteId: string }) {
+  const analizar = useServerFn(analizarRiesgoClienteFn);
+  const enviarEdo = useServerFn(enviarEstadoCuentaFn);
+  const [loading, setLoading] = useState(false);
+  const [enviandoEdo, setEnviandoEdo] = useState(false);
+  const [resultado, setResultado] = useState<{ score: number; nivel: string; recomendaciones: string } | null>(null);
+
+  const color = resultado ? (
+    resultado.nivel === "critico" ? "text-red-500 border-red-500/40 bg-red-500/10" :
+    resultado.nivel === "alto" ? "text-orange-500 border-orange-500/40 bg-orange-500/10" :
+    resultado.nivel === "medio" ? "text-yellow-500 border-yellow-500/40 bg-yellow-500/10" :
+    "text-emerald-500 border-emerald-500/40 bg-emerald-500/10"
+  ) : "";
+
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-primary" /> Riesgo IA & comunicaciones</h3>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-1" disabled={enviandoEdo}
+            onClick={async () => {
+              setEnviandoEdo(true);
+              try {
+                const r = await enviarEdo({ data: { clienteId } });
+                toast.success(`Estado de cuenta enviado a ${r.destinatario}`);
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setEnviandoEdo(false); }
+            }}>
+            {enviandoEdo ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />} Enviar estado de cuenta
+          </Button>
+          <Button size="sm" className="gap-1" disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const r = await analizar({ data: { clienteId } });
+                setResultado(r);
+                toast.success(`Análisis completado: ${r.nivel} (${r.score}/100)`);
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setLoading(false); }
+            }}>
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Analizar riesgo
+          </Button>
+        </div>
+      </div>
+      {resultado && (
+        <div className="space-y-2">
+          <div className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-semibold capitalize ${color}`}>
+            Riesgo {resultado.nivel} · {resultado.score}/100
+          </div>
+          <div className="whitespace-pre-line text-xs bg-muted/40 rounded-md p-3 leading-relaxed">
+            {resultado.recomendaciones || "Sin recomendaciones."}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
