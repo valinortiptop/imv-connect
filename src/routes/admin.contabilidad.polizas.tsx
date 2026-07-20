@@ -263,6 +263,51 @@ function PolizasPage() {
           </div>
         </>
       )}
+
+      <Dialog open={nuevoTipo !== null} onOpenChange={(o) => { if (!o) setNuevoTipo(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nueva póliza de {nuevoTipo ? TIPO_LABEL[nuevoTipo] : ""}</DialogTitle>
+            <DialogDescription>
+              Captura los datos básicos. La póliza se creará como borrador y podrás agregar los movimientos a continuación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="nueva-fecha">Fecha</Label>
+              <Input
+                id="nueva-fecha"
+                type="date"
+                value={nuevaFecha}
+                onChange={(e) => setNuevaFecha(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nuevo-concepto">Concepto</Label>
+              <Textarea
+                id="nuevo-concepto"
+                value={nuevoConcepto}
+                onChange={(e) => setNuevoConcepto(e.target.value)}
+                placeholder="Descripción breve de la póliza"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNuevoTipo(null)} disabled={crear.isPending}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!nuevoTipo) return;
+                if (!nuevaFecha) { toast.error("Fecha requerida"); return; }
+                crear.mutate({ tipo: nuevoTipo, fecha: nuevaFecha, concepto: nuevoConcepto.trim() });
+              }}
+              disabled={crear.isPending}
+            >
+              {crear.isPending ? "Creando…" : "Crear y continuar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
