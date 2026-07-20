@@ -176,9 +176,9 @@ function PolizasPage() {
               </SelectContent>
             </Select>
             <div className="flex gap-1">
-              <Button onClick={() => crear.mutate("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
-              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
-              <Button onClick={() => crear.mutate("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
+              <Button onClick={() => abrirNueva("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
+              <Button onClick={() => abrirNueva("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
+              <Button onClick={() => abrirNueva("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
             </div>
           </div>
 
