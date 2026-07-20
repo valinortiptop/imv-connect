@@ -657,7 +657,7 @@ function ImportCsvDialog({
   satCodes: SATCode[];
   progress: { done: number; total: number } | null;
   summary: {
-    total: number; inserted: number; skippedFk: number;
+    total: number; inserted: number; skippedFk: number; deleteSkipped: number;
     errors: { chunk: number; message: string; sample?: string }[];
   } | null;
 }) {
