@@ -594,8 +594,8 @@ export default function StockEntries() {
       promo_id: null,
       effective_weight_kg: product.weight_kg ?? 0,
       is_gifted: false,
-      cost_with_iva: null,
-      cost_without_iva: null,
+      cost_with_iva: product.cost_with_iva ?? null,
+      cost_without_iva: product.cost_without_iva ?? null,
     }]);
     setProductPopoverOpen(false);
     setProductSearch("");
