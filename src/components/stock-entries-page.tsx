@@ -618,6 +618,22 @@ export default function StockEntries() {
     setLineItems(prev => prev.filter((_, i) => i !== index));
   };
 
+  const updateLineItemCost = (index: number, costWithIva: number | null) => {
+    setLineItems(prev => prev.map((li, i) => {
+      if (i !== index) return li;
+      if (costWithIva == null || Number.isNaN(costWithIva)) {
+        return { ...li, cost_with_iva: null, cost_without_iva: null };
+      }
+      const product = products?.find(p => p.id === li.product_id);
+      // Derive cost_without_iva using product's existing ratio, else assume 16% IVA
+      let ratio = 1 / 1.16;
+      if (product?.cost_with_iva && product?.cost_without_iva && product.cost_with_iva > 0) {
+        ratio = product.cost_without_iva / product.cost_with_iva;
+      }
+      return { ...li, cost_with_iva: costWithIva, cost_without_iva: +(costWithIva * ratio).toFixed(4) };
+    }));
+  };
+
   const updateLineItemPromo = (index: number, promoId: string | null) => {
     setLineItems(prev => prev.map((li, i) => {
       if (i !== index) return li;
