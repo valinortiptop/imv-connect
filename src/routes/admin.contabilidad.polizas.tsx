@@ -133,15 +133,6 @@ function PolizasPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar folio o concepto…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
             </div>
-            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
-                <SelectItem value="ingreso">Ingreso</SelectItem>
-                <SelectItem value="egreso">Egreso</SelectItem>
-                <SelectItem value="diario">Diario</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -153,10 +144,36 @@ function PolizasPage() {
             </Select>
             <div className="flex gap-1">
               <Button onClick={() => crear.mutate("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
-              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Egreso</Button>
+              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
               <Button onClick={() => crear.mutate("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
             </div>
           </div>
+
+          <div className="flex flex-wrap gap-1 border-b border-border">
+            {[
+              { v: "todos", label: "Todos" },
+              { v: "ingreso", label: "Ingreso" },
+              { v: "egreso", label: "Salida" },
+              { v: "diario", label: "Diario" },
+            ].map((t) => {
+              const active = tipoFiltro === t.v;
+              const count = t.v === "todos" ? polizas.length : polizas.filter((p) => p.tipo === (t.v as any)).length;
+              return (
+                <button
+                  key={t.v}
+                  onClick={() => setTipoFiltro(t.v)}
+                  className={`px-3 py-1.5 text-sm rounded-t-md border-b-2 -mb-px transition-colors ${
+                    active
+                      ? "border-primary text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.label} <span className="ml-1 text-xs text-muted-foreground">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+
 
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
