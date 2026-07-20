@@ -141,6 +141,7 @@ function CuentasPage() {
     total: number;
     inserted: number;
     skippedFk: number;
+    deleteSkipped: number;
     errors: { chunk: number; message: string; sample?: string }[];
   };
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
