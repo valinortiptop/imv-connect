@@ -26,16 +26,18 @@ function DiarioPage() {
   const empresaId = selected?.id;
   const [desde, setDesde] = useState(firstOfMonth());
   const [hasta, setHasta] = useState(today());
+  const [incluirBorradores, setIncluirBorradores] = useState(true);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["diario", empresaId, desde, hasta],
+    queryKey: ["diario", empresaId, desde, hasta, incluirBorradores],
     enabled: !!empresaId,
     queryFn: async () => {
+      const estados = incluirBorradores ? ["asentada", "borrador"] : ["asentada"];
       const { data, error } = await supabase
         .from("polizas" as any)
-        .select("id, folio, tipo, fecha, concepto, poliza_movimientos!inner(id, cargo, abono, concepto, cuenta_id, orden, cuentas_contables(codigo, nombre))")
+        .select("id, folio, tipo, fecha, concepto, estado, poliza_movimientos!inner(id, cargo, abono, concepto, cuenta_id, orden, cuentas_contables(codigo, nombre))")
         .eq("empresa_id", empresaId!)
-        .eq("estado", "asentada")
+        .in("estado", estados)
         .gte("fecha", desde)
         .lte("fecha", hasta)
         .order("fecha")
