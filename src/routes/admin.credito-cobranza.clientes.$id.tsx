@@ -262,6 +262,38 @@ function CreditoForm({ initial, clienteId, onSave, pending }: { initial: any; cl
           <label className="text-xs text-muted-foreground">Notas</label>
           <Textarea rows={2} value={notas} onChange={(e) => setNotas(e.target.value)} />
         </div>
+
+        <div className="col-span-2 pt-2 border-t border-border">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Automatización (Fase 2)</h4>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Pronto pago — días</label>
+          <Input type="number" value={pdias} onChange={(e) => setPdias(e.target.value)} placeholder="0 = deshabilitado" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Pronto pago — % NC</label>
+          <Input type="number" step="0.01" value={ppct} onChange={(e) => setPpct(e.target.value)} />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs text-muted-foreground">Email de cobranza</label>
+          <Input type="email" value={emailCob} onChange={(e) => setEmailCob(e.target.value)} placeholder="Si vacío se usa el email principal" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Estado de cuenta automático</label>
+          <Select value={freq} onValueChange={setFreq}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nunca">Nunca</SelectItem>
+              <SelectItem value="semanal">Semanal (lunes)</SelectItem>
+              <SelectItem value="quincenal">Quincenal (1 y 16)</SelectItem>
+              <SelectItem value="mensual">Mensual (día 1)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 pt-6">
+          <input id="rec" type="checkbox" checked={recordatorios} onChange={(e) => setRecordatorios(e.target.checked)} />
+          <label htmlFor="rec" className="text-sm font-medium">Enviar recordatorios de pago</label>
+        </div>
       </div>
       <Button disabled={pending} className="gap-2" onClick={() => onSave({
         limite_credito: Number(limite) || 0,
@@ -271,6 +303,11 @@ function CreditoForm({ initial, clienteId, onSave, pending }: { initial: any; cl
         motivo_bloqueo: bloqueado ? motivoBloqueo : null,
         riesgo_manual: riesgoManual === "auto" ? null : riesgoManual,
         notas: notas || null,
+        pronto_pago_dias: Number(pdias) || 0,
+        pronto_pago_porcentaje: Number(ppct) || 0,
+        email_cobranza: emailCob || null,
+        freq_edo_cuenta: freq,
+        enviar_recordatorios: recordatorios,
       })}>
         <Save className="h-4 w-4" /> Guardar
       </Button>
