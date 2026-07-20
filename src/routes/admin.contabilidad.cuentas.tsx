@@ -358,10 +358,13 @@ function CuentasPage() {
 
           {importOpen && (
             <ImportCsvDialog
-              onClose={() => setImportOpen(false)}
+              satCodes={satCodes}
+              onClose={() => { setImportOpen(false); setImportProgress(null); setImportSummary(null); }}
               hasExisting={cuentas.length > 0}
-              onImport={(rows, replace) => importCsv.mutate({ rows, replace }, { onSuccess: () => setImportOpen(false) })}
+              onImport={(rows, replace) => importCsv.mutate({ rows, replace })}
               importing={importCsv.isPending}
+              progress={importProgress}
+              summary={importSummary}
             />
           )}
         </>
