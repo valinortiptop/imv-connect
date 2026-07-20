@@ -100,6 +100,15 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Cobranza",
+    items: [
+      { key: "navCreditoCartera",        label: "Cartera",          url: "/admin/credito-cobranza/cartera",        icon: Users },
+      { key: "navCreditoGestiones",      label: "Gestiones",        url: "/admin/credito-cobranza/gestiones",      icon: Phone },
+      { key: "navCreditoPromesas",       label: "Promesas de pago", url: "/admin/credito-cobranza/promesas",       icon: HandCoins },
+      { key: "navCreditoAutorizaciones", label: "Autorizaciones",   url: "/admin/credito-cobranza/autorizaciones", icon: ShieldCheck },
+    ],
+  },
+  {
     label: "Contabilidad",
     items: [
       { key: "navContaDash",    label: "Dashboard fiscal",    url: "/admin/contabilidad",              icon: Landmark, exact: true },
