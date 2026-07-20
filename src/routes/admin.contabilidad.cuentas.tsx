@@ -137,16 +137,27 @@ function CuentasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  type ImportSummary = {
+    total: number;
+    inserted: number;
+    skippedFk: number;
+    errors: { chunk: number; message: string; sample?: string }[];
+  };
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+
   const importCsv = useMutation({
-    mutationFn: async ({ rows, replace }: { rows: Partial<Cuenta>[]; replace: boolean }) => {
+    mutationFn: async ({ rows, replace }: { rows: Partial<Cuenta>[]; replace: boolean }): Promise<ImportSummary> => {
       if (!empresaId) throw new Error("Selecciona una empresa");
       if (rows.length === 0) throw new Error("El archivo no contiene filas válidas");
+      setImportSummary(null);
+      setImportProgress({ done: 0, total: rows.length });
+
       if (replace) {
         const { error: eDel } = await supabase
           .from("cuentas_contables" as any).delete().eq("empresa_id", empresaId);
-        if (eDel) throw eDel;
+        if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
       }
-      // Insert padres antes que hijos: ordenar por longitud de código
       const sorted = [...rows].sort((a, b) => (a.codigo?.length ?? 0) - (b.codigo?.length ?? 0));
       const payload = sorted.map((c) => ({
         empresa_id: empresaId,
@@ -160,18 +171,58 @@ function CuentasPage() {
         activa: c.activa ?? true,
         saldo_inicial: c.saldo_inicial ?? 0,
       }));
-      // Insertar en lotes
-      const chunk = 200;
+
+      const errors: ImportSummary["errors"] = [];
+      let inserted = 0;
+      let skippedFk = 0;
+      const chunk = 100;
       for (let i = 0; i < payload.length; i += chunk) {
-        const { error } = await supabase
+        const slice = payload.slice(i, i + chunk);
+        const chunkIdx = Math.floor(i / chunk) + 1;
+        const { error, data } = await supabase
           .from("cuentas_contables" as any)
-          .upsert(payload.slice(i, i + chunk), { onConflict: "empresa_id,codigo" });
-        if (error) throw error;
+          .upsert(slice, { onConflict: "empresa_id,codigo" })
+          .select("id");
+        if (error) {
+          for (const row of slice) {
+            const { error: e2 } = await supabase
+              .from("cuentas_contables" as any)
+              .upsert(row, { onConflict: "empresa_id,codigo" });
+            if (e2) {
+              if ((e2 as any).code === "23503" || /foreign key|violates/i.test(e2.message)) {
+                const { error: e3 } = await supabase
+                  .from("cuentas_contables" as any)
+                  .upsert({ ...row, codigo_agrupador: null }, { onConflict: "empresa_id,codigo" });
+                if (e3) {
+                  errors.push({ chunk: chunkIdx, message: e3.message, sample: row.codigo });
+                } else {
+                  inserted++;
+                  skippedFk++;
+                }
+              } else {
+                errors.push({ chunk: chunkIdx, message: e2.message, sample: row.codigo });
+              }
+            } else {
+              inserted++;
+            }
+          }
+        } else {
+          inserted += (data?.length ?? slice.length);
+        }
+        setImportProgress({ done: Math.min(payload.length, i + chunk), total: payload.length });
       }
-      return payload.length;
+      return { total: payload.length, inserted, skippedFk, errors };
     },
-    onSuccess: (n) => { toast.success(`${n} cuentas importadas`); qc.invalidateQueries({ queryKey: ["cuentas"] }); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: (s) => {
+      setImportSummary(s);
+      if (s.errors.length === 0) toast.success(`${s.inserted} cuentas importadas`);
+      else toast.warning(`${s.inserted} importadas · ${s.errors.length} con errores`);
+      qc.invalidateQueries({ queryKey: ["cuentas"] });
+    },
+    onError: (e: Error) => {
+      setImportProgress(null);
+      toast.error(e.message);
+    },
   });
 
   const [importOpen, setImportOpen] = useState(false);
@@ -307,10 +358,13 @@ function CuentasPage() {
 
           {importOpen && (
             <ImportCsvDialog
-              onClose={() => setImportOpen(false)}
+              satCodes={satCodes}
+              onClose={() => { setImportOpen(false); setImportProgress(null); setImportSummary(null); }}
               hasExisting={cuentas.length > 0}
-              onImport={(rows, replace) => importCsv.mutate({ rows, replace }, { onSuccess: () => setImportOpen(false) })}
+              onImport={(rows, replace) => importCsv.mutate({ rows, replace })}
               importing={importCsv.isPending}
+              progress={importProgress}
+              summary={importSummary}
             />
           )}
         </>
@@ -423,7 +477,7 @@ function CuentaDialog({
 
 // ---------- CSV Import ----------
 
-function parseCsv(text: string): Partial<Cuenta>[] {
+function parseCsv(text: string, satCodes: SATCode[] = []): Partial<Cuenta>[] {
   // Split rows respecting quoted commas
   const rows: string[][] = [];
   let cur: string[] = [], field = "", inQ = false;
@@ -545,10 +599,25 @@ function parseCsv(text: string): Partial<Cuenta>[] {
     const saldoRaw = iSal >= 0 ? (r[iSal] ?? "") : "";
     const saldo = parseMoney(saldoRaw);
 
+    // Derive codigo_agrupador: prefer explicit column, else prefix match against SAT catalog
+    let codigo_agrupador: string | null = iAgr >= 0 ? (r[iAgr] ?? "").trim() || null : null;
+    if (!codigo_agrupador && satCodes.length) {
+      const digits = codigo.replace(/[^0-9]/g, "");
+      // Try candidate SAT codes: 5, 4, 3, 2, 1 digits + possible ".NN" suffix
+      let best: string | null = null;
+      for (const s of satCodes) {
+        const sDigits = s.codigo.replace(/[^0-9]/g, "");
+        if (sDigits.length && digits.startsWith(sDigits)) {
+          if (!best || sDigits.length > best.replace(/[^0-9]/g, "").length) best = s.codigo;
+        }
+      }
+      codigo_agrupador = best;
+    }
+
     return {
       codigo,
       nombre,
-      codigo_agrupador: iAgr >= 0 ? (r[iAgr] ?? "").trim() || null : null,
+      codigo_agrupador,
       naturaleza,
       nivel,
       permite_movimientos,
@@ -561,12 +630,18 @@ function parseCsv(text: string): Partial<Cuenta>[] {
 
 
 function ImportCsvDialog({
-  onClose, onImport, hasExisting, importing,
+  onClose, onImport, hasExisting, importing, satCodes, progress, summary,
 }: {
   onClose: () => void;
   onImport: (rows: Partial<Cuenta>[], replace: boolean) => void;
   hasExisting: boolean;
   importing: boolean;
+  satCodes: SATCode[];
+  progress: { done: number; total: number } | null;
+  summary: {
+    total: number; inserted: number; skippedFk: number;
+    errors: { chunk: number; message: string; sample?: string }[];
+  } | null;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Partial<Cuenta>[]>([]);
@@ -577,13 +652,15 @@ function ImportCsvDialog({
     setFile(f); setError(null);
     try {
       const text = await f.text();
-      const rows = parseCsv(text);
+      const rows = parseCsv(text, satCodes);
       if (rows.length === 0) throw new Error("No se encontraron filas válidas");
       setPreview(rows);
     } catch (e: any) {
       setError(e.message); setPreview([]);
     }
   };
+
+  const withAgrupador = preview.filter((c) => c.codigo_agrupador).length;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -618,8 +695,11 @@ function ImportCsvDialog({
 
           {preview.length > 0 && (
             <div className="rounded-md border border-border overflow-hidden">
-              <div className="bg-muted/30 px-3 py-1.5 text-xs font-medium">
-                Vista previa — {preview.length} cuentas
+              <div className="bg-muted/30 px-3 py-1.5 text-xs font-medium flex items-center justify-between">
+                <span>Vista previa — {preview.length} cuentas</span>
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  Agrupador SAT: {withAgrupador}/{preview.length}
+                </span>
               </div>
               <div className="max-h-64 overflow-y-auto">
                 <table className="w-full text-xs">
@@ -653,9 +733,9 @@ function ImportCsvDialog({
             </div>
           )}
 
-          {hasExisting && (
+          {hasExisting && !summary && (
             <label className="flex items-center gap-2 rounded-md border border-border bg-muted/10 p-2 text-xs">
-              <Switch checked={replace} onCheckedChange={setReplace} />
+              <Switch checked={replace} onCheckedChange={setReplace} disabled={importing} />
               <span>
                 <b>Reemplazar catálogo actual</b> — borra todas las cuentas existentes de esta empresa antes de importar.
                 {replace && <span className="text-destructive"> Esta acción es destructiva.</span>}
@@ -663,17 +743,73 @@ function ImportCsvDialog({
             </label>
           )}
 
+          {progress && importing && (
+            <div className="rounded-md border border-border bg-muted/10 p-3 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="font-medium">Importando…</span>
+                <span className="text-muted-foreground">{progress.done}/{progress.total}</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {summary && !importing && (
+            <div className="rounded-md border border-border bg-muted/10 p-3 space-y-2 text-xs">
+              <div className="font-medium text-foreground text-sm">Resumen de la importación</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded border border-border p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase">Total</div>
+                  <div className="text-lg font-semibold">{summary.total}</div>
+                </div>
+                <div className="rounded border border-emerald-500/40 bg-emerald-500/5 p-2">
+                  <div className="text-[10px] text-emerald-600 uppercase">Insertadas</div>
+                  <div className="text-lg font-semibold text-emerald-600">{summary.inserted}</div>
+                </div>
+                <div className="rounded border border-destructive/40 bg-destructive/5 p-2">
+                  <div className="text-[10px] text-destructive uppercase">Con error</div>
+                  <div className="text-lg font-semibold text-destructive">{summary.errors.length}</div>
+                </div>
+              </div>
+              {summary.skippedFk > 0 && (
+                <p className="text-muted-foreground">
+                  ⚠️ {summary.skippedFk} cuenta(s) importadas sin código agrupador SAT (no se encontró un código válido).
+                </p>
+              )}
+              {summary.errors.length > 0 && (
+                <div className="max-h-40 overflow-y-auto rounded border border-destructive/30 bg-destructive/5 p-2 space-y-1">
+                  {summary.errors.slice(0, 20).map((e, i) => (
+                    <div key={i} className="font-mono text-[10px] text-destructive">
+                      {e.sample && <b>{e.sample}: </b>}{e.message}
+                    </div>
+                  ))}
+                  {summary.errors.length > 20 && (
+                    <div className="text-[10px] text-muted-foreground">…y {summary.errors.length - 20} más</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button
-              disabled={!file || preview.length === 0 || importing}
-              onClick={() => {
-                if (replace && !confirm("Se eliminarán TODAS las cuentas actuales de esta empresa. ¿Continuar?")) return;
-                onImport(preview, replace);
-              }}
-            >
-              {importing ? "Importando…" : `Importar ${preview.length || ""}`}
+            <Button variant="outline" onClick={onClose} disabled={importing}>
+              {summary ? "Cerrar" : "Cancelar"}
             </Button>
+            {!summary && (
+              <Button
+                disabled={!file || preview.length === 0 || importing}
+                onClick={() => {
+                  if (replace && !confirm("Se eliminarán TODAS las cuentas actuales de esta empresa. ¿Continuar?")) return;
+                  onImport(preview, replace);
+                }}
+              >
+                {importing ? "Importando…" : `Importar ${preview.length || ""}`}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
