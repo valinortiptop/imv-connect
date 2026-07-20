@@ -86,11 +86,17 @@ function Cliente360() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <Link to="/admin/credito-cobranza/cartera" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="h-3.5 w-3.5" /> Cartera
         </Link>
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/admin/credito-cobranza/clientes/$id/expediente" params={{ id }}>
+            <FileText className="h-3.5 w-3.5 mr-1" /> Expediente digital
+          </Link>
+        </Button>
       </div>
+
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -121,6 +127,8 @@ function Cliente360() {
           <TabsTrigger value="gestiones"><Phone className="h-3.5 w-3.5 mr-1" />Gestiones</TabsTrigger>
           <TabsTrigger value="promesas"><HandCoins className="h-3.5 w-3.5 mr-1" />Promesas</TabsTrigger>
           <TabsTrigger value="autorizaciones">Autorizaciones</TabsTrigger>
+
+
         </TabsList>
 
         <TabsContent value="credito">
