@@ -20,7 +20,7 @@ import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
 
 const TIPO_LABEL: Record<string, string> = { ingreso: "Ingreso", egreso: "Salida", diario: "Diario" };
 
-export const Route = createFileRoute("/admin/contabilidad/polizas")({
+export const Route = createFileRoute("/admin/contabilidad/polizas/")({
   head: () => ({
     meta: [
       { title: "Pólizas — Contabilidad" },
