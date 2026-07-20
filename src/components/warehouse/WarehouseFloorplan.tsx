@@ -623,7 +623,19 @@ export default function WarehouseFloorplan() {
         open={historicalOpen}
         onOpenChange={setHistoricalOpen}
         currentValue={asOf}
-        onSelect={setAsOf}
+        onSelect={(d) => {
+          if (d) {
+            // Snapshot infra (inventory_snapshots table + list_inventory_snapshots RPC)
+            // isn't deployed yet — the map still reads live slot_contents. Refuse the
+            // switch so the button never lies about showing past inventory.
+            toast.info("Vista histórica no disponible todavía", {
+              description: "Aún no se guardan snapshots del inventario. El mapa sigue mostrando el stock actual.",
+            });
+            setAsOf(null);
+            return;
+          }
+          setAsOf(null);
+        }}
       />
       <ImportInventoryDialog
         open={importOpen}
