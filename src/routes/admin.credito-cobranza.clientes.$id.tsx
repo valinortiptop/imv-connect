@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Unlock, Phone, HandCoins, ShieldCheck, FileText, Save } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Phone, HandCoins, ShieldCheck, FileText, Save, Mail, Sparkles, Loader2 } from "lucide-react";
+import {
+  enviarEstadoCuentaFn,
+  analizarRiesgoClienteFn,
+} from "@/lib/cobranza.functions";
 
 export const Route = createFileRoute("/admin/credito-cobranza/clientes/$id")({
   component: Cliente360,
@@ -107,6 +112,8 @@ function Cliente360() {
         <Kpi title="Días pago prom." value={String(kpis?.dias_pago_prom || 0)} />
       </div>
 
+      <RiesgoIAPanel clienteId={id} />
+
       <Tabs defaultValue="credito" className="w-full">
         <TabsList>
           <TabsTrigger value="credito"><ShieldCheck className="h-3.5 w-3.5 mr-1" />Crédito</TabsTrigger>
@@ -117,7 +124,7 @@ function Cliente360() {
         </TabsList>
 
         <TabsContent value="credito">
-          <CreditoForm initial={credito} onSave={(p) => guardarCredito.mutate(p)} pending={guardarCredito.isPending} />
+          <CreditoForm initial={credito} clienteId={id} onSave={(p) => guardarCredito.mutate(p)} pending={guardarCredito.isPending} />
         </TabsContent>
 
         <TabsContent value="facturas"><FacturasTab clienteId={id} /></TabsContent>
@@ -125,6 +132,64 @@ function Cliente360() {
         <TabsContent value="promesas"><PromesasTab clienteId={id} /></TabsContent>
         <TabsContent value="autorizaciones"><AutorizacionesTab clienteId={id} /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function RiesgoIAPanel({ clienteId }: { clienteId: string }) {
+  const analizar = useServerFn(analizarRiesgoClienteFn);
+  const enviarEdo = useServerFn(enviarEstadoCuentaFn);
+  const [loading, setLoading] = useState(false);
+  const [enviandoEdo, setEnviandoEdo] = useState(false);
+  const [resultado, setResultado] = useState<{ score: number; nivel: string; recomendaciones: string } | null>(null);
+
+  const color = resultado ? (
+    resultado.nivel === "critico" ? "text-red-500 border-red-500/40 bg-red-500/10" :
+    resultado.nivel === "alto" ? "text-orange-500 border-orange-500/40 bg-orange-500/10" :
+    resultado.nivel === "medio" ? "text-yellow-500 border-yellow-500/40 bg-yellow-500/10" :
+    "text-emerald-500 border-emerald-500/40 bg-emerald-500/10"
+  ) : "";
+
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium text-sm flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-primary" /> Riesgo IA & comunicaciones</h3>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="gap-1" disabled={enviandoEdo}
+            onClick={async () => {
+              setEnviandoEdo(true);
+              try {
+                const r = await enviarEdo({ data: { clienteId } });
+                toast.success(`Estado de cuenta enviado a ${r.destinatario}`);
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setEnviandoEdo(false); }
+            }}>
+            {enviandoEdo ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />} Enviar estado de cuenta
+          </Button>
+          <Button size="sm" className="gap-1" disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const r = await analizar({ data: { clienteId } });
+                setResultado(r);
+                toast.success(`Análisis completado: ${r.nivel} (${r.score}/100)`);
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setLoading(false); }
+            }}>
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Analizar riesgo
+          </Button>
+        </div>
+      </div>
+      {resultado && (
+        <div className="space-y-2">
+          <div className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-semibold capitalize ${color}`}>
+            Riesgo {resultado.nivel} · {resultado.score}/100
+          </div>
+          <div className="whitespace-pre-line text-xs bg-muted/40 rounded-md p-3 leading-relaxed">
+            {resultado.recomendaciones || "Sin recomendaciones."}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -139,7 +204,7 @@ function Kpi({ title, value, tone }: { title: string; value: string; tone?: stri
 }
 
 /* ------- Crédito Form ------- */
-function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: any) => void; pending: boolean }) {
+function CreditoForm({ initial, clienteId, onSave, pending }: { initial: any; clienteId: string; onSave: (p: any) => void; pending: boolean }) {
   const [limite, setLimite] = useState<string>(initial?.limite_credito?.toString() || "0");
   const [dias, setDias] = useState<string>(initial?.dias_credito?.toString() || "30");
   const [condicion, setCondicion] = useState(initial?.condicion_pago || "");
@@ -147,6 +212,13 @@ function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: a
   const [motivoBloqueo, setMotivoBloqueo] = useState(initial?.motivo_bloqueo || "");
   const [riesgoManual, setRiesgoManual] = useState<string>(initial?.riesgo_manual || "auto");
   const [notas, setNotas] = useState(initial?.notas || "");
+  const [pdias, setPdias] = useState<string>(initial?.pronto_pago_dias?.toString() || "0");
+  const [ppct, setPpct] = useState<string>(initial?.pronto_pago_porcentaje?.toString() || "0");
+  const [emailCob, setEmailCob] = useState<string>(initial?.email_cobranza || "");
+  const [freq, setFreq] = useState<string>(initial?.freq_edo_cuenta || "nunca");
+  const [recordatorios, setRecordatorios] = useState<boolean>(initial?.enviar_recordatorios !== false);
+  // clienteId available for future per-form actions
+  void clienteId;
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-3 max-w-2xl">
@@ -190,6 +262,38 @@ function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: a
           <label className="text-xs text-muted-foreground">Notas</label>
           <Textarea rows={2} value={notas} onChange={(e) => setNotas(e.target.value)} />
         </div>
+
+        <div className="col-span-2 pt-2 border-t border-border">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Automatización (Fase 2)</h4>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Pronto pago — días</label>
+          <Input type="number" value={pdias} onChange={(e) => setPdias(e.target.value)} placeholder="0 = deshabilitado" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Pronto pago — % NC</label>
+          <Input type="number" step="0.01" value={ppct} onChange={(e) => setPpct(e.target.value)} />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs text-muted-foreground">Email de cobranza</label>
+          <Input type="email" value={emailCob} onChange={(e) => setEmailCob(e.target.value)} placeholder="Si vacío se usa el email principal" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Estado de cuenta automático</label>
+          <Select value={freq} onValueChange={setFreq}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nunca">Nunca</SelectItem>
+              <SelectItem value="semanal">Semanal (lunes)</SelectItem>
+              <SelectItem value="quincenal">Quincenal (1 y 16)</SelectItem>
+              <SelectItem value="mensual">Mensual (día 1)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 pt-6">
+          <input id="rec" type="checkbox" checked={recordatorios} onChange={(e) => setRecordatorios(e.target.checked)} />
+          <label htmlFor="rec" className="text-sm font-medium">Enviar recordatorios de pago</label>
+        </div>
       </div>
       <Button disabled={pending} className="gap-2" onClick={() => onSave({
         limite_credito: Number(limite) || 0,
@@ -199,6 +303,11 @@ function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: a
         motivo_bloqueo: bloqueado ? motivoBloqueo : null,
         riesgo_manual: riesgoManual === "auto" ? null : riesgoManual,
         notas: notas || null,
+        pronto_pago_dias: Number(pdias) || 0,
+        pronto_pago_porcentaje: Number(ppct) || 0,
+        email_cobranza: emailCob || null,
+        freq_edo_cuenta: freq,
+        enviar_recordatorios: recordatorios,
       })}>
         <Save className="h-4 w-4" /> Guardar
       </Button>
