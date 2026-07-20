@@ -445,34 +445,106 @@ function parseCsv(text: string): Partial<Cuenta>[] {
   if (field.length || cur.length) { cur.push(field); rows.push(cur); }
   const nonEmpty = rows.filter((r) => r.some((c) => c.trim() !== ""));
   if (nonEmpty.length === 0) return [];
-  const header = nonEmpty[0].map((h) => h.trim().toLowerCase());
-  const idx = (name: string, ...aliases: string[]) => {
-    const all = [name, ...aliases];
-    for (const a of all) { const i = header.indexOf(a); if (i >= 0) return i; }
+
+  // Detect header row: first row that contains a recognizable header token.
+  // NetSuite exports start with a title line + blanks before headers.
+  const norm = (s: string) =>
+    s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const HEADER_TOKENS = new Set([
+    "codigo", "cuenta", "numero", "no. de cuenta", "no de cuenta",
+    "nombre", "descripcion", "tipo", "naturaleza", "nivel",
+    "saldo", "saldo inicial", "moneda", "resumen", "agrupador", "codigo agrupador",
+  ]);
+  let headerIdx = 0;
+  for (let i = 0; i < nonEmpty.length; i++) {
+    const hits = nonEmpty[i].filter((c) => HEADER_TOKENS.has(norm(c))).length;
+    if (hits >= 2) { headerIdx = i; break; }
+  }
+  const header = nonEmpty[headerIdx].map(norm);
+  const idx = (...aliases: string[]) => {
+    for (const a of aliases) { const i = header.indexOf(a); if (i >= 0) return i; }
     return -1;
   };
-  const iCod = idx("codigo", "código", "cuenta");
-  const iNom = idx("nombre", "descripcion", "descripción");
-  if (iCod < 0 || iNom < 0) throw new Error("El CSV debe incluir al menos las columnas 'codigo' y 'nombre'");
-  const iAgr = idx("codigo_agrupador", "agrupador", "sat", "codigo_sat");
-  const iNat = idx("naturaleza", "tipo");
+  const iCod = idx("codigo", "numero", "cuenta", "no. de cuenta", "no de cuenta");
+  // If a "numero" column exists, "cuenta" is actually the account name (NetSuite layout)
+  const hasNumero = header.includes("numero");
+  const iNom = hasNumero
+    ? idx("cuenta", "nombre", "descripcion")
+    : idx("nombre", "descripcion");
+  if (iCod < 0 || iNom < 0) throw new Error("El CSV debe incluir al menos las columnas 'codigo' (o 'número') y 'nombre' (o 'cuenta')");
+  const iAgr = idx("codigo agrupador", "agrupador", "sat", "codigo_sat", "codigo sat");
+  const iTipo = idx("tipo", "naturaleza");
   const iNiv = idx("nivel");
   const iMov = idx("permite_movimientos", "movimientos", "detalle");
+  const iResumen = idx("resumen");
   const iMon = idx("moneda");
-  const iSal = idx("saldo_inicial", "saldo");
+  const iSal = idx("saldo inicial", "saldo_inicial", "saldo");
 
-  return nonEmpty.slice(1).map((r) => {
+  // Map NetSuite/common tipo values to naturaleza. Anything under
+  // "acreedora" side otherwise defaults to deudora (safer for asset/expense).
+  const mapNaturaleza = (tipo: string, codigo: string): "deudora" | "acreedora" => {
+    const t = norm(tipo);
+    if (!t) {
+      // Fall back to SAT numbering convention: 1/5/6/7 deudora, 2/3/4/8 acreedora
+      const first = codigo.replace(/[^0-9]/g, "").charAt(0);
+      if (["2", "3", "4", "8"].includes(first)) return "acreedora";
+      return "deudora";
+    }
+    if (t.startsWith("a") || t === "c" || t === "credito" || t === "acreedora") return "acreedora";
+    if (t === "deudora" || t === "d" || t === "debito") return "deudora";
+    // NetSuite types
+    const acreedoras = [
+      "ingresos", "ingreso", "patrimonio", "capital",
+      "cuentas a pagar", "cuentas por pagar", "pasivo",
+      "otros pasivos corrientes", "otros pasivos", "pasivo a largo plazo",
+      "tarjeta de credito", "tarjeta de crédito",
+    ];
+    if (acreedoras.some((k) => t.includes(k))) return "acreedora";
+    return "deudora";
+  };
+
+  // Parse currency strings like "$14,800.00", "($8,293.50)", "-1234.5", "" → number.
+  const parseMoney = (raw: string): number => {
+    if (!raw) return 0;
+    let s = raw.trim();
+    if (!s) return 0;
+    const neg = /^\(.*\)$/.test(s) || s.startsWith("-");
+    s = s.replace(/[()$\s,]/g, "").replace(/^-/, "");
+    const n = Number(s);
+    if (!Number.isFinite(n)) return 0;
+    return neg ? -n : n;
+  };
+
+  return nonEmpty.slice(headerIdx + 1).map((r) => {
     const codigo = (r[iCod] ?? "").trim();
     const nombre = (r[iNom] ?? "").trim();
     if (!codigo || !nombre) return null;
-    const natRaw = (iNat >= 0 ? r[iNat] : "").trim().toLowerCase();
-    const naturaleza: "deudora" | "acreedora" =
-      natRaw.startsWith("a") || natRaw === "c" || natRaw === "credito" || natRaw === "crédito" ? "acreedora" : "deudora";
+
+    const tipoRaw = iTipo >= 0 ? (r[iTipo] ?? "").trim() : "";
+    // Skip NetSuite "Sin contabilización" pseudo-accounts.
+    if (norm(tipoRaw).startsWith("sin contabilizacion")) return null;
+
+    const naturaleza = mapNaturaleza(tipoRaw, codigo);
     const nivelParsed = iNiv >= 0 ? Number((r[iNiv] ?? "").trim()) : NaN;
-    const nivel = Number.isFinite(nivelParsed) && nivelParsed > 0 ? nivelParsed : Math.max(1, codigo.split(/[-.]/).length);
-    const movRaw = (iMov >= 0 ? r[iMov] : "").trim().toLowerCase();
-    const permite_movimientos = movRaw === "" ? nivel >= 3 : ["1","true","si","sí","x","y","yes"].includes(movRaw);
-    const saldo = iSal >= 0 ? Number((r[iSal] ?? "0").trim()) : 0;
+    const nivel = Number.isFinite(nivelParsed) && nivelParsed > 0
+      ? Math.min(6, Math.max(1, nivelParsed))
+      : Math.min(6, Math.max(1, codigo.split(/[-.]/).filter(Boolean).length));
+
+    let permite_movimientos: boolean;
+    if (iResumen >= 0) {
+      // NetSuite "Resumen" = Sí → summary/parent → NO movements
+      const rv = norm(r[iResumen] ?? "");
+      permite_movimientos = !(rv === "si" || rv === "sí" || rv === "yes" || rv === "true" || rv === "1");
+    } else if (iMov >= 0) {
+      const movRaw = norm(r[iMov] ?? "");
+      permite_movimientos = movRaw === "" ? nivel >= 3 : ["1", "true", "si", "sí", "x", "y", "yes"].includes(movRaw);
+    } else {
+      permite_movimientos = nivel >= 3;
+    }
+
+    const saldoRaw = iSal >= 0 ? (r[iSal] ?? "") : "";
+    const saldo = parseMoney(saldoRaw);
+
     return {
       codigo,
       nombre,
@@ -481,11 +553,12 @@ function parseCsv(text: string): Partial<Cuenta>[] {
       nivel,
       permite_movimientos,
       moneda: iMon >= 0 ? ((r[iMon] ?? "MXN").trim() || "MXN") : "MXN",
-      saldo_inicial: Number.isFinite(saldo) ? saldo : 0,
+      saldo_inicial: saldo,
       activa: true,
     } as Partial<Cuenta>;
   }).filter((x): x is Partial<Cuenta> => x !== null);
 }
+
 
 function ImportCsvDialog({
   onClose, onImport, hasExisting, importing,
