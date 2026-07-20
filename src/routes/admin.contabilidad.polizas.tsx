@@ -261,10 +261,51 @@ function PolizasPage() {
           </div>
 
 
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={anioFiltro} onValueChange={setAnioFiltro}>
+              <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los años</SelectItem>
+                {aniosDisponibles.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={mesFiltro} onValueChange={setMesFiltro}>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los meses</SelectItem>
+                {MESES.map((m, i) => <SelectItem key={m} value={String(i + 1).padStart(2, "0")}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="f-desde" className="text-xs text-muted-foreground">Desde</Label>
+              <Input id="f-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="w-[150px] h-9" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="f-hasta" className="text-xs text-muted-foreground">Hasta</Label>
+              <Input id="f-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="w-[150px] h-9" />
+            </div>
+            {hayFiltroFecha && (
+              <Button variant="ghost" size="sm" onClick={() => { setAnioFiltro("todos"); setMesFiltro("todos"); setDesde(""); setHasta(""); }}>
+                <X className="h-3.5 w-3.5 mr-1" /> Limpiar fechas
+              </Button>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground">{filtered.length} de {polizas.length}</div>
+          </div>
+
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
+                  <SortHeader k="folio" label="Folio" />
+                  <SortHeader k="tipo" label="Tipo" />
+                  <SortHeader k="fecha" label="Fecha" />
+                  <SortHeader k="concepto" label="Concepto" />
+                  <SortHeader k="total_cargos" label="Cargos" align="right" />
+                  <SortHeader k="total_abonos" label="Abonos" align="right" />
+                  <SortHeader k="estado" label="Estado" align="center" />
+                  <th className="text-right px-3 py-2 w-16"></th>
+                </tr>
+              </thead>
                   <th className="text-left px-3 py-2 w-24">Folio</th>
                   <th className="text-left px-3 py-2 w-24">Tipo</th>
                   <th className="text-left px-3 py-2 w-28">Fecha</th>
