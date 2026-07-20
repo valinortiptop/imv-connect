@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
-import { CreditCard, Users, Phone, HandCoins, ShieldCheck, LayoutDashboard, AlertTriangle } from "lucide-react";
+import { CreditCard, Users, Phone, HandCoins, ShieldCheck, LayoutDashboard, AlertTriangle, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/credito-cobranza")({
@@ -13,6 +13,7 @@ const TABS: Array<{ to: string; label: string; icon: React.ComponentType<{ class
   { to: "/admin/credito-cobranza/gestiones", label: "Gestiones", icon: Phone },
   { to: "/admin/credito-cobranza/promesas", label: "Promesas de pago", icon: HandCoins },
   { to: "/admin/credito-cobranza/alertas", label: "Alertas", icon: AlertTriangle },
+  { to: "/admin/credito-cobranza/complementos", label: "Complementos", icon: Receipt },
   { to: "/admin/credito-cobranza/autorizaciones", label: "Autorizaciones", icon: ShieldCheck },
 ];
 

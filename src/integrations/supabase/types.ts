@@ -840,6 +840,39 @@ export type Database = {
           },
         ]
       }
+      cliente_credito_historial: {
+        Row: {
+          campo: string
+          changed_at: string
+          changed_by: string | null
+          cliente_id: string
+          id: string
+          motivo: string | null
+          valor_anterior: string | null
+          valor_nuevo: string | null
+        }
+        Insert: {
+          campo: string
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id: string
+          id?: string
+          motivo?: string | null
+          valor_anterior?: string | null
+          valor_nuevo?: string | null
+        }
+        Update: {
+          campo?: string
+          changed_at?: string
+          changed_by?: string | null
+          cliente_id?: string
+          id?: string
+          motivo?: string | null
+          valor_anterior?: string | null
+          valor_nuevo?: string | null
+        }
+        Relationships: []
+      }
       cliente_documentos: {
         Row: {
           cliente_id: string
@@ -1841,9 +1874,11 @@ export type Database = {
           created_at: string
           dias: number | null
           estado: Database["public"]["Enums"]["autorizacion_estado"]
+          factura_id: string | null
           id: string
           monto: number | null
           motivo: string
+          pedido_id: string | null
           respuesta: string | null
           resuelto_at: string | null
           resuelto_por: string | null
@@ -1856,9 +1891,11 @@ export type Database = {
           created_at?: string
           dias?: number | null
           estado?: Database["public"]["Enums"]["autorizacion_estado"]
+          factura_id?: string | null
           id?: string
           monto?: number | null
           motivo: string
+          pedido_id?: string | null
           respuesta?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -1871,9 +1908,11 @@ export type Database = {
           created_at?: string
           dias?: number | null
           estado?: Database["public"]["Enums"]["autorizacion_estado"]
+          factura_id?: string | null
           id?: string
           monto?: number | null
           motivo?: string
+          pedido_id?: string | null
           respuesta?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
@@ -4700,6 +4739,13 @@ export type Database = {
       }
       pagos: {
         Row: {
+          complemento_error: string | null
+          complemento_estado: string | null
+          complemento_facturapi_id: string | null
+          complemento_pdf_url: string | null
+          complemento_timbrado_at: string | null
+          complemento_uuid: string | null
+          complemento_xml_url: string | null
           created_at: string
           created_by: string | null
           factura_id: string
@@ -4712,6 +4758,13 @@ export type Database = {
           referencia: string | null
         }
         Insert: {
+          complemento_error?: string | null
+          complemento_estado?: string | null
+          complemento_facturapi_id?: string | null
+          complemento_pdf_url?: string | null
+          complemento_timbrado_at?: string | null
+          complemento_uuid?: string | null
+          complemento_xml_url?: string | null
           created_at?: string
           created_by?: string | null
           factura_id: string
@@ -4724,6 +4777,13 @@ export type Database = {
           referencia?: string | null
         }
         Update: {
+          complemento_error?: string | null
+          complemento_estado?: string | null
+          complemento_facturapi_id?: string | null
+          complemento_pdf_url?: string | null
+          complemento_timbrado_at?: string | null
+          complemento_uuid?: string | null
+          complemento_xml_url?: string | null
           created_at?: string
           created_by?: string | null
           factura_id?: string
