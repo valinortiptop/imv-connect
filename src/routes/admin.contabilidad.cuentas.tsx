@@ -599,10 +599,25 @@ function parseCsv(text: string, satCodes: SATCode[] = []): Partial<Cuenta>[] {
     const saldoRaw = iSal >= 0 ? (r[iSal] ?? "") : "";
     const saldo = parseMoney(saldoRaw);
 
+    // Derive codigo_agrupador: prefer explicit column, else prefix match against SAT catalog
+    let codigo_agrupador: string | null = iAgr >= 0 ? (r[iAgr] ?? "").trim() || null : null;
+    if (!codigo_agrupador && satCodes.length) {
+      const digits = codigo.replace(/[^0-9]/g, "");
+      // Try candidate SAT codes: 5, 4, 3, 2, 1 digits + possible ".NN" suffix
+      let best: string | null = null;
+      for (const s of satCodes) {
+        const sDigits = s.codigo.replace(/[^0-9]/g, "");
+        if (sDigits.length && digits.startsWith(sDigits)) {
+          if (!best || sDigits.length > best.replace(/[^0-9]/g, "").length) best = s.codigo;
+        }
+      }
+      codigo_agrupador = best;
+    }
+
     return {
       codigo,
       nombre,
-      codigo_agrupador: iAgr >= 0 ? (r[iAgr] ?? "").trim() || null : null,
+      codigo_agrupador,
       naturaleza,
       nivel,
       permite_movimientos,
