@@ -1,79 +1,127 @@
-## Módulo Crédito y Cobranza — Plan por fases
+# Crédito y Cobranza — Estado actual vs. faltantes
 
-El alcance descrito es amplio (IA predictiva, timbrado automático de NC por pronto pago, complementos de pago, expediente digital, autorizaciones con workflow, tableros ejecutivos). Propongo entregarlo en **4 fases**, empezando por la base sobre la que hoy ya existe (`/admin/cobranza`, `v_saldos_clientes`, `facturas`, `pagos`, `notas_credito`).
+## Ya implementado
 
----
+**Datos / DB**
+- Tablas: `cliente_credito`, `cobranza_gestiones`, `cobranza_promesas_pago`, `credito_autorizaciones`, `cobranza_comunicaciones`, `cliente_riesgo_snapshots`, `cobranza_alertas`, `cliente_documentos`.
+- Vista `v_cliente_credito_360` y trigger `fn_bloquear_por_credito` (bloqueo automático por crédito/vencido).
+- Bucket privado `cliente-documentos` con RLS.
 
-### Fase 1 — Base 360° del cliente y gestión operativa
+**UI (/admin/credito-cobranza)**
+- Layout con tabs: Dashboard, Cartera, Gestiones, Promesas, Alertas, Autorizaciones.
+- Cliente 360 de cobranza + Expediente digital por cliente.
+- Dashboard ejecutivo (KPIs, aging, riesgo, tendencia 90d, top-10 exposición).
 
-**DB (nuevas tablas):**
-- `cliente_credito` — límite de crédito, días autorizados, condición de pago, bloqueado (bool), motivo_bloqueo, riesgo_manual, updated_by/at.
-- `cobranza_gestiones` — bitácora: cliente_id, factura_id (opcional), tipo (llamada/correo/whatsapp/visita), resultado, notas, created_by, created_at, next_action_at.
-- `cobranza_promesas_pago` — factura_id, cliente_id, monto, fecha_promesa, estado (pendiente/cumplida/incumplida), creado_por, notas.
-- `credito_autorizaciones` — cliente_id, tipo (desbloqueo, incremento_limite, excepcion), estado (solicitada/aprobada/rechazada), monto, motivo, solicitado_por, aprobado_por, fecha.
-- Vista `v_cliente_credito_360` — junta saldos, promedio de días de pago, utilización de línea, última gestión, promesas activas.
+**Server functions (`cobranza.functions.ts`, `cobranza-alertas.functions.ts`)**
+- Envío de estado de cuenta y recordatorios (Resend vía Valinor).
+- NC por pronto pago (Facturapi).
+- Sugerencia de aplicación de pagos.
+- Análisis IA de riesgo en tiempo real (Gemini vía Valinor).
+- CRUD de expediente + URLs firmadas.
+- Gestión de alertas.
 
-**Nueva ruta:** `/admin/credito-cobranza/` (layout con tabs) reemplaza a `/admin/cobranza` (redirect):
-1. **Cartera** — tabla actual mejorada + filtros por vendedor/zona/riesgo, exportación.
-2. **Cliente 360** (`/credito-cobranza/clientes/$id`) — un solo tablero con: información fiscal, línea de crédito y utilización, aging, historial de facturas/pagos/NC, bitácora de gestiones, promesas de pago, autorizaciones. Reusa Client360Drawer donde aplique.
-3. **Gestiones del día** — cola de trabajo priorizada (mayor riesgo/monto/antigüedad, promesas por vencer, sin seguimiento reciente).
-4. **Promesas de pago** — listado con estado y cumplimiento.
-5. **Autorizaciones** — solicitudes de desbloqueo/incremento/excepción con flujo aprobación.
-
-**Integración con Cliente 360 existente:** nueva pestaña "Crédito" en `Client360Drawer` mostrando resumen y CTA para abrir el módulo.
-
----
-
-### Fase 2 — Automatización administrativa
-
-- **Estados de cuenta automáticos:** server function que genera PDF por cliente + envío por Resend (vía Valinor proxy). `pg_cron` diario/semanal según configuración por cliente (nueva columna `enviar_edo_cuenta_cada` en `cliente_credito`).
-- **Recordatorios de pago:** cron que dispara email/WhatsApp 5 días antes, día de vencimiento, y a los 7/15/30 días después. Plantillas editables en `configuracion`.
-- **Bloqueo automático:** trigger al crear pedido/factura — si saldo vencido > 0 o excede límite, marca `cliente_credito.bloqueado = true` y requiere autorización.
-- **Notas de crédito por pronto pago:** al aplicar pago dentro de N días, sugerir NC automática (monto = factura × % pronto pago configurable). Timbrado vía Facturapi (ya existe `facturapi.functions.ts`).
-- **Complementos de pago:** generación automática al registrar pago de factura PPD, timbrado vía Facturapi.
-- **Aplicación sugerida de pagos:** al registrar pago sin factura seleccionada, sugerir facturas más antiguas / mismo monto.
-- **Tareas automáticas:** al detectar promesa incumplida o cliente sin gestión en X días, crear tarjeta en kanban existente asignada al gestor.
+**Automatización (pg_cron)**
+- `cobranza-recordatorios` diario.
+- `cobranza-edo-cuenta` (semanal/quincenal/mensual por cliente).
+- `cobranza-riesgo-nocturno` (recalcula score + alertas).
 
 ---
 
-### Fase 3 — Inteligencia artificial (vía Valinor proxy → Gemini)
+## Faltantes / gaps vs. el requerimiento
 
-- Server function `analizarRiesgoCliente` que calcula un score (0-100) por cliente con:
-  - promedio de días de pago vs. condición
-  - tendencia últimos 90 días
-  - utilización de crédito
-  - historial de promesas cumplidas
-  - concentración de saldo vencido
-- Guarda snapshot diario en `cliente_riesgo_snapshots` para tendencia.
-- IA (Gemini) genera **recomendaciones en lenguaje natural**: sugerir ajuste de límite, revisión de condiciones, priorización. Panel "Recomendaciones IA" en Cliente 360 y en cartera.
-- Alertas tempranas: cron nocturno que detecta cambios negativos y crea notificaciones para el gestor asignado.
+### 1. Complementos de pago (REP) — no implementado
+El requerimiento pide "Generación y seguimiento de complementos de pago". Hoy timbramos facturas y NCs, pero **no hay flujo automático de REP** al registrar pagos de facturas PPD. Falta:
+- Server function `emitirComplementoPagoFn` (Facturapi).
+- Trigger o hook al insertar en `pagos` de facturas PPD.
+- Vista de seguimiento de complementos pendientes / timbrados.
+
+### 2. Flujo de autorizaciones — solo esqueleto
+Existe la tabla y la página, pero falta:
+- Formulario para **solicitar** autorización (desbloqueo, incremento límite, excepción de venta bloqueada).
+- Workflow de aprobación con roles (quién puede aprobar según monto).
+- Notificaciones al solicitante y al aprobador.
+- Ligar autorizaciones a pedidos/facturas específicas.
+
+### 3. Historial de modificaciones de crédito — falta auditoría
+- Tabla `cliente_credito_historial` (o trigger de audit) para trackear cambios de límite/días/condiciones con usuario, fecha y motivo.
+- Vista "Historial de condiciones crediticias" en Cliente 360.
+
+### 4. Generación automática de tareas de cobranza
+Requerimiento: "Generación automática de tareas de seguimiento". Hoy `cobranza-riesgo-nocturno` crea alertas, pero no crea **tarjetas en el kanban** (`kanban_cards`) asignadas al gestor. Falta:
+- Al detectar promesa incumplida / cliente sin gestión en N días / alerta crítica → crear tarjeta kanban.
+- Configurar el board/columna destino en `system_config`.
+
+### 5. Aplicación real de pagos (no solo sugerencia)
+`sugerirAplicacionPagoFn` sugiere, pero falta UI para **aplicar** el pago sugerido a las facturas seleccionadas en un click (mutación multi-fila con transacción).
+
+### 6. Concentración de riesgo por vendedor/zona
+El dashboard ya muestra top-10 exposición y aging, pero no la **concentración por vendedor y por zona** que pide el requerimiento. Faltan tarjetas/gráficos:
+- Cartera vencida por representante.
+- Cartera vencida por zona/ruta.
+
+### 7. Proyección de ingresos con probabilidad de cobro
+Requerimiento explícito: "Proyección de ingresos con base en vencimientos y comportamiento histórico". Faltaría un panel que multiplique saldo por vencer × probabilidad (derivada del score IA) por semana/mes.
+
+### 8. Plantillas configurables de comunicación
+Hoy los HTML de correos están hard-coded en los crons/server functions. Falta:
+- Tabla `cobranza_plantillas` (asunto/cuerpo con variables `{{cliente}}`, `{{saldo}}`, `{{facturas}}`).
+- UI de administración de plantillas.
+- Crons leen plantilla en lugar de string literal.
+
+### 9. Reglas configurables (system_config)
+- Días antes/después del vencimiento para disparar recordatorios (hoy hard-coded).
+- Umbrales de nivel de riesgo (score → nivel).
+- Umbral "sin gestión reciente" (días).
+- Política global default de pronto pago (fallback si el cliente no la define).
+
+### 10. Reportes / exportación
+- Exportación a Excel de la cartera con filtros aplicados.
+- Reporte de gestiones por gestor / periodo.
+- Reporte de cumplimiento de promesas.
+
+### 11. Alertas de expediente vencido
+La tabla soporta fecha de vencimiento por documento, pero no hay **cron ni alerta automática** cuando un documento está por vencer o vencido. Debe integrarse a `cobranza-riesgo-nocturno`.
+
+### 12. Bitácora de comunicaciones en Cliente 360
+`cobranza_comunicaciones` se llena desde los crons pero **no se muestra** un timeline unificado (email + gestiones + promesas + autorizaciones) en Cliente 360.
+
+### 13. Notificaciones in-app
+Uso de la tabla `notifications` existente para avisar al gestor cuando: alerta crítica creada, promesa incumplida hoy, autorización solicitada/aprobada, documento vencido.
+
+### 14. Recomendaciones IA persistidas
+`analizarRiesgoClienteFn` corre en vivo. Falta guardar las **recomendaciones IA** (ajuste de límite, revisar condiciones) en tabla y mostrarlas en dashboard como "Acciones sugeridas por IA" con botón para aceptar/descartar.
 
 ---
 
-### Fase 4 — Expediente digital + Tableros ejecutivos
+## Propuesta de siguientes fases
 
-- **Expediente digital:** reusa `empresa_documentos` pattern → nueva tabla `cliente_documentos` (RFC/constancia, contratos, pagarés, evidencias). Alertas por vencimiento (constancia fiscal anual, etc.).
-- **Dashboard ejecutivo** en `/admin/credito-cobranza/dashboard`:
-  - KPIs: cartera total, vencida, DSO, recuperación día/semana/mes, cumplimiento de promesas.
-  - Gráficos: aging distribution, tendencia recuperación, top 10 exposición, concentración por vendedor/zona.
-  - Proyección de ingresos: suma de vencimientos × probabilidad de cobro (basada en score).
+**Fase 5 — Cierre transaccional (crítico)**
+- Complementos de pago (REP) automáticos.
+- Aplicación real de pagos multi-factura.
+- Flujo de autorizaciones con workflow y notificaciones.
+- Historial/auditoría de cambios en condiciones crediticias.
+
+**Fase 6 — Configurabilidad**
+- Plantillas de comunicación editables.
+- Reglas configurables (días, umbrales, política pronto pago default).
+- Alertas de expediente vencido integradas al cron nocturno.
+
+**Fase 7 — Inteligencia y ejecución**
+- Kanban auto-generado desde alertas/promesas incumplidas.
+- Timeline unificado en Cliente 360.
+- Notificaciones in-app.
+- Recomendaciones IA persistidas + accionables.
+- Concentración de riesgo por vendedor/zona en dashboard.
+- Proyección de ingresos por probabilidad de cobro.
+
+**Fase 8 — Reportería**
+- Export Excel de cartera / gestiones / promesas.
+- Reportes por gestor y periodo.
 
 ---
 
-### Decisiones técnicas comunes
+## Preguntas antes de continuar
 
-- Server functions con `requireSupabaseAuth` para todo lo transaccional (`src/lib/cobranza.functions.ts`).
-- Envíos de email/SMS vía **Valinor proxy** (respetando la regla del proyecto — Resend/Gemini ya están ahí).
-- Todas las tablas nuevas con RLS `authenticated` + `service_role`, GRANTs correctos.
-- Permisos: agregar rutas a `permission_routes` para que `role_permissions` controle acceso.
-
----
-
-### Preguntas antes de arrancar
-
-1. **¿Empezamos por Fase 1 completa?** ¿O prefieres que ataque primero **Cliente 360 de cobranza + bitácora de gestiones + promesas de pago** (lo más urgente operacionalmente) y dejemos autorizaciones/bloqueos para una segunda pasada?
-2. **Notas de Crédito por pronto pago:** ¿la política es un % fijo global, por cliente, o por lista de precios? ¿Y a partir de cuántos días se considera "pronto pago"?
-3. **Envío de estados de cuenta / recordatorios:** ¿usamos Resend (ya conectado vía Valinor) para email y sólo email por ahora, o también WhatsApp desde el inicio?
-4. **Score de riesgo IA:** ¿lo calculamos en tiempo real al abrir el cliente, o snapshot nocturno (más barato) con recálculo bajo demanda?
-
-Confirmando estos 4 puntos arranco con Fase 1.
+1. ¿Priorizamos **Fase 5** (complementos de pago + aplicación real + autorizaciones)? Es lo que cierra el ciclo transaccional y bloquea flujo de efectivo real.
+2. ¿O prefieres primero **Fase 7** (kanban auto, timeline, notificaciones) para que el equipo lo use a diario aunque falte lo transaccional?
+3. Para complementos de pago: ¿emitimos **automáticamente** al registrar pago de PPD, o requiere confirmación manual (checkbox "timbrar REP") en el formulario de pago?
