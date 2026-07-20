@@ -66,6 +66,7 @@ import { Route as AdminDocumentosRouteImport } from './routes/admin.documentos'
 import { Route as AdminDevolucionesRouteImport } from './routes/admin.devoluciones'
 import { Route as AdminDanadosRouteImport } from './routes/admin.danados'
 import { Route as AdminCuentaRouteImport } from './routes/admin.cuenta'
+import { Route as AdminCreditoCobranzaRouteImport } from './routes/admin.credito-cobranza'
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
@@ -407,6 +408,11 @@ const AdminCuentaRoute = AdminCuentaRouteImport.update({
   path: '/cuenta',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCreditoCobranzaRoute = AdminCreditoCobranzaRouteImport.update({
+  id: '/credito-cobranza',
+  path: '/credito-cobranza',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminComprasRoute = AdminComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
@@ -710,6 +716,7 @@ export interface FileRoutesByFullPath {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -820,6 +827,7 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -933,6 +941,7 @@ export interface FileRoutesById {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -1049,6 +1058,7 @@ export interface FileRouteTypes {
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
+    | '/admin/credito-cobranza'
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
@@ -1159,6 +1169,7 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
+    | '/admin/credito-cobranza'
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
@@ -1271,6 +1282,7 @@ export interface FileRouteTypes {
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
+    | '/admin/credito-cobranza'
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
@@ -1783,6 +1795,13 @@ declare module '@tanstack/react-router' {
       path: '/cuenta'
       fullPath: '/admin/cuenta'
       preLoaderRoute: typeof AdminCuentaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/credito-cobranza': {
+      id: '/admin/credito-cobranza'
+      path: '/credito-cobranza'
+      fullPath: '/admin/credito-cobranza'
+      preLoaderRoute: typeof AdminCreditoCobranzaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/compras': {
@@ -2322,6 +2341,7 @@ interface AdminRouteChildren {
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
+  AdminCreditoCobranzaRoute: typeof AdminCreditoCobranzaRoute
   AdminCuentaRoute: typeof AdminCuentaRoute
   AdminDanadosRoute: typeof AdminDanadosRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
@@ -2384,6 +2404,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
+  AdminCreditoCobranzaRoute: AdminCreditoCobranzaRoute,
   AdminCuentaRoute: AdminCuentaRoute,
   AdminDanadosRoute: AdminDanadosRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
