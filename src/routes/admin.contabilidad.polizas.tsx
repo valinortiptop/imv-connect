@@ -306,16 +306,6 @@ function PolizasPage() {
                   <th className="text-right px-3 py-2 w-16"></th>
                 </tr>
               </thead>
-                  <th className="text-left px-3 py-2 w-24">Folio</th>
-                  <th className="text-left px-3 py-2 w-24">Tipo</th>
-                  <th className="text-left px-3 py-2 w-28">Fecha</th>
-                  <th className="text-left px-3 py-2">Concepto</th>
-                  <th className="text-right px-3 py-2 w-32">Cargos</th>
-                  <th className="text-right px-3 py-2 w-32">Abonos</th>
-                  <th className="text-center px-3 py-2 w-24">Estado</th>
-                  <th className="text-right px-3 py-2 w-16"></th>
-                </tr>
-              </thead>
               <tbody>
                 {isLoading ? (
                   <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
