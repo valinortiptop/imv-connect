@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,9 +42,11 @@ const RIESGO_BADGE: Record<Row["riesgo_calculado"], string> = {
 };
 
 function CarteraPage() {
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [riesgo, setRiesgo] = useState<string>("todos");
   const [estado, setEstado] = useState<string>("deudores");
+
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["cobranza-cartera"],
@@ -149,8 +151,13 @@ function CarteraPage() {
             ) : filtered.length === 0 ? (
               <tr><td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">Sin clientes.</td></tr>
             ) : filtered.map((r) => (
-              <tr key={r.cliente_id} className="border-t border-border hover:bg-muted/20">
+              <tr
+                key={r.cliente_id}
+                onClick={() => navigate({ to: "/admin/credito-cobranza/clientes/$id", params: { id: r.cliente_id } })}
+                className="border-t border-border hover:bg-muted/20 cursor-pointer"
+              >
                 <td className="px-3 py-2">
+
                   <div className="flex items-center gap-1.5">
                     {r.bloqueado && <Lock className="h-3.5 w-3.5 text-red-500 shrink-0" />}
                     <div className="min-w-0">
