@@ -94,13 +94,22 @@ function PolizasPage() {
     );
   }, [polizas, tipoFiltro, origenFiltro, search]);
 
+  const [nuevoTipo, setNuevoTipo] = useState<"ingreso" | "egreso" | "diario" | null>(null);
+  const [nuevaFecha, setNuevaFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [nuevoConcepto, setNuevoConcepto] = useState<string>("");
+
+  function abrirNueva(tipo: "ingreso" | "egreso" | "diario") {
+    setNuevoTipo(tipo);
+    setNuevaFecha(new Date().toISOString().slice(0, 10));
+    setNuevoConcepto("");
+  }
+
   const crear = useMutation({
-    mutationFn: async (tipo: "ingreso" | "egreso" | "diario") => {
+    mutationFn: async (payload: { tipo: "ingreso" | "egreso" | "diario"; fecha: string; concepto: string }) => {
       if (!empresaId) throw new Error("Selecciona una empresa");
-      // Try to attach to the open period for the current month
-      const hoy = new Date();
-      const anio = hoy.getFullYear();
-      const mes = hoy.getMonth() + 1;
+      const [anioStr, mesStr] = payload.fecha.split("-");
+      const anio = Number(anioStr);
+      const mes = Number(mesStr);
       const { data: per } = await supabase
         .from("periodos_contables" as any)
         .select("id")
@@ -112,9 +121,9 @@ function PolizasPage() {
         .from("polizas" as any)
         .insert({
           empresa_id: empresaId,
-          tipo,
-          fecha: hoy.toISOString().slice(0, 10),
-          concepto: "",
+          tipo: payload.tipo,
+          fecha: payload.fecha,
+          concepto: payload.concepto,
           estado: "borrador",
           periodo_id: (per as any)?.id ?? null,
           origen: "manual",
@@ -126,6 +135,7 @@ function PolizasPage() {
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["polizas"] });
+      setNuevoTipo(null);
       window.location.href = `/admin/contabilidad/polizas/${id}`;
     },
     onError: (e: Error) => toast.error(e.message),
