@@ -48,7 +48,7 @@ export const enviarEstadoCuentaFn = createServerFn({ method: "POST" })
       .from("facturas")
       .select("folio, fecha_emision, fecha_vencimiento, total, pagado, saldo, estado")
       .eq("cliente_id", data.clienteId)
-      .in("estado", ["emitida", "parcial", "vencida"])
+      .in("estado", ["emitida", "parcial"])
       .order("fecha_vencimiento", { ascending: true });
 
     const rows = facturas ?? [];
@@ -278,7 +278,7 @@ export const sugerirAplicacionPagoFn = createServerFn({ method: "POST" })
       .from("facturas")
       .select("id, folio, fecha_emision, fecha_vencimiento, total, pagado, saldo")
       .eq("cliente_id", data.clienteId)
-      .in("estado", ["emitida", "parcial", "vencida"])
+      .in("estado", ["emitida", "parcial"])
       .order("fecha_vencimiento", { ascending: true, nullsFirst: false });
 
     let restante = data.monto;

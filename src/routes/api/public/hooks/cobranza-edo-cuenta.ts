@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/public/hooks/cobranza-edo-cuenta")({
             .from("facturas")
             .select("folio, fecha_emision, fecha_vencimiento, total, pagado, saldo")
             .eq("cliente_id", row.cliente_id)
-            .in("estado", ["emitida", "parcial", "vencida"])
+            .in("estado", ["emitida", "parcial"])
             .order("fecha_vencimiento", { ascending: true });
 
           const rows = facturas ?? [];

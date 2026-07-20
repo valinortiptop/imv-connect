@@ -123,6 +123,8 @@ import { Route as AdminAlmacenOperacionRouteImport } from './routes/admin.almace
 import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
+import { Route as ApiPublicHooksCobranzaRecordatoriosRouteImport } from './routes/api/public/hooks/cobranza-recordatorios'
+import { Route as ApiPublicHooksCobranzaEdoCuentaRouteImport } from './routes/api/public/hooks/cobranza-edo-cuenta'
 import { Route as AdminCreditoCobranzaClientesIdRouteImport } from './routes/admin.credito-cobranza.clientes.$id'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminComprasFaltantesMotivosRouteImport } from './routes/admin.compras.faltantes.motivos'
@@ -714,6 +716,18 @@ const ApiPublicHooksRegenerateComprasAlertsRoute =
     path: '/api/public/hooks/regenerate-compras-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksCobranzaRecordatoriosRoute =
+  ApiPublicHooksCobranzaRecordatoriosRouteImport.update({
+    id: '/api/public/hooks/cobranza-recordatorios',
+    path: '/api/public/hooks/cobranza-recordatorios',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCobranzaEdoCuentaRoute =
+  ApiPublicHooksCobranzaEdoCuentaRouteImport.update({
+    id: '/api/public/hooks/cobranza-edo-cuenta',
+    path: '/api/public/hooks/cobranza-edo-cuenta',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminCreditoCobranzaClientesIdRoute =
   AdminCreditoCobranzaClientesIdRouteImport.update({
     id: '/clientes/$id',
@@ -859,6 +873,8 @@ export interface FileRoutesByFullPath {
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/admin/credito-cobranza/clientes/$id': typeof AdminCreditoCobranzaClientesIdRoute
+  '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
+  '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -973,6 +989,8 @@ export interface FileRoutesByTo {
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/admin/credito-cobranza/clientes/$id': typeof AdminCreditoCobranzaClientesIdRoute
+  '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
+  '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
@@ -1095,6 +1113,8 @@ export interface FileRoutesById {
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/admin/credito-cobranza/clientes/$id': typeof AdminCreditoCobranzaClientesIdRoute
+  '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
+  '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -1218,6 +1238,8 @@ export interface FileRouteTypes {
     | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/admin/credito-cobranza/clientes/$id'
+    | '/api/public/hooks/cobranza-edo-cuenta'
+    | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1332,6 +1354,8 @@ export interface FileRouteTypes {
     | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/admin/credito-cobranza/clientes/$id'
+    | '/api/public/hooks/cobranza-edo-cuenta'
+    | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas'
@@ -1453,6 +1477,8 @@ export interface FileRouteTypes {
     | '/admin/compras/faltantes/motivos'
     | '/admin/contabilidad/polizas/$id'
     | '/admin/credito-cobranza/clientes/$id'
+    | '/api/public/hooks/cobranza-edo-cuenta'
+    | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1467,6 +1493,8 @@ export interface RootRouteChildren {
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiPublicHooksCobranzaEdoCuentaRoute: typeof ApiPublicHooksCobranzaEdoCuentaRoute
+  ApiPublicHooksCobranzaRecordatoriosRoute: typeof ApiPublicHooksCobranzaRecordatoriosRoute
   ApiPublicHooksRegenerateComprasAlertsRoute: typeof ApiPublicHooksRegenerateComprasAlertsRoute
   ApiPublicMapsScriptRoute: typeof ApiPublicMapsScriptRoute
   ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
@@ -2272,6 +2300,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRegenerateComprasAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/cobranza-recordatorios': {
+      id: '/api/public/hooks/cobranza-recordatorios'
+      path: '/api/public/hooks/cobranza-recordatorios'
+      fullPath: '/api/public/hooks/cobranza-recordatorios'
+      preLoaderRoute: typeof ApiPublicHooksCobranzaRecordatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/cobranza-edo-cuenta': {
+      id: '/api/public/hooks/cobranza-edo-cuenta'
+      path: '/api/public/hooks/cobranza-edo-cuenta'
+      fullPath: '/api/public/hooks/cobranza-edo-cuenta'
+      preLoaderRoute: typeof ApiPublicHooksCobranzaEdoCuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/credito-cobranza/clientes/$id': {
       id: '/admin/credito-cobranza/clientes/$id'
       path: '/clientes/$id'
@@ -2664,6 +2706,9 @@ const rootRouteChildren: RootRouteChildren = {
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiPublicHooksCobranzaEdoCuentaRoute: ApiPublicHooksCobranzaEdoCuentaRoute,
+  ApiPublicHooksCobranzaRecordatoriosRoute:
+    ApiPublicHooksCobranzaRecordatoriosRoute,
   ApiPublicHooksRegenerateComprasAlertsRoute:
     ApiPublicHooksRegenerateComprasAlertsRoute,
   ApiPublicMapsScriptRoute: ApiPublicMapsScriptRoute,

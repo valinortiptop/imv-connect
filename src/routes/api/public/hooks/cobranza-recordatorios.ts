@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/public/hooks/cobranza-recordatorios")
             .from("facturas")
             .select("id, folio, fecha_emision, fecha_vencimiento, total, saldo, pagado, cliente_id, clientes(razon_social, nombre_comercial, email)")
             .eq("fecha_vencimiento", fechaObjetivo)
-            .in("estado", ["emitida", "parcial", "vencida"]);
+            .in("estado", ["emitida", "parcial"]);
 
           for (const f of (facturas ?? []) as any[]) {
             // Skip si ya se envió este tipo para esta factura hoy
