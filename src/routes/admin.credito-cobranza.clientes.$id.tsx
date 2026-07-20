@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Unlock, Phone, HandCoins, ShieldCheck, FileText, Save } from "lucide-react";
+import { ArrowLeft, Lock, Unlock, Phone, HandCoins, ShieldCheck, FileText, Save, Mail, Sparkles, Loader2 } from "lucide-react";
+import {
+  enviarEstadoCuentaFn,
+  analizarRiesgoClienteFn,
+} from "@/lib/cobranza.functions";
 
 export const Route = createFileRoute("/admin/credito-cobranza/clientes/$id")({
   component: Cliente360,
