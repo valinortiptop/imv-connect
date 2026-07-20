@@ -151,13 +151,13 @@ function PolizasPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar folio o concepto…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
             </div>
-            <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <Select value={origenFiltro} onValueChange={setOrigenFiltro}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos los estados</SelectItem>
-                <SelectItem value="borrador">Borrador</SelectItem>
-                <SelectItem value="asentada">Asentada</SelectItem>
-                <SelectItem value="cancelada">Cancelada</SelectItem>
+                <SelectItem value="todos">Todos los orígenes</SelectItem>
+                <SelectItem value="automatica">Automática</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="modificada">Modificada</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex gap-1">
