@@ -69,6 +69,13 @@ function PolizasPage() {
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
   const [origenFiltro, setOrigenFiltro] = useState<string>("todos");
   const [search, setSearch] = useState("");
+  const [anioFiltro, setAnioFiltro] = useState<string>("todos");
+  const [mesFiltro, setMesFiltro] = useState<string>("todos");
+  const [desde, setDesde] = useState<string>("");
+  const [hasta, setHasta] = useState<string>("");
+  type SortKey = "folio" | "tipo" | "fecha" | "concepto" | "total_cargos" | "total_abonos" | "estado";
+  const [sortKey, setSortKey] = useState<SortKey>("fecha");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const { data: polizas = [], isLoading } = useQuery({
     queryKey: ["polizas", empresaId],
@@ -85,14 +92,60 @@ function PolizasPage() {
     },
   });
 
+  const aniosDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of polizas) { if (p.fecha) set.add(p.fecha.slice(0, 4)); }
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [polizas]);
+
+  const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return polizas.filter((p) =>
-      (tipoFiltro === "todos" || p.tipo === tipoFiltro) &&
-      (origenFiltro === "todos" || clasificarOrigen(p) === origenFiltro) &&
-      (!q || p.folio.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q))
+    const arr = polizas.filter((p) => {
+      if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+      if (origenFiltro !== "todos" && clasificarOrigen(p) !== origenFiltro) return false;
+      if (q && !p.folio.toLowerCase().includes(q) && !p.concepto.toLowerCase().includes(q)) return false;
+      if (anioFiltro !== "todos" && p.fecha.slice(0, 4) !== anioFiltro) return false;
+      if (mesFiltro !== "todos" && p.fecha.slice(5, 7) !== mesFiltro) return false;
+      if (desde && p.fecha < desde) return false;
+      if (hasta && p.fecha > hasta) return false;
+      return true;
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      let av: any; let bv: any;
+      switch (sortKey) {
+        case "total_cargos": av = Number(a.total_cargos); bv = Number(b.total_cargos); break;
+        case "total_abonos": av = Number(a.total_abonos); bv = Number(b.total_abonos); break;
+        default: av = (a as any)[sortKey] ?? ""; bv = (b as any)[sortKey] ?? "";
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [polizas, tipoFiltro, origenFiltro, search, anioFiltro, mesFiltro, desde, hasta, sortKey, sortDir]);
+
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "fecha" ? "desc" : "asc"); }
+  }
+  function SortHeader({ k, label, align }: { k: SortKey; label: string; align?: "left" | "right" | "center" }) {
+    const a = align ?? "left";
+    const Icon = sortKey === k ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+    return (
+      <th className={`px-3 py-2 text-${a}`}>
+        <button
+          onClick={() => toggleSort(k)}
+          className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${sortKey === k ? "text-foreground" : ""}`}
+        >
+          {label} <Icon className="h-3 w-3" />
+        </button>
+      </th>
     );
-  }, [polizas, tipoFiltro, origenFiltro, search]);
+  }
+  const hayFiltroFecha = anioFiltro !== "todos" || mesFiltro !== "todos" || !!desde || !!hasta;
 
   const [nuevoTipo, setNuevoTipo] = useState<"ingreso" | "egreso" | "diario" | null>(null);
   const [nuevaFecha, setNuevaFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
