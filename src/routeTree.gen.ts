@@ -78,6 +78,7 @@ import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as RepClientesIndexRouteImport } from './routes/rep.clientes.index'
+import { Route as AdminCreditoCobranzaIndexRouteImport } from './routes/admin.credito-cobranza.index'
 import { Route as AdminContabilidadIndexRouteImport } from './routes/admin.contabilidad.index'
 import { Route as AdminComprasIndexRouteImport } from './routes/admin.compras.index'
 import { Route as AdminBancosIndexRouteImport } from './routes/admin.bancos.index'
@@ -468,6 +469,12 @@ const RepClientesIndexRoute = RepClientesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RepClientesRoute,
 } as any)
+const AdminCreditoCobranzaIndexRoute =
+  AdminCreditoCobranzaIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AdminCreditoCobranzaRoute,
+  } as any)
 const AdminContabilidadIndexRoute = AdminContabilidadIndexRouteImport.update({
   id: '/contabilidad/',
   path: '/contabilidad/',
@@ -716,7 +723,7 @@ export interface FileRoutesByFullPath {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
-  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -807,6 +814,7 @@ export interface FileRoutesByFullPath {
   '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/compras/': typeof AdminComprasIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
+  '/admin/credito-cobranza/': typeof AdminCreditoCobranzaIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
@@ -827,7 +835,6 @@ export interface FileRoutesByTo {
   '/admin/clientes': typeof AdminClientesRouteWithChildren
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
-  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -916,6 +923,7 @@ export interface FileRoutesByTo {
   '/admin/bancos': typeof AdminBancosIndexRoute
   '/admin/compras': typeof AdminComprasIndexRoute
   '/admin/contabilidad': typeof AdminContabilidadIndexRoute
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaIndexRoute
   '/rep/clientes': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
@@ -941,7 +949,7 @@ export interface FileRoutesById {
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
-  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRoute
+  '/admin/credito-cobranza': typeof AdminCreditoCobranzaRouteWithChildren
   '/admin/cuenta': typeof AdminCuentaRoute
   '/admin/danados': typeof AdminDanadosRoute
   '/admin/devoluciones': typeof AdminDevolucionesRouteWithChildren
@@ -1032,6 +1040,7 @@ export interface FileRoutesById {
   '/admin/bancos/': typeof AdminBancosIndexRoute
   '/admin/compras/': typeof AdminComprasIndexRoute
   '/admin/contabilidad/': typeof AdminContabilidadIndexRoute
+  '/admin/credito-cobranza/': typeof AdminCreditoCobranzaIndexRoute
   '/rep/clientes/': typeof RepClientesIndexRoute
   '/admin/clientes/$id/precios': typeof AdminClientesIdPreciosRoute
   '/admin/compras/faltantes/motivos': typeof AdminComprasFaltantesMotivosRoute
@@ -1149,6 +1158,7 @@ export interface FileRouteTypes {
     | '/admin/bancos/'
     | '/admin/compras/'
     | '/admin/contabilidad/'
+    | '/admin/credito-cobranza/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/compras/faltantes/motivos'
@@ -1169,7 +1179,6 @@ export interface FileRouteTypes {
     | '/admin/clientes'
     | '/admin/cobranza'
     | '/admin/comisiones'
-    | '/admin/credito-cobranza'
     | '/admin/cuenta'
     | '/admin/danados'
     | '/admin/devoluciones'
@@ -1258,6 +1267,7 @@ export interface FileRouteTypes {
     | '/admin/bancos'
     | '/admin/compras'
     | '/admin/contabilidad'
+    | '/admin/credito-cobranza'
     | '/rep/clientes'
     | '/admin/clientes/$id/precios'
     | '/admin/compras/faltantes/motivos'
@@ -1373,6 +1383,7 @@ export interface FileRouteTypes {
     | '/admin/bancos/'
     | '/admin/compras/'
     | '/admin/contabilidad/'
+    | '/admin/credito-cobranza/'
     | '/rep/clientes/'
     | '/admin/clientes/$id/precios'
     | '/admin/compras/faltantes/motivos'
@@ -1881,6 +1892,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RepClientesIndexRouteImport
       parentRoute: typeof RepClientesRoute
     }
+    '/admin/credito-cobranza/': {
+      id: '/admin/credito-cobranza/'
+      path: '/'
+      fullPath: '/admin/credito-cobranza/'
+      preLoaderRoute: typeof AdminCreditoCobranzaIndexRouteImport
+      parentRoute: typeof AdminCreditoCobranzaRoute
+    }
     '/admin/contabilidad/': {
       id: '/admin/contabilidad/'
       path: '/contabilidad'
@@ -2275,6 +2293,17 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
   AdminComprasRouteChildren,
 )
 
+interface AdminCreditoCobranzaRouteChildren {
+  AdminCreditoCobranzaIndexRoute: typeof AdminCreditoCobranzaIndexRoute
+}
+
+const AdminCreditoCobranzaRouteChildren: AdminCreditoCobranzaRouteChildren = {
+  AdminCreditoCobranzaIndexRoute: AdminCreditoCobranzaIndexRoute,
+}
+
+const AdminCreditoCobranzaRouteWithChildren =
+  AdminCreditoCobranzaRoute._addFileChildren(AdminCreditoCobranzaRouteChildren)
+
 interface AdminDevolucionesRouteChildren {
   AdminDevolucionesIdRoute: typeof AdminDevolucionesIdRoute
   AdminDevolucionesListaRoute: typeof AdminDevolucionesListaRoute
@@ -2341,7 +2370,7 @@ interface AdminRouteChildren {
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
-  AdminCreditoCobranzaRoute: typeof AdminCreditoCobranzaRoute
+  AdminCreditoCobranzaRoute: typeof AdminCreditoCobranzaRouteWithChildren
   AdminCuentaRoute: typeof AdminCuentaRoute
   AdminDanadosRoute: typeof AdminDanadosRoute
   AdminDevolucionesRoute: typeof AdminDevolucionesRouteWithChildren
@@ -2404,7 +2433,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
-  AdminCreditoCobranzaRoute: AdminCreditoCobranzaRoute,
+  AdminCreditoCobranzaRoute: AdminCreditoCobranzaRouteWithChildren,
   AdminCuentaRoute: AdminCuentaRoute,
   AdminDanadosRoute: AdminDanadosRoute,
   AdminDevolucionesRoute: AdminDevolucionesRouteWithChildren,
