@@ -42,9 +42,11 @@ const RIESGO_BADGE: Record<Row["riesgo_calculado"], string> = {
 };
 
 function CarteraPage() {
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [riesgo, setRiesgo] = useState<string>("todos");
   const [estado, setEstado] = useState<string>("deudores");
+
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["cobranza-cartera"],
