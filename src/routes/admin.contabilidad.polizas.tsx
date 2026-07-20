@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil } from "lucide-react";
+import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,13 @@ function PolizasPage() {
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
   const [origenFiltro, setOrigenFiltro] = useState<string>("todos");
   const [search, setSearch] = useState("");
+  const [anioFiltro, setAnioFiltro] = useState<string>("todos");
+  const [mesFiltro, setMesFiltro] = useState<string>("todos");
+  const [desde, setDesde] = useState<string>("");
+  const [hasta, setHasta] = useState<string>("");
+  type SortKey = "folio" | "tipo" | "fecha" | "concepto" | "total_cargos" | "total_abonos" | "estado";
+  const [sortKey, setSortKey] = useState<SortKey>("fecha");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const { data: polizas = [], isLoading } = useQuery({
     queryKey: ["polizas", empresaId],
@@ -85,14 +92,60 @@ function PolizasPage() {
     },
   });
 
+  const aniosDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of polizas) { if (p.fecha) set.add(p.fecha.slice(0, 4)); }
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [polizas]);
+
+  const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return polizas.filter((p) =>
-      (tipoFiltro === "todos" || p.tipo === tipoFiltro) &&
-      (origenFiltro === "todos" || clasificarOrigen(p) === origenFiltro) &&
-      (!q || p.folio.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q))
+    const arr = polizas.filter((p) => {
+      if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+      if (origenFiltro !== "todos" && clasificarOrigen(p) !== origenFiltro) return false;
+      if (q && !p.folio.toLowerCase().includes(q) && !p.concepto.toLowerCase().includes(q)) return false;
+      if (anioFiltro !== "todos" && p.fecha.slice(0, 4) !== anioFiltro) return false;
+      if (mesFiltro !== "todos" && p.fecha.slice(5, 7) !== mesFiltro) return false;
+      if (desde && p.fecha < desde) return false;
+      if (hasta && p.fecha > hasta) return false;
+      return true;
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      let av: any; let bv: any;
+      switch (sortKey) {
+        case "total_cargos": av = Number(a.total_cargos); bv = Number(b.total_cargos); break;
+        case "total_abonos": av = Number(a.total_abonos); bv = Number(b.total_abonos); break;
+        default: av = (a as any)[sortKey] ?? ""; bv = (b as any)[sortKey] ?? "";
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [polizas, tipoFiltro, origenFiltro, search, anioFiltro, mesFiltro, desde, hasta, sortKey, sortDir]);
+
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "fecha" ? "desc" : "asc"); }
+  }
+  function SortHeader({ k, label, align }: { k: SortKey; label: string; align?: "left" | "right" | "center" }) {
+    const a = align ?? "left";
+    const Icon = sortKey === k ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+    return (
+      <th className={`px-3 py-2 text-${a}`}>
+        <button
+          onClick={() => toggleSort(k)}
+          className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${sortKey === k ? "text-foreground" : ""}`}
+        >
+          {label} <Icon className="h-3 w-3" />
+        </button>
+      </th>
     );
-  }, [polizas, tipoFiltro, origenFiltro, search]);
+  }
+  const hayFiltroFecha = anioFiltro !== "todos" || mesFiltro !== "todos" || !!desde || !!hasta;
 
   const [nuevoTipo, setNuevoTipo] = useState<"ingreso" | "egreso" | "diario" | null>(null);
   const [nuevaFecha, setNuevaFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
@@ -208,17 +261,48 @@ function PolizasPage() {
           </div>
 
 
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={anioFiltro} onValueChange={setAnioFiltro}>
+              <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los años</SelectItem>
+                {aniosDisponibles.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={mesFiltro} onValueChange={setMesFiltro}>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los meses</SelectItem>
+                {MESES.map((m, i) => <SelectItem key={m} value={String(i + 1).padStart(2, "0")}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="f-desde" className="text-xs text-muted-foreground">Desde</Label>
+              <Input id="f-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="w-[150px] h-9" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="f-hasta" className="text-xs text-muted-foreground">Hasta</Label>
+              <Input id="f-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="w-[150px] h-9" />
+            </div>
+            {hayFiltroFecha && (
+              <Button variant="ghost" size="sm" onClick={() => { setAnioFiltro("todos"); setMesFiltro("todos"); setDesde(""); setHasta(""); }}>
+                <X className="h-3.5 w-3.5 mr-1" /> Limpiar fechas
+              </Button>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground">{filtered.length} de {polizas.length}</div>
+          </div>
+
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="text-left px-3 py-2 w-24">Folio</th>
-                  <th className="text-left px-3 py-2 w-24">Tipo</th>
-                  <th className="text-left px-3 py-2 w-28">Fecha</th>
-                  <th className="text-left px-3 py-2">Concepto</th>
-                  <th className="text-right px-3 py-2 w-32">Cargos</th>
-                  <th className="text-right px-3 py-2 w-32">Abonos</th>
-                  <th className="text-center px-3 py-2 w-24">Estado</th>
+                  <SortHeader k="folio" label="Folio" />
+                  <SortHeader k="tipo" label="Tipo" />
+                  <SortHeader k="fecha" label="Fecha" />
+                  <SortHeader k="concepto" label="Concepto" />
+                  <SortHeader k="total_cargos" label="Cargos" align="right" />
+                  <SortHeader k="total_abonos" label="Abonos" align="right" />
+                  <SortHeader k="estado" label="Estado" align="center" />
                   <th className="text-right px-3 py-2 w-16"></th>
                 </tr>
               </thead>
