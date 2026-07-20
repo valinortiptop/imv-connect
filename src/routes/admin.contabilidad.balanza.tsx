@@ -25,13 +25,14 @@ function BalanzaPage() {
   const [desde, setDesde] = useState(firstOfMonth());
   const [hasta, setHasta] = useState(today());
   const [nivelMax, setNivelMax] = useState(6);
+  const [incluirBorradores, setIncluirBorradores] = useState(true);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["balanza", empresaId, desde, hasta],
+    queryKey: ["balanza", empresaId, desde, hasta, incluirBorradores],
     enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
-        _empresa: empresaId!, _desde: desde, _hasta: hasta,
+        _empresa: empresaId!, _desde: desde, _hasta: hasta, _incluir_borradores: incluirBorradores,
       });
       if (error) throw error;
       return (data ?? []) as any[];
@@ -75,6 +76,10 @@ function BalanzaPage() {
         <div><Label className="text-xs">Desde</Label><Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></div>
         <div><Label className="text-xs">Hasta</Label><Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></div>
         <div><Label className="text-xs">Nivel máx.</Label><Input type="number" min={1} max={6} value={nivelMax} onChange={(e) => setNivelMax(Number(e.target.value))} className="w-24" /></div>
+        <label className="flex items-center gap-2 text-xs cursor-pointer pb-2">
+          <input type="checkbox" checked={incluirBorradores} onChange={(e) => setIncluirBorradores(e.target.checked)} className="h-4 w-4" />
+          Incluir borradores
+        </label>
         <Button variant="outline" size="sm" onClick={exportCSV} disabled={filtered.length === 0}>
           <Download className="h-4 w-4 mr-1" /> CSV
         </Button>

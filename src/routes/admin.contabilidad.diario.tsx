@@ -26,16 +26,18 @@ function DiarioPage() {
   const empresaId = selected?.id;
   const [desde, setDesde] = useState(firstOfMonth());
   const [hasta, setHasta] = useState(today());
+  const [incluirBorradores, setIncluirBorradores] = useState(true);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["diario", empresaId, desde, hasta],
+    queryKey: ["diario", empresaId, desde, hasta, incluirBorradores],
     enabled: !!empresaId,
     queryFn: async () => {
+      const estados = incluirBorradores ? ["asentada", "borrador"] : ["asentada"];
       const { data, error } = await supabase
         .from("polizas" as any)
-        .select("id, folio, tipo, fecha, concepto, poliza_movimientos!inner(id, cargo, abono, concepto, cuenta_id, orden, cuentas_contables(codigo, nombre))")
+        .select("id, folio, tipo, fecha, concepto, estado, poliza_movimientos!inner(id, cargo, abono, concepto, cuenta_id, orden, cuentas_contables(codigo, nombre))")
         .eq("empresa_id", empresaId!)
-        .eq("estado", "asentada")
+        .in("estado", estados)
         .gte("fecha", desde)
         .lte("fecha", hasta)
         .order("fecha")
@@ -66,6 +68,10 @@ function DiarioPage() {
       <div className="flex flex-wrap items-end gap-3">
         <div><Label className="text-xs">Desde</Label><Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></div>
         <div><Label className="text-xs">Hasta</Label><Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></div>
+        <label className="flex items-center gap-2 text-xs cursor-pointer pb-2">
+          <input type="checkbox" checked={incluirBorradores} onChange={(e) => setIncluirBorradores(e.target.checked)} className="h-4 w-4" />
+          Incluir borradores
+        </label>
       </div>
 
       {!empresaId ? (
@@ -96,7 +102,10 @@ function DiarioPage() {
                       <td className="px-2 py-1.5 text-xs">{i === 0 ? p.fecha : ""}</td>
                       <td className="px-2 py-1.5">
                         {i === 0 ? (
-                          <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">{p.folio}</Link>
+                          <span className="inline-flex items-center gap-1">
+                            <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">{p.folio}</Link>
+                            {p.estado === "borrador" && <span className="text-[10px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-600 border border-amber-500/30">borrador</span>}
+                          </span>
                         ) : ""}
                       </td>
                       <td className="px-2 py-1.5 font-mono text-xs">{m.cuentas_contables?.codigo}</td>
