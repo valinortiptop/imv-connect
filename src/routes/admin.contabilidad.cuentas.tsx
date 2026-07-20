@@ -630,12 +630,18 @@ function parseCsv(text: string, satCodes: SATCode[] = []): Partial<Cuenta>[] {
 
 
 function ImportCsvDialog({
-  onClose, onImport, hasExisting, importing,
+  onClose, onImport, hasExisting, importing, satCodes, progress, summary,
 }: {
   onClose: () => void;
   onImport: (rows: Partial<Cuenta>[], replace: boolean) => void;
   hasExisting: boolean;
   importing: boolean;
+  satCodes: SATCode[];
+  progress: { done: number; total: number } | null;
+  summary: {
+    total: number; inserted: number; skippedFk: number;
+    errors: { chunk: number; message: string; sample?: string }[];
+  } | null;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Partial<Cuenta>[]>([]);
@@ -646,13 +652,15 @@ function ImportCsvDialog({
     setFile(f); setError(null);
     try {
       const text = await f.text();
-      const rows = parseCsv(text);
+      const rows = parseCsv(text, satCodes);
       if (rows.length === 0) throw new Error("No se encontraron filas válidas");
       setPreview(rows);
     } catch (e: any) {
       setError(e.message); setPreview([]);
     }
   };
+
+  const withAgrupador = preview.filter((c) => c.codigo_agrupador).length;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
