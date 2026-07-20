@@ -134,6 +134,7 @@ import { Route as AdminCreditoCobranzaClientesIdRouteImport } from './routes/adm
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminComprasFaltantesMotivosRouteImport } from './routes/admin.compras.faltantes.motivos'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
+import { Route as AdminCreditoCobranzaClientesIdTimelineRouteImport } from './routes/admin.credito-cobranza.clientes.$id.timeline'
 import { Route as AdminCreditoCobranzaClientesIdExpedienteRouteImport } from './routes/admin.credito-cobranza.clientes.$id.expediente'
 import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
 
@@ -787,6 +788,12 @@ const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   path: '/precios',
   getParentRoute: () => AdminClientesIdRoute,
 } as any)
+const AdminCreditoCobranzaClientesIdTimelineRoute =
+  AdminCreditoCobranzaClientesIdTimelineRouteImport.update({
+    id: '/timeline',
+    path: '/timeline',
+    getParentRoute: () => AdminCreditoCobranzaClientesIdRoute,
+  } as any)
 const AdminCreditoCobranzaClientesIdExpedienteRoute =
   AdminCreditoCobranzaClientesIdExpedienteRouteImport.update({
     id: '/expediente',
@@ -926,6 +933,7 @@ export interface FileRoutesByFullPath {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesByTo {
@@ -1048,6 +1056,7 @@ export interface FileRoutesByTo {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesById {
@@ -1178,6 +1187,7 @@ export interface FileRoutesById {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRouteTypes {
@@ -1309,6 +1319,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1431,6 +1442,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   id:
     | '__root__'
@@ -1560,6 +1572,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
@@ -2456,6 +2469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesIdPreciosRouteImport
       parentRoute: typeof AdminClientesIdRoute
     }
+    '/admin/credito-cobranza/clientes/$id/timeline': {
+      id: '/admin/credito-cobranza/clientes/$id/timeline'
+      path: '/timeline'
+      fullPath: '/admin/credito-cobranza/clientes/$id/timeline'
+      preLoaderRoute: typeof AdminCreditoCobranzaClientesIdTimelineRouteImport
+      parentRoute: typeof AdminCreditoCobranzaClientesIdRoute
+    }
     '/admin/credito-cobranza/clientes/$id/expediente': {
       id: '/admin/credito-cobranza/clientes/$id/expediente'
       path: '/expediente'
@@ -2558,12 +2578,15 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
 
 interface AdminCreditoCobranzaClientesIdRouteChildren {
   AdminCreditoCobranzaClientesIdExpedienteRoute: typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  AdminCreditoCobranzaClientesIdTimelineRoute: typeof AdminCreditoCobranzaClientesIdTimelineRoute
 }
 
 const AdminCreditoCobranzaClientesIdRouteChildren: AdminCreditoCobranzaClientesIdRouteChildren =
   {
     AdminCreditoCobranzaClientesIdExpedienteRoute:
       AdminCreditoCobranzaClientesIdExpedienteRoute,
+    AdminCreditoCobranzaClientesIdTimelineRoute:
+      AdminCreditoCobranzaClientesIdTimelineRoute,
   }
 
 const AdminCreditoCobranzaClientesIdRouteWithChildren =
