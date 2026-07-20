@@ -6,7 +6,7 @@ import {
   AlertOctagon, Undo2, UserPlus, History, Handshake, UserSquare2, Rocket, Activity, Gauge, Building2,
   Calculator as CalcIcon, BookText, Scale, Receipt, Landmark, ShieldCheck, PieChart, ScrollText,
   Banknote, ArrowLeftRight, ArrowDownUp, Wallet, FileSpreadsheet, Sparkles, Trophy,
-  CalendarClock, DollarSign, Snowflake, ClipboardCheck, Building, Bell,
+  CalendarClock, DollarSign, Snowflake, ClipboardCheck, Building, Bell, Phone, HandCoins,
 
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -97,6 +97,15 @@ const navGroups: NavGroup[] = [
       { key: "navManiobra",    label: "Maniobra",   url: "/admin/maniobra",   icon: Package },
       { key: "navCatalogo",    label: "Catálogo",   url: "/admin/catalogo",   icon: BookOpen },
       { key: "navDocuments",   label: "Documentos", url: "/admin/documentos", icon: FileText },
+    ],
+  },
+  {
+    label: "Cobranza",
+    items: [
+      { key: "navCreditoCartera",        label: "Cartera",          url: "/admin/credito-cobranza/cartera",        icon: Users },
+      { key: "navCreditoGestiones",      label: "Gestiones",        url: "/admin/credito-cobranza/gestiones",      icon: Phone },
+      { key: "navCreditoPromesas",       label: "Promesas de pago", url: "/admin/credito-cobranza/promesas",       icon: HandCoins },
+      { key: "navCreditoAutorizaciones", label: "Autorizaciones",   url: "/admin/credito-cobranza/autorizaciones", icon: ShieldCheck },
     ],
   },
   {
