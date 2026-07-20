@@ -114,6 +114,7 @@ import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nom
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
 import { Route as AdminAlmacenOperacionRouteImport } from './routes/admin.almacen.operacion'
+import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
@@ -654,6 +655,12 @@ const AdminAlmacenOperacionRoute = AdminAlmacenOperacionRouteImport.update({
   path: '/operacion',
   getParentRoute: () => AdminAlmacenRoute,
 } as any)
+const AdminContabilidadPolizasIndexRoute =
+  AdminContabilidadPolizasIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AdminContabilidadPolizasRoute,
+  } as any)
 const ApiPublicMapsScriptRoute = ApiPublicMapsScriptRouteImport.update({
   id: '/api/public/maps/script',
   path: '/api/public/maps/script',
@@ -799,6 +806,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
+  '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesByTo {
@@ -889,7 +897,6 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/facturas': typeof AdminContabilidadFacturasRoute
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
-  '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
@@ -907,6 +914,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
+  '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesById {
@@ -1021,6 +1029,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/polizas/$id': typeof AdminContabilidadPolizasIdRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
+  '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRouteTypes {
@@ -1136,6 +1145,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
+    | '/admin/contabilidad/polizas/'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1226,7 +1236,6 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/facturas'
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
-    | '/admin/contabilidad/polizas'
     | '/admin/contabilidad/sat'
     | '/admin/devoluciones/$id'
     | '/admin/devoluciones/lista'
@@ -1244,6 +1253,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
+    | '/admin/contabilidad/polizas'
     | '/api/public/maps/tile/$z/$x/$y'
   id:
     | '__root__'
@@ -1357,6 +1367,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/polizas/$id'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
+    | '/admin/contabilidad/polizas/'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
@@ -2110,6 +2121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAlmacenOperacionRouteImport
       parentRoute: typeof AdminAlmacenRoute
     }
+    '/admin/contabilidad/polizas/': {
+      id: '/admin/contabilidad/polizas/'
+      path: '/'
+      fullPath: '/admin/contabilidad/polizas/'
+      preLoaderRoute: typeof AdminContabilidadPolizasIndexRouteImport
+      parentRoute: typeof AdminContabilidadPolizasRoute
+    }
     '/api/public/maps/script': {
       id: '/api/public/maps/script'
       path: '/api/public/maps/script'
@@ -2279,11 +2297,13 @@ const AdminPedidosRouteWithChildren = AdminPedidosRoute._addFileChildren(
 
 interface AdminContabilidadPolizasRouteChildren {
   AdminContabilidadPolizasIdRoute: typeof AdminContabilidadPolizasIdRoute
+  AdminContabilidadPolizasIndexRoute: typeof AdminContabilidadPolizasIndexRoute
 }
 
 const AdminContabilidadPolizasRouteChildren: AdminContabilidadPolizasRouteChildren =
   {
     AdminContabilidadPolizasIdRoute: AdminContabilidadPolizasIdRoute,
+    AdminContabilidadPolizasIndexRoute: AdminContabilidadPolizasIndexRoute,
   }
 
 const AdminContabilidadPolizasRouteWithChildren =
