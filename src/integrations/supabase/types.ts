@@ -1206,6 +1206,7 @@ export type Database = {
           created_at: string
           descripcion: string | null
           id: string
+          kanban_card_id: string | null
           metadata: Json | null
           nivel: string
           resuelta: boolean
@@ -1220,6 +1221,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           id?: string
+          kanban_card_id?: string | null
           metadata?: Json | null
           nivel?: string
           resuelta?: boolean
@@ -1234,6 +1236,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           id?: string
+          kanban_card_id?: string | null
           metadata?: Json | null
           nivel?: string
           resuelta?: boolean
@@ -1278,6 +1281,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_alertas_kanban_card_id_fkey"
+            columns: ["kanban_card_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_cards"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cobranza_alertas_resuelta_por_fkey"
@@ -1388,6 +1398,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cobranza_config: {
+        Row: {
+          clave: string
+          descripcion: string | null
+          id: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          clave: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string
+          valor: Json
+        }
+        Update: {
+          clave?: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
       }
       cobranza_gestiones: {
         Row: {
@@ -1588,6 +1622,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cobranza_templates: {
+        Row: {
+          activo: boolean
+          asunto: string | null
+          canal: string
+          codigo: string
+          created_at: string
+          cuerpo: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          asunto?: string | null
+          canal?: string
+          codigo: string
+          created_at?: string
+          cuerpo: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          asunto?: string | null
+          canal?: string
+          codigo?: string
+          created_at?: string
+          cuerpo?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       competitor_migrations: {
         Row: {
@@ -10543,6 +10616,18 @@ export type Database = {
             referencedColumns: ["representante_id"]
           },
         ]
+      }
+      v_cliente_timeline: {
+        Row: {
+          cliente_id: string | null
+          detalle: string | null
+          fecha: string | null
+          id: string | null
+          monto: number | null
+          tipo: string | null
+          titulo: string | null
+        }
+        Relationships: []
       }
       v_comisiones_representante: {
         Row: {
