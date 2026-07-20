@@ -593,11 +593,14 @@ function ImportCsvDialog({
         </DialogHeader>
         <div className="space-y-3 pt-2 text-sm">
           <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">Columnas esperadas:</p>
-            <code className="block font-mono text-[11px]">
-              codigo, nombre, codigo_agrupador, naturaleza, nivel, permite_movimientos, moneda, saldo_inicial
-            </code>
-            <p className="mt-2">Sólo <b>codigo</b> y <b>nombre</b> son obligatorios. Naturaleza acepta <i>deudora/acreedora</i>. Se hace upsert por código.</p>
+            <p className="font-medium text-foreground mb-1">Formatos soportados</p>
+            <p className="mb-1">
+              <b>Estándar:</b> <code className="font-mono text-[11px]">codigo, nombre, codigo_agrupador, naturaleza, nivel, permite_movimientos, moneda, saldo_inicial</code>
+            </p>
+            <p className="mb-1">
+              <b>NetSuite (Plan de cuentas):</b> se detectan automáticamente <code>Número</code>, <code>Cuenta</code>, <code>Tipo</code>, <code>Resumen</code>, <code>Moneda</code> y <code>Saldo</code>. El preámbulo del archivo se ignora.
+            </p>
+            <p className="mt-2">Sólo el código y el nombre son obligatorios. Se hace upsert por código. Importes válidos: <code>$1,234.00</code> o <code>($8,293.50)</code> para negativos.</p>
           </div>
 
           <div>
