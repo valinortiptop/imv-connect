@@ -46,11 +46,11 @@ function MayorPage() {
   });
 
   const { data: mayor = [], isLoading } = useQuery({
-    queryKey: ["mayor", cuentaId, desde, hasta],
+    queryKey: ["mayor", cuentaId, desde, hasta, incluirBorradores],
     enabled: !!cuentaId,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("libro_mayor_cuenta" as any, {
-        _cuenta: cuentaId, _desde: desde, _hasta: hasta,
+        _cuenta: cuentaId, _desde: desde, _hasta: hasta, _incluir_borradores: incluirBorradores,
       });
       if (error) throw error;
       return (data ?? []) as any[];
