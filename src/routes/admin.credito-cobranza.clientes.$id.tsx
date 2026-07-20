@@ -121,6 +121,12 @@ function Cliente360() {
           <TabsTrigger value="gestiones"><Phone className="h-3.5 w-3.5 mr-1" />Gestiones</TabsTrigger>
           <TabsTrigger value="promesas"><HandCoins className="h-3.5 w-3.5 mr-1" />Promesas</TabsTrigger>
           <TabsTrigger value="autorizaciones">Autorizaciones</TabsTrigger>
+          <TabsTrigger value="expediente" asChild>
+            <Link to="/admin/credito-cobranza/clientes/$id/expediente" params={{ id }}>
+              <FileText className="h-3.5 w-3.5 mr-1" />Expediente
+            </Link>
+          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="credito">
