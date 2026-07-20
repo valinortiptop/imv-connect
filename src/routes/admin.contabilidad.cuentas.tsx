@@ -141,6 +141,7 @@ function CuentasPage() {
     total: number;
     inserted: number;
     skippedFk: number;
+    deleteSkipped: number;
     errors: { chunk: number; message: string; sample?: string }[];
   };
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
@@ -153,10 +154,27 @@ function CuentasPage() {
       setImportSummary(null);
       setImportProgress({ done: 0, total: rows.length });
 
+      let deleteSkipped = 0;
       if (replace) {
-        const { error: eDel } = await supabase
-          .from("cuentas_contables" as any).delete().eq("empresa_id", empresaId);
-        if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
+        // Clear self-referential parent links so we can delete in any order
+        await supabase.from("cuentas_contables" as any)
+          .update({ padre_id: null }).eq("empresa_id", empresaId);
+        // Find accounts referenced by pólizas — those cannot be deleted (FK RESTRICT)
+        const { data: refs } = await supabase
+          .from("poliza_movimientos" as any)
+          .select("cuenta_id");
+        const referencedIds = new Set<string>((refs as any[] | null)?.map((r) => r.cuenta_id) ?? []);
+        const { data: allRows } = await supabase
+          .from("cuentas_contables" as any)
+          .select("id").eq("empresa_id", empresaId);
+        const deletableIds = ((allRows as any[] | null) ?? [])
+          .map((r) => r.id).filter((id) => !referencedIds.has(id));
+        deleteSkipped = ((allRows as any[] | null)?.length ?? 0) - deletableIds.length;
+        if (deletableIds.length > 0) {
+          const { error: eDel } = await supabase
+            .from("cuentas_contables" as any).delete().in("id", deletableIds);
+          if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
+        }
       }
       const sorted = [...rows].sort((a, b) => (a.codigo?.length ?? 0) - (b.codigo?.length ?? 0));
       const payload = sorted.map((c) => ({
@@ -211,7 +229,7 @@ function CuentasPage() {
         }
         setImportProgress({ done: Math.min(payload.length, i + chunk), total: payload.length });
       }
-      return { total: payload.length, inserted, skippedFk, errors };
+      return { total: payload.length, inserted, skippedFk, deleteSkipped, errors };
     },
     onSuccess: (s) => {
       setImportSummary(s);
@@ -639,7 +657,7 @@ function ImportCsvDialog({
   satCodes: SATCode[];
   progress: { done: number; total: number } | null;
   summary: {
-    total: number; inserted: number; skippedFk: number;
+    total: number; inserted: number; skippedFk: number; deleteSkipped: number;
     errors: { chunk: number; message: string; sample?: string }[];
   } | null;
 }) {
@@ -778,6 +796,11 @@ function ImportCsvDialog({
               {summary.skippedFk > 0 && (
                 <p className="text-muted-foreground">
                   ⚠️ {summary.skippedFk} cuenta(s) importadas sin código agrupador SAT (no se encontró un código válido).
+                </p>
+              )}
+              {summary.deleteSkipped > 0 && (
+                <p className="text-muted-foreground">
+                  ⚠️ {summary.deleteSkipped} cuenta(s) previas no se borraron porque ya tienen movimientos en pólizas (se actualizaron en su lugar).
                 </p>
               )}
               {summary.errors.length > 0 && (
