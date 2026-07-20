@@ -28,6 +28,7 @@ function MayorPage() {
   const [desde, setDesde] = useState(firstOfMonth());
   const [hasta, setHasta] = useState(today());
   const [cuentaId, setCuentaId] = useState<string>("");
+  const [incluirBorradores, setIncluirBorradores] = useState(true);
 
   const { data: cuentas = [] } = useQuery({
     queryKey: ["cuentas-mayor", empresaId],
