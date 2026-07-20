@@ -154,7 +154,7 @@ function CuentasPage() {
         codigo_agrupador: c.codigo_agrupador || null,
         nombre: c.nombre,
         naturaleza: c.naturaleza ?? "deudora",
-        nivel: c.nivel ?? Math.min(6, Math.max(1, (c.codigo ?? "").replace(/[^0-9]/g, "").length <= 3 ? ((c.codigo?.split("-").length ?? 1) + ((c.codigo ?? "").length >= 3 ? 1 : 0)) : 3)),
+        nivel: c.nivel ?? Math.min(6, Math.max(1, (c.codigo ?? "").split(/[-.]/).filter(Boolean).length)),
         permite_movimientos: c.permite_movimientos ?? true,
         moneda: c.moneda || "MXN",
         activa: c.activa ?? true,
