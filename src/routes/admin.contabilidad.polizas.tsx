@@ -1,9 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search } from "lucide-react";
+import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+
+const TIPO_LABEL: Record<string, string> = { ingreso: "Ingreso", egreso: "Salida", diario: "Diario" };
 
 export const Route = createFileRoute("/admin/contabilidad/polizas")({
   head: () => ({
