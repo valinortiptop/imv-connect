@@ -7,6 +7,11 @@ import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil } fro
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -89,13 +94,22 @@ function PolizasPage() {
     );
   }, [polizas, tipoFiltro, origenFiltro, search]);
 
+  const [nuevoTipo, setNuevoTipo] = useState<"ingreso" | "egreso" | "diario" | null>(null);
+  const [nuevaFecha, setNuevaFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [nuevoConcepto, setNuevoConcepto] = useState<string>("");
+
+  function abrirNueva(tipo: "ingreso" | "egreso" | "diario") {
+    setNuevoTipo(tipo);
+    setNuevaFecha(new Date().toISOString().slice(0, 10));
+    setNuevoConcepto("");
+  }
+
   const crear = useMutation({
-    mutationFn: async (tipo: "ingreso" | "egreso" | "diario") => {
+    mutationFn: async (payload: { tipo: "ingreso" | "egreso" | "diario"; fecha: string; concepto: string }) => {
       if (!empresaId) throw new Error("Selecciona una empresa");
-      // Try to attach to the open period for the current month
-      const hoy = new Date();
-      const anio = hoy.getFullYear();
-      const mes = hoy.getMonth() + 1;
+      const [anioStr, mesStr] = payload.fecha.split("-");
+      const anio = Number(anioStr);
+      const mes = Number(mesStr);
       const { data: per } = await supabase
         .from("periodos_contables" as any)
         .select("id")
@@ -107,9 +121,9 @@ function PolizasPage() {
         .from("polizas" as any)
         .insert({
           empresa_id: empresaId,
-          tipo,
-          fecha: hoy.toISOString().slice(0, 10),
-          concepto: "",
+          tipo: payload.tipo,
+          fecha: payload.fecha,
+          concepto: payload.concepto,
           estado: "borrador",
           periodo_id: (per as any)?.id ?? null,
           origen: "manual",
@@ -121,6 +135,7 @@ function PolizasPage() {
     },
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ["polizas"] });
+      setNuevoTipo(null);
       window.location.href = `/admin/contabilidad/polizas/${id}`;
     },
     onError: (e: Error) => toast.error(e.message),
@@ -161,9 +176,9 @@ function PolizasPage() {
               </SelectContent>
             </Select>
             <div className="flex gap-1">
-              <Button onClick={() => crear.mutate("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
-              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
-              <Button onClick={() => crear.mutate("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
+              <Button onClick={() => abrirNueva("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
+              <Button onClick={() => abrirNueva("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
+              <Button onClick={() => abrirNueva("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
             </div>
           </div>
 
@@ -248,6 +263,51 @@ function PolizasPage() {
           </div>
         </>
       )}
+
+      <Dialog open={nuevoTipo !== null} onOpenChange={(o) => { if (!o) setNuevoTipo(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nueva póliza de {nuevoTipo ? TIPO_LABEL[nuevoTipo] : ""}</DialogTitle>
+            <DialogDescription>
+              Captura los datos básicos. La póliza se creará como borrador y podrás agregar los movimientos a continuación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="nueva-fecha">Fecha</Label>
+              <Input
+                id="nueva-fecha"
+                type="date"
+                value={nuevaFecha}
+                onChange={(e) => setNuevaFecha(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nuevo-concepto">Concepto</Label>
+              <Textarea
+                id="nuevo-concepto"
+                value={nuevoConcepto}
+                onChange={(e) => setNuevoConcepto(e.target.value)}
+                placeholder="Descripción breve de la póliza"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNuevoTipo(null)} disabled={crear.isPending}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!nuevoTipo) return;
+                if (!nuevaFecha) { toast.error("Fecha requerida"); return; }
+                crear.mutate({ tipo: nuevoTipo, fecha: nuevaFecha, concepto: nuevoConcepto.trim() });
+              }}
+              disabled={crear.isPending}
+            >
+              {crear.isPending ? "Creando…" : "Crear y continuar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
