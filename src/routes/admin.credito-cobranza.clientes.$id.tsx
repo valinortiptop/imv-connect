@@ -204,7 +204,7 @@ function Kpi({ title, value, tone }: { title: string; value: string; tone?: stri
 }
 
 /* ------- Crédito Form ------- */
-function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: any) => void; pending: boolean }) {
+function CreditoForm({ initial, clienteId, onSave, pending }: { initial: any; clienteId: string; onSave: (p: any) => void; pending: boolean }) {
   const [limite, setLimite] = useState<string>(initial?.limite_credito?.toString() || "0");
   const [dias, setDias] = useState<string>(initial?.dias_credito?.toString() || "30");
   const [condicion, setCondicion] = useState(initial?.condicion_pago || "");
@@ -212,6 +212,13 @@ function CreditoForm({ initial, onSave, pending }: { initial: any; onSave: (p: a
   const [motivoBloqueo, setMotivoBloqueo] = useState(initial?.motivo_bloqueo || "");
   const [riesgoManual, setRiesgoManual] = useState<string>(initial?.riesgo_manual || "auto");
   const [notas, setNotas] = useState(initial?.notas || "");
+  const [pdias, setPdias] = useState<string>(initial?.pronto_pago_dias?.toString() || "0");
+  const [ppct, setPpct] = useState<string>(initial?.pronto_pago_porcentaje?.toString() || "0");
+  const [emailCob, setEmailCob] = useState<string>(initial?.email_cobranza || "");
+  const [freq, setFreq] = useState<string>(initial?.freq_edo_cuenta || "nunca");
+  const [recordatorios, setRecordatorios] = useState<boolean>(initial?.enviar_recordatorios !== false);
+  // clienteId available for future per-form actions
+  void clienteId;
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-3 max-w-2xl">
