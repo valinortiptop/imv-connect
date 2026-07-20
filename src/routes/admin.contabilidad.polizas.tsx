@@ -1,9 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search } from "lucide-react";
+import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
+
+const TIPO_LABEL: Record<string, string> = { ingreso: "Ingreso", egreso: "Salida", diario: "Diario" };
 
 export const Route = createFileRoute("/admin/contabilidad/polizas")({
   head: () => ({
@@ -38,6 +40,7 @@ type Poliza = {
 
 function PolizasPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
@@ -130,15 +133,6 @@ function PolizasPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar folio o concepto…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
             </div>
-            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
-                <SelectItem value="ingreso">Ingreso</SelectItem>
-                <SelectItem value="egreso">Egreso</SelectItem>
-                <SelectItem value="diario">Diario</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={estadoFiltro} onValueChange={setEstadoFiltro}>
               <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -150,10 +144,36 @@ function PolizasPage() {
             </Select>
             <div className="flex gap-1">
               <Button onClick={() => crear.mutate("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
-              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Egreso</Button>
+              <Button onClick={() => crear.mutate("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
               <Button onClick={() => crear.mutate("diario")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Diario</Button>
             </div>
           </div>
+
+          <div className="flex flex-wrap gap-1 border-b border-border">
+            {[
+              { v: "todos", label: "Todos" },
+              { v: "ingreso", label: "Ingreso" },
+              { v: "egreso", label: "Salida" },
+              { v: "diario", label: "Diario" },
+            ].map((t) => {
+              const active = tipoFiltro === t.v;
+              const count = t.v === "todos" ? polizas.length : polizas.filter((p) => p.tipo === (t.v as any)).length;
+              return (
+                <button
+                  key={t.v}
+                  onClick={() => setTipoFiltro(t.v)}
+                  className={`px-3 py-1.5 text-sm rounded-t-md border-b-2 -mb-px transition-colors ${
+                    active
+                      ? "border-primary text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.label} <span className="ml-1 text-xs text-muted-foreground">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+
 
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
@@ -166,27 +186,42 @@ function PolizasPage() {
                   <th className="text-right px-3 py-2 w-32">Cargos</th>
                   <th className="text-right px-3 py-2 w-32">Abonos</th>
                   <th className="text-center px-3 py-2 w-24">Estado</th>
+                  <th className="text-right px-3 py-2 w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas.</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas.</td></tr>
                 ) : filtered.map((p) => (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/20">
-                    <td className="px-3 py-2">
+                  <tr
+                    key={p.id}
+                    className="border-t border-border hover:bg-muted/20 cursor-pointer"
+                    onClick={() => navigate({ to: "/admin/contabilidad/polizas/$id", params: { id: p.id } })}
+                  >
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">
                         {p.folio}
                       </Link>
                     </td>
-                    <td className="px-3 py-2 capitalize">{p.tipo}</td>
+                    <td className="px-3 py-2">{TIPO_LABEL[p.tipo] ?? p.tipo}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{p.fecha}</td>
                     <td className="px-3 py-2 truncate max-w-[420px]">{p.concepto || <span className="text-muted-foreground italic">(sin concepto)</span>}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_cargos))}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_abonos))}</td>
                     <td className="px-3 py-2 text-center">
                       <EstadoBadge estado={p.estado} />
+                    </td>
+                    <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        to="/admin/contabilidad/polizas/$id"
+                        params={{ id: p.id }}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        title={p.estado === "borrador" ? "Editar póliza" : "Ver póliza"}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Link>
                     </td>
                   </tr>
                 ))}
