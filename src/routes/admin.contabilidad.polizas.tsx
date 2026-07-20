@@ -186,27 +186,42 @@ function PolizasPage() {
                   <th className="text-right px-3 py-2 w-32">Cargos</th>
                   <th className="text-right px-3 py-2 w-32">Abonos</th>
                   <th className="text-center px-3 py-2 w-24">Estado</th>
+                  <th className="text-right px-3 py-2 w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Cargando…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas.</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sin pólizas.</td></tr>
                 ) : filtered.map((p) => (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/20">
-                    <td className="px-3 py-2">
+                  <tr
+                    key={p.id}
+                    className="border-t border-border hover:bg-muted/20 cursor-pointer"
+                    onClick={() => navigate({ to: "/admin/contabilidad/polizas/$id", params: { id: p.id } })}
+                  >
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-xs text-primary hover:underline">
                         {p.folio}
                       </Link>
                     </td>
-                    <td className="px-3 py-2 capitalize">{p.tipo}</td>
+                    <td className="px-3 py-2">{TIPO_LABEL[p.tipo] ?? p.tipo}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{p.fecha}</td>
                     <td className="px-3 py-2 truncate max-w-[420px]">{p.concepto || <span className="text-muted-foreground italic">(sin concepto)</span>}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_cargos))}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_abonos))}</td>
                     <td className="px-3 py-2 text-center">
                       <EstadoBadge estado={p.estado} />
+                    </td>
+                    <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        to="/admin/contabilidad/polizas/$id"
+                        params={{ id: p.id }}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        title={p.estado === "borrador" ? "Editar póliza" : "Ver póliza"}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Link>
                     </td>
                   </tr>
                 ))}
