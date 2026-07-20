@@ -153,10 +153,27 @@ function CuentasPage() {
       setImportSummary(null);
       setImportProgress({ done: 0, total: rows.length });
 
+      let deleteSkipped = 0;
       if (replace) {
-        const { error: eDel } = await supabase
-          .from("cuentas_contables" as any).delete().eq("empresa_id", empresaId);
-        if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
+        // Clear self-referential parent links so we can delete in any order
+        await supabase.from("cuentas_contables" as any)
+          .update({ padre_id: null }).eq("empresa_id", empresaId);
+        // Find accounts referenced by pólizas — those cannot be deleted (FK RESTRICT)
+        const { data: refs } = await supabase
+          .from("poliza_movimientos" as any)
+          .select("cuenta_id");
+        const referencedIds = new Set<string>((refs as any[] | null)?.map((r) => r.cuenta_id) ?? []);
+        const { data: allRows } = await supabase
+          .from("cuentas_contables" as any)
+          .select("id").eq("empresa_id", empresaId);
+        const deletableIds = ((allRows as any[] | null) ?? [])
+          .map((r) => r.id).filter((id) => !referencedIds.has(id));
+        deleteSkipped = ((allRows as any[] | null)?.length ?? 0) - deletableIds.length;
+        if (deletableIds.length > 0) {
+          const { error: eDel } = await supabase
+            .from("cuentas_contables" as any).delete().in("id", deletableIds);
+          if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
+        }
       }
       const sorted = [...rows].sort((a, b) => (a.codigo?.length ?? 0) - (b.codigo?.length ?? 0));
       const payload = sorted.map((c) => ({
