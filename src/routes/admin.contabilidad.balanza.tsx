@@ -25,13 +25,14 @@ function BalanzaPage() {
   const [desde, setDesde] = useState(firstOfMonth());
   const [hasta, setHasta] = useState(today());
   const [nivelMax, setNivelMax] = useState(6);
+  const [incluirBorradores, setIncluirBorradores] = useState(true);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["balanza", empresaId, desde, hasta],
+    queryKey: ["balanza", empresaId, desde, hasta, incluirBorradores],
     enabled: !!empresaId,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("balanza_de_comprobacion" as any, {
-        _empresa: empresaId!, _desde: desde, _hasta: hasta,
+        _empresa: empresaId!, _desde: desde, _hasta: hasta, _incluir_borradores: incluirBorradores,
       });
       if (error) throw error;
       return (data ?? []) as any[];
