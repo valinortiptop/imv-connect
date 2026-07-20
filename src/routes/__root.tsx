@@ -37,22 +37,53 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const details = [error?.name, error?.message].filter(Boolean).join(": ") || String(error);
+  const stack = (error?.stack ?? "").split("\n").slice(0, 8).join("\n");
+
+  const resetAppData = () => {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => !k.startsWith("sb-"))
+        .forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
+    } catch {}
+    window.location.href = "/";
+  };
+
+  const copyDiagnostics = async () => {
+    const payload = `URL: ${window.location.href}\nUA: ${navigator.userAgent}\nTime: ${new Date().toISOString()}\n\n${details}\n\n${stack}`;
+    try { await navigator.clipboard.writeText(payload); } catch {}
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
+      <div className="w-full max-w-lg text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong on our end. Try again, or reset app data if it keeps happening.
         </p>
+
+        <details className="mt-4 rounded-md border border-border bg-muted/30 p-3 text-left">
+          <summary className="cursor-pointer text-xs font-medium text-foreground">
+            Error details
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap break-words text-[11px] leading-snug text-muted-foreground">
+{details}
+{stack ? "\n\n" + stack : ""}
+          </pre>
+          <button
+            onClick={copyDiagnostics}
+            className="mt-2 text-[11px] text-primary underline"
+          >
+            Copy diagnostics
+          </button>
+        </details>
+
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={() => { router.invalidate(); reset(); }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
@@ -63,6 +94,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             Go home
           </a>
+          <button
+            onClick={resetAppData}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Reset app data
+          </button>
         </div>
       </div>
     </div>
