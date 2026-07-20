@@ -722,13 +722,21 @@ export type Database = {
           condicion_pago: string | null
           created_at: string
           dias_credito: number
+          email_cobranza: string | null
+          enviar_recordatorios: boolean
+          freq_edo_cuenta: string
           gestor_id: string | null
           limite_credito: number
           motivo_bloqueo: string | null
           notas: string | null
+          pronto_pago_dias: number | null
+          pronto_pago_porcentaje: number | null
           riesgo_manual:
             | Database["public"]["Enums"]["cliente_riesgo_nivel"]
             | null
+          ultimo_edo_cuenta_at: string | null
+          ultimo_score: number | null
+          ultimo_score_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -738,13 +746,21 @@ export type Database = {
           condicion_pago?: string | null
           created_at?: string
           dias_credito?: number
+          email_cobranza?: string | null
+          enviar_recordatorios?: boolean
+          freq_edo_cuenta?: string
           gestor_id?: string | null
           limite_credito?: number
           motivo_bloqueo?: string | null
           notas?: string | null
+          pronto_pago_dias?: number | null
+          pronto_pago_porcentaje?: number | null
           riesgo_manual?:
             | Database["public"]["Enums"]["cliente_riesgo_nivel"]
             | null
+          ultimo_edo_cuenta_at?: string | null
+          ultimo_score?: number | null
+          ultimo_score_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -754,13 +770,21 @@ export type Database = {
           condicion_pago?: string | null
           created_at?: string
           dias_credito?: number
+          email_cobranza?: string | null
+          enviar_recordatorios?: boolean
+          freq_edo_cuenta?: string
           gestor_id?: string | null
           limite_credito?: number
           motivo_bloqueo?: string | null
           notas?: string | null
+          pronto_pago_dias?: number | null
+          pronto_pago_porcentaje?: number | null
           riesgo_manual?:
             | Database["public"]["Enums"]["cliente_riesgo_nivel"]
             | null
+          ultimo_edo_cuenta_at?: string | null
+          ultimo_score?: number | null
+          ultimo_score_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -810,6 +834,97 @@ export type Database = {
           {
             foreignKeyName: "cliente_credito_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      cliente_riesgo_snapshots: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          dias_pago_prom: number | null
+          factores: Json | null
+          id: string
+          modelo: string | null
+          nivel: Database["public"]["Enums"]["cliente_riesgo_nivel"]
+          recomendaciones: string | null
+          saldo_total: number | null
+          saldo_vencido: number | null
+          score: number
+          utilizacion_pct: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          dias_pago_prom?: number | null
+          factores?: Json | null
+          id?: string
+          modelo?: string | null
+          nivel: Database["public"]["Enums"]["cliente_riesgo_nivel"]
+          recomendaciones?: string | null
+          saldo_total?: number | null
+          saldo_vencido?: number | null
+          score: number
+          utilizacion_pct?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          dias_pago_prom?: number | null
+          factores?: Json | null
+          id?: string
+          modelo?: string | null
+          nivel?: Database["public"]["Enums"]["cliente_riesgo_nivel"]
+          recomendaciones?: string | null
+          saldo_total?: number | null
+          saldo_vencido?: number | null
+          score?: number
+          utilizacion_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "v_usuarios_roles"
             referencedColumns: ["user_id"]
@@ -961,6 +1076,107 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_comisiones_representante"
             referencedColumns: ["representante_id"]
+          },
+        ]
+      }
+      cobranza_comunicaciones: {
+        Row: {
+          asunto: string | null
+          canal: string
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          cuerpo_preview: string | null
+          destinatario: string | null
+          error: string | null
+          estado: string
+          factura_id: string | null
+          id: string
+          metadata: Json | null
+          provider_id: string | null
+          tipo: string
+        }
+        Insert: {
+          asunto?: string | null
+          canal?: string
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          cuerpo_preview?: string | null
+          destinatario?: string | null
+          error?: string | null
+          estado?: string
+          factura_id?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_id?: string | null
+          tipo: string
+        }
+        Update: {
+          asunto?: string | null
+          canal?: string
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          cuerpo_preview?: string | null
+          destinatario?: string | null
+          error?: string | null
+          estado?: string
+          factura_id?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
+            referencedColumns: ["id"]
           },
         ]
       }
