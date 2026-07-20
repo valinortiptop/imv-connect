@@ -91,6 +91,7 @@ import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devol
 import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluciones.$id'
 import { Route as AdminCreditoCobranzaPromesasRouteImport } from './routes/admin.credito-cobranza.promesas'
 import { Route as AdminCreditoCobranzaGestionesRouteImport } from './routes/admin.credito-cobranza.gestiones'
+import { Route as AdminCreditoCobranzaDashboardRouteImport } from './routes/admin.credito-cobranza.dashboard'
 import { Route as AdminCreditoCobranzaCarteraRouteImport } from './routes/admin.credito-cobranza.cartera'
 import { Route as AdminCreditoCobranzaAutorizacionesRouteImport } from './routes/admin.credito-cobranza.autorizaciones'
 import { Route as AdminContabilidadSatRouteImport } from './routes/admin.contabilidad.sat'
@@ -544,6 +545,12 @@ const AdminCreditoCobranzaGestionesRoute =
     path: '/gestiones',
     getParentRoute: () => AdminCreditoCobranzaRoute,
   } as any)
+const AdminCreditoCobranzaDashboardRoute =
+  AdminCreditoCobranzaDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AdminCreditoCobranzaRoute,
+  } as any)
 const AdminCreditoCobranzaCarteraRoute =
   AdminCreditoCobranzaCarteraRouteImport.update({
     id: '/cartera',
@@ -855,6 +862,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
+  '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -971,6 +979,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
+  '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -1095,6 +1104,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
+  '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
   '/admin/devoluciones/$id': typeof AdminDevolucionesIdRoute
@@ -1220,6 +1230,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
+    | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
     | '/admin/devoluciones/$id'
@@ -1336,6 +1347,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
+    | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
     | '/admin/devoluciones/$id'
@@ -1459,6 +1471,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
+    | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
     | '/admin/devoluciones/$id'
@@ -2076,6 +2089,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreditoCobranzaGestionesRouteImport
       parentRoute: typeof AdminCreditoCobranzaRoute
     }
+    '/admin/credito-cobranza/dashboard': {
+      id: '/admin/credito-cobranza/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/credito-cobranza/dashboard'
+      preLoaderRoute: typeof AdminCreditoCobranzaDashboardRouteImport
+      parentRoute: typeof AdminCreditoCobranzaRoute
+    }
     '/admin/credito-cobranza/cartera': {
       id: '/admin/credito-cobranza/cartera'
       path: '/cartera'
@@ -2438,6 +2458,7 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
 interface AdminCreditoCobranzaRouteChildren {
   AdminCreditoCobranzaAutorizacionesRoute: typeof AdminCreditoCobranzaAutorizacionesRoute
   AdminCreditoCobranzaCarteraRoute: typeof AdminCreditoCobranzaCarteraRoute
+  AdminCreditoCobranzaDashboardRoute: typeof AdminCreditoCobranzaDashboardRoute
   AdminCreditoCobranzaGestionesRoute: typeof AdminCreditoCobranzaGestionesRoute
   AdminCreditoCobranzaPromesasRoute: typeof AdminCreditoCobranzaPromesasRoute
   AdminCreditoCobranzaIndexRoute: typeof AdminCreditoCobranzaIndexRoute
@@ -2448,6 +2469,7 @@ const AdminCreditoCobranzaRouteChildren: AdminCreditoCobranzaRouteChildren = {
   AdminCreditoCobranzaAutorizacionesRoute:
     AdminCreditoCobranzaAutorizacionesRoute,
   AdminCreditoCobranzaCarteraRoute: AdminCreditoCobranzaCarteraRoute,
+  AdminCreditoCobranzaDashboardRoute: AdminCreditoCobranzaDashboardRoute,
   AdminCreditoCobranzaGestionesRoute: AdminCreditoCobranzaGestionesRoute,
   AdminCreditoCobranzaPromesasRoute: AdminCreditoCobranzaPromesasRoute,
   AdminCreditoCobranzaIndexRoute: AdminCreditoCobranzaIndexRoute,
