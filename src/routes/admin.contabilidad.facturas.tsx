@@ -21,7 +21,7 @@ function FacturasContPage() {
   const qc = useQueryClient();
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
-  const [filtro, setFiltro] = useState<string>("pendientes");
+  const [filtro, setFiltro] = useState<string>("todas");
 
   const { data: facturas = [], isLoading } = useQuery({
     queryKey: ["facturas-contables", empresaId, filtro],
