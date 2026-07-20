@@ -695,8 +695,11 @@ function ImportCsvDialog({
 
           {preview.length > 0 && (
             <div className="rounded-md border border-border overflow-hidden">
-              <div className="bg-muted/30 px-3 py-1.5 text-xs font-medium">
-                Vista previa — {preview.length} cuentas
+              <div className="bg-muted/30 px-3 py-1.5 text-xs font-medium flex items-center justify-between">
+                <span>Vista previa — {preview.length} cuentas</span>
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  Agrupador SAT: {withAgrupador}/{preview.length}
+                </span>
               </div>
               <div className="max-h-64 overflow-y-auto">
                 <table className="w-full text-xs">
@@ -730,9 +733,9 @@ function ImportCsvDialog({
             </div>
           )}
 
-          {hasExisting && (
+          {hasExisting && !summary && (
             <label className="flex items-center gap-2 rounded-md border border-border bg-muted/10 p-2 text-xs">
-              <Switch checked={replace} onCheckedChange={setReplace} />
+              <Switch checked={replace} onCheckedChange={setReplace} disabled={importing} />
               <span>
                 <b>Reemplazar catálogo actual</b> — borra todas las cuentas existentes de esta empresa antes de importar.
                 {replace && <span className="text-destructive"> Esta acción es destructiva.</span>}
@@ -740,17 +743,73 @@ function ImportCsvDialog({
             </label>
           )}
 
+          {progress && importing && (
+            <div className="rounded-md border border-border bg-muted/10 p-3 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="font-medium">Importando…</span>
+                <span className="text-muted-foreground">{progress.done}/{progress.total}</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {summary && !importing && (
+            <div className="rounded-md border border-border bg-muted/10 p-3 space-y-2 text-xs">
+              <div className="font-medium text-foreground text-sm">Resumen de la importación</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded border border-border p-2">
+                  <div className="text-[10px] text-muted-foreground uppercase">Total</div>
+                  <div className="text-lg font-semibold">{summary.total}</div>
+                </div>
+                <div className="rounded border border-emerald-500/40 bg-emerald-500/5 p-2">
+                  <div className="text-[10px] text-emerald-600 uppercase">Insertadas</div>
+                  <div className="text-lg font-semibold text-emerald-600">{summary.inserted}</div>
+                </div>
+                <div className="rounded border border-destructive/40 bg-destructive/5 p-2">
+                  <div className="text-[10px] text-destructive uppercase">Con error</div>
+                  <div className="text-lg font-semibold text-destructive">{summary.errors.length}</div>
+                </div>
+              </div>
+              {summary.skippedFk > 0 && (
+                <p className="text-muted-foreground">
+                  ⚠️ {summary.skippedFk} cuenta(s) importadas sin código agrupador SAT (no se encontró un código válido).
+                </p>
+              )}
+              {summary.errors.length > 0 && (
+                <div className="max-h-40 overflow-y-auto rounded border border-destructive/30 bg-destructive/5 p-2 space-y-1">
+                  {summary.errors.slice(0, 20).map((e, i) => (
+                    <div key={i} className="font-mono text-[10px] text-destructive">
+                      {e.sample && <b>{e.sample}: </b>}{e.message}
+                    </div>
+                  ))}
+                  {summary.errors.length > 20 && (
+                    <div className="text-[10px] text-muted-foreground">…y {summary.errors.length - 20} más</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button
-              disabled={!file || preview.length === 0 || importing}
-              onClick={() => {
-                if (replace && !confirm("Se eliminarán TODAS las cuentas actuales de esta empresa. ¿Continuar?")) return;
-                onImport(preview, replace);
-              }}
-            >
-              {importing ? "Importando…" : `Importar ${preview.length || ""}`}
+            <Button variant="outline" onClick={onClose} disabled={importing}>
+              {summary ? "Cerrar" : "Cancelar"}
             </Button>
+            {!summary && (
+              <Button
+                disabled={!file || preview.length === 0 || importing}
+                onClick={() => {
+                  if (replace && !confirm("Se eliminarán TODAS las cuentas actuales de esta empresa. ¿Continuar?")) return;
+                  onImport(preview, replace);
+                }}
+              >
+                {importing ? "Importando…" : `Importar ${preview.length || ""}`}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
