@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Ban, Lock, TrendingUp } from "lucide-react";
+import { AlertTriangle, Ban, Lock, TrendingUp, Download } from "lucide-react";
 
 export const Route = createFileRoute("/admin/credito-cobranza/cartera")({
   component: CarteraPage,
@@ -121,7 +122,11 @@ function CarteraPage() {
             <SelectItem value="critico">Crítico</SelectItem>
           </SelectContent>
         </Select>
+        <Button size="sm" variant="outline" className="ml-auto" onClick={() => exportCsv(filtered)}>
+          <Download className="h-4 w-4 mr-1" /> Exportar CSV
+        </Button>
       </div>
+
 
       <div className="rounded-lg border border-border overflow-x-auto">
         <table className="w-full text-sm">
@@ -205,4 +210,26 @@ function Kpi({
       <div className="mt-1 text-lg font-semibold font-mono">{value}</div>
     </div>
   );
+}
+
+function exportCsv(rows: Row[]) {
+  const headers = [
+    "Cliente", "Razón social", "Saldo", "Vencido", "Facturas abiertas", "Facturas vencidas",
+    "Límite crédito", "Uso %", "Días pago prom.", "Riesgo", "Bloqueado",
+  ];
+  const lines = rows.map((r) => [
+    r.nombre_comercial || r.razon_social,
+    r.razon_social,
+    r.saldo_total, r.saldo_vencido, r.facturas_abiertas, r.facturas_vencidas,
+    r.limite_credito, r.utilizacion_pct ?? "", r.dias_pago_prom, r.riesgo_calculado,
+    r.bloqueado ? "sí" : "no",
+  ].map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
+  const csv = [headers.join(","), ...lines].join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cartera-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
