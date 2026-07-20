@@ -40,6 +40,7 @@ type Poliza = {
 
 function PolizasPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
