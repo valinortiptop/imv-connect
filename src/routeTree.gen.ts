@@ -92,6 +92,7 @@ import { Route as AdminDevolucionesIdRouteImport } from './routes/admin.devoluci
 import { Route as AdminCreditoCobranzaPromesasRouteImport } from './routes/admin.credito-cobranza.promesas'
 import { Route as AdminCreditoCobranzaGestionesRouteImport } from './routes/admin.credito-cobranza.gestiones'
 import { Route as AdminCreditoCobranzaDashboardRouteImport } from './routes/admin.credito-cobranza.dashboard'
+import { Route as AdminCreditoCobranzaConfiguracionRouteImport } from './routes/admin.credito-cobranza.configuracion'
 import { Route as AdminCreditoCobranzaComplementosRouteImport } from './routes/admin.credito-cobranza.complementos'
 import { Route as AdminCreditoCobranzaCarteraRouteImport } from './routes/admin.credito-cobranza.cartera'
 import { Route as AdminCreditoCobranzaAutorizacionesRouteImport } from './routes/admin.credito-cobranza.autorizaciones'
@@ -133,6 +134,7 @@ import { Route as AdminCreditoCobranzaClientesIdRouteImport } from './routes/adm
 import { Route as AdminContabilidadPolizasIdRouteImport } from './routes/admin.contabilidad.polizas.$id'
 import { Route as AdminComprasFaltantesMotivosRouteImport } from './routes/admin.compras.faltantes.motivos'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
+import { Route as AdminCreditoCobranzaClientesIdTimelineRouteImport } from './routes/admin.credito-cobranza.clientes.$id.timeline'
 import { Route as AdminCreditoCobranzaClientesIdExpedienteRouteImport } from './routes/admin.credito-cobranza.clientes.$id.expediente'
 import { Route as ApiPublicMapsTileZXYRouteImport } from './routes/api/public/maps.tile.$z.$x.$y'
 
@@ -555,6 +557,12 @@ const AdminCreditoCobranzaDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AdminCreditoCobranzaRoute,
   } as any)
+const AdminCreditoCobranzaConfiguracionRoute =
+  AdminCreditoCobranzaConfiguracionRouteImport.update({
+    id: '/configuracion',
+    path: '/configuracion',
+    getParentRoute: () => AdminCreditoCobranzaRoute,
+  } as any)
 const AdminCreditoCobranzaComplementosRoute =
   AdminCreditoCobranzaComplementosRouteImport.update({
     id: '/complementos',
@@ -780,6 +788,12 @@ const AdminClientesIdPreciosRoute = AdminClientesIdPreciosRouteImport.update({
   path: '/precios',
   getParentRoute: () => AdminClientesIdRoute,
 } as any)
+const AdminCreditoCobranzaClientesIdTimelineRoute =
+  AdminCreditoCobranzaClientesIdTimelineRouteImport.update({
+    id: '/timeline',
+    path: '/timeline',
+    getParentRoute: () => AdminCreditoCobranzaClientesIdRoute,
+  } as any)
 const AdminCreditoCobranzaClientesIdExpedienteRoute =
   AdminCreditoCobranzaClientesIdExpedienteRouteImport.update({
     id: '/expediente',
@@ -892,6 +906,7 @@ export interface FileRoutesByFullPath {
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
   '/admin/credito-cobranza/complementos': typeof AdminCreditoCobranzaComplementosRoute
+  '/admin/credito-cobranza/configuracion': typeof AdminCreditoCobranzaConfiguracionRoute
   '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
@@ -918,6 +933,7 @@ export interface FileRoutesByFullPath {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesByTo {
@@ -1013,6 +1029,7 @@ export interface FileRoutesByTo {
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
   '/admin/credito-cobranza/complementos': typeof AdminCreditoCobranzaComplementosRoute
+  '/admin/credito-cobranza/configuracion': typeof AdminCreditoCobranzaConfiguracionRoute
   '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
@@ -1039,6 +1056,7 @@ export interface FileRoutesByTo {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRoutesById {
@@ -1142,6 +1160,7 @@ export interface FileRoutesById {
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
   '/admin/credito-cobranza/cartera': typeof AdminCreditoCobranzaCarteraRoute
   '/admin/credito-cobranza/complementos': typeof AdminCreditoCobranzaComplementosRoute
+  '/admin/credito-cobranza/configuracion': typeof AdminCreditoCobranzaConfiguracionRoute
   '/admin/credito-cobranza/dashboard': typeof AdminCreditoCobranzaDashboardRoute
   '/admin/credito-cobranza/gestiones': typeof AdminCreditoCobranzaGestionesRoute
   '/admin/credito-cobranza/promesas': typeof AdminCreditoCobranzaPromesasRoute
@@ -1168,6 +1187,7 @@ export interface FileRoutesById {
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
   '/admin/credito-cobranza/clientes/$id/expediente': typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  '/admin/credito-cobranza/clientes/$id/timeline': typeof AdminCreditoCobranzaClientesIdTimelineRoute
   '/api/public/maps/tile/$z/$x/$y': typeof ApiPublicMapsTileZXYRoute
 }
 export interface FileRouteTypes {
@@ -1272,6 +1292,7 @@ export interface FileRouteTypes {
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
     | '/admin/credito-cobranza/complementos'
+    | '/admin/credito-cobranza/configuracion'
     | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
@@ -1298,6 +1319,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1393,6 +1415,7 @@ export interface FileRouteTypes {
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
     | '/admin/credito-cobranza/complementos'
+    | '/admin/credito-cobranza/configuracion'
     | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
@@ -1419,6 +1442,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   id:
     | '__root__'
@@ -1521,6 +1545,7 @@ export interface FileRouteTypes {
     | '/admin/credito-cobranza/autorizaciones'
     | '/admin/credito-cobranza/cartera'
     | '/admin/credito-cobranza/complementos'
+    | '/admin/credito-cobranza/configuracion'
     | '/admin/credito-cobranza/dashboard'
     | '/admin/credito-cobranza/gestiones'
     | '/admin/credito-cobranza/promesas'
@@ -1547,6 +1572,7 @@ export interface FileRouteTypes {
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
     | '/admin/credito-cobranza/clientes/$id/expediente'
+    | '/admin/credito-cobranza/clientes/$id/timeline'
     | '/api/public/maps/tile/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
@@ -2149,6 +2175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreditoCobranzaDashboardRouteImport
       parentRoute: typeof AdminCreditoCobranzaRoute
     }
+    '/admin/credito-cobranza/configuracion': {
+      id: '/admin/credito-cobranza/configuracion'
+      path: '/configuracion'
+      fullPath: '/admin/credito-cobranza/configuracion'
+      preLoaderRoute: typeof AdminCreditoCobranzaConfiguracionRouteImport
+      parentRoute: typeof AdminCreditoCobranzaRoute
+    }
     '/admin/credito-cobranza/complementos': {
       id: '/admin/credito-cobranza/complementos'
       path: '/complementos'
@@ -2436,6 +2469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientesIdPreciosRouteImport
       parentRoute: typeof AdminClientesIdRoute
     }
+    '/admin/credito-cobranza/clientes/$id/timeline': {
+      id: '/admin/credito-cobranza/clientes/$id/timeline'
+      path: '/timeline'
+      fullPath: '/admin/credito-cobranza/clientes/$id/timeline'
+      preLoaderRoute: typeof AdminCreditoCobranzaClientesIdTimelineRouteImport
+      parentRoute: typeof AdminCreditoCobranzaClientesIdRoute
+    }
     '/admin/credito-cobranza/clientes/$id/expediente': {
       id: '/admin/credito-cobranza/clientes/$id/expediente'
       path: '/expediente'
@@ -2538,12 +2578,15 @@ const AdminComprasRouteWithChildren = AdminComprasRoute._addFileChildren(
 
 interface AdminCreditoCobranzaClientesIdRouteChildren {
   AdminCreditoCobranzaClientesIdExpedienteRoute: typeof AdminCreditoCobranzaClientesIdExpedienteRoute
+  AdminCreditoCobranzaClientesIdTimelineRoute: typeof AdminCreditoCobranzaClientesIdTimelineRoute
 }
 
 const AdminCreditoCobranzaClientesIdRouteChildren: AdminCreditoCobranzaClientesIdRouteChildren =
   {
     AdminCreditoCobranzaClientesIdExpedienteRoute:
       AdminCreditoCobranzaClientesIdExpedienteRoute,
+    AdminCreditoCobranzaClientesIdTimelineRoute:
+      AdminCreditoCobranzaClientesIdTimelineRoute,
   }
 
 const AdminCreditoCobranzaClientesIdRouteWithChildren =
@@ -2556,6 +2599,7 @@ interface AdminCreditoCobranzaRouteChildren {
   AdminCreditoCobranzaAutorizacionesRoute: typeof AdminCreditoCobranzaAutorizacionesRoute
   AdminCreditoCobranzaCarteraRoute: typeof AdminCreditoCobranzaCarteraRoute
   AdminCreditoCobranzaComplementosRoute: typeof AdminCreditoCobranzaComplementosRoute
+  AdminCreditoCobranzaConfiguracionRoute: typeof AdminCreditoCobranzaConfiguracionRoute
   AdminCreditoCobranzaDashboardRoute: typeof AdminCreditoCobranzaDashboardRoute
   AdminCreditoCobranzaGestionesRoute: typeof AdminCreditoCobranzaGestionesRoute
   AdminCreditoCobranzaPromesasRoute: typeof AdminCreditoCobranzaPromesasRoute
@@ -2569,6 +2613,8 @@ const AdminCreditoCobranzaRouteChildren: AdminCreditoCobranzaRouteChildren = {
     AdminCreditoCobranzaAutorizacionesRoute,
   AdminCreditoCobranzaCarteraRoute: AdminCreditoCobranzaCarteraRoute,
   AdminCreditoCobranzaComplementosRoute: AdminCreditoCobranzaComplementosRoute,
+  AdminCreditoCobranzaConfiguracionRoute:
+    AdminCreditoCobranzaConfiguracionRoute,
   AdminCreditoCobranzaDashboardRoute: AdminCreditoCobranzaDashboardRoute,
   AdminCreditoCobranzaGestionesRoute: AdminCreditoCobranzaGestionesRoute,
   AdminCreditoCobranzaPromesasRoute: AdminCreditoCobranzaPromesasRoute,

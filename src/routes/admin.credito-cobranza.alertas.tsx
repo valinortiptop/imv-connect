@@ -4,9 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, ListPlus } from "lucide-react";
 import { toast } from "sonner";
 import { listAlertasCobranzaFn, resolverAlertaFn } from "@/lib/cobranza-alertas.functions";
+import { generarKanbanDesdeAlertaFn } from "@/lib/cobranza-config.functions";
 
 export const Route = createFileRoute("/admin/credito-cobranza/alertas")({
   head: () => ({ meta: [{ title: "Alertas · Crédito y Cobranza" }] }),
@@ -24,6 +25,7 @@ function AlertasPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listAlertasCobranzaFn);
   const resolveFn = useServerFn(resolverAlertaFn);
+  const kanbanFn = useServerFn(generarKanbanDesdeAlertaFn);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["cobranza-alertas", "pendientes"],
@@ -34,6 +36,15 @@ function AlertasPage() {
     mutationFn: (id: string) => resolveFn({ data: { alertaId: id } }),
     onSuccess: () => {
       toast.success("Alerta resuelta");
+      qc.invalidateQueries({ queryKey: ["cobranza-alertas"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Error"),
+  });
+
+  const toKanban = useMutation({
+    mutationFn: (id: string) => kanbanFn({ data: { alertaId: id } }),
+    onSuccess: (r: any) => {
+      toast.success(r?.existing ? "Ya existía tarjeta Kanban" : "Tarjeta Kanban creada");
       qc.invalidateQueries({ queryKey: ["cobranza-alertas"] });
     },
     onError: (e: any) => toast.error(e?.message || "Error"),
@@ -75,6 +86,15 @@ function AlertasPage() {
                       <Link to="/admin/credito-cobranza/clientes/$id" params={{ id: a.cliente_id }}>
                         <ExternalLink className="h-3 w-3 mr-1" /> Abrir
                       </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toKanban.mutate(a.id)}
+                      disabled={toKanban.isPending || !!a.kanban_card_id}
+                      title={a.kanban_card_id ? "Ya tiene tarjeta" : "Enviar a Kanban"}
+                    >
+                      <ListPlus className="h-3 w-3 mr-1" /> Kanban
                     </Button>
                     <Button size="sm" onClick={() => resolver.mutate(a.id)} disabled={resolver.isPending}>
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Resolver
