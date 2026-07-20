@@ -798,6 +798,11 @@ function ImportCsvDialog({
                   ⚠️ {summary.skippedFk} cuenta(s) importadas sin código agrupador SAT (no se encontró un código válido).
                 </p>
               )}
+              {summary.deleteSkipped > 0 && (
+                <p className="text-muted-foreground">
+                  ⚠️ {summary.deleteSkipped} cuenta(s) previas no se borraron porque ya tienen movimientos en pólizas (se actualizaron en su lugar).
+                </p>
+              )}
               {summary.errors.length > 0 && (
                 <div className="max-h-40 overflow-y-auto rounded border border-destructive/30 bg-destructive/5 p-2 space-y-1">
                   {summary.errors.slice(0, 20).map((e, i) => (
