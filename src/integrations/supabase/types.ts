@@ -10278,21 +10278,42 @@ export type Database = {
         }
         Returns: undefined
       }
-      balanza_de_comprobacion: {
-        Args: { _desde: string; _empresa: string; _hasta: string }
-        Returns: {
-          abonos: number
-          cargos: number
-          codigo: string
-          codigo_agrupador: string
-          cuenta_id: string
-          naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
-          nivel: number
-          nombre: string
-          saldo_final: number
-          saldo_inicial: number
-        }[]
-      }
+      balanza_de_comprobacion:
+        | {
+            Args: { _desde: string; _empresa: string; _hasta: string }
+            Returns: {
+              abonos: number
+              cargos: number
+              codigo: string
+              codigo_agrupador: string
+              cuenta_id: string
+              naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+              nivel: number
+              nombre: string
+              saldo_final: number
+              saldo_inicial: number
+            }[]
+          }
+        | {
+            Args: {
+              _desde: string
+              _empresa: string
+              _hasta: string
+              _incluir_borradores?: boolean
+            }
+            Returns: {
+              abonos: number
+              cargos: number
+              codigo: string
+              codigo_agrupador: string
+              cuenta_id: string
+              naturaleza: Database["public"]["Enums"]["cta_naturaleza"]
+              nivel: number
+              nombre: string
+              saldo_final: number
+              saldo_inicial: number
+            }[]
+          }
       bank_account_saldo: { Args: { _cuenta: string }; Returns: number }
       bootstrap_admin: { Args: never; Returns: undefined }
       crear_factura_desde_pedido: {
@@ -10425,20 +10446,41 @@ export type Database = {
           tipo: Database["public"]["Enums"]["impuesto_tipo"]
         }[]
       }
-      libro_mayor_cuenta: {
-        Args: { _cuenta: string; _desde: string; _hasta: string }
-        Returns: {
-          abono: number
-          cargo: number
-          concepto: string
-          fecha: string
-          folio: string
-          poliza_id: string
-          saldo: number
-          tipo: Database["public"]["Enums"]["poliza_tipo"]
-          uuid_cfdi: string
-        }[]
-      }
+      libro_mayor_cuenta:
+        | {
+            Args: { _cuenta: string; _desde: string; _hasta: string }
+            Returns: {
+              abono: number
+              cargo: number
+              concepto: string
+              fecha: string
+              folio: string
+              poliza_id: string
+              saldo: number
+              tipo: Database["public"]["Enums"]["poliza_tipo"]
+              uuid_cfdi: string
+            }[]
+          }
+        | {
+            Args: {
+              _cuenta: string
+              _desde: string
+              _hasta: string
+              _incluir_borradores?: boolean
+            }
+            Returns: {
+              abono: number
+              cargo: number
+              concepto: string
+              estado: string
+              fecha: string
+              folio: string
+              poliza_id: string
+              saldo: number
+              tipo: Database["public"]["Enums"]["poliza_tipo"]
+              uuid_cfdi: string
+            }[]
+          }
       list_orders_to_fulfill: {
         Args: { p_horizon_days?: number }
         Returns: {
