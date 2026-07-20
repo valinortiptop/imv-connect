@@ -295,7 +295,6 @@ function CreditoForm({ initial, clienteId, onSave, pending }: { initial: any; cl
           <label htmlFor="rec" className="text-sm font-medium">Enviar recordatorios de pago</label>
         </div>
       </div>
-      </div>
       <Button disabled={pending} className="gap-2" onClick={() => onSave({
         limite_credito: Number(limite) || 0,
         dias_credito: Number(dias) || 30,
