@@ -137,16 +137,27 @@ function CuentasPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  type ImportSummary = {
+    total: number;
+    inserted: number;
+    skippedFk: number;
+    errors: { chunk: number; message: string; sample?: string }[];
+  };
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+
   const importCsv = useMutation({
-    mutationFn: async ({ rows, replace }: { rows: Partial<Cuenta>[]; replace: boolean }) => {
+    mutationFn: async ({ rows, replace }: { rows: Partial<Cuenta>[]; replace: boolean }): Promise<ImportSummary> => {
       if (!empresaId) throw new Error("Selecciona una empresa");
       if (rows.length === 0) throw new Error("El archivo no contiene filas válidas");
+      setImportSummary(null);
+      setImportProgress({ done: 0, total: rows.length });
+
       if (replace) {
         const { error: eDel } = await supabase
           .from("cuentas_contables" as any).delete().eq("empresa_id", empresaId);
-        if (eDel) throw eDel;
+        if (eDel) throw new Error(`No se pudo borrar el catálogo previo: ${eDel.message}`);
       }
-      // Insert padres antes que hijos: ordenar por longitud de código
       const sorted = [...rows].sort((a, b) => (a.codigo?.length ?? 0) - (b.codigo?.length ?? 0));
       const payload = sorted.map((c) => ({
         empresa_id: empresaId,
@@ -160,18 +171,58 @@ function CuentasPage() {
         activa: c.activa ?? true,
         saldo_inicial: c.saldo_inicial ?? 0,
       }));
-      // Insertar en lotes
-      const chunk = 200;
+
+      const errors: ImportSummary["errors"] = [];
+      let inserted = 0;
+      let skippedFk = 0;
+      const chunk = 100;
       for (let i = 0; i < payload.length; i += chunk) {
-        const { error } = await supabase
+        const slice = payload.slice(i, i + chunk);
+        const chunkIdx = Math.floor(i / chunk) + 1;
+        const { error, data } = await supabase
           .from("cuentas_contables" as any)
-          .upsert(payload.slice(i, i + chunk), { onConflict: "empresa_id,codigo" });
-        if (error) throw error;
+          .upsert(slice, { onConflict: "empresa_id,codigo" })
+          .select("id");
+        if (error) {
+          for (const row of slice) {
+            const { error: e2 } = await supabase
+              .from("cuentas_contables" as any)
+              .upsert(row, { onConflict: "empresa_id,codigo" });
+            if (e2) {
+              if ((e2 as any).code === "23503" || /foreign key|violates/i.test(e2.message)) {
+                const { error: e3 } = await supabase
+                  .from("cuentas_contables" as any)
+                  .upsert({ ...row, codigo_agrupador: null }, { onConflict: "empresa_id,codigo" });
+                if (e3) {
+                  errors.push({ chunk: chunkIdx, message: e3.message, sample: row.codigo });
+                } else {
+                  inserted++;
+                  skippedFk++;
+                }
+              } else {
+                errors.push({ chunk: chunkIdx, message: e2.message, sample: row.codigo });
+              }
+            } else {
+              inserted++;
+            }
+          }
+        } else {
+          inserted += (data?.length ?? slice.length);
+        }
+        setImportProgress({ done: Math.min(payload.length, i + chunk), total: payload.length });
       }
-      return payload.length;
+      return { total: payload.length, inserted, skippedFk, errors };
     },
-    onSuccess: (n) => { toast.success(`${n} cuentas importadas`); qc.invalidateQueries({ queryKey: ["cuentas"] }); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: (s) => {
+      setImportSummary(s);
+      if (s.errors.length === 0) toast.success(`${s.inserted} cuentas importadas`);
+      else toast.warning(`${s.inserted} importadas · ${s.errors.length} con errores`);
+      qc.invalidateQueries({ queryKey: ["cuentas"] });
+    },
+    onError: (e: Error) => {
+      setImportProgress(null);
+      toast.error(e.message);
+    },
   });
 
   const [importOpen, setImportOpen] = useState(false);
