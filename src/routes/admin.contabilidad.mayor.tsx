@@ -89,6 +89,10 @@ function MayorPage() {
             </div>
             <div><Label className="text-xs">Desde</Label><Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></div>
             <div><Label className="text-xs">Hasta</Label><Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></div>
+            <label className="flex items-center gap-2 text-xs cursor-pointer pb-2">
+              <input type="checkbox" checked={incluirBorradores} onChange={(e) => setIncluirBorradores(e.target.checked)} className="h-4 w-4" />
+              Incluir borradores
+            </label>
           </div>
 
           {!cuentaId ? (
