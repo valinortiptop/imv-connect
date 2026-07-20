@@ -91,17 +91,22 @@ function Cliente360() {
           <ArrowLeft className="h-3.5 w-3.5" /> Cartera
         </Link>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/admin/credito-cobranza/clientes/$id/timeline" params={{ id }}>
-              <FileText className="h-3.5 w-3.5 mr-1" /> Timeline
-            </Link>
-          </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/admin/credito-cobranza/clientes/$id/expediente" params={{ id }}>
-              <FileText className="h-3.5 w-3.5 mr-1" /> Expediente digital
-            </Link>
-          </Button>
+          <Link
+            to="/admin/credito-cobranza/clientes/$id/timeline"
+            params={{ id }}
+            className="inline-flex items-center h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileText className="h-3.5 w-3.5 mr-1" /> Timeline
+          </Link>
+          <Link
+            to="/admin/credito-cobranza/clientes/$id/expediente"
+            params={{ id }}
+            className="inline-flex items-center h-9 px-3 rounded-md border border-input bg-background text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileText className="h-3.5 w-3.5 mr-1" /> Expediente digital
+          </Link>
         </div>
+
       </div>
 
 
