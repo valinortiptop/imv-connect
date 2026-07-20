@@ -62,7 +62,7 @@ function PolizasPage() {
   const { selected } = useSelectedEmpresa();
   const empresaId = selected?.id;
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
-  const [estadoFiltro, setEstadoFiltro] = useState<string>("todos");
+  const [origenFiltro, setOrigenFiltro] = useState<string>("todos");
   const [search, setSearch] = useState("");
 
   const { data: polizas = [], isLoading } = useQuery({
@@ -71,7 +71,7 @@ function PolizasPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("polizas" as any)
-        .select("id, tipo, folio, fecha, concepto, estado, total_cargos, total_abonos")
+        .select("id, tipo, folio, fecha, concepto, estado, total_cargos, total_abonos, origen, created_at, updated_at")
         .eq("empresa_id", empresaId!)
         .order("fecha", { ascending: false })
         .order("folio", { ascending: false });
@@ -84,10 +84,10 @@ function PolizasPage() {
     const q = search.trim().toLowerCase();
     return polizas.filter((p) =>
       (tipoFiltro === "todos" || p.tipo === tipoFiltro) &&
-      (estadoFiltro === "todos" || p.estado === estadoFiltro) &&
+      (origenFiltro === "todos" || clasificarOrigen(p) === origenFiltro) &&
       (!q || p.folio.toLowerCase().includes(q) || p.concepto.toLowerCase().includes(q))
     );
-  }, [polizas, tipoFiltro, estadoFiltro, search]);
+  }, [polizas, tipoFiltro, origenFiltro, search]);
 
   const crear = useMutation({
     mutationFn: async (tipo: "ingreso" | "egreso" | "diario") => {
