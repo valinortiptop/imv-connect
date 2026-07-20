@@ -1149,6 +1149,7 @@ export default function StockEntries() {
                   <TableRow className="border-border">
                     <TableHead className="text-foreground font-semibold text-xs">Producto</TableHead>
                     <TableHead className="text-foreground font-semibold text-xs w-[90px]">Bultos</TableHead>
+                    <TableHead className="text-foreground font-semibold text-xs w-[130px]">Costo/bulto c/IVA</TableHead>
                     <TableHead className="text-foreground font-semibold text-xs">Notas</TableHead>
                     <TableHead className="text-foreground font-semibold text-xs w-[40px]"></TableHead>
                   </TableRow>
@@ -1167,6 +1168,20 @@ export default function StockEntries() {
                           value={li.quantity}
                           onChange={e => updateLineItemQuantity(i, parseInt(e.target.value) || 1)}
                           className="h-7 w-[75px]"
+                        />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={li.cost_with_iva ?? ""}
+                          onChange={e => {
+                            const v = e.target.value;
+                            updateLineItemCost(i, v === "" ? null : parseFloat(v));
+                          }}
+                          placeholder="0.00"
+                          className="h-7 w-[115px]"
                         />
                       </TableCell>
                       <TableCell className="py-1.5">
