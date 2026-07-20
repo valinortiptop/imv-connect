@@ -477,7 +477,7 @@ function CuentaDialog({
 
 // ---------- CSV Import ----------
 
-function parseCsv(text: string): Partial<Cuenta>[] {
+function parseCsv(text: string, satCodes: SATCode[] = []): Partial<Cuenta>[] {
   // Split rows respecting quoted commas
   const rows: string[][] = [];
   let cur: string[] = [], field = "", inQ = false;
