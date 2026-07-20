@@ -229,7 +229,7 @@ function CuentasPage() {
         }
         setImportProgress({ done: Math.min(payload.length, i + chunk), total: payload.length });
       }
-      return { total: payload.length, inserted, skippedFk, errors };
+      return { total: payload.length, inserted, skippedFk, deleteSkipped, errors };
     },
     onSuccess: (s) => {
       setImportSummary(s);
