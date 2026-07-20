@@ -619,6 +619,13 @@ export type Database = {
             foreignKeyName: "client_price_overrides_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -705,6 +712,107 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_productos"
             referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      cliente_credito: {
+        Row: {
+          bloqueado: boolean
+          cliente_id: string
+          condicion_pago: string | null
+          created_at: string
+          dias_credito: number
+          gestor_id: string | null
+          limite_credito: number
+          motivo_bloqueo: string | null
+          notas: string | null
+          riesgo_manual:
+            | Database["public"]["Enums"]["cliente_riesgo_nivel"]
+            | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bloqueado?: boolean
+          cliente_id: string
+          condicion_pago?: string | null
+          created_at?: string
+          dias_credito?: number
+          gestor_id?: string | null
+          limite_credito?: number
+          motivo_bloqueo?: string | null
+          notas?: string | null
+          riesgo_manual?:
+            | Database["public"]["Enums"]["cliente_riesgo_nivel"]
+            | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bloqueado?: boolean
+          cliente_id?: string
+          condicion_pago?: string | null
+          created_at?: string
+          dias_credito?: number
+          gestor_id?: string | null
+          limite_credito?: number
+          motivo_bloqueo?: string | null
+          notas?: string | null
+          riesgo_manual?:
+            | Database["public"]["Enums"]["cliente_riesgo_nivel"]
+            | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -856,6 +964,206 @@ export type Database = {
           },
         ]
       }
+      cobranza_gestiones: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          factura_id: string | null
+          id: string
+          monto_comprometido: number | null
+          next_action_at: string | null
+          notas: string | null
+          resultado:
+            | Database["public"]["Enums"]["cobranza_gestion_resultado"]
+            | null
+          tipo: Database["public"]["Enums"]["cobranza_gestion_tipo"]
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          factura_id?: string | null
+          id?: string
+          monto_comprometido?: number | null
+          next_action_at?: string | null
+          notas?: string | null
+          resultado?:
+            | Database["public"]["Enums"]["cobranza_gestion_resultado"]
+            | null
+          tipo?: Database["public"]["Enums"]["cobranza_gestion_tipo"]
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          factura_id?: string | null
+          id?: string
+          monto_comprometido?: number | null
+          next_action_at?: string | null
+          notas?: string | null
+          resultado?:
+            | Database["public"]["Enums"]["cobranza_gestion_resultado"]
+            | null
+          tipo?: Database["public"]["Enums"]["cobranza_gestion_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cobranza_promesas_pago: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          cumplida_at: string | null
+          estado: Database["public"]["Enums"]["promesa_estado"]
+          factura_id: string | null
+          fecha_promesa: string
+          gestion_id: string | null
+          id: string
+          monto: number
+          monto_cumplido: number
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          cumplida_at?: string | null
+          estado?: Database["public"]["Enums"]["promesa_estado"]
+          factura_id?: string | null
+          fecha_promesa: string
+          gestion_id?: string | null
+          id?: string
+          monto: number
+          monto_cumplido?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          cumplida_at?: string | null
+          estado?: Database["public"]["Enums"]["promesa_estado"]
+          factura_id?: string | null
+          fecha_promesa?: string
+          gestion_id?: string | null
+          id?: string
+          monto?: number
+          monto_cumplido?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_gestion_id_fkey"
+            columns: ["gestion_id"]
+            isOneToOne: false
+            referencedRelation: "cobranza_gestiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_migrations: {
         Row: {
           cliente_id: string
@@ -913,6 +1221,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "competitor_migrations_cliente_id_fkey"
@@ -1125,6 +1440,104 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_productos"
             referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      credito_autorizaciones: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          dias: number | null
+          estado: Database["public"]["Enums"]["autorizacion_estado"]
+          id: string
+          monto: number | null
+          motivo: string
+          respuesta: string | null
+          resuelto_at: string | null
+          resuelto_por: string | null
+          solicitado_at: string
+          solicitado_por: string | null
+          tipo: Database["public"]["Enums"]["autorizacion_tipo"]
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          dias?: number | null
+          estado?: Database["public"]["Enums"]["autorizacion_estado"]
+          id?: string
+          monto?: number | null
+          motivo: string
+          respuesta?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          solicitado_at?: string
+          solicitado_por?: string | null
+          tipo: Database["public"]["Enums"]["autorizacion_tipo"]
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          dias?: number | null
+          estado?: Database["public"]["Enums"]["autorizacion_estado"]
+          id?: string
+          monto?: number | null
+          motivo?: string
+          respuesta?: string | null
+          resuelto_at?: string | null
+          resuelto_por?: string | null
+          solicitado_at?: string
+          solicitado_por?: string | null
+          tipo?: Database["public"]["Enums"]["autorizacion_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1781,6 +2194,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -2422,6 +2842,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "facturas_cliente_id_fkey"
@@ -4457,6 +4884,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -4786,6 +5220,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "precios_cliente_cliente_id_fkey"
@@ -6377,6 +6818,13 @@ export type Database = {
             foreignKeyName: "rep_client_insights_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: true
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -6669,6 +7117,13 @@ export type Database = {
             foreignKeyName: "rep_visits_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -6933,6 +7388,13 @@ export type Database = {
             foreignKeyName: "sales_history_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -7157,6 +7619,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "shortage_events_cliente_id_fkey"
@@ -8635,6 +9104,13 @@ export type Database = {
             foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -9107,6 +9583,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -9203,6 +9686,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "pedidos_cliente_id_fkey"
@@ -9530,6 +10020,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -9539,6 +10036,59 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
+      v_cliente_credito_360: {
+        Row: {
+          bloqueado: boolean | null
+          cliente_id: string | null
+          dias_credito: number | null
+          dias_pago_prom: number | null
+          facturas_abiertas: number | null
+          facturas_vencidas: number | null
+          gestor_id: string | null
+          limite_credito: number | null
+          motivo_bloqueo: string | null
+          nombre_comercial: string | null
+          promesas_cumplidas: number | null
+          promesas_incumplidas: number | null
+          promesas_pendientes: number | null
+          razon_social: string | null
+          representante_id: string | null
+          riesgo_calculado: string | null
+          riesgo_manual:
+            | Database["public"]["Enums"]["cliente_riesgo_nivel"]
+            | null
+          saldo_total: number | null
+          saldo_vencido: number | null
+          ultima_gestion_at: string | null
+          ultima_gestion_tipo:
+            | Database["public"]["Enums"]["cobranza_gestion_tipo"]
+            | null
+          utilizacion_pct: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_credito_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
           },
         ]
       }
@@ -9675,6 +10225,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -9780,6 +10337,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "pedidos_cliente_id_fkey"
@@ -9964,6 +10528,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -10070,6 +10641,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "pedidos_cliente_id_fkey"
@@ -10608,6 +11186,12 @@ export type Database = {
         | "logistica"
         | "contabilidad"
         | "viewer"
+      autorizacion_estado: "solicitada" | "aprobada" | "rechazada" | "cancelada"
+      autorizacion_tipo:
+        | "desbloqueo"
+        | "incremento_limite"
+        | "excepcion_credito"
+        | "ampliacion_plazo"
       bank_movement_kind:
         | "entrada"
         | "salida"
@@ -10617,6 +11201,23 @@ export type Database = {
         | "comision"
         | "interes"
         | "ajuste"
+      cliente_riesgo_nivel: "bajo" | "medio" | "alto" | "critico"
+      cobranza_gestion_resultado:
+        | "contactado"
+        | "no_contesta"
+        | "buzon"
+        | "promesa_pago"
+        | "disputa"
+        | "pago_realizado"
+        | "sin_respuesta"
+        | "otro"
+      cobranza_gestion_tipo:
+        | "llamada"
+        | "correo"
+        | "whatsapp"
+        | "sms"
+        | "visita"
+        | "otro"
       cta_naturaleza: "deudora" | "acreedora"
       devolucion_estado: "borrador" | "aplicada" | "cancelada"
       factura_estado:
@@ -10668,6 +11269,7 @@ export type Database = {
       periodo_estado: "abierto" | "cerrado" | "enviado_sat"
       poliza_estado: "borrador" | "asentada" | "cancelada"
       poliza_tipo: "ingreso" | "egreso" | "diario"
+      promesa_estado: "pendiente" | "cumplida" | "incumplida" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -10804,6 +11406,13 @@ export const Constants = {
         "contabilidad",
         "viewer",
       ],
+      autorizacion_estado: ["solicitada", "aprobada", "rechazada", "cancelada"],
+      autorizacion_tipo: [
+        "desbloqueo",
+        "incremento_limite",
+        "excepcion_credito",
+        "ampliacion_plazo",
+      ],
       bank_movement_kind: [
         "entrada",
         "salida",
@@ -10813,6 +11422,25 @@ export const Constants = {
         "comision",
         "interes",
         "ajuste",
+      ],
+      cliente_riesgo_nivel: ["bajo", "medio", "alto", "critico"],
+      cobranza_gestion_resultado: [
+        "contactado",
+        "no_contesta",
+        "buzon",
+        "promesa_pago",
+        "disputa",
+        "pago_realizado",
+        "sin_respuesta",
+        "otro",
+      ],
+      cobranza_gestion_tipo: [
+        "llamada",
+        "correo",
+        "whatsapp",
+        "sms",
+        "visita",
+        "otro",
       ],
       cta_naturaleza: ["deudora", "acreedora"],
       devolucion_estado: ["borrador", "aplicada", "cancelada"],
@@ -10863,6 +11491,7 @@ export const Constants = {
       periodo_estado: ["abierto", "cerrado", "enviado_sat"],
       poliza_estado: ["borrador", "asentada", "cancelada"],
       poliza_tipo: ["ingreso", "egreso", "diario"],
+      promesa_estado: ["pendiente", "cumplida", "incumplida", "cancelada"],
     },
   },
 } as const
