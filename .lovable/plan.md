@@ -1,44 +1,50 @@
-## Goal
-Rebuild the two "General" dashboards (`/admin/clientes-dashboard`, `/admin/almacen-dashboard`) so they visually match the ALPHA ERP reference sketches: colorful 3D icons instead of monochrome Lucide glyphs, cleaner arrow layout, and the same node/edge topology already wired to live counts and routes.
+## Problem
 
-## 1. Icon library (`src/assets/flow-icons/`)
+The current `FlowDiagram` renders its SVG arrow layer with `viewBox="0 0 100 100"` and `preserveAspectRatio="none"`, so strokes get squashed non-uniformly and arrowheads collapse into tiny dashes. Combined with wide grid gaps, the result on `/admin/clientes-dashboard` looks like icons floating with faint hyphens between them — nothing like the ALPHA ERP reference where thick dark arrows visibly connect adjacent icons and each node has a green dropdown chevron beneath it.
 
-Use the user's 8 uploaded 3D icons via Lovable Assets pointers, then generate the remaining nodes in the same 3D-clay style (isometric, soft shadows, blue/teal/orange palette, transparent background).
+## Redesign approach
 
-Mapping of uploaded icons:
-- Address book (person) → **Clientes** / **Prospectos** (tinted variant)
-- Invoice with $ → **Facturas** / **Notas de venta**
-- Doc with % + refresh → **Devoluciones, descuentos y anticipos** / **Cotizaciones**
-- Hand truck with box → **Remisiones**
-- Doc with person + box check → **Pedidos**
-- Warehouse → **Almacenes**
-- Forklift → **Movimientos**
-- (spare) → reuse for **Inventario físico** check clipboard
+Rebuild `src/components/dashboards/FlowDiagram.tsx` around a fixed pixel grid so arrows render at real, uniform thickness — matching the reference exactly. No changes to node/edge data in the two dashboard route files; the diagram component alone drives the visual match.
 
-Icons to generate (fast tier, transparent PNG, matching 3D-clay style):
-Clientes dashboard: Seguimientos de notas, Seguimiento de cotizaciones, Consignaciones, Devolución de consignaciones, Mapas de entrega, Guías de embarque, Productos/servicios, Seguimiento de CxC, Relación masiva de depósitos, Aplicación de cobranza, Notas de cargo.
-Almacén dashboard: Integración de costos, Inventario físico, Consulta de inventario, Guías de embarque (reuse), Productos/servicios (reuse).
+### Layout
 
-Each icon saved as `src/assets/flow-icons/<slug>.png` with matching `.asset.json` pointer.
+- Fixed cell size: `CELL_W = 170px`, `CELL_H = 150px` (icon ~72px + label + chevron).
+- Grid container: `width = cols * CELL_W`, `height = rows * CELL_H`, no CSS aspect-ratio hack.
+- Wrap in horizontal scroll container so 7×3 Clientes grid stays legible on narrower screens.
+- Tight gaps (nodes sit at cell centers; icons ~80px so adjacent icons nearly touch, like the reference).
 
-## 2. `FlowDiagram` component update
+### Arrows (the main fix)
 
-Extend `FlowNode` to accept either a `LucideIcon` or an image URL:
-```ts
-icon: LucideIcon | { src: string; alt?: string };
-```
-Renderer picks `<img>` (h-12 w-12, drop-shadow) when object, else the existing Lucide path. Node card gets slightly bigger padding and a taller minRow to give the 3D icons room. Everything else (grid, edges, counts, accents) stays.
+- SVG overlay sized to exact pixel dimensions of the grid, `viewBox` matching 1:1, `preserveAspectRatio="xMidYMid meet"`.
+- Stroke: `hsl(var(--muted-foreground))` at `2.5px`, opacity `0.85`, round caps/joins.
+- Real triangular arrowhead marker sized `10×10`, filled same color, placed at path end (and start when bidirectional).
+- Orthogonal path builder unchanged in intent (straight for same row/col; L-shape with `hv`/`vh` bend) but computed in pixels with a proper icon-edge padding (`~44px`) so arrows land right at the icon border, short and punchy like the reference.
+- For same-row adjacent nodes (the common case), arrows become short horizontal segments between icons — visually dominant, exactly matching the sketch.
 
-## 3. Route rewires
+### Nodes
 
-Update `src/routes/admin.clientes-dashboard.tsx` and `src/routes/admin.almacen-dashboard.tsx`:
-- Swap each node's `icon:` to the corresponding image asset.
-- Keep current `col`/`row`, `to`, `count`, `accent`, edges (topology already matches the reference).
-- Bump card size (via FlowDiagram) so the diagram breathes like the sketch.
+- Column-flex: icon (72–80px, drop-shadow), label below (12px, medium), optional sublabel (10px muted).
+- Add the small green dropdown chevron indicator (`▽` inside a rounded rectangle) below the label for active/linked nodes — this is the recurring visual motif in the reference under Consignaciones, Pedidos, Facturas, Remisiones, etc. Rendered as a tiny inline SVG, not clickable (decorative parity with reference).
+- Count badge: keep, repositioned to top-right of icon (small, primary color).
+- Disabled nodes: 45% opacity, no chevron, no link.
+- Remove all remaining border/card styling and hover borders — just icon + text.
 
-## 4. Out of scope
-No route/data/logic changes. No sidebar changes. Business rules (inventory/accounting triggers) untouched.
+### Behavior preserved
 
-## Technical notes
-- Icon generation via `imagegen--generate_image` fast tier, 1024×1024, `transparent_background=true`, prompt template: *"3D clay-style app icon, soft matte plastic, isometric, blue/teal/orange palette, subtle drop shadow, centered on a clean transparent background — <subject>"* to keep the set visually consistent.
-- Assets registered with `lovable-assets create` so binaries stay out of the repo; imported as `import icon from "@/assets/flow-icons/xxx.png.asset.json"` and passed as `{ src: icon.url }`.
+- Same `FlowNode` / `FlowEdge` types → `admin.clientes-dashboard.tsx` and `admin.almacen-dashboard.tsx` need no data changes.
+- Click on node still navigates via `<Link to={n.to}>`.
+- Live counts from the existing `useQuery` still flow through.
+
+### Files changed
+
+- `src/components/dashboards/FlowDiagram.tsx` — full rewrite of layout + SVG (single file).
+
+### Out of scope
+
+- Icon assets (already correct).
+- Dashboard node/edge topology (already matches the reference structure).
+- Almacén dashboard grid — automatically inherits the same visual treatment.
+
+## Verification
+
+After the change I'll capture `/admin/clientes-dashboard` via Playwright at 1400px wide and compare against `image-215.png`: arrows must be visibly thick and connect adjacent icons directly, green chevrons must sit under labels, layout must read as one continuous flowchart instead of a sparse icon grid.
