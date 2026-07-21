@@ -142,7 +142,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
               markerHeight="6"
               orient="auto"
             >
-              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--muted-foreground))" />
+              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--foreground))" fillOpacity="0.75" />
             </marker>
             <marker
               id="flow-arrow-start"
@@ -153,7 +153,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
               markerHeight="6"
               orient="auto-start-reverse"
             >
-              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--muted-foreground))" />
+              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--foreground))" fillOpacity="0.75" />
             </marker>
           </defs>
           {edges.map((e, i) => {
