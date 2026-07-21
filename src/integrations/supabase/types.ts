@@ -11353,8 +11353,21 @@ export type Database = {
         Args: { _almacen: string; _delta: number; _producto: string }
         Returns: undefined
       }
+      _cfg_text: { Args: { p_key: string }; Returns: string }
       _find_cuenta: {
-        Args: { _agrupador: string; _empresa: string }
+        Args: { p_codigo: string; p_empresa: string }
+        Returns: string
+      }
+      _find_periodo: {
+        Args: { p_empresa: string; p_fecha: string }
+        Returns: string
+      }
+      _next_poliza_folio: {
+        Args: {
+          p_empresa: string
+          p_fecha: string
+          p_tipo: Database["public"]["Enums"]["poliza_tipo"]
+        }
         Returns: string
       }
       admin_list_all_routes: {
@@ -11467,6 +11480,10 @@ export type Database = {
           p_rfc?: string
         }
         Returns: string
+      }
+      create_remision_inventory_movs: {
+        Args: { p_trip_id: string }
+        Returns: number
       }
       current_user_roles: {
         Args: never
@@ -11681,6 +11698,8 @@ export type Database = {
         Returns: Json
       }
       polizas_recalc: { Args: { _poliza: string }; Returns: undefined }
+      post_factura_poliza: { Args: { p_factura_id: string }; Returns: string }
+      post_pago_poliza: { Args: { p_pago_id: string }; Returns: string }
       recibir_oc: { Args: { _items: Json; _oc: string }; Returns: undefined }
       remover_rol: {
         Args: {
