@@ -70,6 +70,7 @@ import { Route as AdminCreditoCobranzaRouteImport } from './routes/admin.credito
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
+import { Route as AdminClientesDashboardRouteImport } from './routes/admin.clientes-dashboard'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminCentralesRouteImport } from './routes/admin.centrales'
 import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
@@ -441,6 +442,11 @@ const AdminComisionesRoute = AdminComisionesRouteImport.update({
 const AdminCobranzaRoute = AdminCobranzaRouteImport.update({
   id: '/cobranza',
   path: '/cobranza',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClientesDashboardRoute = AdminClientesDashboardRouteImport.update({
+  id: '/clientes-dashboard',
+  path: '/clientes-dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminClientesRoute = AdminClientesRouteImport.update({
@@ -818,6 +824,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
@@ -945,6 +952,7 @@ export interface FileRoutesByTo {
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/cuenta': typeof AdminCuentaRoute
@@ -1072,6 +1080,7 @@ export interface FileRoutesById {
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
@@ -1204,6 +1213,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
@@ -1331,6 +1341,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/cuenta'
@@ -1457,6 +1468,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
@@ -2019,6 +2031,13 @@ declare module '@tanstack/react-router' {
       path: '/cobranza'
       fullPath: '/admin/cobranza'
       preLoaderRoute: typeof AdminCobranzaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clientes-dashboard': {
+      id: '/admin/clientes-dashboard'
+      path: '/clientes-dashboard'
+      fullPath: '/admin/clientes-dashboard'
+      preLoaderRoute: typeof AdminClientesDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/clientes': {
@@ -2689,6 +2708,7 @@ interface AdminRouteChildren {
   AdminCatalogoRoute: typeof AdminCatalogoRoute
   AdminCentralesRoute: typeof AdminCentralesRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
+  AdminClientesDashboardRoute: typeof AdminClientesDashboardRoute
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
@@ -2752,6 +2772,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCatalogoRoute: AdminCatalogoRoute,
   AdminCentralesRoute: AdminCentralesRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
+  AdminClientesDashboardRoute: AdminClientesDashboardRoute,
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
