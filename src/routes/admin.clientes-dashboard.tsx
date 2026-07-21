@@ -53,8 +53,8 @@ function ClientesDashboard() {
     { id: "pedidos",      label: "Pedidos", icon: FileText, col: 3, row: 2, to: "/admin/pedidos", count: data?.pedidosAbiertos, accent: "primary" },
     { id: "factura",      label: "Facturas", sublabel: "Costo de venta", icon: ReceiptText, col: 4, row: 2, to: "/admin/facturas", count: data?.facturasMes, accent: "success" },
     { id: "segCxc",       label: "Seguimiento de cuentas por cobrar", icon: ListChecks, col: 5, row: 2, to: "/admin/credito-cobranza/cartera", count: data?.cxcVencida, accent: "danger" },
-    { id: "depositos",    label: "Relación masiva de depósitos en banca", icon: Landmark, col: 6, row: 2, to: "/admin/bancos", accent: "muted" },
-    { id: "aplicaCob",    label: "Aplicación de cobranza", icon: Banknote, col: 7, row: 2, to: "/admin/credito-cobranza/aplicacion", accent: "primary" },
+    { id: "depositos",    label: "Relación masiva de depósitos en banca", icon: Landmark, col: 6, row: 2, to: "/admin/bancos/movimientos", accent: "muted" },
+    { id: "aplicaCob",    label: "Aplicación de cobranza", icon: Banknote, col: 7, row: 2, to: "/admin/credito-cobranza/complementos", accent: "primary" },
     // Row 3
     { id: "productos",    label: "Productos / servicios", icon: Package, col: 1, row: 3, to: "/admin/productos", accent: "muted" },
     { id: "segCotiza",    label: "Seguimiento de cotizaciones", icon: NotebookPen, col: 2, row: 3, accent: "muted", disabled: true },
