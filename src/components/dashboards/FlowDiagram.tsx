@@ -117,7 +117,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
 
   return (
     <div
-      className="relative w-full overflow-x-auto rounded-xl border bg-card/50 p-3 md:p-5"
+      className="relative w-full overflow-x-auto p-3 md:p-5"
     >
       <div
         className="relative"
