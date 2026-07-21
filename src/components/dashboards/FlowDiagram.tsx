@@ -188,12 +188,12 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
           }}
         >
           {nodes.map((n) => {
-            const accent = n.accent ?? "muted";
             const isImageIcon = typeof n.icon === "object" && "src" in n.icon;
+            const accent = n.accent ?? "muted";
             const inner = (
               <>
                 {n.count != null && n.count !== "" && (
-                  <span className="absolute right-1.5 top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                  <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground shadow">
                     {n.count}
                   </span>
                 )}
@@ -202,15 +202,15 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                     src={(n.icon as { src: string; alt?: string }).src}
                     alt={(n.icon as { src: string; alt?: string }).alt ?? n.label}
                     loading="lazy"
-                    className="h-12 w-12 md:h-14 md:w-14 object-contain drop-shadow-sm"
+                    className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-md transition-transform group-hover:scale-110"
                   />
                 ) : (
                   (() => {
                     const Icon = n.icon as LucideIcon;
-                    return <Icon className={cn("h-6 w-6 md:h-7 md:w-7", iconAccentClass[accent])} />;
+                    return <Icon className={cn("h-10 w-10 md:h-12 md:w-12 transition-transform group-hover:scale-110", iconAccentClass[accent])} />;
                   })()
                 )}
-                <div className="text-[11px] font-medium leading-tight md:text-xs">
+                <div className="mt-1 text-[11px] font-medium leading-tight md:text-xs">
                   {n.label}
                 </div>
                 {n.sublabel && (
@@ -222,10 +222,9 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
             );
 
             const base = cn(
-              "group relative flex flex-col items-center justify-center gap-1 rounded-lg border bg-background/80 p-2 text-center transition-all",
-              "hover:-translate-y-0.5 hover:shadow-md",
-              accentClass[accent],
-              n.disabled && "opacity-60 pointer-events-none",
+              "group relative flex flex-col items-center justify-center gap-0.5 bg-transparent p-1 text-center",
+              n.disabled && "opacity-50 pointer-events-none",
+              !n.disabled && n.to && "cursor-pointer",
             );
 
             if (!n.to || n.disabled) {
