@@ -166,9 +166,9 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                 key={i}
                 d={d}
                 fill="none"
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth="0.45"
-                strokeOpacity="0.6"
+                stroke="hsl(var(--foreground))"
+                strokeWidth="0.55"
+                strokeOpacity="0.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 markerEnd="url(#flow-arrow-end)"
