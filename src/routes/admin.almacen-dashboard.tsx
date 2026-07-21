@@ -7,10 +7,9 @@ import {
   ArrowLeftRight,
   ClipboardCheck,
   Truck,
-  Boxes,
-  AlertTriangle,
   Search,
   Info,
+  Calculator,
 } from "lucide-react";
 import FlowDiagram, {
   type FlowNode,
@@ -32,24 +31,24 @@ function AlmacenDashboard() {
   });
 
   const nodes: FlowNode[] = [
-    { id: "almacenes", label: "Almacenes", sublabel: "Ubicaciones", icon: Warehouse, col: 1, row: 1, to: "/admin/almacenes", count: data?.almacenes, accent: "primary" },
-    { id: "productos", label: "Productos", sublabel: "Catálogo", icon: Package, col: 2, row: 1, to: "/admin/productos", count: data?.productos, accent: "muted" },
-    { id: "entradas",  label: "Entradas",  sublabel: "Compra / traspaso", icon: Boxes, col: 3, row: 1, to: "/admin/entradas", count: data?.entradasHoy, accent: "success" },
-    { id: "movs",      label: "Movimientos", sublabel: "Hoy", icon: ArrowLeftRight, col: 2, row: 2, to: "/admin/kardex", count: data?.movimientosHoy, accent: "primary" },
-    { id: "fisico",    label: "Inventario físico", sublabel: "Conteo", icon: ClipboardCheck, col: 1, row: 2, to: "/admin/inventario", accent: "warning" },
-    { id: "guias",     label: "Guías de embarque", sublabel: "Salidas", icon: Truck, col: 3, row: 2, to: "/admin/logistica", accent: "muted" },
-    { id: "danados",   label: "Dañados / Mermas", icon: AlertTriangle, col: 4, row: 1, to: "/admin/danados", count: data?.danados, accent: "danger" },
-    { id: "consulta",  label: "Consulta / Kardex", icon: Search, col: 4, row: 2, to: "/admin/kardex", accent: "muted" },
+    // Row 1: costos (top)
+    { id: "costos", label: "Integración de costos", icon: Calculator, col: 2, row: 1, to: "/admin/kardex", count: data?.entradasHoy, accent: "success" },
+    // Row 2: main horizontal spine
+    { id: "almacenes", label: "Almacenes", icon: Warehouse, col: 1, row: 2, to: "/admin/almacenes", count: data?.almacenes, accent: "primary" },
+    { id: "movs",      label: "Movimientos", icon: ArrowLeftRight, col: 2, row: 2, to: "/admin/kardex", count: data?.movimientosHoy, accent: "primary" },
+    { id: "fisico",    label: "Inventario físico", icon: ClipboardCheck, col: 3, row: 2, to: "/admin/inventario", accent: "warning" },
+    { id: "consulta",  label: "Consulta de inventario", icon: Search, col: 4, row: 2, to: "/admin/kardex", accent: "muted" },
+    // Row 3
+    { id: "productos", label: "Productos / servicios", icon: Package, col: 1, row: 3, to: "/admin/productos", count: data?.productos, accent: "muted" },
+    { id: "guias",     label: "Guías de embarque", icon: Truck, col: 2, row: 3, to: "/admin/logistica", accent: "muted" },
   ];
 
   const edges: FlowEdge[] = [
     { from: "almacenes", to: "movs" },
-    { from: "productos", to: "movs" },
-    { from: "entradas",  to: "movs" },
-    { from: "movs",      to: "fisico" },
-    { from: "movs",      to: "guias" },
-    { from: "movs",      to: "consulta" },
-    { from: "guias",     to: "danados" },
+    { from: "movs", to: "costos", bidirectional: true },
+    { from: "movs", to: "fisico" },
+    { from: "fisico", to: "consulta" },
+    { from: "movs", to: "guias" },
   ];
 
   return (
@@ -63,7 +62,7 @@ function AlmacenDashboard() {
         </p>
       </header>
 
-      <FlowDiagram nodes={nodes} edges={edges} cols={4} rows={2} />
+      <FlowDiagram nodes={nodes} edges={edges} cols={4} rows={3} />
 
       <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground flex gap-2">
         <Info className="h-4 w-4 shrink-0 mt-0.5" />
