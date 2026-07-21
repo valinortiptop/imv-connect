@@ -76,6 +76,7 @@ import { Route as AdminCentralesRouteImport } from './routes/admin.centrales'
 import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
 import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
+import { Route as AdminAlmacenDashboardRouteImport } from './routes/admin.almacen-dashboard'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as RepClientesIndexRouteImport } from './routes/rep.clientes.index'
@@ -474,6 +475,11 @@ const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
   path: '/almacenes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAlmacenDashboardRoute = AdminAlmacenDashboardRouteImport.update({
+  id: '/almacen-dashboard',
+  path: '/almacen-dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAlmacenRoute = AdminAlmacenRouteImport.update({
   id: '/almacen',
   path: '/almacen',
@@ -819,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -947,6 +954,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/administracion': typeof AdminAdministracionRoute
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -1075,6 +1083,7 @@ export interface FileRoutesById {
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
@@ -1208,6 +1217,7 @@ export interface FileRouteTypes {
     | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
@@ -1336,6 +1346,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin/administracion'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
@@ -1463,6 +1474,7 @@ export interface FileRouteTypes {
     | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
@@ -2073,6 +2085,13 @@ declare module '@tanstack/react-router' {
       path: '/almacenes'
       fullPath: '/admin/almacenes'
       preLoaderRoute: typeof AdminAlmacenesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/almacen-dashboard': {
+      id: '/admin/almacen-dashboard'
+      path: '/almacen-dashboard'
+      fullPath: '/admin/almacen-dashboard'
+      preLoaderRoute: typeof AdminAlmacenDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/almacen': {
@@ -2703,6 +2722,7 @@ const AdminContabilidadPolizasRouteWithChildren =
 interface AdminRouteChildren {
   AdminAdministracionRoute: typeof AdminAdministracionRoute
   AdminAlmacenRoute: typeof AdminAlmacenRouteWithChildren
+  AdminAlmacenDashboardRoute: typeof AdminAlmacenDashboardRoute
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminCalculadoraRoute: typeof AdminCalculadoraRoute
   AdminCatalogoRoute: typeof AdminCatalogoRoute
@@ -2767,6 +2787,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdministracionRoute: AdminAdministracionRoute,
   AdminAlmacenRoute: AdminAlmacenRouteWithChildren,
+  AdminAlmacenDashboardRoute: AdminAlmacenDashboardRoute,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminCalculadoraRoute: AdminCalculadoraRoute,
   AdminCatalogoRoute: AdminCatalogoRoute,
