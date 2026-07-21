@@ -2,11 +2,13 @@ import { Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export type FlowIcon = LucideIcon | { src: string; alt?: string };
+
 export type FlowNode = {
   id: string;
   label: string;
   sublabel?: string;
-  icon: LucideIcon;
+  icon: FlowIcon;
   /** grid col (1-based) */
   col: number;
   /** grid row (1-based) */
