@@ -188,8 +188,8 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
           }}
         >
           {nodes.map((n) => {
-            const Icon = n.icon;
             const accent = n.accent ?? "muted";
+            const isImageIcon = typeof n.icon === "object" && "src" in n.icon;
             const inner = (
               <>
                 {n.count != null && n.count !== "" && (
@@ -197,7 +197,19 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                     {n.count}
                   </span>
                 )}
-                <Icon className={cn("h-6 w-6 md:h-7 md:w-7", iconAccentClass[accent])} />
+                {isImageIcon ? (
+                  <img
+                    src={(n.icon as { src: string; alt?: string }).src}
+                    alt={(n.icon as { src: string; alt?: string }).alt ?? n.label}
+                    loading="lazy"
+                    className="h-12 w-12 md:h-14 md:w-14 object-contain drop-shadow-sm"
+                  />
+                ) : (
+                  (() => {
+                    const Icon = n.icon as LucideIcon;
+                    return <Icon className={cn("h-6 w-6 md:h-7 md:w-7", iconAccentClass[accent])} />;
+                  })()
+                )}
                 <div className="text-[11px] font-medium leading-tight md:text-xs">
                   {n.label}
                 </div>
