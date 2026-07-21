@@ -11353,10 +11353,6 @@ export type Database = {
         Args: { _almacen: string; _delta: number; _producto: string }
         Returns: undefined
       }
-      _find_cuenta: {
-        Args: { _agrupador: string; _empresa: string }
-        Returns: string
-      }
       admin_list_all_routes: {
         Args: never
         Returns: {
