@@ -1,127 +1,129 @@
-# Crédito y Cobranza — Estado actual vs. faltantes
 
-## Ya implementado
+## Goal
 
-**Datos / DB**
-- Tablas: `cliente_credito`, `cobranza_gestiones`, `cobranza_promesas_pago`, `credito_autorizaciones`, `cobranza_comunicaciones`, `cliente_riesgo_snapshots`, `cobranza_alertas`, `cliente_documentos`.
-- Vista `v_cliente_credito_360` y trigger `fn_bloquear_por_credito` (bloqueo automático por crédito/vencido).
-- Bucket privado `cliente-documentos` con RLS.
-
-**UI (/admin/credito-cobranza)**
-- Layout con tabs: Dashboard, Cartera, Gestiones, Promesas, Alertas, Autorizaciones.
-- Cliente 360 de cobranza + Expediente digital por cliente.
-- Dashboard ejecutivo (KPIs, aging, riesgo, tendencia 90d, top-10 exposición).
-
-**Server functions (`cobranza.functions.ts`, `cobranza-alertas.functions.ts`)**
-- Envío de estado de cuenta y recordatorios (Resend vía Valinor).
-- NC por pronto pago (Facturapi).
-- Sugerencia de aplicación de pagos.
-- Análisis IA de riesgo en tiempo real (Gemini vía Valinor).
-- CRUD de expediente + URLs firmadas.
-- Gestión de alertas.
-
-**Automatización (pg_cron)**
-- `cobranza-recordatorios` diario.
-- `cobranza-edo-cuenta` (semanal/quincenal/mensual por cliente).
-- `cobranza-riesgo-nocturno` (recalcula score + alertas).
+Build two new interactive flow-diagram dashboards mirroring Eduardo Islas's reference diagrams and close the wiring gaps he identified around minute 53:00 of the call: **remisión must affect almacén**, **factura must post costo de venta a contabilidad**, and **cobranza must post ingreso a contabilidad**.
 
 ---
 
-## Faltantes / gaps vs. el requerimiento
+## Part 1 — New dashboards (visual layer)
 
-### 1. Complementos de pago (REP) — no implementado
-El requerimiento pide "Generación y seguimiento de complementos de pago". Hoy timbramos facturas y NCs, pero **no hay flujo automático de REP** al registrar pagos de facturas PPD. Falta:
-- Server function `emitirComplementoPagoFn` (Facturapi).
-- Trigger o hook al insertar en `pagos` de facturas PPD.
-- Vista de seguimiento de complementos pendientes / timbrados.
+### 1.1 Clientes Dashboard (`/admin/clientes-dashboard`)
+Interactive node/arrow diagram matching the reference (image-206). Each node is a large icon tile with label + live count badge, connected by SVG arrows, clickable → routes to the existing module.
 
-### 2. Flujo de autorizaciones — solo esqueleto
-Existe la tabla y la página, pero falta:
-- Formulario para **solicitar** autorización (desbloqueo, incremento límite, excepción de venta bloqueada).
-- Workflow de aprobación con roles (quién puede aprobar según monto).
-- Notificaciones al solicitante y al aprobador.
-- Ligar autorizaciones a pedidos/facturas específicas.
+Nodes and their existing routes:
 
-### 3. Historial de modificaciones de crédito — falta auditoría
-- Tabla `cliente_credito_historial` (o trigger de audit) para trackear cambios de límite/días/condiciones con usuario, fecha y motivo.
-- Vista "Historial de condiciones crediticias" en Cliente 360.
+```text
+Prospectos ─┐
+            ├─► Clientes ─► Cotizaciones ─► Pedidos ─► Remisiones ─► Facturas ─► Seguimiento CxC ─► Aplicación de cobranza
+Seguim. notas ┘                                            │                        │                        │
+                                                     Guías embarque         Devoluciones/NC          Notas cargo/cheques dev.
+                                                                             Consignaciones
+```
 
-### 4. Generación automática de tareas de cobranza
-Requerimiento: "Generación automática de tareas de seguimiento". Hoy `cobranza-riesgo-nocturno` crea alertas, pero no crea **tarjetas en el kanban** (`kanban_cards`) asignadas al gestor. Falta:
-- Al detectar promesa incumplida / cliente sin gestión en N días / alerta crítica → crear tarjeta kanban.
-- Configurar el board/columna destino en `system_config`.
+Route mapping (all existing):
+- Prospectos → `/admin/prospectos`
+- Clientes → `/admin/clientes`
+- Cotizaciones → `/rep/cotizaciones` (or new placeholder)
+- Pedidos → `/admin/pedidos`
+- Remisiones → `/admin/logistica`
+- Guías de embarque → `/admin/maniobra`
+- Facturas → `/admin/facturas`
+- Seguimiento CxC → `/admin/credito-cobranza/cartera`
+- Aplicación de cobranza → `/admin/credito-cobranza/gestiones`
+- Devoluciones/descuentos/anticipos → `/admin/devoluciones/lista`
+- Notas de cargo / cheques devueltos → `/admin/credito-cobranza/complementos`
 
-### 5. Aplicación real de pagos (no solo sugerencia)
-`sugerirAplicacionPagoFn` sugiere, pero falta UI para **aplicar** el pago sugerido a las facturas seleccionadas en un click (mutación multi-fila con transacción).
+Each tile fetches a live count (pending pedidos, facturas del mes, cartera vencida, etc.) via a single `getClientesDashboardCountsFn` server function.
 
-### 6. Concentración de riesgo por vendedor/zona
-El dashboard ya muestra top-10 exposición y aging, pero no la **concentración por vendedor y por zona** que pide el requerimiento. Faltan tarjetas/gráficos:
-- Cartera vencida por representante.
-- Cartera vencida por zona/ruta.
+### 1.2 Almacén Dashboard (`/admin/almacen-dashboard`)
+Same treatment for image-207:
 
-### 7. Proyección de ingresos con probabilidad de cobro
-Requerimiento explícito: "Proyección de ingresos con base en vencimientos y comportamiento histórico". Faltaría un panel que multiplique saldo por vencer × probabilidad (derivada del score IA) por semana/mes.
+```text
+                Integración de costos
+                        ▲
+Almacenes ─► Movimientos ─► Inventario físico ─► Consulta de inventario
+                        ▼
+                 Guías de embarque
+Productos/servicios (standalone tile)
+```
 
-### 8. Plantillas configurables de comunicación
-Hoy los HTML de correos están hard-coded en los crons/server functions. Falta:
-- Tabla `cobranza_plantillas` (asunto/cuerpo con variables `{{cliente}}`, `{{saldo}}`, `{{facturas}}`).
-- UI de administración de plantillas.
-- Crons leen plantilla en lugar de string literal.
+Route mapping:
+- Almacenes → `/admin/almacenes`
+- Movimientos → `/admin/kardex`
+- Integración de costos → `/admin/compras/costos`
+- Inventario físico → `/admin/inventario`
+- Consulta de inventario → `/admin/almacen`
+- Guías de embarque → `/admin/maniobra`
+- Productos/servicios → `/admin/productos`
 
-### 9. Reglas configurables (system_config)
-- Días antes/después del vencimiento para disparar recordatorios (hoy hard-coded).
-- Umbrales de nivel de riesgo (score → nivel).
-- Umbral "sin gestión reciente" (días).
-- Política global default de pronto pago (fallback si el cliente no la define).
+Live counts via `getAlmacenDashboardCountsFn` (movimientos hoy, stock crítico, valor inventario, etc.).
 
-### 10. Reportes / exportación
-- Exportación a Excel de la cartera con filtros aplicados.
-- Reporte de gestiones por gestor / periodo.
-- Reporte de cumplimiento de promesas.
+### 1.3 Reusable component
+`src/components/dashboards/FlowDiagram.tsx` — takes a `nodes[]` and `edges[]` config, renders a responsive SVG-arrow layout with lucide icons, count badges, and hover states using semantic tokens. Both dashboards import it with different configs.
 
-### 11. Alertas de expediente vencido
-La tabla soporta fecha de vencimiento por documento, pero no hay **cron ni alerta automática** cuando un documento está por vencer o vencido. Debe integrarse a `cobranza-riesgo-nocturno`.
-
-### 12. Bitácora de comunicaciones en Cliente 360
-`cobranza_comunicaciones` se llena desde los crons pero **no se muestra** un timeline unificado (email + gestiones + promesas + autorizaciones) en Cliente 360.
-
-### 13. Notificaciones in-app
-Uso de la tabla `notifications` existente para avisar al gestor cuando: alerta crítica creada, promesa incumplida hoy, autorización solicitada/aprobada, documento vencido.
-
-### 14. Recomendaciones IA persistidas
-`analizarRiesgoClienteFn` corre en vivo. Falta guardar las **recomendaciones IA** (ajuste de límite, revisar condiciones) en tabla y mostrarlas en dashboard como "Acciones sugeridas por IA" con botón para aceptar/descartar.
+### 1.4 Sidebar
+Add two entries at the very top of the General group in `src/components/admin-sidebar.tsx`, and seed them into `permission_routes` via migration:
+- `navClientesDashboard` → `/admin/clientes-dashboard` (LayoutDashboard icon)
+- `navAlmacenDashboard` → `/admin/almacen-dashboard` (Warehouse icon)
 
 ---
 
-## Propuesta de siguientes fases
+## Part 2 — Critical wiring gaps (per Eduardo Islas 00:53:38)
 
-**Fase 5 — Cierre transaccional (crítico)**
-- Complementos de pago (REP) automáticos.
-- Aplicación real de pagos multi-factura.
-- Flujo de autorizaciones con workflow y notificaciones.
-- Historial/auditoría de cambios en condiciones crediticias.
+The accountant's flow requires each commercial step to have its accounting/inventory counterpart. Current gaps in the codebase:
 
-**Fase 6 — Configurabilidad**
-- Plantillas de comunicación editables.
-- Reglas configurables (días, umbrales, política pronto pago default).
-- Alertas de expediente vencido integradas al cron nocturno.
+### Gap A — Remisión → movimiento de almacén (salida)
+**Now:** `stock_deliveries` / `delivery_trips` exist but do not always write a `movimientos_inventario` row when a remisión is closed/entregada.
+**Fix:** DB trigger `trg_remision_afecta_almacen` on `delivery_trips` (status → 'entregado'): inserts `movimientos_inventario` rows (tipo='salida_venta') per line and decrements `stock`. Idempotent.
 
-**Fase 7 — Inteligencia y ejecución**
-- Kanban auto-generado desde alertas/promesas incumplidas.
-- Timeline unificado en Cliente 360.
-- Notificaciones in-app.
-- Recomendaciones IA persistidas + accionables.
-- Concentración de riesgo por vendedor/zona en dashboard.
-- Proyección de ingresos por probabilidad de cobro.
+### Gap B — Factura → póliza de costo de venta + IVA trasladado
+**Now:** `facturas` posts an income póliza in some paths; costo de venta and IVA are inconsistent.
+**Fix:** Server fn `postFacturaContableFn(facturaId)` (idempotent, keyed by `poliza.referencia`) that generates one póliza tipo='ingreso' with movements: DR Clientes / CR Ventas / CR IVA trasladado / DR Costo de venta / CR Inventario. Automatically invoked from Facturapi timbrado success callback. Config for the 4 account codes in `system_config`.
 
-**Fase 8 — Reportería**
-- Export Excel de cartera / gestiones / promesas.
-- Reportes por gestor y periodo.
+### Gap C — Cobranza → póliza de ingreso
+**Now:** `pagos` applied to facturas but no `polizas` row.
+**Fix:** Server fn `postPagoContableFn(pagoId)` posts póliza tipo='ingreso': DR Bancos / CR Clientes (+ CR IVA por trasladar → IVA trasladado shift when using flujo de efectivo). Idempotent. Called from `aplicarPagoMultiFn` after success.
+
+### Gap D — Devoluciones / notas de crédito → póliza de egreso + entrada de almacén
+**Fix:** Trigger on `devoluciones` estado='recibida' → póliza reversa + `movimientos_inventario` entrada.
+
+### Gap E — Póliza classification (from same call, 00:27:13)
+Ensure `polizas.tipo` is one of `ingreso | egreso | diario` and `polizas.estado_origen` is `automatica | manual | modificada`. Add if missing; backfill.
+
+All Part 2 changes are single migration + 3 server functions + hooking them into their existing entry points (Facturapi callback, `aplicarPagoMultiFn`, devoluciones update flow). No UI changes to those modules beyond a small "estado contable" badge on facturas/pagos rows.
 
 ---
 
-## Preguntas antes de continuar
+## Technical details
 
-1. ¿Priorizamos **Fase 5** (complementos de pago + aplicación real + autorizaciones)? Es lo que cierra el ciclo transaccional y bloquea flujo de efectivo real.
-2. ¿O prefieres primero **Fase 7** (kanban auto, timeline, notificaciones) para que el equipo lo use a diario aunque falte lo transaccional?
-3. Para complementos de pago: ¿emitimos **automáticamente** al registrar pago de PPD, o requiere confirmación manual (checkbox "timbrar REP") en el formulario de pago?
+**Migration `0025_dashboard_routes_and_accounting_hooks.sql`:**
+1. `INSERT INTO permission_routes` for the two new dashboards.
+2. `ALTER TABLE polizas` add `estado_origen` enum column if missing; default `automatica`.
+3. `CREATE TRIGGER trg_remision_afecta_almacen` on `delivery_trips`.
+4. `CREATE TRIGGER trg_devolucion_afecta_almacen_y_poliza` on `devoluciones`.
+5. `system_config` rows for account codes (`cuenta_clientes`, `cuenta_ventas`, `cuenta_iva_trasladado`, `cuenta_costo_venta`, `cuenta_inventario`, `cuenta_bancos_default`).
+
+**New files:**
+- `src/components/dashboards/FlowDiagram.tsx`
+- `src/components/dashboards/clientes-dashboard.tsx`
+- `src/components/dashboards/almacen-dashboard.tsx`
+- `src/routes/admin.clientes-dashboard.tsx`
+- `src/routes/admin.almacen-dashboard.tsx`
+- `src/lib/dashboard-counts.functions.ts` (both count fns)
+- `src/lib/contabilidad-hooks.functions.ts` (`postFacturaContableFn`, `postPagoContableFn`)
+
+**Modified:**
+- `src/components/admin-sidebar.tsx` — add two nav entries
+- `src/lib/facturapi.functions.ts` — call `postFacturaContableFn` on timbrado success
+- `src/lib/cobranza.functions.ts` (or wherever `aplicarPagoMultiFn` lives) — call `postPagoContableFn`
+- `src/components/facturacion-page.tsx` — small "Contabilizada" badge
+
+**Design:** Uses semantic tokens (`--primary`, `--muted`, `--card`, `--accent`). Arrows are SVG `<path>` with `stroke="hsl(var(--muted-foreground))"`. Node tiles use existing `Card`. Live in dark and light mode.
+
+---
+
+## Out of scope
+- Redesigning existing modules
+- New reporting or KPI widgets beyond count badges
+- Editing the Facturapi API or Facturapi UI itself
+- The other pending items from the call (Facturapi shortcut button, Reportar-fallas button, imports fix) — handled separately.

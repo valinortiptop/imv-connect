@@ -70,11 +70,13 @@ import { Route as AdminCreditoCobranzaRouteImport } from './routes/admin.credito
 import { Route as AdminComprasRouteImport } from './routes/admin.compras'
 import { Route as AdminComisionesRouteImport } from './routes/admin.comisiones'
 import { Route as AdminCobranzaRouteImport } from './routes/admin.cobranza'
+import { Route as AdminClientesDashboardRouteImport } from './routes/admin.clientes-dashboard'
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminCentralesRouteImport } from './routes/admin.centrales'
 import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
 import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
+import { Route as AdminAlmacenDashboardRouteImport } from './routes/admin.almacen-dashboard'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
 import { Route as AdminAdministracionRouteImport } from './routes/admin.administracion'
 import { Route as RepClientesIndexRouteImport } from './routes/rep.clientes.index'
@@ -443,6 +445,11 @@ const AdminCobranzaRoute = AdminCobranzaRouteImport.update({
   path: '/cobranza',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminClientesDashboardRoute = AdminClientesDashboardRouteImport.update({
+  id: '/clientes-dashboard',
+  path: '/clientes-dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminClientesRoute = AdminClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -466,6 +473,11 @@ const AdminCalculadoraRoute = AdminCalculadoraRouteImport.update({
 const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
   id: '/almacenes',
   path: '/almacenes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAlmacenDashboardRoute = AdminAlmacenDashboardRouteImport.update({
+  id: '/almacen-dashboard',
+  path: '/almacen-dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAlmacenRoute = AdminAlmacenRouteImport.update({
@@ -813,11 +825,13 @@ export interface FileRoutesByFullPath {
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
@@ -940,11 +954,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/administracion': typeof AdminAdministracionRoute
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/cuenta': typeof AdminCuentaRoute
@@ -1067,11 +1083,13 @@ export interface FileRoutesById {
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
+  '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
   '/admin/clientes': typeof AdminClientesRouteWithChildren
+  '/admin/clientes-dashboard': typeof AdminClientesDashboardRoute
   '/admin/cobranza': typeof AdminCobranzaRoute
   '/admin/comisiones': typeof AdminComisionesRoute
   '/admin/compras': typeof AdminComprasRouteWithChildren
@@ -1199,11 +1217,13 @@ export interface FileRouteTypes {
     | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
@@ -1326,11 +1346,13 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin/administracion'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/cuenta'
@@ -1452,11 +1474,13 @@ export interface FileRouteTypes {
     | '/rep'
     | '/admin/administracion'
     | '/admin/almacen'
+    | '/admin/almacen-dashboard'
     | '/admin/almacenes'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
     | '/admin/clientes'
+    | '/admin/clientes-dashboard'
     | '/admin/cobranza'
     | '/admin/comisiones'
     | '/admin/compras'
@@ -2021,6 +2045,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCobranzaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/clientes-dashboard': {
+      id: '/admin/clientes-dashboard'
+      path: '/clientes-dashboard'
+      fullPath: '/admin/clientes-dashboard'
+      preLoaderRoute: typeof AdminClientesDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/clientes': {
       id: '/admin/clientes'
       path: '/clientes'
@@ -2054,6 +2085,13 @@ declare module '@tanstack/react-router' {
       path: '/almacenes'
       fullPath: '/admin/almacenes'
       preLoaderRoute: typeof AdminAlmacenesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/almacen-dashboard': {
+      id: '/admin/almacen-dashboard'
+      path: '/almacen-dashboard'
+      fullPath: '/admin/almacen-dashboard'
+      preLoaderRoute: typeof AdminAlmacenDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/almacen': {
@@ -2684,11 +2722,13 @@ const AdminContabilidadPolizasRouteWithChildren =
 interface AdminRouteChildren {
   AdminAdministracionRoute: typeof AdminAdministracionRoute
   AdminAlmacenRoute: typeof AdminAlmacenRouteWithChildren
+  AdminAlmacenDashboardRoute: typeof AdminAlmacenDashboardRoute
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
   AdminCalculadoraRoute: typeof AdminCalculadoraRoute
   AdminCatalogoRoute: typeof AdminCatalogoRoute
   AdminCentralesRoute: typeof AdminCentralesRoute
   AdminClientesRoute: typeof AdminClientesRouteWithChildren
+  AdminClientesDashboardRoute: typeof AdminClientesDashboardRoute
   AdminCobranzaRoute: typeof AdminCobranzaRoute
   AdminComisionesRoute: typeof AdminComisionesRoute
   AdminComprasRoute: typeof AdminComprasRouteWithChildren
@@ -2747,11 +2787,13 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdministracionRoute: AdminAdministracionRoute,
   AdminAlmacenRoute: AdminAlmacenRouteWithChildren,
+  AdminAlmacenDashboardRoute: AdminAlmacenDashboardRoute,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
   AdminCalculadoraRoute: AdminCalculadoraRoute,
   AdminCatalogoRoute: AdminCatalogoRoute,
   AdminCentralesRoute: AdminCentralesRoute,
   AdminClientesRoute: AdminClientesRouteWithChildren,
+  AdminClientesDashboardRoute: AdminClientesDashboardRoute,
   AdminCobranzaRoute: AdminCobranzaRoute,
   AdminComisionesRoute: AdminComisionesRoute,
   AdminComprasRoute: AdminComprasRouteWithChildren,
@@ -2888,13 +2930,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

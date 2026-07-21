@@ -5626,6 +5626,7 @@ export type Database = {
           created_by: string | null
           empresa_id: string
           estado: Database["public"]["Enums"]["poliza_estado"]
+          estado_origen: string
           fecha: string
           folio: string
           id: string
@@ -5646,6 +5647,7 @@ export type Database = {
           created_by?: string | null
           empresa_id: string
           estado?: Database["public"]["Enums"]["poliza_estado"]
+          estado_origen?: string
           fecha?: string
           folio: string
           id?: string
@@ -5666,6 +5668,7 @@ export type Database = {
           created_by?: string | null
           empresa_id?: string
           estado?: Database["public"]["Enums"]["poliza_estado"]
+          estado_origen?: string
           fecha?: string
           folio?: string
           id?: string

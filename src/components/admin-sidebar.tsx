@@ -34,6 +34,8 @@ const navGroups: NavGroup[] = [
   {
     label: "General",
     items: [
+      { key: "navClientesDashboard", label: "Clientes Dashboard",  url: "/admin/clientes-dashboard", icon: Users },
+      { key: "navAlmacenDashboard",  label: "Almacén Dashboard",   url: "/admin/almacen-dashboard",  icon: Warehouse },
       { key: "navDashboard",    label: "Dashboard",            url: "/admin",                icon: LayoutDashboard, exact: true },
       { key: "navAIChat",       label: "Gandalf",              url: "/admin/gandalf",        icon: Bot },
       { key: "navTareas",       label: "Tareas",               url: "/admin/tareas",         icon: CheckSquare },
