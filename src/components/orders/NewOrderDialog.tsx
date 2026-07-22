@@ -1151,7 +1151,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                           type="number"
                           min={0}
                           step={0.01}
-                          value={line.unit_price}
+                          value={typeof line.unit_price === "number" ? line.unit_price.toFixed(2) : line.unit_price}
                           onChange={e => updateLine(idx, "unit_price", e.target.value)}
                           className={cn(
                             "h-8 text-center",

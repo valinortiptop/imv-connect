@@ -5320,6 +5320,7 @@ export type Database = {
           notas_cliente: string | null
           notas_internas: string | null
           order_code: string | null
+          price_list_id: string | null
           representante_id: string | null
           signature_path: string | null
           signature_token: string | null
@@ -5350,6 +5351,7 @@ export type Database = {
           notas_cliente?: string | null
           notas_internas?: string | null
           order_code?: string | null
+          price_list_id?: string | null
           representante_id?: string | null
           signature_path?: string | null
           signature_token?: string | null
@@ -5380,6 +5382,7 @@ export type Database = {
           notas_cliente?: string | null
           notas_internas?: string | null
           order_code?: string | null
+          price_list_id?: string | null
           representante_id?: string | null
           signature_path?: string | null
           signature_token?: string | null
@@ -5425,6 +5428,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pedidos_representante_id_fkey"
@@ -10203,6 +10213,7 @@ export type Database = {
           notes: string | null
           order_code: string | null
           order_date: string | null
+          price_list_id: string | null
           signature_path: string | null
           signature_token: string | null
           signed_at: string | null
@@ -10226,6 +10237,7 @@ export type Database = {
           notes?: string | null
           order_code?: never
           order_date?: never
+          price_list_id?: string | null
           signature_path?: string | null
           signature_token?: string | null
           signed_at?: string | null
@@ -10249,6 +10261,7 @@ export type Database = {
           notes?: string | null
           order_code?: never
           order_date?: never
+          price_list_id?: string | null
           signature_path?: string | null
           signature_token?: string | null
           signed_at?: string | null
@@ -10294,6 +10307,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
           },
         ]
       }
