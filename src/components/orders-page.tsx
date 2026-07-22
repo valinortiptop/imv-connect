@@ -78,7 +78,7 @@ function SortableTableHead<K extends string>({
   );
 }
 
-export default function Orders({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
+export default function Orders({ restrictClientIds, hideCotizaciones = false }: { restrictClientIds?: string[] | null; hideCotizaciones?: boolean } = {}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
