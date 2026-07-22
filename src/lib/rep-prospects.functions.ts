@@ -95,7 +95,7 @@ export const createProspectFn = createServerFn({ method: "POST" })
         review_count: data.review_count ?? null,
         business_status: data.business_status ?? null,
         primary_type: data.primary_type ?? null,
-        price_level: data.price_level ?? null,
+        price_level: data.price_level != null ? String(data.price_level) : null,
         opening_hours: data.opening_hours ?? null,
         description: data.description ?? null,
         enrichment_status: enriched ? "google_places" : null,
