@@ -2087,13 +2087,41 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("rep_rutas_guardadas")
-      .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, created_at, origen")
+      .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, start_lat, start_lng, created_at, origen")
       .eq("user_id", context.userId)
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 60);
     if (error) throw new Error(error.message);
-    return { routes: rows ?? [] };
+
+    // Hydrate stops with client name + address
+    const ids = new Set<string>();
+    for (const r of rows ?? []) {
+      for (const s of ((r as any).ordered_stops as any[]) ?? []) {
+        if (s?.cliente_id) ids.add(String(s.cliente_id));
+      }
+    }
+    const byId = new Map<string, any>();
+    if (ids.size > 0) {
+      const { data: clis } = await context.supabase
+        .from("clientes")
+        .select("id, nombre_comercial, razon_social, nickname, direccion, codigo_postal")
+        .in("id", [...ids]);
+      for (const c of clis ?? []) byId.set(String(c.id), c);
+    }
+    const hydrated = (rows ?? []).map((r: any) => ({
+      ...r,
+      ordered_stops: ((r.ordered_stops as any[]) ?? []).map((s: any) => {
+        const c = byId.get(String(s.cliente_id));
+        return {
+          ...s,
+          nombre: s?.nombre || c?.nombre_comercial || c?.razon_social || c?.nickname || null,
+          direccion: s?.direccion || c?.direccion || null,
+          codigo_postal: c?.codigo_postal || null,
+        };
+      }),
+    }));
+    return { routes: hydrated };
   });
 
 export const deleteSavedRouteFn = createServerFn({ method: "POST" })
