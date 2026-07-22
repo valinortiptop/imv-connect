@@ -108,8 +108,18 @@ function Page() {
           ))}
         </div>
       )}
+
+      <NewOrderDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        mode="quote"
+        onOrderCreated={() => {
+          qc.invalidateQueries({ queryKey: ["rep-quotes"] });
+        }}
+      />
     </div>
   );
 }
+
 
 export const Route = createFileRoute("/rep/cotizaciones")({ component: Page });
