@@ -31,12 +31,12 @@ type Props = {
   rows: number;
 };
 
-// Fixed pixel geometry so arrows render at real, uniform thickness
-// (no aspect-ratio stretching hacks).
-const CELL_W = 180;
-const CELL_H = 160;
-const ICON = 84; // icon box side
-const PAD = ICON / 2 + 6; // arrow terminus padding from cell centre
+// Fixed pixel geometry — tight, reference-matching layout.
+const CELL_W = 150;
+const CELL_H = 130;
+const ICON = 88;
+const PAD = ICON / 2 + 2; // arrows land right at the icon edge
+const ARROW_COLOR = "#4b5563"; // slate-600
 
 export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
@@ -55,12 +55,12 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
     if (a.row === b.row) {
       const sx = p2.x > p1.x ? PAD : -PAD;
       const ex = p2.x > p1.x ? -PAD : PAD;
-      return `M ${p1.x + sx} ${p1.y} L ${p2.x + ex} ${p2.y}`;
+      return `M ${p1.x + sx} ${p1.y} L ${p2.x + ex} ${p1.y}`;
     }
     if (a.col === b.col) {
       const sy = p2.y > p1.y ? PAD : -PAD;
       const ey = p2.y > p1.y ? -PAD : PAD;
-      return `M ${p1.x} ${p1.y + sy} L ${p2.x} ${p2.y + ey}`;
+      return `M ${p1.x} ${p1.y + sy} L ${p1.x} ${p2.y + ey}`;
     }
     if (bend === "hv") {
       const sx = p2.x > p1.x ? PAD : -PAD;
@@ -74,10 +74,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <div
-        className="relative mx-auto"
-        style={{ width, height }}
-      >
+      <div className="relative mx-auto" style={{ width, height }}>
         {/* Arrows layer */}
         <svg
           className="pointer-events-none absolute inset-0"
@@ -88,27 +85,27 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
           <defs>
             <marker
               id="fd-arrow-end"
-              viewBox="0 0 10 10"
-              refX="8.5"
-              refY="5"
-              markerWidth="7"
-              markerHeight="7"
+              viewBox="0 0 12 12"
+              refX="9"
+              refY="6"
+              markerWidth="10"
+              markerHeight="10"
               orient="auto"
               markerUnits="userSpaceOnUse"
             >
-              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--muted-foreground))" />
+              <path d="M0,0 L12,6 L0,12 z" fill={ARROW_COLOR} />
             </marker>
             <marker
               id="fd-arrow-start"
-              viewBox="0 0 10 10"
-              refX="1.5"
-              refY="5"
-              markerWidth="7"
-              markerHeight="7"
+              viewBox="0 0 12 12"
+              refX="3"
+              refY="6"
+              markerWidth="10"
+              markerHeight="10"
               orient="auto-start-reverse"
               markerUnits="userSpaceOnUse"
             >
-              <path d="M0,0 L10,5 L0,10 z" fill="hsl(var(--muted-foreground))" />
+              <path d="M0,0 L12,6 L0,12 z" fill={ARROW_COLOR} />
             </marker>
           </defs>
           {edges.map((e, i) => {
@@ -121,9 +118,8 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                 key={i}
                 d={d}
                 fill="none"
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth={3}
-                strokeOpacity={0.85}
+                stroke={ARROW_COLOR}
+                strokeWidth={4}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 markerEnd="url(#fd-arrow-end)"
@@ -142,7 +138,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
             <>
               <div className="relative" style={{ width: ICON, height: ICON }}>
                 {n.count != null && n.count !== "" && (
-                  <span className="absolute -right-1 -top-1 z-10 min-w-[20px] rounded-full bg-foreground px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-background shadow">
+                  <span className="absolute -right-1 -top-1 z-10 min-w-[18px] rounded-full bg-foreground/90 px-1.5 py-0.5 text-center text-[9px] font-bold leading-none text-background shadow">
                     {n.count}
                   </span>
                 )}
@@ -162,18 +158,18 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                   })()
                 )}
               </div>
-              <div className="mt-1 max-w-[160px] text-center text-[12px] font-medium leading-tight text-foreground">
+              <div className="mt-0.5 max-w-[130px] text-center text-[11px] font-medium leading-tight text-foreground">
                 {n.label}
               </div>
               {n.sublabel && (
-                <div className="max-w-[160px] text-center text-[10px] leading-tight text-muted-foreground">
+                <div className="max-w-[130px] text-center text-[10px] leading-tight text-muted-foreground">
                   {n.sublabel}
                 </div>
               )}
               {!n.disabled && (
-                <div className="mt-1 flex h-4 w-6 items-center justify-center rounded-sm border border-emerald-500/60 bg-emerald-500/10">
-                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                    <path d="M1 1 L4 5 L7 1" stroke="rgb(16 185 129)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <div className="mt-0.5 flex h-3.5 w-7 items-center justify-center rounded-[3px] border border-emerald-500/70 bg-emerald-500/15">
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+                    <path d="M1 1 L5 5 L9 1" stroke="rgb(16 185 129)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               )}
@@ -190,7 +186,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
             left: c.x,
             top: c.y,
             transform: "translate(-50%, -50%)",
-            width: CELL_W - 12,
+            width: CELL_W - 8,
           } as const;
 
           if (!n.to || n.disabled) {
