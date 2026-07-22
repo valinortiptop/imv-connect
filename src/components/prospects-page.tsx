@@ -326,7 +326,7 @@ function waLink(phone: string, text?: string): string {
 
 /* ───────────────────────── Main page ───────────────────────── */
 
-export default function Prospects() {
+export default function Prospects({ scopeToMe = false }: { scopeToMe?: boolean } = {}) {
   const { user, role } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -337,7 +337,7 @@ export default function Prospects() {
   const [enrichedFilter, setEnrichedFilter] = useState<"all" | "enriched" | "not_enriched">("all");
   const [muniFilter, setMuniFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [mineOnly, setMineOnly] = useState(false);
+  const [mineOnly, setMineOnly] = useState(scopeToMe);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // Detail dialog: store only the prospect id and resolve the fresh
   // record from the prospects query on every render. Storing a
