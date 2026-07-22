@@ -7479,6 +7479,65 @@ export type Database = {
           },
         ]
       }
+      rep_rutas_guardadas: {
+        Row: {
+          created_at: string
+          fecha: string
+          id: string
+          legs: Json
+          nombre: string | null
+          ordered_stops: Json
+          origen: string
+          polyline: string | null
+          representante_id: string | null
+          start_lat: number | null
+          start_lng: number | null
+          total_km: number | null
+          total_minutes: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          legs?: Json
+          nombre?: string | null
+          ordered_stops?: Json
+          origen?: string
+          polyline?: string | null
+          representante_id?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          total_km?: number | null
+          total_minutes?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fecha?: string
+          id?: string
+          legs?: Json
+          nombre?: string | null
+          ordered_stops?: Json
+          origen?: string
+          polyline?: string | null
+          representante_id?: string | null
+          start_lat?: number | null
+          start_lng?: number | null
+          total_km?: number | null
+          total_minutes?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_rutas_guardadas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_usuarios_roles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       rep_targets: {
         Row: {
           created_at: string
