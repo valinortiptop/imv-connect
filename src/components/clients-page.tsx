@@ -480,7 +480,7 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
 /* ------------------------------------------------------------------ */
 /*  Main Clients page                                                 */
 /* ------------------------------------------------------------------ */
-export default function Clients() {
+export default function Clients({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -569,11 +569,17 @@ export default function Clients() {
     el.style.setProperty("--y", `${e.clientY}px`);
   }, []);
 
+  const restrictKey = restrictClientIds ? [...restrictClientIds].sort().join(",") : null;
   const { data: clients, isLoading, error } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", restrictKey],
     queryFn: async () => {
+      if (restrictClientIds && restrictClientIds.length === 0) return [] as Client[];
+      let query = supabase.from("clients").select("*").order("name");
+      if (restrictClientIds && restrictClientIds.length > 0) {
+        query = query.in("id", restrictClientIds);
+      }
       const [{ data, error }, { data: reps }] = await Promise.all([
-        supabase.from("clients").select("*").order("name"),
+        query,
         supabase.from("representantes").select("id, nombre"),
       ]);
       if (error) throw error;
