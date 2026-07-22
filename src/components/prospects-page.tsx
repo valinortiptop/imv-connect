@@ -2143,25 +2143,61 @@ function NuevoContactoDialog({
   const [colonia, setColonia] = useState("");
   const [direccion, setDireccion] = useState("");
   const [saving, setSaving] = useState(false);
+  const [enrichment, setEnrichment] = useState<any>(null);
+  const [enriching, setEnriching] = useState(false);
 
   // Reset when reopened so each "Agregar" starts blank
   useEffect(() => {
     if (open) {
       setPhone(""); setName(""); setContactPerson("");
       setMunicipio(""); setColonia(""); setDireccion("");
+      setEnrichment(null);
     }
   }, [open]);
 
+  const handlePlaceSelect = async (r: any) => {
+    setDireccion(r.address || "");
+    if (!r.place_id) return;
+    setEnriching(true);
+    try {
+      const { googlePlaceEnrichFn } = await import("@/lib/valinor.functions");
+      const res = await googlePlaceEnrichFn({ data: { place_id: r.place_id } });
+      const e = (res as any)?.enrichment;
+      if (e) {
+        setEnrichment(e);
+        if (e.name && !name.trim()) setName(e.name);
+        if (e.direccion) setDireccion(e.direccion);
+        if (e.colonia) setColonia(e.colonia);
+        if (e.municipio) setMunicipio(e.municipio);
+        if (e.phone && !phone.trim()) setPhone(e.phone);
+      }
+    } catch (err: any) {
+      toast({ title: "No se pudo enriquecer", description: err?.message ?? "", variant: "destructive" });
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   const submit = async () => {
-    const r = normalizePhone(phone.trim());
-    if (!r.value) {
-      toast({ title: "Teléfono inválido", description: r.reason || "Revisa el formato", variant: "destructive" });
+    const trimmedPhone = phone.trim();
+    let phoneValue: string | null = null;
+    if (trimmedPhone) {
+      const r = normalizePhone(trimmedPhone);
+      if (!r.value) {
+        toast({ title: "Teléfono inválido", description: r.reason || "Revisa el formato", variant: "destructive" });
+        return;
+      }
+      phoneValue = r.value;
+    }
+    if (!phoneValue && !name.trim()) {
+      toast({ title: "Falta información", description: "Ingresa teléfono o nombre del negocio", variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
+      const e = enrichment ?? {};
       const { error } = await (supabase as any).from("prospects").insert({
-        phone: r.value,
+        phone: phoneValue,
         name: name.trim() || null,
         contact_person: contactPerson.trim() || null,
         municipio: municipio.trim() || null,
@@ -2170,9 +2206,23 @@ function NuevoContactoDialog({
         source: defaultSource,
         assigned_to: defaultAssignee,
         status: "nuevo",
+        lat: e.lat ?? null,
+        lng: e.lng ?? null,
+        place_id: e.place_id ?? null,
+        website: e.website ?? null,
+        google_maps_url: e.google_maps_url ?? null,
+        rating: e.rating ?? null,
+        review_count: e.user_ratings_total ?? null,
+        business_status: e.business_status ?? null,
+        primary_type: e.primary_type ?? null,
+        price_level: e.price_level != null ? String(e.price_level) : null,
+        opening_hours: e.opening_hours ?? null,
+        description: e.description ?? null,
+        enrichment_status: enrichment ? "google_places" : null,
+        enriched_at: enrichment ? new Date().toISOString() : null,
       });
       if (error) throw error;
-      toast({ title: "Contacto agregado", description: defaultSource ? `Lista: ${defaultSource}` : "Sin lista" });
+      toast({ title: "Prospecto agregado", description: defaultSource ? `Lista: ${defaultSource}` : "Sin lista" });
       qc.invalidateQueries({ queryKey: ["prospects"] });
       onClose();
     } catch (err: any) {
@@ -2184,31 +2234,45 @@ function NuevoContactoDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Agregar contacto</DialogTitle>
+          <DialogTitle>Nuevo prospecto</DialogTitle>
           <DialogDescription>
-            {defaultSource ? <>Se agregará a la lista <b>{defaultSource}</b>.</> : "Sin lista asignada."}
+            {defaultSource ? <>Se agregará a la lista <b>{defaultSource}</b>.</> : "Busca el negocio en Google para autocompletar."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">
           <div>
-            <Label className="text-xs">Teléfono *</Label>
-            <Input
-              autoFocus
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+52 55 1234 5678 o 5512345678"
-              className="font-mono"
+            <Label className="text-xs flex items-center gap-2">
+              Buscar en Google Maps
+              {enriching && <Loader2 className="h-3 w-3 animate-spin" />}
+              {enrichment && !enriching && <Badge variant="secondary" className="text-[10px]">Enriquecido</Badge>}
+            </Label>
+            <AddressAutocomplete
+              value={direccion}
+              onChange={setDireccion}
+              onSelect={handlePlaceSelect}
+              placeholder="Nombre del negocio, calle, colonia…"
             />
           </div>
           <div>
             <Label className="text-xs">Nombre del negocio</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Veterinaria Las Flores" />
           </div>
-          <div>
-            <Label className="text-xs">Contacto / encargado</Label>
-            <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Quien contesta el teléfono" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Teléfono</Label>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+52 55 1234 5678"
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Contacto / encargado</Label>
+              <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Quien contesta" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -2220,14 +2284,10 @@ function NuevoContactoDialog({
               <Input value={colonia} onChange={(e) => setColonia(e.target.value)} />
             </div>
           </div>
-          <div>
-            <Label className="text-xs">Dirección</Label>
-            <Input value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle y número" />
-          </div>
         </div>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving || !phone.trim()}>
+          <Button onClick={submit} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
             Agregar
           </Button>
@@ -2236,6 +2296,7 @@ function NuevoContactoDialog({
     </Dialog>
   );
 }
+
 
 function ImportDialog({
   open,
