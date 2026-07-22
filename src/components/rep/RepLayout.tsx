@@ -16,13 +16,14 @@ import { AICopilotButton } from "@/components/ai/AICopilotButton";
 
 type RepCtx = {
   rep: { id: string; nombre: string } | null;
+  isAdmin: boolean;
   geo: { lat: number; lng: number } | null;
   refreshGeo: () => void;
 };
-const Ctx = createContext<RepCtx>({ rep: null, geo: null, refreshGeo: () => {} });
+const Ctx = createContext<RepCtx>({ rep: null, isAdmin: false, geo: null, refreshGeo: () => {} });
 export const useRepContext = () => useContext(Ctx);
 
-type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean; mobilePrimary?: boolean };
+type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean; mobilePrimary?: boolean; adminOnly?: boolean };
 const NAV: NavItem[] = [
   { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true, mobilePrimary: true },
   { to: "/rep/clientes", label: "Clientes", icon: Users, mobilePrimary: true },
@@ -44,7 +45,7 @@ const NAV: NavItem[] = [
   { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
   { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2, desktopOnly: true },
   { to: "/rep/coach", label: "Coach IA", icon: Sparkles, desktopOnly: true },
-  { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, desktopOnly: true },
+  { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, desktopOnly: true, adminOnly: true },
 
 ];
 
@@ -73,9 +74,12 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     navigate({ to: "/login" });
   };
 
+  const isAdmin = !!data?.isAdmin;
+  const visibleNav = NAV.filter((n) => !n.adminOnly || isAdmin);
+
   return (
     <AIProvider>
-    <Ctx.Provider value={{ rep: data?.rep ?? null, geo, refreshGeo }}>
+    <Ctx.Provider value={{ rep: data?.rep ?? null, isAdmin, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
         <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
@@ -89,7 +93,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             <NotificationBell />
           </div>
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
-            {NAV.map((n) => (
+            {visibleNav.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
@@ -156,7 +160,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-card md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          {NAV.filter((n) => n.mobilePrimary).map((n) => {
+          {visibleNav.filter((n) => n.mobilePrimary).map((n) => {
             const active = isActive(n.to, n.exact);
             return (
               <Link
@@ -176,8 +180,9 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             );
           })}
           <MoreSheet
+            isAdmin={isAdmin}
             active={
-              !NAV.filter((n) => n.mobilePrimary).some((n) =>
+              !visibleNav.filter((n) => n.mobilePrimary).some((n) =>
                 isActive(n.to, n.exact),
               )
             }
