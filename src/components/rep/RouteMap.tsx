@@ -619,24 +619,32 @@ export default function RouteMap() {
                 const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
                 const leg = routeInfo.legs[i];
                 return (
-                  <li key={`${s.cliente_id}-${i}`} className="flex items-start gap-3 rounded-md border p-2">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{name}</div>
-                      {c?.direccion && (
-                        <div className="truncate text-xs text-muted-foreground">{c.direccion}</div>
-                      )}
-                    </div>
-                    {leg && (
-                      <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
-                        <div>{leg.distance_text || `${leg.distance_km} km`}</div>
-                        <div>{leg.duration_text || `${leg.duration_min} min`}</div>
+                  <li key={`${s.cliente_id}-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => setCheckInClient({ id: s.cliente_id, nombre: name })}
+                      className="flex w-full items-start gap-3 rounded-md border p-2 text-left transition hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{name}</div>
+                        {c?.direccion && (
+                          <div className="truncate text-xs text-muted-foreground">{c.direccion}</div>
+                        )}
+                        <div className="mt-0.5 text-[11px] text-primary">Toca para registrar visita</div>
                       </div>
-                    )}
+                      {leg && (
+                        <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                          <div>{leg.distance_text || `${leg.distance_km} km`}</div>
+                          <div>{leg.duration_text || `${leg.duration_min} min`}</div>
+                        </div>
+                      )}
+                    </button>
                   </li>
                 );
+
               })}
             </ol>
           </CardContent>
