@@ -574,17 +574,17 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
     queryKey: ["clients", restrictKey],
     queryFn: async () => {
       if (restrictClientIds && restrictClientIds.length === 0) return [] as Client[];
-      let query = supabase.from("clients").select("*").order("name");
-      if (restrictClientIds && restrictClientIds.length > 0) {
-        query = query.in("id", restrictClientIds);
-      }
-      const [{ data, error }, { data: reps }] = await Promise.all([
-        query,
-        supabase.from("representantes").select("id, nombre"),
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const [data, reps] = await Promise.all([
+        fetchAllRows<any>(() => {
+          let q = supabase.from("clients").select("*").order("name");
+          if (restrictClientIds && restrictClientIds.length > 0) q = q.in("id", restrictClientIds);
+          return q;
+        }),
+        (async () => (await supabase.from("representantes").select("id, nombre")).data ?? [])(),
       ]);
-      if (error) throw error;
-      const repMap = new Map((reps ?? []).map((r) => [r.id, r.nombre]));
-      return (data ?? []).map((c) => ({
+      const repMap = new Map((reps ?? []).map((r: any) => [r.id, r.nombre]));
+      return data.map((c: any) => ({
         ...c,
         representante_nombre: (repMap.get((c as any).representante_id) as string | null) || c.contact || null,
       })) as Client[];
