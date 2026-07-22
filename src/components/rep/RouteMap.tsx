@@ -122,6 +122,7 @@ export default function RouteMap() {
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
+  const [routeFecha, setRouteFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
 
 
 
@@ -319,6 +320,7 @@ export default function RouteMap() {
       // Persist so it appears on Ruta history and Plan semanal
       saveRoute({
         data: {
+          fecha: routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
@@ -416,6 +418,7 @@ export default function RouteMap() {
       toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
       saveRoute({
         data: {
+          fecha: routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
@@ -707,6 +710,15 @@ export default function RouteMap() {
               <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                 {routeInfo.ordered.length} paradas · {routeInfo.km} km · {routeInfo.min} min
               </p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Fecha:</label>
+                <Input
+                  type="date"
+                  value={routeFecha}
+                  onChange={(e) => setRouteFecha(e.target.value)}
+                  className="h-7 w-36 text-xs"
+                />
+              </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-1">
               {routeDirty && (
