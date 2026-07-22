@@ -21,8 +21,10 @@ const fmtMXN = (n: number) =>
 function Page() {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const [newOpen, setNewOpen] = useState(false);
   const fetchQuotes = useServerFn(listRepQuotesFn);
   const convert = useServerFn(convertQuoteToPedidoFn);
+
 
   const q = useQuery({ queryKey: ["rep-quotes"], queryFn: () => fetchQuotes() });
 
