@@ -56,19 +56,35 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
     const repIds = Array.from(
       new Set((rows ?? []).map((r: any) => r.representante_id).filter(Boolean)),
     );
-    let repMap = new Map<string, string>();
+    const userIds = Array.from(
+      new Set((rows ?? []).map((r: any) => r.user_id).filter(Boolean)),
+    );
+    const repById = new Map<string, string>();
+    const repByUser = new Map<string, string>();
     if (repIds.length) {
       const { data: reps } = await supabase
         .from("representantes")
         .select("id, nombre")
         .in("id", repIds);
-      repMap = new Map((reps ?? []).map((r: any) => [r.id, r.nombre]));
+      (reps ?? []).forEach((r: any) => repById.set(r.id, r.nombre));
+    }
+    if (userIds.length) {
+      const { data: reps } = await supabase
+        .from("representantes")
+        .select("id, user_id, nombre")
+        .in("user_id", userIds);
+      (reps ?? []).forEach((r: any) => {
+        if (r.user_id) repByUser.set(r.user_id, r.nombre);
+      });
     }
 
     const events: RepAccessEvent[] = (rows ?? []).map((r: any) => ({
       id: r.id,
       representante_id: r.representante_id,
-      representante_nombre: r.representante_id ? repMap.get(r.representante_id) ?? null : null,
+      representante_nombre:
+        (r.representante_id ? repById.get(r.representante_id) : null) ??
+        (r.user_id ? repByUser.get(r.user_id) : null) ??
+        null,
       user_id: r.user_id,
       signed_in_at: r.signed_in_at,
       lat: r.lat != null ? Number(r.lat) : null,
