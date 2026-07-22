@@ -870,11 +870,18 @@ export const optimizeRouteFn = createServerFn({ method: "POST" })
       ...order.map((i) => data.stops[i]),
       data.stops[data.stops.length - 1],
     ];
+    const legsBreakdown = legs.map((l: any) => ({
+      distance_km: Math.round((l.distance?.value ?? 0) / 100) / 10,
+      duration_min: Math.round((l.duration?.value ?? 0) / 60),
+      distance_text: l.distance?.text ?? "",
+      duration_text: l.duration?.text ?? "",
+    }));
     return {
       orderedStops,
       polyline: route?.overview_polyline?.points ?? null,
       total_km: Math.round(totalMeters / 100) / 10,
       total_minutes: Math.round(totalSecs / 60),
+      legs: legsBreakdown,
     };
   });
 
