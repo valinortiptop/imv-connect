@@ -1,125 +1,32 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { listRepQuotesFn, convertQuoteToPedidoFn } from "@/lib/rep-sales.functions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { getMyClientsFn } from "@/lib/rep.functions";
+import Orders from "@/components/orders-page";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
-import { FileText, ArrowRight, Plus } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
-import ShareTicketButton from "@/components/rep/ShareTicketButton";
-import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
-
-
-
-const fmtMXN = (n: number) =>
-  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(n);
 
 function Page() {
-  const qc = useQueryClient();
-  const nav = useNavigate();
-  const [newOpen, setNewOpen] = useState(false);
-  const fetchQuotes = useServerFn(listRepQuotesFn);
-  const convert = useServerFn(convertQuoteToPedidoFn);
+  const fetchClients = useServerFn(getMyClientsFn);
+  const q = useQuery({ queryKey: ["rep-clients"], queryFn: () => fetchClients() });
 
+  if (q.isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
-  const q = useQuery({ queryKey: ["rep-quotes"], queryFn: () => fetchQuotes() });
-
-  const mutate = useMutation({
-    mutationFn: (quoteId: string) => convert({ data: { quoteId } }),
-    onSuccess: (r) => {
-      toast.success(r.alreadyConverted ? "Ya estaba convertida" : `Pedido creado ${r.folio ?? ""}`);
-      qc.invalidateQueries({ queryKey: ["rep-quotes"] });
-      if (r.pedidoId) nav({ to: "/admin/pedidos/$id", params: { id: r.pedidoId } });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Error al convertir"),
-  });
+  const clientIds = (q.data?.clients ?? []).map((c: any) => c.id);
 
   return (
     <div className="space-y-4">
       <AIPageInsights module="rep-cotizaciones" />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold md:text-2xl">Cotizaciones</h1>
-          <p className="text-sm text-muted-foreground">Propuestas enviadas y su conversión a pedido</p>
-        </div>
-        <Button size="sm" onClick={() => setNewOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Crear nueva cotización
-        </Button>
-
-      </div>
-
-      {q.isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-28 w-full" />
-          ))}
-        </div>
-      ) : q.data?.quotes.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            No hay cotizaciones todavía.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {q.data?.quotes.map((c: any) => (
-            <Card key={c.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-between text-base">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    {c.client_name}
-                  </span>
-                  <Badge variant={c.converted_to_order_id ? "secondary" : "default"}>
-                    {c.converted_to_order_id ? "convertida" : c.status}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 pt-0">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-muted-foreground">Total</span>
-                  <span className="text-lg font-semibold">{fmtMXN(Number(c.total ?? 0))}</span>
-                </div>
-                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
-                  <span>{new Date(c.created_at).toLocaleDateString("es-MX")}</span>
-                  <span>{c.delivery_date ? `Entrega: ${c.delivery_date}` : "Sin fecha"}</span>
-                </div>
-                <div className="flex gap-2">
-                  <ShareTicketButton kind="cotizacion" id={c.id} />
-                  {!c.converted_to_order_id && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      disabled={mutate.isPending}
-                      onClick={() => mutate.mutate(c.id)}
-                    >
-                      Convertir a pedido <ArrowRight className="ml-2 h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <NewOrderDialog
-        open={newOpen}
-        onOpenChange={setNewOpen}
-        mode="quote"
-        onOrderCreated={() => {
-          qc.invalidateQueries({ queryKey: ["rep-quotes"] });
-        }}
-      />
+      <Orders restrictClientIds={clientIds} />
     </div>
   );
 }
-
 
 export const Route = createFileRoute("/rep/cotizaciones")({ component: Page });
