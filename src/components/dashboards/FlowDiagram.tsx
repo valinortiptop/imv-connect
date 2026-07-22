@@ -119,7 +119,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
             const a = nodeById.get(e.from);
             const b = nodeById.get(e.to);
             if (!a || !b) return null;
-            const d = buildPath(a, b, e.bend ?? "vh");
+            const d = buildPath(a, b, e.bend ?? "vh", e.laneOffset ?? 0);
             return (
               <path
                 key={i}
