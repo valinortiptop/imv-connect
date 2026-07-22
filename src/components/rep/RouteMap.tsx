@@ -89,6 +89,9 @@ export default function RouteMap() {
   const geocode = useServerFn(geocodeClientFn);
   const fetchHeat = useServerFn(getOpportunityHeatmapFn);
   const suggestAI = useServerFn(suggestRouteWithAIFn);
+  const saveRoute = useServerFn(saveRouteFn);
+  const qc = useQueryClient();
+
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
