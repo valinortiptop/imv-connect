@@ -60,10 +60,13 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
   const list = useServerFn(listSavedRoutesFn);
   const del = useServerFn(deleteSavedRouteFn);
   const dup = useServerFn(duplicateSavedRouteFn);
+  const rename = useServerFn(renameSavedRouteFn);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
   const [checkIn, setCheckIn] = useState<{ id: string; nombre: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>("");
 
   const q = useQuery({
     queryKey: ["rep-saved-routes", limit],
@@ -86,6 +89,16 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
       qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo duplicar"),
+  });
+
+  const renameMut = useMutation({
+    mutationFn: (vars: { id: string; nombre: string }) => rename({ data: vars }),
+    onSuccess: () => {
+      toast.success("Nombre actualizado");
+      setEditingId(null);
+      qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo renombrar"),
   });
 
   const loadRouteIntoMap = (r: SavedRoute) => {
