@@ -47,6 +47,10 @@ function WeeklyPlanRoute() {
 
       <AIPageInsights module="rep-plan" />
 
+      <SavedRoutesList />
+
+
+
 
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-3">
