@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { useBuildVersionCheck } from "../hooks/use-build-version-check";
 import { AuthProvider } from "../hooks/use-auth";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
