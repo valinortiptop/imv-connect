@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { listSavedRoutesFn, deleteSavedRouteFn } from "@/lib/rep.functions";
+import { listSavedRoutesFn, deleteSavedRouteFn, duplicateSavedRouteFn } from "@/lib/rep.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { History, ChevronDown, ChevronRight, Trash2, MapPin, Pencil, ClipboardCheck } from "lucide-react";
+import { History, ChevronDown, ChevronRight, Trash2, MapPin, Pencil, ClipboardCheck, Copy } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 
 type Stop = {
