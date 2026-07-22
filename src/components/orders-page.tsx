@@ -607,6 +607,7 @@ export default function Orders({ restrictClientIds }: { restrictClientIds?: stri
           onConverted={(orderId) => { setTab("pedidos"); setEditOrderId(orderId); }}
           newOpen={newQuoteOpen}
           onNewOpenChange={setNewQuoteOpen}
+          restrictClientIds={restrictClientIds ?? undefined}
         />
       )}
 
