@@ -103,25 +103,35 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
 
 
   const finish = useMutation({
-    mutationFn: () =>
-      doCheckOut({
-        data: {
-          visitId: visitId!,
-          lat: geo?.lat,
-          lng: geo?.lng,
-          notes: notes || undefined,
-          outcome: (outcome || undefined) as any,
-          agreements: agreements.filter((a) => a.description.trim().length > 0),
-        },
-      }),
+    mutationFn: async () => {
+      const tid = toast.loading("Finalizando visita…");
+      try {
+        const r = await doCheckOut({
+          data: {
+            visitId: visitId!,
+            lat: geo?.lat,
+            lng: geo?.lng,
+            notes: notes || undefined,
+            outcome: (outcome || undefined) as any,
+            agreements: agreements.filter((a) => a.description.trim().length > 0),
+          },
+        });
+        toast.dismiss(tid);
+        return r;
+      } catch (e) {
+        toast.dismiss(tid);
+        throw e;
+      }
+    },
     onSuccess: () => {
       toast.success("Visita finalizada");
       qc.invalidateQueries({ queryKey: ["client-visits", clienteId] });
       qc.invalidateQueries({ queryKey: ["rep-visits"] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message ?? "Error"),
+    onError: (e: any) => toast.error(String(e?.message ?? e ?? "Error al finalizar visita")),
   });
+
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
