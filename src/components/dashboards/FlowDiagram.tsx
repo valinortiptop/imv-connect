@@ -22,6 +22,9 @@ export type FlowEdge = {
   to: string;
   bend?: "hv" | "vh";
   bidirectional?: boolean;
+  /** perpendicular shift (px) applied to the middle segment of an L-shaped path,
+   * or to the whole line for straight paths. Use to separate parallel arrows. */
+  laneOffset?: number;
 };
 
 type Props = {
@@ -48,28 +51,32 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
     y: (row - 0.5) * CELL_H,
   });
 
-  const buildPath = (a: FlowNode, b: FlowNode, bend: "hv" | "vh" = "vh") => {
+  const buildPath = (a: FlowNode, b: FlowNode, bend: "hv" | "vh" = "vh", off = 0) => {
     const p1 = centre(a.col, a.row);
     const p2 = centre(b.col, b.row);
 
     if (a.row === b.row) {
       const sx = p2.x > p1.x ? PAD : -PAD;
       const ex = p2.x > p1.x ? -PAD : PAD;
-      return `M ${p1.x + sx} ${p1.y} L ${p2.x + ex} ${p1.y}`;
+      const y = p1.y + off;
+      return `M ${p1.x + sx} ${y} L ${p2.x + ex} ${y}`;
     }
     if (a.col === b.col) {
       const sy = p2.y > p1.y ? PAD : -PAD;
       const ey = p2.y > p1.y ? -PAD : PAD;
-      return `M ${p1.x} ${p1.y + sy} L ${p1.x} ${p2.y + ey}`;
+      const x = p1.x + off;
+      return `M ${x} ${p1.y + sy} L ${x} ${p2.y + ey}`;
     }
     if (bend === "hv") {
       const sx = p2.x > p1.x ? PAD : -PAD;
       const ey = p2.y > p1.y ? -PAD : PAD;
-      return `M ${p1.x + sx} ${p1.y} L ${p2.x} ${p1.y} L ${p2.x} ${p2.y + ey}`;
+      const midY = p1.y + off;
+      return `M ${p1.x + sx} ${midY} L ${p2.x + off} ${midY} L ${p2.x + off} ${p2.y + ey}`;
     }
     const sy = p2.y > p1.y ? PAD : -PAD;
     const ex = p2.x > p1.x ? -PAD : PAD;
-    return `M ${p1.x} ${p1.y + sy} L ${p1.x} ${p2.y} L ${p2.x + ex} ${p2.y}`;
+    const midX = p1.x + off;
+    return `M ${midX} ${p1.y + sy} L ${midX} ${p2.y + off} L ${p2.x + ex} ${p2.y + off}`;
   };
 
   return (
@@ -112,7 +119,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
             const a = nodeById.get(e.from);
             const b = nodeById.get(e.to);
             if (!a || !b) return null;
-            const d = buildPath(a, b, e.bend ?? "vh");
+            const d = buildPath(a, b, e.bend ?? "vh", e.laneOffset ?? 0);
             return (
               <path
                 key={i}

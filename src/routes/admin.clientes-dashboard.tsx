@@ -67,19 +67,22 @@ function ClientesDashboard() {
 
   const edges: FlowEdge[] = [
     { from: "prospectos", to: "clientes" },
-    { from: "clientes", to: "segNotas", bend: "vh" },
+    // Clientes fans out: separate the two vh-bends so they don't stack on col 2
+    { from: "clientes", to: "segNotas", bend: "vh", laneOffset: -28 },
     { from: "clientes", to: "cotiza" },
-    { from: "clientes", to: "productos", bend: "vh" },
+    { from: "clientes", to: "productos", bend: "vh", laneOffset: 28 },
     { from: "cotiza", to: "segCotiza", bidirectional: true },
     { from: "cotiza", to: "pedidos" },
     { from: "pedidos", to: "factura" },
-    { from: "pedidos", to: "consigna", bend: "vh" },
-    { from: "consigna", to: "factura", bend: "vh" },
+    // Pedidos ↔ Consigna ↔ Factura share col 4; offset the bends
+    { from: "pedidos", to: "consigna", bend: "vh", laneOffset: -24 },
+    { from: "consigna", to: "factura" },
     { from: "consigna", to: "devConsigna", bidirectional: true },
     { from: "pedidos", to: "remision", bidirectional: true },
     { from: "remision", to: "guias", bidirectional: true },
-    { from: "guias", to: "factura", bend: "vh" },
-    { from: "devol", to: "factura", bend: "vh" },
+    { from: "guias", to: "factura", bend: "vh", laneOffset: 24 },
+    // Devol → Factura: route via col 4 to avoid crossing segCxc at col 5
+    { from: "devol", to: "factura", bend: "hv", laneOffset: 28 },
     { from: "factura", to: "segCxc" },
     { from: "segCxc", to: "depositos" },
     { from: "depositos", to: "aplicaCob" },
