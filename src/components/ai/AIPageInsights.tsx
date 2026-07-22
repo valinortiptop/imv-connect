@@ -105,8 +105,14 @@ export function AIPageInsights({
           path: path ?? (typeof window !== "undefined" ? window.location.pathname : "/rep"),
         },
       }),
-    onSuccess: (res) => setText(res.text),
-    onError: (e: Error) => setText(`No se pudo generar el análisis: ${e.message}`),
+    onSuccess: (res) => {
+      setText(res.text);
+      setOpen(true);
+    },
+    onError: (e: Error) => {
+      setText(`No se pudo generar el análisis: ${e.message}`);
+      setOpen(false);
+    },
   });
 
   useEffect(() => {

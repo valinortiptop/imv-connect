@@ -21,6 +21,9 @@ const MODULE = z.enum([
   "rep-anaquel",
   "rep-cierre",
   "rep-metas",
+  "rep-competencia",
+  "rep-comportamiento-sku",
+  "rep-oportunidades-perdidas",
 ]);
 
 
