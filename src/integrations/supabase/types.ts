@@ -3240,6 +3240,7 @@ export type Database = {
       }
       facturas: {
         Row: {
+          backfill_source: string | null
           cancel_motivo: string | null
           canceled_at: string | null
           cfdi_status: string | null
@@ -3271,6 +3272,7 @@ export type Database = {
           xml_url: string | null
         }
         Insert: {
+          backfill_source?: string | null
           cancel_motivo?: string | null
           canceled_at?: string | null
           cfdi_status?: string | null
@@ -3302,6 +3304,7 @@ export type Database = {
           xml_url?: string | null
         }
         Update: {
+          backfill_source?: string | null
           cancel_motivo?: string | null
           canceled_at?: string | null
           cfdi_status?: string | null
@@ -5301,6 +5304,7 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          backfill_source: string | null
           cliente_id: string
           comision_monto: number | null
           comision_pct: number | null
@@ -5332,6 +5336,7 @@ export type Database = {
           urgency: boolean | null
         }
         Insert: {
+          backfill_source?: string | null
           cliente_id: string
           comision_monto?: number | null
           comision_pct?: number | null
@@ -5363,6 +5368,7 @@ export type Database = {
           urgency?: boolean | null
         }
         Update: {
+          backfill_source?: string | null
           cliente_id?: string
           comision_monto?: number | null
           comision_pct?: number | null
