@@ -480,7 +480,7 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
 /* ------------------------------------------------------------------ */
 /*  Main Clients page                                                 */
 /* ------------------------------------------------------------------ */
-export default function Clients() {
+export default function Clients({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
