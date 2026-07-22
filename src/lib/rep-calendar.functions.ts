@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type CalendarEvent = {
   id: string;
-  type: "visita" | "acuerdo" | "llamada" | "pedido" | "entrega";
+  type: "visita" | "acuerdo" | "llamada" | "pedido" | "entrega" | "ruta";
   title: string;
   subtitle?: string;
   start: string; // ISO
@@ -35,7 +35,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
     const { from, to, clienteId } = data;
     const repIds = data.repId ? [data.repId] : data.repIds;
 
-    const [repsRes, clientsRes, visitsRes, agreementsRes, callsRes, tripsRes, ordersRes] = await Promise.all([
+    const [repsRes, clientsRes, visitsRes, agreementsRes, callsRes, tripsRes, ordersRes, routesRes] = await Promise.all([
       supabase.from("representantes").select("id, nombre"),
       supabase.from("clientes").select("id, razon_social, nombre_comercial, representante_id"),
       (async () => {
@@ -70,6 +70,15 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
           .lte("created_at", to);
         if (repIds?.length) q = q.in("representante_id", repIds);
         if (clienteId) q = q.eq("cliente_id", clienteId);
+        return q;
+      })(),
+      (async () => {
+        let q = supabase
+          .from("rep_rutas_guardadas")
+          .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, representante_id, user_id, created_at")
+          .gte("fecha", from.slice(0, 10))
+          .lte("fecha", to.slice(0, 10));
+        if (repIds?.length) q = q.in("representante_id", repIds);
         return q;
       })(),
     ]);
@@ -178,6 +187,29 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         cliente_id: p.cliente_id,
         cliente_nombre: cli?.name ?? null,
         status: p.estado,
+      });
+    }
+
+    // Saved routes (planned or past)
+    for (const r of routesRes.data ?? []) {
+      const stops = ((r.ordered_stops as any[]) ?? []).length;
+      if (clienteId) {
+        const has = ((r.ordered_stops as any[]) ?? []).some((s: any) => String(s?.cliente_id) === clienteId);
+        if (!has) continue;
+      }
+      const repId = r.representante_id ?? null;
+      events.push({
+        id: `r-${r.id}`,
+        type: "ruta",
+        title: r.nombre || `Ruta · ${stops} paradas`,
+        subtitle: [
+          stops ? `${stops} paradas` : null,
+          r.total_km != null ? `${r.total_km} km` : null,
+          r.total_minutes != null ? `${r.total_minutes} min` : null,
+        ].filter(Boolean).join(" · ") || undefined,
+        start: `${r.fecha}T07:00:00`,
+        representante_id: repId,
+        representante_nombre: repId ? reps.get(repId) ?? null : null,
       });
     }
 
