@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { listRepQuotesFn, convertQuoteToPedidoFn } from "@/lib/rep-sales.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { toast } from "sonner";
 import { FileText, ArrowRight, Plus } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
 import ShareTicketButton from "@/components/rep/ShareTicketButton";
+import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
+
 
 
 const fmtMXN = (n: number) =>
@@ -18,8 +21,10 @@ const fmtMXN = (n: number) =>
 function Page() {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const [newOpen, setNewOpen] = useState(false);
   const fetchQuotes = useServerFn(listRepQuotesFn);
   const convert = useServerFn(convertQuoteToPedidoFn);
+
 
   const q = useQuery({ queryKey: ["rep-quotes"], queryFn: () => fetchQuotes() });
 
@@ -41,11 +46,10 @@ function Page() {
           <h1 className="text-xl font-semibold md:text-2xl">Cotizaciones</h1>
           <p className="text-sm text-muted-foreground">Propuestas enviadas y su conversión a pedido</p>
         </div>
-        <Button asChild size="sm">
-          <Link to="/rep/clientes">
-            <Plus className="mr-2 h-4 w-4" /> Nueva desde cliente
-          </Link>
+        <Button size="sm" onClick={() => setNewOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Crear nueva cotización
         </Button>
+
       </div>
 
       {q.isLoading ? (
@@ -104,8 +108,18 @@ function Page() {
           ))}
         </div>
       )}
+
+      <NewOrderDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        mode="quote"
+        onOrderCreated={() => {
+          qc.invalidateQueries({ queryKey: ["rep-quotes"] });
+        }}
+      />
     </div>
   );
 }
+
 
 export const Route = createFileRoute("/rep/cotizaciones")({ component: Page });
