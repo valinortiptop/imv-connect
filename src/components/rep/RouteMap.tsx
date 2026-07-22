@@ -177,6 +177,63 @@ export default function RouteMap() {
     return () => { cancelled = true; };
   }, []);
 
+  // Hydrate from a saved route (opened via "Ver / Editar" in SavedRoutesList)
+  useEffect(() => {
+    const hydrate = (r: any) => {
+      if (!r) return;
+      const stops = (r.ordered_stops ?? [])
+        .filter((s: any) => s?.lat != null && s?.lng != null)
+        .map((s: any) => ({
+          cliente_id: String(s.cliente_id),
+          lat: Number(s.lat),
+          lng: Number(s.lng),
+        }));
+      if (stops.length === 0) {
+        toast.error("Esta ruta no tiene coordenadas");
+        return;
+      }
+      const path = r.polyline ? decodePolyline(r.polyline) : [];
+      setSelected(new Set(stops.map((s: any) => s.cliente_id)));
+      setRouteInfo({
+        km: Number(r.total_km ?? 0),
+        min: Number(r.total_minutes ?? 0),
+        path,
+        ordered: stops,
+        legs: r.legs ?? [],
+      });
+      if (r.fecha) setRouteFecha(String(r.fecha).slice(0, 10));
+      // Fit map
+      const maps = (window as any).google?.maps;
+      const map = mapRef.current;
+      if (maps && map) {
+        const bounds = new maps.LatLngBounds();
+        stops.forEach((s: any) => bounds.extend({ lat: s.lat, lng: s.lng }));
+        if (path.length > 0) path.forEach(([lat, lng]) => bounds.extend({ lat, lng }));
+        userInteractedRef.current = true;
+        map.fitBounds(bounds, 60);
+      }
+    };
+
+    // Check sessionStorage on mount
+    try {
+      const raw = sessionStorage.getItem("rep:load-route");
+      if (raw) {
+        sessionStorage.removeItem("rep:load-route");
+        // Defer until map is ready
+        const tryHydrate = () => {
+          if (mapRef.current) hydrate(JSON.parse(raw));
+          else setTimeout(tryHydrate, 150);
+        };
+        tryHydrate();
+      }
+    } catch {}
+
+    const onEvent = (e: any) => hydrate(e?.detail);
+    window.addEventListener("rep:load-route", onEvent as any);
+    return () => window.removeEventListener("rep:load-route", onEvent as any);
+  }, []);
+
+
 
   const routeMode = !!routeInfo;
 
