@@ -3,8 +3,9 @@
 // Server-side geocoding + route optimization go through the Valinor proxy
 // via existing server functions.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
 import {
   getMyClientsFn,
   optimizeRouteFn,
