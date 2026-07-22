@@ -61,6 +61,9 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
     );
     const repById = new Map<string, string>();
     const repByUser = new Map<string, string>();
+    const repByEmail = new Map<string, string>();
+    const emailByUser = new Map<string, string>();
+
     if (repIds.length) {
       const { data: reps } = await supabase
         .from("representantes")
@@ -76,23 +79,59 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
       (reps ?? []).forEach((r: any) => {
         if (r.user_id) repByUser.set(r.user_id, r.nombre);
       });
+
+      // Fallback: representantes.user_id is often null → resolve via email in auth.users
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const missing = userIds.filter((u) => !repByUser.has(u as string));
+        if (missing.length) {
+          const emails: string[] = [];
+          for (const uid of missing) {
+            const { data: au } = await (supabaseAdmin as any).auth.admin.getUserById(uid);
+            const email = au?.user?.email;
+            const fullName =
+              au?.user?.user_metadata?.full_name ?? au?.user?.user_metadata?.name ?? null;
+            if (email) {
+              emailByUser.set(uid as string, email);
+              emails.push(email);
+            }
+            if (fullName) repByUser.set(uid as string, fullName);
+          }
+          if (emails.length) {
+            const { data: repsByMail } = await (supabaseAdmin as any)
+              .from("representantes")
+              .select("email, nombre")
+              .in("email", emails);
+            (repsByMail ?? []).forEach((r: any) => {
+              if (r.email) repByEmail.set(String(r.email).toLowerCase(), r.nombre);
+            });
+          }
+        }
+      } catch {
+        // ignore – fall back to whatever we already have
+      }
     }
 
-    const events: RepAccessEvent[] = (rows ?? []).map((r: any) => ({
-      id: r.id,
-      representante_id: r.representante_id,
-      representante_nombre:
+    const events: RepAccessEvent[] = (rows ?? []).map((r: any) => {
+      const email = r.user_id ? emailByUser.get(r.user_id)?.toLowerCase() : null;
+      const nombre =
         (r.representante_id ? repById.get(r.representante_id) : null) ??
         (r.user_id ? repByUser.get(r.user_id) : null) ??
-        null,
-      user_id: r.user_id,
-      signed_in_at: r.signed_in_at,
-      lat: r.lat != null ? Number(r.lat) : null,
-      lng: r.lng != null ? Number(r.lng) : null,
-      accuracy: r.accuracy != null ? Number(r.accuracy) : null,
-      has_location: !!r.has_location,
-      user_agent: r.user_agent ?? null,
-    }));
+        (email ? repByEmail.get(email) : null) ??
+        (r.user_id ? emailByUser.get(r.user_id) ?? null : null);
+      return {
+        id: r.id,
+        representante_id: r.representante_id,
+        representante_nombre: nombre ?? null,
+        user_id: r.user_id,
+        signed_in_at: r.signed_in_at,
+        lat: r.lat != null ? Number(r.lat) : null,
+        lng: r.lng != null ? Number(r.lng) : null,
+        accuracy: r.accuracy != null ? Number(r.accuracy) : null,
+        has_location: !!r.has_location,
+        user_agent: r.user_agent ?? null,
+      };
+    });
 
     return { events };
   });
