@@ -482,7 +482,7 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
               <div className="text-sm text-muted-foreground">Sin eventos para este día.</div>
             )}
             {dayEvents.map((e) => (
-              <EventRow key={e.id} e={e} />
+              <EventRow key={e.id} e={e} onClick={() => setSelectedEvent(e)} />
             ))}
           </CardContent>
         </Card>
