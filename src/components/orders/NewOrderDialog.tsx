@@ -522,8 +522,19 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const duplicateLine = (idx: number) => {
+    setLines(prev => {
+      const src = prev[idx];
+      if (!src) return prev;
+      // Copy the line so the user can quickly offer the same product
+      // with a different price list / custom price without re-searching.
+      const copy: OrderLine = { ...src };
+      return [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+    });
+  };
+
   const totalOrder = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
-  const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 0 }).format(n);
+  const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const availableProducts = sortProducts(products);
   const availableDamaged = damagedBatches.filter(b => !lines.some(l => l.damaged_batch_id === b.id));
 
