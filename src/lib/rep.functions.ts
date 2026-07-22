@@ -2136,3 +2136,46 @@ export const deleteSavedRouteFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const duplicateSavedRouteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      id: z.string().uuid(),
+      fecha: z.string().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: src, error: readErr } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    if (!src) throw new Error("Ruta no encontrada");
+
+    const baseName = (src as any).nombre || "Ruta";
+    const copyName = /\(copia\)/i.test(baseName) ? baseName : `${baseName} (copia)`;
+
+    const { data: row, error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .insert({
+        user_id: context.userId,
+        representante_id: (src as any).representante_id ?? null,
+        nombre: copyName,
+        fecha: data.fecha ?? (src as any).fecha,
+        start_lat: (src as any).start_lat ?? null,
+        start_lng: (src as any).start_lng ?? null,
+        total_km: (src as any).total_km ?? null,
+        total_minutes: (src as any).total_minutes ?? null,
+        polyline: (src as any).polyline ?? null,
+        ordered_stops: (src as any).ordered_stops ?? [],
+        legs: (src as any).legs ?? [],
+        origen: "duplicado",
+      })
+      .select("id, fecha, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });

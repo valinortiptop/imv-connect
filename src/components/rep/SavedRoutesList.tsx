@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { listSavedRoutesFn, deleteSavedRouteFn } from "@/lib/rep.functions";
+import { listSavedRoutesFn, deleteSavedRouteFn, duplicateSavedRouteFn } from "@/lib/rep.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { History, ChevronDown, ChevronRight, Trash2, MapPin, Pencil, ClipboardCheck } from "lucide-react";
+import { History, ChevronDown, ChevronRight, Trash2, MapPin, Pencil, ClipboardCheck, Copy } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 
 type Stop = {
@@ -41,6 +41,7 @@ function fmtDate(iso: string) {
 export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
   const list = useServerFn(listSavedRoutesFn);
   const del = useServerFn(deleteSavedRouteFn);
+  const dup = useServerFn(duplicateSavedRouteFn);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -58,6 +59,15 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
       qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar"),
+  });
+
+  const duplicateMut = useMutation({
+    mutationFn: (vars: { id: string; fecha?: string }) => dup({ data: vars }),
+    onSuccess: () => {
+      toast.success("Ruta duplicada");
+      qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo duplicar"),
   });
 
   const loadRouteIntoMap = (r: SavedRoute) => {
@@ -143,6 +153,26 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             Ver / Editar
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Duplicar ruta"
+                            disabled={duplicateMut.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const today = new Date().toISOString().slice(0, 10);
+                              const suggested = prompt(
+                                "Fecha para la ruta duplicada (YYYY-MM-DD):",
+                                r.fecha || today,
+                              );
+                              if (suggested === null) return;
+                              const fecha = suggested.trim() || r.fecha || today;
+                              duplicateMut.mutate({ id: r.id, fecha });
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
                           </Button>
                           <Button
                             size="icon"
