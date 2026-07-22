@@ -710,6 +710,15 @@ export default function RouteMap() {
               <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                 {routeInfo.ordered.length} paradas · {routeInfo.km} km · {routeInfo.min} min
               </p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Fecha:</label>
+                <Input
+                  type="date"
+                  value={routeFecha}
+                  onChange={(e) => setRouteFecha(e.target.value)}
+                  className="h-7 w-36 text-xs"
+                />
+              </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-1">
               {routeDirty && (
