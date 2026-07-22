@@ -418,6 +418,7 @@ export default function RouteMap() {
       toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
       saveRoute({
         data: {
+          fecha: routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
