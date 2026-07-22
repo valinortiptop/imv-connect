@@ -190,17 +190,35 @@ export async function googlePlaceDetails(input: {
   place_id: string;
   sessiontoken?: string;
   language?: string;
+  fields?: string;
 }) {
   const endpoint = buildMapsEndpoint("/maps/api/place/details/json", {
     place_id: input.place_id,
     sessiontoken: input.sessiontoken,
     language: input.language ?? "es",
-    fields: "formatted_address,address_components,geometry,name,place_id",
+    fields:
+      input.fields ??
+      "formatted_address,address_components,geometry,name,place_id",
   });
   return callValinor<{
     status: string;
     result?: {
+      name?: string;
       formatted_address?: string;
+      formatted_phone_number?: string;
+      international_phone_number?: string;
+      website?: string;
+      url?: string;
+      rating?: number;
+      user_ratings_total?: number;
+      business_status?: string;
+      types?: string[];
+      price_level?: number;
+      opening_hours?: {
+        weekday_text?: string[];
+        open_now?: boolean;
+      };
+      editorial_summary?: { overview?: string };
       place_id?: string;
       geometry?: { location?: { lat: number; lng: number } };
       address_components?: Array<{

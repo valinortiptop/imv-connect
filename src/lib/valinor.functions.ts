@@ -95,10 +95,71 @@ export const googlePlaceDetailsFn = createServerFn({ method: "POST" })
         place_id: z.string().min(1).max(300),
         sessiontoken: z.string().min(1).max(120).optional(),
         language: z.string().min(2).max(8).optional(),
+        fields: z.string().min(1).max(500).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => googlePlaceDetails(data));
+
+const PLACE_FULL_FIELDS =
+  "name,formatted_address,address_components,geometry,place_id,formatted_phone_number,international_phone_number,website,url,rating,user_ratings_total,business_status,types,price_level,opening_hours,editorial_summary";
+
+export const googlePlaceEnrichFn = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        place_id: z.string().min(1).max(300),
+        sessiontoken: z.string().min(1).max(120).optional(),
+        language: z.string().min(2).max(8).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const resp = await googlePlaceDetails({ ...data, fields: PLACE_FULL_FIELDS });
+    const r = resp?.result;
+    if (!r) return { enrichment: null };
+
+    const comps = r.address_components ?? [];
+    const findComp = (types: string[]) =>
+      comps.find((c) => c.types?.some((t) => types.includes(t)))?.long_name ?? null;
+
+    const street_number = findComp(["street_number"]);
+    const route = findComp(["route"]);
+    const direccion =
+      [route, street_number].filter(Boolean).join(" ") || null;
+    const colonia =
+      findComp(["sublocality", "sublocality_level_1", "neighborhood"]);
+    const municipio =
+      findComp(["locality", "administrative_area_level_2"]);
+    const estado = findComp(["administrative_area_level_1"]);
+    const codigo_postal = findComp(["postal_code"]);
+
+    return {
+      enrichment: {
+        name: r.name ?? null,
+        place_id: r.place_id ?? data.place_id,
+        formatted_address: r.formatted_address ?? null,
+        direccion: direccion ?? r.formatted_address ?? null,
+        colonia,
+        municipio,
+        estado,
+        codigo_postal,
+        lat: r.geometry?.location?.lat ?? null,
+        lng: r.geometry?.location?.lng ?? null,
+        phone:
+          r.formatted_phone_number ?? r.international_phone_number ?? null,
+        website: r.website ?? null,
+        google_maps_url: r.url ?? null,
+        rating: r.rating ?? null,
+        user_ratings_total: r.user_ratings_total ?? null,
+        business_status: r.business_status ?? null,
+        primary_type: r.types?.[0] ?? null,
+        price_level: r.price_level ?? null,
+        opening_hours: r.opening_hours?.weekday_text ?? null,
+        description: r.editorial_summary?.overview ?? null,
+      },
+    };
+  });
 
 export const googleGeocodeFn = createServerFn({ method: "POST" })
   .inputValidator((input) =>
