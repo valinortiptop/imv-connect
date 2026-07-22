@@ -41,6 +41,7 @@ function fmtDate(iso: string) {
 export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
   const list = useServerFn(listSavedRoutesFn);
   const del = useServerFn(deleteSavedRouteFn);
+  const dup = useServerFn(duplicateSavedRouteFn);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -58,6 +59,15 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
       qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar"),
+  });
+
+  const duplicateMut = useMutation({
+    mutationFn: (vars: { id: string; fecha?: string }) => dup({ data: vars }),
+    onSuccess: () => {
+      toast.success("Ruta duplicada");
+      qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo duplicar"),
   });
 
   const loadRouteIntoMap = (r: SavedRoute) => {
