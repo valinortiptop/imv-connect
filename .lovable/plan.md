@@ -1,63 +1,46 @@
-# Backfill 2026 Sales History → Pedidos + Facturas
+## What I found
 
-Convert the NetSuite export `IMVVENTASDESGLOSADAS558-2.xls` (25,475 invoices, 62,018 line items, Jan–Jul 2026) into transactional records so all the AI/intelligence features have real 2026 history to work with.
+Database check (just now):
 
-## What gets created
+- `pedidos` total: **7**, tagged `netsuite_2026`: **0**
+- `facturas` total: **2**, tagged `netsuite_2026`: **0**
+- `pedido_items` from backfill: **0**
+- 0 clientes, 0 representantes, 0 items impacted
 
-Per unique `Número de documento` (INV…) in the file:
-- **1 pedido** — status `entregado`, folio = `INV#####`, one item per line
-- **1 factura** — status `pagada`, folio matches, `pagado = total`, `saldo = 0`, linked to the pedido
-- **N pedido_items + factura_items** — one per row, snapshotting product name/sku/unit
+The backfill code is in place (`src/lib/backfill-sales.functions.ts`, `src/routes/admin.backfill-ventas.tsx`, `src/components/backfill-ventas-page.tsx`), but **it was never actually executed** against the NetSuite file — nothing was inserted. The listing pages (Pedidos, Ventas, Cliente 360) are showing all the data they have; there is just no 2026 history to show.
 
-Per file (in addition):
-- **sales_history** rows for every line, tagged with a shared `import_batch_id`
+The source file `IMVVENTASDESGLOSADAS558-2.xls` (~42 MB) is still available in uploads.
 
-All records land in the single existing empresa (`IMV`, id `1e977bb2-…`).
+## Plan
 
-## Money handling
-
-- Line `precio_unitario = ingresos_totales / cantidad`
-- `iva_pct = 0`, `ieps_pct = 0`
-- Pedido/factura `subtotal = total = SUM(line revenue)`, `iva = 0`
-- Lines with `ingresos_totales ≈ 0` (bonificaciones — hundreds in the file, e.g. `0.01`) are kept as-is so unit history is preserved.
-
-## Reference resolution (auto-create stubs when missing)
-
-- **Cliente**: file has `"1471 NANCY M YAÑEZ SILVA"`. Strip leading numeric ID, match by exact `razon_social`, then case-insensitive. Missing → insert stub client with `razon_social = <clean name>`, `nickname = <netsuite id>`, `client_type = 'menudeo'`, `active = true`.
-- **Producto**: match by `sku` (exact). Missing → insert stub with `sku`, `nombre = descripción`, `unidad = 'PZA'`, `precio_base = precio_unitario`, `activo = true` (fill required fields with sensible defaults; empresa scoped).
-- **Representante**: match by `nombre` (exact, then case-insensitive). Missing → insert stub with `nombre`, `activo = true`, `comision_default_pct = 0`.
-- Assign `pedido.representante_id` = rep from the first line of that invoice; also set `factura.representante_id`.
-
-Resolution runs once up front, building three in-memory maps, so lookups during import are O(1).
-
-## Server function + migration
-
-New migration `db/migrations/0025_backfill_2026_helpers.sql`:
-- `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS backfill_source text` (nullable; tag = `'netsuite_2026'` so we can find/undo the batch cleanly).
-- Same on `facturas`.
-- Indexes on `pedidos(folio)` and `facturas(folio)` (unique-if-null-safe partial) to make idempotent upserts fast.
-
-New server function file `src/lib/backfill-sales.functions.ts`:
-- `backfillNetsuiteSales2026Fn` (`.middleware([requireSupabaseAuth])`, admin-role checked via `has_role`) — accepts `{ rows: [...] }` chunks and does the resolve → insert work using `supabaseAdmin` (loaded inside the handler).
-- Uses transactions per invoice; on failure of one invoice, logs and continues.
-- Idempotent: `ON CONFLICT (folio)` update-nothing so re-runs skip already-imported invoices.
-
-## Admin UI to run the backfill
-
-New route/page: **`/admin/onboarding` → "Backfill ventas 2026" card** (or a new dedicated route `/admin/backfill-ventas` — matches existing sidebar pattern).
-- File upload (accepts `.xls`/`.xlsx`) using the same parser style as `sales-history-import.ts` but with streaming/chunked processing (file is 42 MB, 62k rows).
-- Parses in the browser (SheetJS), then POSTs chunks of ~500 rows at a time to the server function with a progress bar.
-- Also runs the existing `importSalesHistory` in parallel so `sales_history` gets populated with the same batch id.
-- Shows counters: parsed / created pedidos / created facturas / created client stubs / created product stubs / created rep stubs / duplicated (skipped) / errors.
-
-## Safety / rollback
-
-- Everything created is tagged `backfill_source = 'netsuite_2026'` → one SQL `DELETE` removes the entire batch if needed.
-- Stubs created for missing clients/products/reps get `notas = 'Auto-creado backfill NetSuite 2026-…'` so they're easy to spot and enrich later.
-- The importer is idempotent; running it twice does nothing on the second run.
+1. **Run the backfill end-to-end** using the existing `backfillNetsuiteSales2026Fn`, but drive it from the server so we don't depend on the browser processing a 42 MB file in chunks:
+   - Parse `/mnt/user-uploads/IMVVENTASDESGLOSADAS558-2.xls` on the server (SheetJS, same parser as the UI).
+   - Call the existing chunked function in batches of 100 invoices and aggregate the counters.
+   - Expose it as an admin-only server function + a small "Run backfill from uploaded file" button on `/admin/backfill-ventas` so re-runs are one click.
+2. **Verify after the run**, in the same turn:
+   - `count(*)` of pedidos / facturas / pedido_items / factura_items tagged `netsuite_2026`
+   - Distinct clientes and representantes impacted
+   - Date range of imported invoices
+   - Spot-check one imported pedido: cliente resolved, items present, factura linked, `estado = entregado`, factura `pagada`
+3. **Confirm the listing pages actually surface it** (they should — none of them filter on `backfill_source`, and admin scope is not restricted):
+   - `/admin/pedidos` — check total and date filter defaults (current view is "Jul 26"; backfill dates cover Jan–Jul so results will appear once the range is widened, worth confirming).
+   - `/admin/facturas` (Facturación) — confirm backfilled facturas show up under "Todas".
+   - Cliente 360 for one backfilled client — confirm pedidos/facturas history appears.
+   - `sales_history` view/page — confirm counts.
+4. **If something is being filtered out**, fix only the offending list/filter (e.g. default date range too narrow, or a scope filter excluding rows without a `representante_id`). No schema changes expected.
 
 ## Technical notes
 
-- File format is **SpreadsheetML 2003 XML** disguised as `.xls`. SheetJS reads it fine (`XLSX.read(..., { type: "array" })`), same as the existing `sales-history-import.ts` path.
-- 62k rows / ~25k pedidos: chunking + server-side batched inserts keeps this ~2–4 minutes.
-- No CFDI is generated (no Facturapi call) — these are historical records marked as issued/paid.
+- `pedidos.backfill_source` and `facturas.backfill_source` already exist; nothing new to migrate.
+- `backfillNetsuiteSales2026Fn` uses `supabaseAdmin` and is idempotent per `folio` / `invoice_no`, so re-running is safe — `skipped_existing` will just grow.
+- Server-side XLSX parse must be inside the handler (Worker runtime): use `XLSX.read` from `xlsx`, which is pure JS and Worker-safe.
+- Missing clientes/productos/reps are created as stubs (already implemented) — after the run, we should surface a short report of how many stubs were created so you can decide whether to reconcile them.
+
+## Question before I build
+
+Do you want me to:
+
+- **(A)** run the backfill server-side against the already-uploaded `IMVVENTASDESGLOSADAS558-2.xls` right now, or
+- **(B)** first debug the existing UI (`/admin/backfill-ventas`) to find out why your previous upload didn't insert anything (e.g. it errored partway, you didn't click Run, etc.)?
+
+I recommend **A** — it's faster and gives us verified data to check the listings against. Confirm and I'll switch to build mode.
