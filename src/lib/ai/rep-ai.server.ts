@@ -37,7 +37,10 @@ export type RepModule =
   | "rep-prospectos"
   | "rep-anaquel"
   | "rep-cierre"
-  | "rep-metas";
+  | "rep-metas"
+  | "rep-competencia"
+  | "rep-comportamiento-sku"
+  | "rep-oportunidades-perdidas";
 
 
 const MODULE_LABEL: Record<RepModule, string> = {
@@ -59,6 +62,9 @@ const MODULE_LABEL: Record<RepModule, string> = {
   "rep-anaquel": "Anaquel y evidencia visual",
   "rep-cierre": "Cierre de día",
   "rep-metas": "Metas y avance",
+  "rep-competencia": "Inteligencia competitiva",
+  "rep-comportamiento-sku": "Comportamiento por SKU",
+  "rep-oportunidades-perdidas": "Oportunidades perdidas",
 };
 
 
