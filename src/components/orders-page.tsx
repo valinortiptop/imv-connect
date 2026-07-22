@@ -171,17 +171,18 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
     queryKey: ["orders", restrictKey],
     queryFn: async () => {
       if (restrictClientIds && restrictClientIds.length === 0) return [] as OrderSummaryRow[];
-      let q = supabase
-        .from("order_summary")
-        .select("*")
-        .order("order_code", { ascending: false })
-        .limit(500);
-      if (restrictClientIds && restrictClientIds.length > 0) {
-        q = q.in("client_id", restrictClientIds);
-      }
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as OrderSummaryRow[];
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const rows = await fetchAllRows<OrderSummaryRow>(() => {
+        let q = supabase
+          .from("order_summary")
+          .select("*")
+          .order("order_code", { ascending: false });
+        if (restrictClientIds && restrictClientIds.length > 0) {
+          q = q.in("client_id", restrictClientIds);
+        }
+        return q;
+      });
+      return rows;
     },
   });
 
@@ -501,14 +502,16 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   const { data: tokenMap = {} } = useQuery({
     queryKey: ["orders-signature-tokens"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("orders")
-        .select("id, signature_token, order_code")
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const rows = await fetchAllRows<{ id: string; signature_token: string | null; order_code: string | null }>(
+        () =>
+          (supabase as any)
+            .from("orders")
+            .select("id, signature_token, order_code")
+            .order("created_at", { ascending: false }),
+      );
       const map: Record<string, { token: string | null; code: string | null }> = {};
-      for (const o of (data ?? []) as { id: string; signature_token: string | null; order_code: string | null }[]) {
+      for (const o of rows) {
         map[o.id] = { token: o.signature_token, code: o.order_code };
       }
       return map;
