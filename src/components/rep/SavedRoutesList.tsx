@@ -152,20 +152,6 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                     const time = new Date(r.created_at).toLocaleTimeString("es-MX", {
                       hour: "2-digit", minute: "2-digit",
                     });
-                    return (
-                      <div key={r.id} className="rounded-md border border-border">
-                        <div className="flex items-center gap-2 p-2">
-                          <button
-                            type="button"
-                            onClick={() => setOpenId(open ? null : r.id)}
-                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                          >
-                            {open ? (
-                              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            )}
-                            <div className="min-w-0 flex-1">
                     const isEditing = editingId === r.id;
                     const displayName = r.nombre || `Ruta ${time}`;
                     return (
