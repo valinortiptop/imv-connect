@@ -130,6 +130,13 @@ export default function ClientList() {
                       {c.telefono ?? c.phone}
                     </span>
                   )}
+                  {c.representante_nombre && (
+                    <span className="inline-flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {c.representante_nombre}
+                    </span>
+                  )}
+
                 </div>
               </div>
             </Link>
