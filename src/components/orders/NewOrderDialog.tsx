@@ -508,8 +508,15 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const updateLine = (idx: number, field: "quantity" | "unit_price", value: string) => {
     setLines(prev => prev.map((l, i) => {
       if (i !== idx) return l;
-      const parsed = value === "" ? ""
-        : (field === "quantity" ? parseInt(value) || "" : parseFloat(value) || "");
+      let parsed: number | string;
+      if (value === "") {
+        parsed = "";
+      } else if (field === "quantity") {
+        parsed = parseInt(value) || "";
+      } else {
+        // Allow trailing "." and partial decimals like "10." while typing.
+        parsed = /^\d*\.?\d*$/.test(value) ? (value as any) : (parseFloat(value) || "");
+      }
       // Cap damaged quantity at remaining_quantity
       if (field === "quantity" && l.is_damaged && l.damaged_max_qty != null && typeof parsed === "number") {
         return { ...l, quantity: Math.min(parsed, l.damaged_max_qty) as any };
@@ -522,8 +529,19 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     setLines(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const duplicateLine = (idx: number) => {
+    setLines(prev => {
+      const src = prev[idx];
+      if (!src) return prev;
+      // Copy the line so the user can quickly offer the same product
+      // with a different price list / custom price without re-searching.
+      const copy: OrderLine = { ...src };
+      return [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+    });
+  };
+
   const totalOrder = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
-  const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 0 }).format(n);
+  const fmtMXN = (n: number) => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const availableProducts = sortProducts(products);
   const availableDamaged = damagedBatches.filter(b => !lines.some(l => l.damaged_batch_id === b.id));
 
@@ -1152,9 +1170,14 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         />
                       </div>
                       <div className="text-sm text-right font-medium">{fmtMXN((Number(line.quantity) || 0) * (Number(line.unit_price) || 0))}</div>
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeLine(idx)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-0.5">
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => duplicateLine(idx)} title="Duplicar producto (para otra lista o precio)">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeLine(idx)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     );
                   })}
