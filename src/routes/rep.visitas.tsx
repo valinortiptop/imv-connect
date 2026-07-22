@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import VisitsList from "@/components/rep/VisitsList";
 import TodayPlan from "@/components/rep/TodayPlan";
+import SavedRoutesList from "@/components/rep/SavedRoutesList";
 import AIPageInsights from "@/components/ai/AIPageInsights";
 
 export const Route = createFileRoute("/rep/visitas")({
@@ -8,8 +9,8 @@ export const Route = createFileRoute("/rep/visitas")({
     <div className="space-y-6">
       <AIPageInsights module="rep-visitas" />
       <TodayPlan />
+      <SavedRoutesList />
       <VisitsList />
     </div>
   ),
 });
-
