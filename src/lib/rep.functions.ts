@@ -92,6 +92,23 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
       (insights ?? []).map((i: any) => [i.cliente_id, i]),
     );
 
+    // Representantes lookup (para mostrar nombre del vendedor asignado)
+    const repIds = Array.from(
+      new Set(
+        (clientes ?? [])
+          .map((c: any) => c.representante_id)
+          .filter(Boolean),
+      ),
+    );
+    const repsMap = new Map<string, string>();
+    if (repIds.length > 0) {
+      const { data: reps } = await context.supabase
+        .from("representantes")
+        .select("id, nombre")
+        .in("id", repIds);
+      for (const r of reps ?? []) repsMap.set(r.id, r.nombre);
+    }
+
     const now = Date.now();
     const enriched = (clientes ?? []).map((c: any) => {
       const s = stats.get(c.id);
@@ -109,8 +126,12 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
         avg_ticket: avgTicket,
         days_since_last: daysSince,
         churn_risk_score: insight?.churn_risk_score ?? null,
+        representante_nombre: c.representante_id
+          ? repsMap.get(c.representante_id) ?? null
+          : null,
       };
     });
+
 
     return { rep, clients: enriched };
   });
