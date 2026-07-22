@@ -118,6 +118,8 @@ export default function RouteMap() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
+  const [showWithoutCoords, setShowWithoutCoords] = useState(false);
+
 
 
 
