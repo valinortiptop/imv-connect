@@ -882,7 +882,7 @@ export default function RouteMap() {
                         </div>
                       )}
                     </button>
-                    <div className="flex flex-col items-center justify-center gap-0.5 px-1">
+                    <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-1">
                       <button
                         type="button"
                         title="Subir"
@@ -906,7 +906,7 @@ export default function RouteMap() {
                       type="button"
                       title="Eliminar parada"
                       onClick={(e) => { e.stopPropagation(); removeStop(i); }}
-                      className="flex items-center px-2 text-muted-foreground hover:text-destructive"
+                      className="flex shrink-0 items-center px-2 text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
