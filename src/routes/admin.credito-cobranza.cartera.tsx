@@ -51,13 +51,14 @@ function CarteraPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["cobranza-cartera"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("v_cliente_credito_360" as any)
-        .select("*")
-        .order("saldo_vencido", { ascending: false })
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Row[];
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const rows = await fetchAllRows<Row>(() =>
+        supabase
+          .from("v_cliente_credito_360" as any)
+          .select("*")
+          .order("saldo_vencido", { ascending: false }),
+      );
+      return rows;
     },
   });
 
