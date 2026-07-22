@@ -32,10 +32,10 @@ type Props = {
 };
 
 // Fixed pixel geometry — tight, reference-matching layout.
-const CELL_W = 150;
-const CELL_H = 130;
-const ICON = 88;
-const PAD = ICON / 2 + 2; // arrows land right at the icon edge
+const CELL_W = 200;
+const CELL_H = 190;
+const ICON = 120;
+const PAD = ICON / 2 + 4;
 const ARROW_COLOR = "#4b5563"; // slate-600
 
 export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
@@ -158,11 +158,11 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                   })()
                 )}
               </div>
-              <div className="mt-0.5 max-w-[130px] text-center text-[11px] font-medium leading-tight text-foreground">
+              <div className="mt-1 max-w-[180px] text-center text-[13px] font-medium leading-tight text-foreground">
                 {n.label}
               </div>
               {n.sublabel && (
-                <div className="max-w-[130px] text-center text-[10px] leading-tight text-muted-foreground">
+                <div className="max-w-[180px] text-center text-[11px] leading-tight text-muted-foreground">
                   {n.sublabel}
                 </div>
               )}
