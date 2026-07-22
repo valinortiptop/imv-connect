@@ -2137,6 +2137,24 @@ export const deleteSavedRouteFn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const renameSavedRouteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      id: z.string().uuid(),
+      nombre: z.string().trim().min(1).max(120),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .update({ nombre: data.nombre })
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const duplicateSavedRouteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
