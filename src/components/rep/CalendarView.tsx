@@ -364,8 +364,14 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                       {evts.slice(0, 3).map((e) => (
                         <div
                           key={e.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setSelectedEvent(e);
+                          }}
                           className={cn(
-                            "truncate rounded px-1 py-0.5 text-[10px] border",
+                            "truncate rounded px-1 py-0.5 text-[10px] border cursor-pointer hover:opacity-80",
                             TYPE_META[e.type].color,
                           )}
                         >
