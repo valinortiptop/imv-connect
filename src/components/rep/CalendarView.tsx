@@ -647,33 +647,3 @@ function EventDetailsDialog({
     </Dialog>
   );
 }
-      <span className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", meta.dot)} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium truncate">{e.title}</span>
-          <Badge variant="outline" className={cn("shrink-0 text-[10px]", meta.color)}>
-            {meta.label}
-          </Badge>
-          {e.status && (
-            <Badge variant="secondary" className="text-[10px]">
-              {e.status}
-            </Badge>
-          )}
-        </div>
-        {e.subtitle && (
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">{e.subtitle}</div>
-        )}
-        <div className="mt-0.5 text-[11px] text-muted-foreground">
-          {new Date(e.start).toLocaleString("es-MX", {
-            hour: "2-digit",
-            minute: "2-digit",
-            day: "2-digit",
-            month: "short",
-          })}
-          {e.representante_nombre ? ` · ${e.representante_nombre}` : ""}
-          {e.cliente_nombre ? ` · ${e.cliente_nombre}` : ""}
-        </div>
-      </div>
-    </div>
-  );
-}
