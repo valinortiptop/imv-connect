@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import AIPageInsights from "@/components/ai/AIPageInsights";
 import CollectionsPriorityCard from "@/components/rep/CollectionsPriorityCard";
 import MissedOpportunitiesList from "@/components/rep/MissedOpportunitiesList";
+import SavedRoutesList from "@/components/rep/SavedRoutesList";
+
 
 export const Route = createFileRoute("/rep/plan")({
   head: () => ({ meta: [{ title: "Plan semanal · Panel Rep" }] }),
