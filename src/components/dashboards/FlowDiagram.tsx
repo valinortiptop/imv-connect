@@ -32,10 +32,10 @@ type Props = {
 };
 
 // Fixed pixel geometry — tight, reference-matching layout.
-const CELL_W = 150;
-const CELL_H = 130;
-const ICON = 88;
-const PAD = ICON / 2 + 2; // arrows land right at the icon edge
+const CELL_W = 200;
+const CELL_H = 190;
+const ICON = 120;
+const PAD = ICON / 2 + 4;
 const ARROW_COLOR = "#4b5563"; // slate-600
 
 export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
