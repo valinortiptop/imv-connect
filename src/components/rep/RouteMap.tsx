@@ -309,6 +309,22 @@ export default function RouteMap() {
         legs: r.legs ?? [],
       });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
+      // Persist so it appears on Ruta history and Plan semanal
+      saveRoute({
+        data: {
+          totalKm: r.total_km,
+          totalMinutes: r.total_minutes,
+          polyline: r.polyline ?? null,
+          orderedStops: r.orderedStops ?? [],
+          legs: r.legs ?? [],
+          startLat: geo?.lat ?? null,
+          startLng: geo?.lng ?? null,
+          origen: "manual",
+        },
+      })
+        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
+        .catch(() => {});
+
       // Fit map to route
       const maps = (window as any).google?.maps;
       const map = mapRef.current;
