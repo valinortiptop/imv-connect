@@ -491,14 +491,162 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
       {eventsQuery.isLoading && (
         <div className="text-xs text-muted-foreground">Cargando agenda…</div>
       )}
+
+      <EventDetailsDialog
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </div>
   );
 }
 
-function EventRow({ e }: { e: CalendarEvent }) {
+function EventRow({ e, onClick }: { e: CalendarEvent; onClick?: () => void }) {
   const meta = TYPE_META[e.type];
   return (
-    <div className="flex items-start gap-3 rounded-md border p-2">
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-start gap-3 rounded-md border p-2",
+        onClick && "cursor-pointer hover:bg-muted/50 transition",
+      )}
+    >
+      <span className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", meta.dot)} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium truncate">{e.title}</span>
+          <Badge variant="outline" className={cn("shrink-0 text-[10px]", meta.color)}>
+            {meta.label}
+          </Badge>
+          {e.status && (
+            <Badge variant="secondary" className="text-[10px]">
+              {e.status}
+            </Badge>
+          )}
+        </div>
+        {e.subtitle && (
+          <div className="mt-0.5 truncate text-xs text-muted-foreground">{e.subtitle}</div>
+        )}
+        <div className="mt-0.5 text-[11px] text-muted-foreground">
+          {new Date(e.start).toLocaleString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "short",
+          })}
+          {e.representante_nombre ? ` · ${e.representante_nombre}` : ""}
+          {e.cliente_nombre ? ` · ${e.cliente_nombre}` : ""}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventDetailsDialog({
+  event,
+  onClose,
+}: {
+  event: CalendarEvent | null;
+  onClose: () => void;
+}) {
+  const open = !!event;
+  if (!event) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent />
+      </Dialog>
+    );
+  }
+  const meta = TYPE_META[event.type];
+  const startDate = new Date(event.start);
+  const endDate = event.end ? new Date(event.end) : null;
+
+  const detailLink = (() => {
+    switch (event.type) {
+      case "pedido":
+        return { to: `/admin/pedidos/${event.id}`, label: "Ver pedido" };
+      case "visita":
+        return event.cliente_id
+          ? { to: `/rep/clientes/${event.cliente_id}`, label: "Ver cliente" }
+          : null;
+      case "ruta":
+        return { to: `/rep/ruta`, label: "Ver ruta" };
+      case "entrega":
+        return { to: `/admin/logistica`, label: "Ver logística" };
+      default:
+        return event.cliente_id
+          ? { to: `/rep/clientes/${event.cliente_id}`, label: "Ver cliente" }
+          : null;
+    }
+  })();
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <span className={cn("h-2.5 w-2.5 rounded-full", meta.dot)} />
+            <Badge variant="outline" className={cn("text-[10px]", meta.color)}>
+              {meta.label}
+            </Badge>
+            {event.status && (
+              <Badge variant="secondary" className="text-[10px]">
+                {event.status}
+              </Badge>
+            )}
+          </div>
+          <DialogTitle className="mt-2 text-left">{event.title}</DialogTitle>
+          {event.subtitle && (
+            <DialogDescription className="text-left">{event.subtitle}</DialogDescription>
+          )}
+        </DialogHeader>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">Fecha</span>
+            <span className="text-right">
+              {startDate.toLocaleString("es-MX", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              {endDate && ` — ${endDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`}
+            </span>
+          </div>
+          {event.representante_nombre && (
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">Representante</span>
+              <span className="text-right">{event.representante_nombre}</span>
+            </div>
+          )}
+          {event.cliente_nombre && (
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">Cliente</span>
+              <span className="text-right">{event.cliente_nombre}</span>
+            </div>
+          )}
+          {event.outcome && (
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">Resultado</span>
+              <span className="text-right">{event.outcome}</span>
+            </div>
+          )}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
+          {detailLink && (
+            <Button asChild onClick={onClose}>
+              <Link to={detailLink.to}>{detailLink.label}</Link>
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
       <span className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", meta.dot)} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm">
