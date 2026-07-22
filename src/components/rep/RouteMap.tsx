@@ -122,6 +122,7 @@ export default function RouteMap() {
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
+  const [routeFecha, setRouteFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
 
 
 
