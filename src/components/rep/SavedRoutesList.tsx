@@ -335,12 +335,13 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                                     <ClipboardCheck className="h-3 w-3" />
                                     Check-in
                                   </Button>
-                              </li>
-                            ))}
-                            {(r.ordered_stops ?? []).length === 0 && (
-                              <li className="text-xs text-muted-foreground">Sin paradas registradas</li>
-                            )}
-                          </ol>
+                                </li>
+                              ))}
+                              {(r.ordered_stops ?? []).length === 0 && (
+                                <li className="text-xs text-muted-foreground">Sin paradas registradas</li>
+                              )}
+                            </ol>
+                          </div>
                         )}
                       </div>
                     );
