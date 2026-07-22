@@ -283,6 +283,91 @@ function ProspectsPage() {
             <DialogTitle>Nuevo prospecto</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Google Places search */}
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Buscar en Google
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  Auto-llena el formulario
+                </span>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={gQuery}
+                  onChange={(e) => setGQuery(e.target.value)}
+                  placeholder="Nombre del negocio, dirección…"
+                  className="pl-8"
+                  disabled={gEnriching}
+                />
+                {(gLoading || gEnriching) && (
+                  <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              {gResults.length > 0 && (
+                <div className="max-h-60 overflow-auto rounded-md border bg-popover">
+                  {gResults.map((r) => (
+                    <button
+                      key={r.place_id}
+                      type="button"
+                      onClick={() => pickPlace(r.place_id)}
+                      className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
+                    >
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{r.main}</div>
+                        {r.secondary && (
+                          <div className="truncate text-xs text-muted-foreground">
+                            {r.secondary}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {enrichment && (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border bg-background p-2 text-xs">
+                  <Badge variant="secondary" className="gap-1">
+                    <Sparkles className="h-3 w-3" /> Enriquecido con Google
+                  </Badge>
+                  {enrichment.rating != null && (
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                      {Number(enrichment.rating).toFixed(1)}
+                      {enrichment.review_count != null && (
+                        <span className="text-muted-foreground">
+                          ({enrichment.review_count})
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {enrichment.website && (
+                    <a
+                      href={enrichment.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Globe className="h-3 w-3" /> Sitio
+                    </a>
+                  )}
+                  {enrichment.primary_type && (
+                    <span className="text-muted-foreground capitalize">
+                      {enrichment.primary_type.replace(/_/g, " ")}
+                    </span>
+                  )}
+                  {enrichment.business_status && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {enrichment.business_status}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+
+
             <div>
               <Label>Nombre del negocio *</Label>
               <Input
