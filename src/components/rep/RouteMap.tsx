@@ -706,6 +706,16 @@ export default function RouteMap() {
           </CardContent>
         </Card>
       )}
+
+      {checkInClient && (
+        <CheckInDialog
+          open={!!checkInClient}
+          onOpenChange={(v) => !v && setCheckInClient(null)}
+          clienteId={checkInClient.id}
+          clienteNombre={checkInClient.nombre}
+        />
+      )}
     </div>
   );
 }
+
