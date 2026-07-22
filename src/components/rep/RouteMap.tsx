@@ -109,6 +109,8 @@ export default function RouteMap() {
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
+  const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
+
 
 
   const clientsWithCoords = useMemo(
