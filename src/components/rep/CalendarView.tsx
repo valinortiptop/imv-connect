@@ -417,9 +417,14 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                     </div>
                     <div className="space-y-1">
                       {evts.map((e) => (
-                        <div
+                        <button
                           key={e.id}
-                          className={cn("rounded border px-1.5 py-1 text-[11px]", TYPE_META[e.type].color)}
+                          type="button"
+                          onClick={() => setSelectedEvent(e)}
+                          className={cn(
+                            "w-full text-left rounded border px-1.5 py-1 text-[11px] hover:opacity-80 transition",
+                            TYPE_META[e.type].color,
+                          )}
                         >
                           <div className="font-medium truncate">{e.title}</div>
                           <div className="text-[10px] opacity-70">
@@ -429,7 +434,7 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                             })}
                             {e.representante_nombre ? ` · ${e.representante_nombre}` : ""}
                           </div>
-                        </div>
+                        </button>
                       ))}
                       {evts.length === 0 && (
                         <div className="text-[10px] text-muted-foreground">Sin eventos</div>
