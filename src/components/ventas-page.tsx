@@ -103,26 +103,27 @@ function useSoldMix(year: number, month0: number) {
     queryFn: async (): Promise<{ mix: SoldMix; total: number }> => {
       // Two-step fetch so we can filter reliably. PostgREST nested filters
       // can be fragile; explicit ID list is boring but always works.
-      const { data: orderRows, error: orderErr } = await (supabase as any)
-        .from("orders")
-        .select("id")
-        .eq("status", "Entregado")
-        // Order date — sales counted in the month the deal was closed,
-        // not when goods physically shipped. Matches /sales and /pnl.
-        .gte("order_date", monthStart(year, month0))
-        .lt("order_date", monthEnd(year, month0));
-      if (orderErr) throw orderErr;
-      const orderIds = (orderRows ?? []).map((r: any) => r.id);
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const orderRows = await fetchAllRows<{ id: string }>(() =>
+        (supabase as any)
+          .from("orders")
+          .select("id")
+          .eq("status", "Entregado")
+          .gte("order_date", monthStart(year, month0))
+          .lt("order_date", monthEnd(year, month0)),
+      );
+      const orderIds = orderRows.map((r) => r.id);
       if (orderIds.length === 0) return { mix: new Map(), total: 0 };
 
-      const { data, error } = await (supabase as any)
-        .from("order_items")
-        .select("quantity, product_id")
-        .in("order_id", orderIds);
-      if (error) throw error;
+      const data = await fetchAllRows<any>(() =>
+        (supabase as any)
+          .from("order_items")
+          .select("quantity, product_id")
+          .in("order_id", orderIds),
+      );
       const mix = new Map<string, number>();
       let total = 0;
-      for (const row of (data ?? []) as any[]) {
+      for (const row of data as any[]) {
         if (!row.product_id || !row.quantity) continue;
         const q = Number(row.quantity);
         mix.set(row.product_id, (mix.get(row.product_id) ?? 0) + q);
@@ -176,21 +177,26 @@ export default function Ventas() {
       // Fetch prev month data client-side for the deck's MoM delta slide
       const prevYear = month0 === 0 ? year - 1 : year;
       const prevMonth = month0 === 0 ? 11 : month0 - 1;
-      const { data: prevOrders } = await (supabase as any)
-        .from("orders")
-        .select("id")
-        .eq("status", "Entregado")
-        .gte("order_date", monthStart(prevYear, prevMonth))
-        .lt("order_date", monthEnd(prevYear, prevMonth));
-      const prevOrderIds = (prevOrders ?? []).map((r: any) => r.id);
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const prevOrders = await fetchAllRows<{ id: string }>(() =>
+        (supabase as any)
+          .from("orders")
+          .select("id")
+          .eq("status", "Entregado")
+          .gte("order_date", monthStart(prevYear, prevMonth))
+          .lt("order_date", monthEnd(prevYear, prevMonth)),
+      );
+      const prevOrderIds = prevOrders.map((r) => r.id);
       const prevSoldMix: SoldMix = new Map();
       let prevTotal = 0;
       if (prevOrderIds.length) {
-        const { data: prevRows } = await (supabase as any)
-          .from("order_items")
-          .select("quantity, product_id")
-          .in("order_id", prevOrderIds);
-        for (const row of (prevRows ?? []) as any[]) {
+        const prevRows = await fetchAllRows<any>(() =>
+          (supabase as any)
+            .from("order_items")
+            .select("quantity, product_id")
+            .in("order_id", prevOrderIds),
+        );
+        for (const row of prevRows as any[]) {
           if (!row.product_id || !row.quantity) continue;
           const q = Number(row.quantity);
           prevSoldMix.set(row.product_id, (prevSoldMix.get(row.product_id) ?? 0) + q);

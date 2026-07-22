@@ -92,21 +92,24 @@ export default function Sales() {
       // order-level discount has to be allocated across line items
       // proportionally so revenue/profit aggregates (by client, product,
       // brand, day, etc.) all stay accurate.
-      const { data: orders, error: ordErr } = await (supabase as any)
-        .from("orders")
-        .select("id, order_code, order_date, delivery_date, status, client_id, discount_amount, clients(name)")
-        .neq("status", "Cancelado")
-        .order("delivery_date", { ascending: false });
-      if (ordErr) throw ordErr;
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const orders = await fetchAllRows<any>(() =>
+        (supabase as any)
+          .from("orders")
+          .select("id, order_code, order_date, delivery_date, status, client_id, discount_amount, clients(name)")
+          .neq("status", "Cancelado")
+          .order("delivery_date", { ascending: false }),
+      );
       if (!orders?.length) return [];
 
-      // Get all order items
+      // Paged fetch so we get every line item across all 25k+ orders
       const orderIds = orders.map((o: any) => o.id);
-      const { data: items, error: itemErr } = await supabase
-        .from("order_items")
-        .select("order_id, product_id, quantity, unit_price_override, products(clave, name, brand, sale_price_with_iva, image_url)")
-        .in("order_id", orderIds);
-      if (itemErr) throw itemErr;
+      const items = await fetchAllRows<any>(() =>
+        supabase
+          .from("order_items")
+          .select("order_id, product_id, quantity, unit_price_override, products(clave, name, brand, sale_price_with_iva, image_url)")
+          .in("order_id", orderIds),
+      );
 
       // Get cost & bonificación from margins table (matches dashboard logic)
       const { data: marginData, error: marginErr } = await supabase
