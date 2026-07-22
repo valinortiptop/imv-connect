@@ -455,7 +455,7 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
           </CardHeader>
           <CardContent className="p-3 space-y-2">
             {(eventsByDay.get(cursor.toISOString().slice(0, 10)) ?? []).map((e) => (
-              <EventRow key={e.id} e={e} />
+              <EventRow key={e.id} e={e} onClick={() => setSelectedEvent(e)} />
             ))}
             {!(eventsByDay.get(cursor.toISOString().slice(0, 10)) ?? []).length && (
               <div className="text-sm text-muted-foreground">Sin eventos programados.</div>
