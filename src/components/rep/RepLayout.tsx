@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true, mobilePrimary: true },
   { to: "/rep/clientes", label: "Clientes", icon: Users, mobilePrimary: true },
   { to: "/rep/ruta", label: "Ruta", icon: MapIcon, mobilePrimary: true },
+  { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/visitas", label: "Visitas", icon: ClipboardList, mobilePrimary: true },
   { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText, desktopOnly: true },
   { to: "/rep/cobranza", label: "Cobranza", icon: Banknote, desktopOnly: true },
@@ -37,7 +38,7 @@ const NAV: NavItem[] = [
   { to: "/rep/catalogo", label: "Catálogo", icon: ShoppingBag, desktopOnly: true },
   { to: "/rep/inventario", label: "Inventario", icon: Boxes },
 
-  { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
+
   { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
   { to: "/rep/competencia", label: "Competencia", icon: Swords, desktopOnly: true },
   { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
