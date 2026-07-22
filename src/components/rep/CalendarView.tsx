@@ -95,6 +95,8 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
   const [selectedRepIds, setSelectedRepIds] = useState<string[]>([]);
   const [activeTypes, setActiveTypes] = useState<CalendarEvent["type"][]>([...ALL_TYPES]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(startOfDay(new Date()));
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
 
   const { from, to } = useMemo(() => {
     if (view === "month") {
