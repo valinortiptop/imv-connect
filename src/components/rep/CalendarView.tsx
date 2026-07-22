@@ -44,9 +44,14 @@ const TYPE_META: Record<
     color: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
     dot: "bg-orange-500",
   },
+  ruta: {
+    label: "Ruta",
+    color: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
+    dot: "bg-sky-500",
+  },
 };
 
-const ALL_TYPES: CalendarEvent["type"][] = ["visita", "acuerdo", "llamada", "pedido", "entrega"];
+const ALL_TYPES: CalendarEvent["type"][] = ["visita", "acuerdo", "llamada", "pedido", "entrega", "ruta"];
 
 function startOfDay(d: Date) {
   const n = new Date(d);
