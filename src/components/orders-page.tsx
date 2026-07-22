@@ -78,7 +78,7 @@ function SortableTableHead<K extends string>({
   );
 }
 
-export default function Orders({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
+export default function Orders({ restrictClientIds, hideCotizaciones = false }: { restrictClientIds?: string[] | null; hideCotizaciones?: boolean } = {}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -562,28 +562,30 @@ export default function Orders({ restrictClientIds }: { restrictClientIds?: stri
         </div>
         <div className="flex items-center gap-3 self-start sm:self-auto">
           {/* Pedidos / Cotizaciones toggle */}
-          <div className="inline-flex rounded-lg border bg-card p-1 text-sm">
-            <button
-              type="button"
-              onClick={() => setTab("pedidos")}
-              className={cn(
-                "px-3 py-1.5 rounded-md font-medium transition-colors",
-                tab === "pedidos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Pedidos
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("cotizaciones")}
-              className={cn(
-                "px-3 py-1.5 rounded-md font-medium transition-colors",
-                tab === "cotizaciones" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Cotizaciones
-            </button>
-          </div>
+          {!hideCotizaciones && (
+            <div className="inline-flex rounded-lg border bg-card p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setTab("pedidos")}
+                className={cn(
+                  "px-3 py-1.5 rounded-md font-medium transition-colors",
+                  tab === "pedidos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Pedidos
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("cotizaciones")}
+                className={cn(
+                  "px-3 py-1.5 rounded-md font-medium transition-colors",
+                  tab === "cotizaciones" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Cotizaciones
+              </button>
+            </div>
+          )}
           {/* Single action button. min-w fixes the width so swapping
            * labels ("Nuevo Pedido" → "Nueva Cotización") doesn't change
            * the right edge of the row, which would otherwise push the
