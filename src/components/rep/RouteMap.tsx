@@ -35,6 +35,8 @@ import {
   Printer,
   Download,
   X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 
@@ -116,6 +118,8 @@ export default function RouteMap() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
+  const [showWithoutCoords, setShowWithoutCoords] = useState(false);
+
 
 
 
@@ -689,28 +693,42 @@ export default function RouteMap() {
       {withoutCoords.length > 0 && !routeInfo && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MapPin className="h-4 w-4 text-amber-500" />
-              Sin coordenadas ({withoutCoords.length})
-            </CardTitle>
+            <button
+              type="button"
+              onClick={() => setShowWithoutCoords((v) => !v)}
+              className="flex w-full items-center justify-between gap-2 text-left"
+            >
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MapPin className="h-4 w-4 text-amber-500" />
+                Sin coordenadas ({withoutCoords.length})
+              </CardTitle>
+              {showWithoutCoords ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
           </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            {withoutCoords.slice(0, 10).map((c: any) => (
-              <div key={c.id} className="flex items-center justify-between gap-2">
-                <span className="truncate">{c.nombre_comercial ?? c.razon_social}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!c.direccion || geocodeMut.isPending}
-                  onClick={() => geocodeMut.mutate(c.id)}
-                >
-                  <Locate className="mr-1 h-3.5 w-3.5" /> Ubicar
-                </Button>
-              </div>
-            ))}
-          </CardContent>
+          {showWithoutCoords && (
+            <CardContent className="space-y-1 text-sm">
+              {withoutCoords.slice(0, 10).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between gap-2">
+                  <span className="truncate">{c.nombre_comercial ?? c.razon_social}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!c.direccion || geocodeMut.isPending}
+                    onClick={() => geocodeMut.mutate(c.id)}
+                  >
+                    <Locate className="mr-1 h-3.5 w-3.5" /> Ubicar
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          )}
         </Card>
       )}
+
 
       {selected.size > 0 && !routeInfo && (
         <Card>
