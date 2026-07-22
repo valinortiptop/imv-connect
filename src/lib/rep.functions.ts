@@ -29,7 +29,11 @@ export const getMyRepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId);
-    return { rep };
+    const { data: isAdminData } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return { rep, isAdmin: !!isAdminData };
   });
 
 /* ─── 2. getMyClients: clientes + métricas base ─── */

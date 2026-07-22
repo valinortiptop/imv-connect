@@ -33,7 +33,27 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ events: CalendarEvent[] }> => {
     const supabase = context.supabase as any;
     const { from, to, clienteId } = data;
-    const repIds = data.repId ? [data.repId] : data.repIds;
+
+    // Enforce scoping: non-admin callers may only see their own events.
+    const { data: isAdminData } = await supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const isAdmin = !!isAdminData;
+
+    let repIds = data.repId ? [data.repId] : data.repIds;
+    if (!isAdmin) {
+      const { data: myRep } = await supabase
+        .from("representantes")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!myRep?.id) {
+        // Signed-in user has no rep row and is not admin → no events.
+        return { events: [] };
+      }
+      repIds = [myRep.id];
+    }
 
     const [repsRes, clientsRes, visitsRes, agreementsRes, callsRes, tripsRes, ordersRes, routesRes] = await Promise.all([
       supabase.from("representantes").select("id, nombre"),
@@ -220,10 +240,17 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
 export const listRepresentantesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await (context.supabase as any)
+    const supabase = context.supabase as any;
+    const { data: isAdminData } = await supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    let q = supabase
       .from("representantes")
       .select("id, nombre, activo")
       .eq("activo", true)
       .order("nombre");
+    if (!isAdminData) q = q.eq("user_id", context.userId);
+    const { data } = await q;
     return { representantes: (data ?? []) as { id: string; nombre: string; activo: boolean }[] };
   });

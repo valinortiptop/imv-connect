@@ -117,6 +117,7 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
     queryFn: () => fetchReps(),
     enabled: !embedded,
   });
+  const showRepFilter = !embedded && (repsQuery.data?.representantes.length ?? 0) > 1;
 
   const eventsQuery = useQuery({
     queryKey: ["rep-calendar-events", from, to, selectedRepIds.join(","), repId ?? "", clienteId ?? ""],
@@ -286,7 +287,7 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
               })}
             </div>
           </div>
-          {!embedded && (
+          {showRepFilter && (
             <div>
               <div className="text-xs font-medium mb-1 text-muted-foreground">Representantes</div>
               <div className="flex flex-wrap gap-1.5">

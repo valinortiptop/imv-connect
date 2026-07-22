@@ -26,7 +26,7 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-type Item = { to: string; label: string; icon: any };
+type Item = { to: string; label: string; icon: any; adminOnly?: boolean };
 type Group = { label: string; items: Item[] };
 
 const GROUPS: Group[] = [
@@ -56,13 +56,17 @@ const GROUPS: Group[] = [
       { to: "/rep/competencia", label: "Competencia", icon: Swords },
       { to: "/rep/metas", label: "Metas", icon: Target },
       { to: "/rep/coach", label: "Coach IA", icon: Sparkles },
-      { to: "/rep/supervisor", label: "Supervisor", icon: Trophy },
+      { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, adminOnly: true },
     ],
   },
 ];
 
-export default function MoreSheet({ active }: { active?: boolean }) {
+export default function MoreSheet({ active, isAdmin = false }: { active?: boolean; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => !it.adminOnly || isAdmin),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -91,7 +95,7 @@ export default function MoreSheet({ active }: { active?: boolean }) {
             paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
           }}
         >
-          {GROUPS.map((g) => (
+          {groups.map((g) => (
             <div key={g.label} className="mb-6 last:mb-0">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {g.label}
