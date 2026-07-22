@@ -708,11 +708,21 @@ export default function RouteMap() {
                 {routeInfo.ordered.length} paradas · {routeInfo.km} km · {routeInfo.min} min
               </p>
             </div>
-            <div className="flex shrink-0 gap-1">
-              <Button size="sm" variant="outline" onClick={printRoute}>
+            <div className="flex shrink-0 flex-wrap gap-1">
+              {routeDirty && (
+                <Button
+                  size="sm"
+                  onClick={() => recalcRoute.mutate()}
+                  disabled={recalcRoute.isPending}
+                >
+                  <RefreshCw className={`mr-1 h-3.5 w-3.5 ${recalcRoute.isPending ? "animate-spin" : ""}`} />
+                  Recalcular
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={printRoute} disabled={routeDirty}>
                 <Printer className="mr-1 h-3.5 w-3.5" /> Imprimir
               </Button>
-              <Button size="sm" variant="outline" onClick={downloadRoute}>
+              <Button size="sm" variant="outline" onClick={downloadRoute} disabled={routeDirty}>
                 <Download className="mr-1 h-3.5 w-3.5" /> Descargar
               </Button>
               <Button size="sm" variant="ghost" onClick={clearRoute} title="Cerrar ruta">
@@ -721,6 +731,11 @@ export default function RouteMap() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
+            {routeDirty && (
+              <div className="mb-2 rounded-md border border-amber-400/40 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+                Reordenaste la ruta. Pulsa <b>Recalcular</b> para actualizar distancias y trazo en el mapa.
+              </div>
+            )}
             <ol className="space-y-2">
               <li className="flex items-start gap-3 rounded-md bg-muted/50 p-2">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-xs font-bold text-background">
@@ -735,12 +750,51 @@ export default function RouteMap() {
                 const c = clientsById.get(s.cliente_id);
                 const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
                 const leg = routeInfo.legs[i];
+                const isDragging = dragIdx === i;
+                const isOver = dragOverIdx === i && dragIdx !== null && dragIdx !== i;
                 return (
-                  <li key={`${s.cliente_id}-${i}`}>
+                  <li
+                    key={`${s.cliente_id}-${i}`}
+                    draggable
+                    onDragStart={(e) => {
+                      setDragIdx(i);
+                      e.dataTransfer.effectAllowed = "move";
+                      try { e.dataTransfer.setData("text/plain", String(i)); } catch {}
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverIdx !== i) setDragOverIdx(i);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverIdx === i) setDragOverIdx(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const from = dragIdx ?? Number(e.dataTransfer.getData("text/plain"));
+                      if (!Number.isNaN(from)) reorderStop(from, i);
+                      setDragIdx(null);
+                      setDragOverIdx(null);
+                    }}
+                    onDragEnd={() => {
+                      setDragIdx(null);
+                      setDragOverIdx(null);
+                    }}
+                    className={`flex items-stretch gap-1 rounded-md border transition ${
+                      isDragging ? "opacity-40" : ""
+                    } ${isOver ? "border-primary ring-2 ring-primary/30" : ""}`}
+                  >
+                    <div
+                      className="flex cursor-grab items-center px-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+                      title="Arrastra para reordenar"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </div>
                     <button
                       type="button"
                       onClick={() => setCheckInClient({ id: s.cliente_id, nombre: name })}
-                      className="flex w-full items-start gap-3 rounded-md border p-2 text-left transition hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      className="flex flex-1 items-start gap-3 rounded-md p-2 text-left transition hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         {i + 1}
@@ -752,18 +806,47 @@ export default function RouteMap() {
                         )}
                         <div className="mt-0.5 text-[11px] text-primary">Toca para registrar visita</div>
                       </div>
-                      {leg && (
+                      {leg && !routeDirty && (
                         <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
                           <div>{leg.distance_text || `${leg.distance_km} km`}</div>
                           <div>{leg.duration_text || `${leg.duration_min} min`}</div>
                         </div>
                       )}
                     </button>
+                    <div className="flex flex-col items-center justify-center gap-0.5 px-1">
+                      <button
+                        type="button"
+                        title="Subir"
+                        disabled={i === 0}
+                        onClick={(e) => { e.stopPropagation(); reorderStop(i, i - 1); }}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Bajar"
+                        disabled={i === routeInfo.ordered.length - 1}
+                        onClick={(e) => { e.stopPropagation(); reorderStop(i, i + 1); }}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      title="Eliminar parada"
+                      onClick={(e) => { e.stopPropagation(); removeStop(i); }}
+                      className="flex items-center px-2 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </li>
                 );
 
               })}
             </ol>
+
           </CardContent>
         </Card>
       )}
