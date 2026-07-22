@@ -25,9 +25,12 @@ import {
   Copy,
   Check,
   X as XIcon,
+  Printer,
+  Download,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 import SavedRoutePreview from "./SavedRoutePreview";
+import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 type Stop = {
   cliente_id: string;
@@ -240,6 +243,44 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                             onClick={() => loadRouteIntoMap(r)}
                           >
                             Ver / Editar
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Imprimir ruta"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              printRouteHtml({
+                                title: displayName,
+                                fecha: r.fecha,
+                                totalKm: r.total_km,
+                                totalMin: r.total_minutes,
+                                stops: (r.ordered_stops ?? []) as any,
+                                legs: (r.legs ?? []) as any,
+                              });
+                            }}
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Descargar PDF"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadRoutePdf({
+                                title: displayName,
+                                fecha: r.fecha,
+                                totalKm: r.total_km,
+                                totalMin: r.total_minutes,
+                                stops: (r.ordered_stops ?? []) as any,
+                                legs: (r.legs ?? []) as any,
+                              });
+                            }}
+                          >
+                            <Download className="h-3.5 w-3.5" />
                           </Button>
                           <Button
                             size="icon"

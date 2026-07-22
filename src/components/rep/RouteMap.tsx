@@ -42,6 +42,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
+import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 
 function decodePolyline(str: string): [number, number][] {
@@ -551,63 +552,34 @@ export default function RouteMap() {
     });
   }, [clientsWithCoords, clientQuery]);
 
-  const buildRouteText = () => {
-    if (!routeInfo) return "";
-    const lines: string[] = [];
-    lines.push("Ruta optimizada");
-    lines.push(`Total: ${routeInfo.km} km · ${routeInfo.min} min`);
-    lines.push("");
-    lines.push("Inicio: Ubicación actual");
-    routeInfo.ordered.forEach((s, i) => {
-      const c = clientsById.get(s.cliente_id);
-      const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
-      const dir = c?.direccion ?? "";
-      const leg = routeInfo.legs[i];
-      const legTxt = leg ? ` (${leg.distance_text || `${leg.distance_km} km`} · ${leg.duration_text || `${leg.duration_min} min`})` : "";
-      lines.push(`${i + 1}. ${name}${legTxt}`);
-      if (dir) lines.push(`   ${dir}`);
-    });
-    return lines.join("\n");
+
+  const buildExportRoute = () => {
+    if (!routeInfo) return null;
+    return {
+      title: "Ruta del día",
+      fecha: new Date().toISOString().slice(0, 10),
+      totalKm: routeInfo.km,
+      totalMin: routeInfo.min,
+      stops: routeInfo.ordered.map((s, i) => {
+        const c = clientsById.get(s.cliente_id);
+        return {
+          cliente_id: s.cliente_id,
+          nombre: c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`,
+          direccion: c?.direccion ?? "",
+        };
+      }),
+      legs: routeInfo.legs,
+    };
   };
 
   const downloadRoute = () => {
-    const text = buildRouteText();
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ruta-${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    const r = buildExportRoute();
+    if (r) downloadRoutePdf(r);
   };
 
   const printRoute = () => {
-    if (!routeInfo) return;
-    const rows = routeInfo.ordered
-      .map((s, i) => {
-        const c = clientsById.get(s.cliente_id);
-        const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
-        const dir = c?.direccion ?? "";
-        const leg = routeInfo.legs[i];
-        const legTxt = leg
-          ? `${leg.distance_text || `${leg.distance_km} km`} · ${leg.duration_text || `${leg.duration_min} min`}`
-          : "";
-        return `<tr><td style="padding:8px;border-bottom:1px solid #eee;text-align:center;font-weight:700">${i + 1}</td><td style="padding:8px;border-bottom:1px solid #eee"><div style="font-weight:600">${name}</div><div style="color:#666;font-size:12px">${dir}</div></td><td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#333;white-space:nowrap">${legTxt}</td></tr>`;
-      })
-      .join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Ruta del día</title></head><body style="font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#111">
-<h1 style="margin:0 0 4px">Ruta del día</h1>
-<p style="margin:0 0 16px;color:#555">Total: <strong>${routeInfo.km} km</strong> · <strong>${routeInfo.min} min</strong> · ${routeInfo.ordered.length} paradas</p>
-<table style="width:100%;border-collapse:collapse;border-top:2px solid #111">${rows}</table>
-<script>window.onload=function(){setTimeout(function(){window.print();},250);}</script>
-</body></html>`;
-    const w = window.open("", "_blank", "width=800,height=900");
-    if (!w) { toast.error("Permite ventanas emergentes para imprimir"); return; }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    const r = buildExportRoute();
+    if (r) printRouteHtml(r);
   };
 
   const clearRoute = () => {
