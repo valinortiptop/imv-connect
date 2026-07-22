@@ -42,6 +42,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
+import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 
 function decodePolyline(str: string): [number, number][] {
