@@ -87,6 +87,7 @@ import { Route as AdminComprasIndexRouteImport } from './routes/admin.compras.in
 import { Route as AdminBancosIndexRouteImport } from './routes/admin.bancos.index'
 import { Route as AdminAlmacenIndexRouteImport } from './routes/admin.almacen.index'
 import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
+import { Route as ApiPublicBackfillNetsuite2026RouteImport } from './routes/api/public/backfill-netsuite-2026'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
@@ -532,6 +533,12 @@ const RepClientesIdRoute = RepClientesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => RepClientesRoute,
 } as any)
+const ApiPublicBackfillNetsuite2026Route =
+  ApiPublicBackfillNetsuite2026RouteImport.update({
+    id: '/api/public/backfill-netsuite-2026',
+    path: '/api/public/backfill-netsuite-2026',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -936,6 +943,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen/': typeof AdminAlmacenIndexRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
@@ -1062,6 +1070,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen': typeof AdminAlmacenIndexRoute
   '/admin/bancos': typeof AdminBancosIndexRoute
@@ -1196,6 +1205,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
+  '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen/': typeof AdminAlmacenIndexRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
@@ -1331,6 +1341,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
     | '/admin/almacen/'
     | '/admin/bancos/'
@@ -1457,6 +1468,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
     | '/admin/almacen'
     | '/admin/bancos'
@@ -1590,6 +1602,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
     | '/admin/pedidos/$id'
+    | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
     | '/admin/almacen/'
     | '/admin/bancos/'
@@ -1620,6 +1633,7 @@ export interface RootRouteChildren {
   EntregaTokenRoute: typeof EntregaTokenRoute
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiPublicBackfillNetsuite2026Route: typeof ApiPublicBackfillNetsuite2026Route
   ApiPublicHooksCobranzaEdoCuentaRoute: typeof ApiPublicHooksCobranzaEdoCuentaRoute
   ApiPublicHooksCobranzaRecordatoriosRoute: typeof ApiPublicHooksCobranzaRecordatoriosRoute
   ApiPublicHooksCobranzaRiesgoNocturnoRoute: typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
@@ -2175,6 +2189,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rep/clientes/$id'
       preLoaderRoute: typeof RepClientesIdRouteImport
       parentRoute: typeof RepClientesRoute
+    }
+    '/api/public/backfill-netsuite-2026': {
+      id: '/api/public/backfill-netsuite-2026'
+      path: '/api/public/backfill-netsuite-2026'
+      fullPath: '/api/public/backfill-netsuite-2026'
+      preLoaderRoute: typeof ApiPublicBackfillNetsuite2026RouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/pedidos/$id': {
       id: '/admin/pedidos/$id'
@@ -2938,6 +2959,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntregaTokenRoute: EntregaTokenRoute,
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiPublicBackfillNetsuite2026Route: ApiPublicBackfillNetsuite2026Route,
   ApiPublicHooksCobranzaEdoCuentaRoute: ApiPublicHooksCobranzaEdoCuentaRoute,
   ApiPublicHooksCobranzaRecordatoriosRoute:
     ApiPublicHooksCobranzaRecordatoriosRoute,
