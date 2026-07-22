@@ -732,6 +732,16 @@ export default function RouteMap() {
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0} className="hidden sm:inline-flex">
             Limpiar ({selected.size})
           </Button>
+          <div className="flex items-center gap-1.5">
+            <label className="hidden text-[11px] text-muted-foreground sm:inline">Fecha:</label>
+            <Input
+              type="date"
+              value={routeFecha}
+              onChange={(e) => setRouteFecha(e.target.value)}
+              className="h-8 w-36 text-xs"
+              title="Fecha del plan / ruta"
+            />
+          </div>
           <Button
             size="sm"
             variant="outline"
