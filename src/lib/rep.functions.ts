@@ -2011,3 +2011,78 @@ Responde SOLO JSON con este esquema:
     const detail = ordered.map((id) => candidates.find((c) => c.cliente_id === id)).filter(Boolean);
     return { ordered, detail, rationale };
   });
+
+/* ─── saveRoute / listSavedRoutes / deleteSavedRoute ─── */
+export const saveRouteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      nombre: z.string().optional(),
+      fecha: z.string().optional(),
+      startLat: z.number().nullable().optional(),
+      startLng: z.number().nullable().optional(),
+      totalKm: z.number().optional(),
+      totalMinutes: z.number().optional(),
+      polyline: z.string().nullable().optional(),
+      orderedStops: z.array(z.any()).default([]),
+      legs: z.array(z.any()).default([]),
+      origen: z.string().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rep } = await context.supabase
+      .from("representantes")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const { data: row, error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .insert({
+        user_id: context.userId,
+        representante_id: rep?.id ?? null,
+        nombre: data.nombre ?? null,
+        fecha: data.fecha ?? undefined,
+        start_lat: data.startLat ?? null,
+        start_lng: data.startLng ?? null,
+        total_km: data.totalKm ?? null,
+        total_minutes: data.totalMinutes ?? null,
+        polyline: data.polyline ?? null,
+        ordered_stops: data.orderedStops ?? [],
+        legs: data.legs ?? [],
+        origen: data.origen ?? "manual",
+      })
+      .select("id, fecha, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const listSavedRoutesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ limit: z.number().optional() }).default({}).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, created_at, origen")
+      .eq("user_id", context.userId)
+      .order("fecha", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 60);
+    if (error) throw new Error(error.message);
+    return { routes: rows ?? [] };
+  });
+
+export const deleteSavedRouteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

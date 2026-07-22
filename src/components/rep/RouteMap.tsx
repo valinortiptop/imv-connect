@@ -3,15 +3,18 @@
 // Server-side geocoding + route optimization go through the Valinor proxy
 // via existing server functions.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+
 import {
   getMyClientsFn,
   optimizeRouteFn,
   geocodeClientFn,
   getOpportunityHeatmapFn,
   suggestRouteWithAIFn,
+  saveRouteFn,
 } from "@/lib/rep.functions";
+
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,6 +90,9 @@ export default function RouteMap() {
   const geocode = useServerFn(geocodeClientFn);
   const fetchHeat = useServerFn(getOpportunityHeatmapFn);
   const suggestAI = useServerFn(suggestRouteWithAIFn);
+  const saveRoute = useServerFn(saveRouteFn);
+  const qc = useQueryClient();
+
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
@@ -303,6 +309,22 @@ export default function RouteMap() {
         legs: r.legs ?? [],
       });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
+      // Persist so it appears on Ruta history and Plan semanal
+      saveRoute({
+        data: {
+          totalKm: r.total_km,
+          totalMinutes: r.total_minutes,
+          polyline: r.polyline ?? null,
+          orderedStops: r.orderedStops ?? [],
+          legs: r.legs ?? [],
+          startLat: geo?.lat ?? null,
+          startLng: geo?.lng ?? null,
+          origen: "manual",
+        },
+      })
+        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
+        .catch(() => {});
+
       // Fit map to route
       const maps = (window as any).google?.maps;
       const map = mapRef.current;
