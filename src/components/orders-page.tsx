@@ -166,14 +166,20 @@ export default function Orders({ restrictClientIds }: { restrictClientIds?: stri
     }
   }, []);
 
+  const restrictKey = restrictClientIds ? [...restrictClientIds].sort().join(",") : null;
   const { data: orders = [], isLoading, error } = useQuery({
-    queryKey: ["orders"],
+    queryKey: ["orders", restrictKey],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (restrictClientIds && restrictClientIds.length === 0) return [] as OrderSummaryRow[];
+      let q = supabase
         .from("order_summary")
         .select("*")
         .order("order_code", { ascending: false })
         .limit(500);
+      if (restrictClientIds && restrictClientIds.length > 0) {
+        q = q.in("client_id", restrictClientIds);
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as OrderSummaryRow[];
     },
