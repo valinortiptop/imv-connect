@@ -21,10 +21,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
-import { MapPin, Route as RouteIcon, Locate, Flame, ListChecks, Search, Sparkles } from "lucide-react";
+import {
+  MapPin,
+  Route as RouteIcon,
+  Locate,
+  Flame,
+  ListChecks,
+  Search,
+  Sparkles,
+  Printer,
+  Download,
+  X,
+} from "lucide-react";
 
 function decodePolyline(str: string): [number, number][] {
-  // Google encoded polyline algorithm.
   let index = 0, lat = 0, lng = 0;
   const coords: [number, number][] = [];
   while (index < str.length) {
@@ -39,6 +49,33 @@ function decodePolyline(str: string): [number, number][] {
     coords.push([lat / 1e5, lng / 1e5]);
   }
   return coords;
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const re = new RegExp(`(${escapeRegExp(q)})`, "ig");
+  const parts = String(text ?? "").split(re);
+  return (
+    <>
+      {parts.map((p, i) =>
+        re.test(p) && p.toLowerCase() === q.toLowerCase() ? (
+          <mark
+            key={i}
+            className="rounded-sm bg-yellow-200 px-0.5 text-foreground dark:bg-yellow-500/40"
+          >
+            {p}
+          </mark>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 export default function RouteMap() {
@@ -59,7 +96,13 @@ export default function RouteMap() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [routeInfo, setRouteInfo] = useState<{ km: number; min: number; path: [number, number][] } | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{
+    km: number;
+    min: number;
+    path: [number, number][];
+    ordered: { cliente_id: string; lat: number; lng: number }[];
+    legs: { distance_km: number; duration_min: number; distance_text: string; duration_text: string }[];
+  } | null>(null);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -70,6 +113,11 @@ export default function RouteMap() {
     () => (data?.clients ?? []).filter((c: any) => c.lat && c.lng),
     [data],
   );
+  const clientsById = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const c of data?.clients ?? []) m.set(c.id, c);
+    return m;
+  }, [data]);
 
   const allPoints = useMemo<[number, number][]>(
     () => clientsWithCoords.map((c: any) => [Number(c.lat), Number(c.lng)]),
@@ -98,10 +146,8 @@ export default function RouteMap() {
             clickableIcons: false,
             gestureHandling: "greedy",
           });
-          // Detect real user interactions so we don't override their zoom/pan.
           mapRef.current.addListener("dragstart", () => { userInteractedRef.current = true; });
           mapRef.current.addListener("zoom_changed", () => {
-            // Ignore programmatic zoom changes flagged by didFitRef.
             if (didFitRef.current) userInteractedRef.current = true;
           });
         }
@@ -114,6 +160,8 @@ export default function RouteMap() {
   }, []);
 
 
+  const routeMode = !!routeInfo;
+
   useEffect(() => {
     const maps = window.google?.maps;
     const map = mapRef.current;
@@ -122,7 +170,8 @@ export default function RouteMap() {
     overlaysRef.current.forEach((overlay) => overlay?.setMap?.(null));
     overlaysRef.current = [];
 
-    if (showHeatmap) {
+    // Heatmap only when NOT in route-focused mode
+    if (showHeatmap && !routeMode) {
       (heatQ.data?.points ?? []).forEach((p: any) => {
         const circle = new maps.Circle({
           map,
@@ -137,26 +186,53 @@ export default function RouteMap() {
       });
     }
 
-    clientsWithCoords.forEach((c: any) => {
-      const isSel = selected.has(c.id);
-      const risk = (c.churn_risk_score ?? 0) >= 0.6;
-      const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
-      const marker = new maps.Marker({
-        map,
-        position: { lat: Number(c.lat), lng: Number(c.lng) },
-        title: c.nombre_comercial ?? c.razon_social,
-        icon: {
-          path: maps.SymbolPath.CIRCLE,
-          scale: isSel ? 10 : 7,
-          fillColor: color,
-          fillOpacity: 0.9,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        },
+    // In route mode, only render ordered stops with numbered markers.
+    if (routeMode && routeInfo) {
+      routeInfo.ordered.forEach((s, idx) => {
+        const c = clientsById.get(s.cliente_id);
+        const marker = new maps.Marker({
+          map,
+          position: { lat: Number(s.lat), lng: Number(s.lng) },
+          title: c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${idx + 1}`,
+          label: {
+            text: String(idx + 1),
+            color: "#ffffff",
+            fontSize: "12px",
+            fontWeight: "700",
+          },
+          icon: {
+            path: maps.SymbolPath.CIRCLE,
+            scale: 13,
+            fillColor: "#2563eb",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
+        });
+        overlaysRef.current.push(marker);
       });
-      marker.addListener("click", () => toggleSel(c.id));
-      overlaysRef.current.push(marker);
-    });
+    } else {
+      clientsWithCoords.forEach((c: any) => {
+        const isSel = selected.has(c.id);
+        const risk = (c.churn_risk_score ?? 0) >= 0.6;
+        const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
+        const marker = new maps.Marker({
+          map,
+          position: { lat: Number(c.lat), lng: Number(c.lng) },
+          title: c.nombre_comercial ?? c.razon_social,
+          icon: {
+            path: maps.SymbolPath.CIRCLE,
+            scale: isSel ? 10 : 7,
+            fillColor: color,
+            fillOpacity: 0.9,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
+        });
+        marker.addListener("click", () => toggleSel(c.id));
+        overlaysRef.current.push(marker);
+      });
+    }
 
     if (geo) {
       const marker = new maps.Marker({
@@ -180,15 +256,12 @@ export default function RouteMap() {
         map,
         path: routeInfo.path.map(([lat, lng]) => ({ lat, lng })),
         strokeColor: "#2563eb",
-        strokeOpacity: 0.85,
-        strokeWeight: 4,
+        strokeOpacity: 0.9,
+        strokeWeight: 5,
       });
       overlaysRef.current.push(line);
     }
 
-    // Fit bounds ONLY on the first render after the map is ready, and only when
-    // the user hasn't already zoomed/panned. This prevents clicking a marker
-    // (which changes `selected`) from resetting the view.
     if (!userInteractedRef.current && !didFitRef.current) {
       const fitPoints = geo ? [[geo.lat, geo.lng], ...allPoints] : allPoints;
       if (fitPoints.length === 0) {
@@ -204,7 +277,7 @@ export default function RouteMap() {
       }
       if (allPoints.length > 0) didFitRef.current = true;
     }
-  }, [allPoints, center, clientsWithCoords, geo, heatQ.data, routeInfo, selected, showHeatmap, mapStatus]);
+  }, [allPoints, center, clientsWithCoords, clientsById, geo, heatQ.data, routeInfo, routeMode, selected, showHeatmap, mapStatus]);
 
 
   const doOptimize = useMutation({
@@ -218,8 +291,24 @@ export default function RouteMap() {
     },
     onSuccess: (r: any) => {
       const path = r.polyline ? decodePolyline(r.polyline) : [];
-      setRouteInfo({ km: r.total_km, min: r.total_minutes, path });
+      setRouteInfo({
+        km: r.total_km,
+        min: r.total_minutes,
+        path,
+        ordered: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+      });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
+      // Fit map to route
+      const maps = (window as any).google?.maps;
+      const map = mapRef.current;
+      if (maps && map && path.length > 0) {
+        const bounds = new maps.LatLngBounds();
+        path.forEach(([lat, lng]) => bounds.extend({ lat, lng }));
+        if (geo) bounds.extend({ lat: geo.lat, lng: geo.lng });
+        userInteractedRef.current = true;
+        map.fitBounds(bounds, 60);
+      }
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
@@ -239,7 +328,6 @@ export default function RouteMap() {
       setSelected(new Set(ids));
       setAiRationale(r?.rationale ?? null);
       setRouteInfo(null);
-      // Auto-fit map to suggested clients
       const maps = (window as any).google?.maps;
       const map = mapRef.current;
       if (maps && map) {
@@ -262,6 +350,91 @@ export default function RouteMap() {
 
   const withoutCoords = (data?.clients ?? []).filter((c: any) => !c.lat || !c.lng);
 
+  // Global search across name + address, used inside the picker popover.
+  const filteredClients = useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    if (!q) return clientsWithCoords;
+    return clientsWithCoords.filter((c: any) => {
+      const haystack = [
+        c.nombre_comercial,
+        c.razon_social,
+        c.nickname,
+        c.direccion,
+        c.codigo_postal,
+        c.rfc,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [clientsWithCoords, clientQuery]);
+
+  const buildRouteText = () => {
+    if (!routeInfo) return "";
+    const lines: string[] = [];
+    lines.push("Ruta optimizada");
+    lines.push(`Total: ${routeInfo.km} km · ${routeInfo.min} min`);
+    lines.push("");
+    lines.push("Inicio: Ubicación actual");
+    routeInfo.ordered.forEach((s, i) => {
+      const c = clientsById.get(s.cliente_id);
+      const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
+      const dir = c?.direccion ?? "";
+      const leg = routeInfo.legs[i];
+      const legTxt = leg ? ` (${leg.distance_text || `${leg.distance_km} km`} · ${leg.duration_text || `${leg.duration_min} min`})` : "";
+      lines.push(`${i + 1}. ${name}${legTxt}`);
+      if (dir) lines.push(`   ${dir}`);
+    });
+    return lines.join("\n");
+  };
+
+  const downloadRoute = () => {
+    const text = buildRouteText();
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ruta-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const printRoute = () => {
+    if (!routeInfo) return;
+    const rows = routeInfo.ordered
+      .map((s, i) => {
+        const c = clientsById.get(s.cliente_id);
+        const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
+        const dir = c?.direccion ?? "";
+        const leg = routeInfo.legs[i];
+        const legTxt = leg
+          ? `${leg.distance_text || `${leg.distance_km} km`} · ${leg.duration_text || `${leg.duration_min} min`}`
+          : "";
+        return `<tr><td style="padding:8px;border-bottom:1px solid #eee;text-align:center;font-weight:700">${i + 1}</td><td style="padding:8px;border-bottom:1px solid #eee"><div style="font-weight:600">${name}</div><div style="color:#666;font-size:12px">${dir}</div></td><td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#333;white-space:nowrap">${legTxt}</td></tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Ruta del día</title></head><body style="font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#111">
+<h1 style="margin:0 0 4px">Ruta del día</h1>
+<p style="margin:0 0 16px;color:#555">Total: <strong>${routeInfo.km} km</strong> · <strong>${routeInfo.min} min</strong> · ${routeInfo.ordered.length} paradas</p>
+<table style="width:100%;border-collapse:collapse;border-top:2px solid #111">${rows}</table>
+<script>window.onload=function(){setTimeout(function(){window.print();},250);}</script>
+</body></html>`;
+    const w = window.open("", "_blank", "width=800,height=900");
+    if (!w) { toast.error("Permite ventanas emergentes para imprimir"); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
+  const clearRoute = () => {
+    setRouteInfo(null);
+    userInteractedRef.current = false;
+    didFitRef.current = false;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -280,7 +453,7 @@ export default function RouteMap() {
                 <span className="sm:hidden">Clientes</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[calc(100vw-2rem)] max-w-sm p-0 sm:w-80" align="end">
+            <PopoverContent className="w-[calc(100vw-2rem)] max-w-sm p-0 sm:w-96" align="end">
               <div className="border-b p-2">
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -288,17 +461,25 @@ export default function RouteMap() {
                     autoFocus
                     value={clientQuery}
                     onChange={(e) => setClientQuery(e.target.value)}
-                    placeholder="Buscar cliente…"
+                    placeholder="Buscar por nombre o dirección…"
                     className="h-8 pl-7 text-sm"
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{selected.size} seleccionados</span>
+                  <span>
+                    {selected.size} seleccionados · {filteredClients.length} resultados
+                  </span>
                   <div className="flex gap-2">
                     <button
                       className="hover:underline"
                       onClick={() =>
-                        setSelected(new Set(clientsWithCoords.map((c: any) => c.id)))
+                        setSelected(
+                          (prev) => {
+                            const n = new Set(prev);
+                            filteredClients.forEach((c: any) => n.add(c.id));
+                            return n;
+                          },
+                        )
                       }
                     >
                       Todos
@@ -313,54 +494,57 @@ export default function RouteMap() {
                   </div>
                 </div>
               </div>
-              <div className="max-h-72 overflow-y-auto py-1">
-                {clientsWithCoords
-                  .filter((c: any) => {
-                    const q = clientQuery.trim().toLowerCase();
-                    if (!q) return true;
-                    const name = (c.nombre_comercial ?? c.razon_social ?? "").toLowerCase();
-                    return name.includes(q);
-                  })
-                  .slice(0, 200)
-                  .map((c: any) => {
-                    const isSel = selected.has(c.id);
-                    return (
-                      <label
-                        key={c.id}
-                        className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"
-                      >
-                        <Checkbox
-                          checked={isSel}
-                          onCheckedChange={() => toggleSel(c.id)}
-                        />
-                        <span className="min-w-0 flex-1 truncate">
-                          {c.nombre_comercial ?? c.razon_social}
+              <div className="max-h-80 overflow-y-auto py-1">
+                {filteredClients.slice(0, 200).map((c: any) => {
+                  const isSel = selected.has(c.id);
+                  const name = c.nombre_comercial ?? c.razon_social ?? "";
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex cursor-pointer items-start gap-2 px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      <Checkbox
+                        checked={isSel}
+                        onCheckedChange={() => toggleSel(c.id)}
+                        className="mt-0.5"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">
+                          <Highlight text={name} query={clientQuery} />
                         </span>
-                        <button
-                          className="text-[11px] text-primary hover:underline"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const map = mapRef.current;
-                            if (!map) return;
-                            userInteractedRef.current = true;
-                            map.panTo({ lat: Number(c.lat), lng: Number(c.lng) });
-                            if (map.getZoom() < 15) map.setZoom(15);
-                          }}
-                        >
-                          Ver
-                        </button>
-                      </label>
-                    );
-                  })}
-                {clientsWithCoords.length === 0 && (
+                        {c.direccion && (
+                          <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                            <Highlight text={c.direccion} query={clientQuery} />
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        className="shrink-0 text-[11px] text-primary hover:underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const map = mapRef.current;
+                          if (!map) return;
+                          userInteractedRef.current = true;
+                          map.panTo({ lat: Number(c.lat), lng: Number(c.lng) });
+                          if (map.getZoom() < 15) map.setZoom(15);
+                        }}
+                      >
+                        Ver
+                      </button>
+                    </label>
+                  );
+                })}
+                {filteredClients.length === 0 && (
                   <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                    No hay clientes con coordenadas.
+                    {clientQuery
+                      ? "Sin coincidencias."
+                      : "No hay clientes con coordenadas."}
                   </div>
                 )}
               </div>
             </PopoverContent>
           </Popover>
-          <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)}>
+          <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)} disabled={routeMode}>
             <Flame className="mr-1 h-4 w-4" />
             <span className="hidden sm:inline">Heatmap</span>
           </Button>
@@ -393,13 +577,69 @@ export default function RouteMap() {
           </div>
         )}
       </div>
+
       {routeInfo && (
-        <div className="text-sm text-muted-foreground tabular-nums">
-          Total: {routeInfo.km} km · {routeInfo.min} min
-        </div>
+        <Card className="border-primary/30">
+          <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+            <div className="min-w-0">
+              <CardTitle className="text-base">Ruta optimizada</CardTitle>
+              <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                {routeInfo.ordered.length} paradas · {routeInfo.km} km · {routeInfo.min} min
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-1">
+              <Button size="sm" variant="outline" onClick={printRoute}>
+                <Printer className="mr-1 h-3.5 w-3.5" /> Imprimir
+              </Button>
+              <Button size="sm" variant="outline" onClick={downloadRoute}>
+                <Download className="mr-1 h-3.5 w-3.5" /> Descargar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={clearRoute} title="Cerrar ruta">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ol className="space-y-2">
+              <li className="flex items-start gap-3 rounded-md bg-muted/50 p-2">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-foreground text-xs font-bold text-background">
+                  •
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">Inicio</div>
+                  <div className="text-xs text-muted-foreground">Tu ubicación actual</div>
+                </div>
+              </li>
+              {routeInfo.ordered.map((s, i) => {
+                const c = clientsById.get(s.cliente_id);
+                const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
+                const leg = routeInfo.legs[i];
+                return (
+                  <li key={`${s.cliente_id}-${i}`} className="flex items-start gap-3 rounded-md border p-2">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{name}</div>
+                      {c?.direccion && (
+                        <div className="truncate text-xs text-muted-foreground">{c.direccion}</div>
+                      )}
+                    </div>
+                    {leg && (
+                      <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                        <div>{leg.distance_text || `${leg.distance_km} km`}</div>
+                        <div>{leg.duration_text || `${leg.duration_min} min`}</div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </CardContent>
+        </Card>
       )}
 
-      {aiRationale && (
+      {aiRationale && !routeInfo && (
         <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <div className="min-w-0">
@@ -412,7 +652,7 @@ export default function RouteMap() {
         </div>
       )}
 
-      {withoutCoords.length > 0 && (
+      {withoutCoords.length > 0 && !routeInfo && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -438,7 +678,7 @@ export default function RouteMap() {
         </Card>
       )}
 
-      {selected.size > 0 && (
+      {selected.size > 0 && !routeInfo && (
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-base">Seleccionados</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-1">
