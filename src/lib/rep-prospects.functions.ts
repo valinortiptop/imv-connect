@@ -54,12 +54,24 @@ export const createProspectFn = createServerFn({ method: "POST" })
         notes: z.string().max(2000).optional(),
         source: z.string().max(50).default("campo"),
         photoPath: z.string().max(500).optional(),
+        // Google Places enrichment
+        place_id: z.string().max(300).optional(),
+        website: z.string().max(500).optional(),
+        google_maps_url: z.string().max(500).optional(),
+        rating: z.number().optional(),
+        review_count: z.number().int().optional(),
+        business_status: z.string().max(50).optional(),
+        primary_type: z.string().max(80).optional(),
+        price_level: z.number().int().optional(),
+        opening_hours: z.array(z.string()).optional(),
+        description: z.string().max(2000).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId);
     void rep;
+    const enriched = !!data.place_id;
     const { data: row, error } = await context.supabase
       .from("prospects")
       .insert({
@@ -76,6 +88,18 @@ export const createProspectFn = createServerFn({ method: "POST" })
         status: "nuevo",
         assigned_to: context.userId,
         photo_url: data.photoPath ?? null,
+        place_id: data.place_id ?? null,
+        website: data.website ?? null,
+        google_maps_url: data.google_maps_url ?? null,
+        rating: data.rating ?? null,
+        review_count: data.review_count ?? null,
+        business_status: data.business_status ?? null,
+        primary_type: data.primary_type ?? null,
+        price_level: data.price_level ?? null,
+        opening_hours: data.opening_hours ?? null,
+        description: data.description ?? null,
+        enrichment_status: enriched ? "google_places" : null,
+        enriched_at: enriched ? new Date().toISOString() : null,
       })
       .select()
       .single();
