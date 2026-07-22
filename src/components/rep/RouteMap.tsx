@@ -37,6 +37,9 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  GripVertical,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 
