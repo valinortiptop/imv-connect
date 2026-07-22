@@ -215,6 +215,63 @@ export const registerPaymentFn = createServerFn({ method: "POST" })
     return { pagoId: pago.id };
   });
 
+/* ─────────── Cobranza summary (para meta mensual) ─────────── */
+
+export const getRepCobranzaSummaryFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const monthStr = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}-01`;
+
+    // clientes del rep
+    let clientIds: string[] | null = null;
+    if (rep) {
+      const { data: cs } = await context.supabase
+        .from("clientes")
+        .select("id")
+        .eq("representante_id", rep.id);
+      clientIds = (cs ?? []).map((c: any) => c.id);
+    }
+
+    // facturas del rep para poder ligar pagos
+    let facQ = context.supabase.from("facturas").select("id, cliente_id, representante_id");
+    if (rep) facQ = facQ.eq("representante_id", rep.id);
+    const { data: facs } = await facQ;
+    const facIds = (facs ?? []).map((f: any) => f.id);
+
+    let collected = 0;
+    if (facIds.length) {
+      const { data: pagos } = await context.supabase
+        .from("pagos")
+        .select("monto, fecha, factura_id")
+        .in("factura_id", facIds)
+        .gte("fecha", monthStart.toISOString().slice(0, 10))
+        .lt("fecha", monthEnd.toISOString().slice(0, 10));
+      collected = (pagos ?? []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+    }
+
+    let target: any = null;
+    if (rep) {
+      const { data: t } = await context.supabase
+        .from("rep_targets")
+        .select("target_amount, min_daily")
+        .eq("rep_id", rep.id)
+        .eq("period_month", monthStr)
+        .maybeSingle();
+      target = t;
+    }
+
+    return {
+      collected_month: collected,
+      target_amount: Number(target?.target_amount ?? 0),
+      month: monthStr,
+      rep_id: rep?.id ?? null,
+    };
+  });
+
 /* ─────────── Devoluciones ─────────── */
 
 export const listRepDevolucionesFn = createServerFn({ method: "POST" })
