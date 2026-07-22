@@ -324,6 +324,7 @@ export async function runNetsuiteBackfillChunk(
     const pid = folioToPedidoId.get(folio);
     if (!pid) continue;
     for (const l of lines) {
+      if (!(l.qty > 0) || !(l.price >= 0)) continue;
       pedItems.push({
         pedido_id: pid,
         producto_id: l.producto_id,
@@ -336,6 +337,7 @@ export async function runNetsuiteBackfillChunk(
         is_damaged: false,
       });
     }
+
   }
   if (pedItems.length) {
     for (let i = 0; i < pedItems.length; i += 1000) {
