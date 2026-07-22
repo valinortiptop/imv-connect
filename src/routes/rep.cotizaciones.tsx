@@ -46,11 +46,10 @@ function Page() {
           <h1 className="text-xl font-semibold md:text-2xl">Cotizaciones</h1>
           <p className="text-sm text-muted-foreground">Propuestas enviadas y su conversión a pedido</p>
         </div>
-        <Button asChild size="sm">
-          <Link to="/rep/clientes">
-            <Plus className="mr-2 h-4 w-4" /> Nueva desde cliente
-          </Link>
+        <Button size="sm" onClick={() => setNewOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Crear nueva cotización
         </Button>
+
       </div>
 
       {q.isLoading ? (
