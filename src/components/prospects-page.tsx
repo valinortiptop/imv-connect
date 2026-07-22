@@ -717,10 +717,15 @@ export default function Prospects({ scopeToMe = false }: { scopeToMe?: boolean }
             <SearchCheck className="h-4 w-4" />
             {tx("Enriquecer con Google")}
           </Button>
+          <Button variant="outline" onClick={() => { setNewContactSource(null); setNewContactOpen(true); }} className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            {tx("Nuevo prospecto")}
+          </Button>
           <Button onClick={() => setImportOpen(true)} className="gap-2">
             <Upload className="h-4 w-4" />
             {tx("Importar lista")}
           </Button>
+
         </div>
       </div>
 
