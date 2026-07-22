@@ -33,6 +33,8 @@ import {
   Download,
   X,
 } from "lucide-react";
+import CheckInDialog from "./CheckInDialog";
+
 
 function decodePolyline(str: string): [number, number][] {
   let index = 0, lat = 0, lng = 0;
