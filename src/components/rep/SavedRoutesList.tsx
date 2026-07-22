@@ -25,9 +25,12 @@ import {
   Copy,
   Check,
   X as XIcon,
+  Printer,
+  Download,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 import SavedRoutePreview from "./SavedRoutePreview";
+import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 type Stop = {
   cliente_id: string;
