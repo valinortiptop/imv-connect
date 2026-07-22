@@ -77,9 +77,12 @@ interface CotizacionesTabProps {
    *  layout shift caused by hiding/showing the button per tab). */
   newOpen?: boolean;
   onNewOpenChange?: (open: boolean) => void;
+  /** When set, only quotes for these client IDs are shown. Used by the
+   *  representative panel to scope quotes to the rep's own clients. */
+  restrictClientIds?: string[] | null;
 }
 
-export function CotizacionesTab({ onConverted, newOpen, onNewOpenChange }: CotizacionesTabProps) {
+export function CotizacionesTab({ onConverted, newOpen, onNewOpenChange, restrictClientIds }: CotizacionesTabProps) {
   const qc = useQueryClient();
   const [internalNewOpen, setInternalNewOpen] = useState(false);
   const dialogOpen = newOpen ?? internalNewOpen;
@@ -89,17 +92,24 @@ export function CotizacionesTab({ onConverted, newOpen, onNewOpenChange }: Cotiz
   const [convertRow, setConvertRow] = useState<QuoteRow | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  const restrictKey = restrictClientIds ? [...restrictClientIds].sort().join(",") : null;
+
   // Quotes (drafts only — exclude already-converted ones).
   // staleTime keeps the data warm so toggling tabs feels instant after
   // the first fetch.
   const { data: quotes = [], isLoading } = useQuery({
-    queryKey: ["quotes", "drafts"],
+    queryKey: ["quotes", "drafts", restrictKey],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      if (restrictClientIds && restrictClientIds.length === 0) return [] as QuoteRow[];
+      let query = (supabase as any)
         .from("quotes")
         .select("id, quote_number, client_id, contact_name, delivery_date, total, notes, status, converted_to_order_id, created_at, clients(name), price_lists(name)")
         .is("converted_to_order_id", null)
         .order("created_at", { ascending: false });
+      if (restrictClientIds && restrictClientIds.length > 0) {
+        query = query.in("client_id", restrictClientIds);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []).map((q: any): QuoteRow => ({
         id: q.id,

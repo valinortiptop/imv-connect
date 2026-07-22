@@ -78,7 +78,7 @@ function SortableTableHead<K extends string>({
   );
 }
 
-export default function Orders() {
+export default function Orders({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -166,14 +166,20 @@ export default function Orders() {
     }
   }, []);
 
+  const restrictKey = restrictClientIds ? [...restrictClientIds].sort().join(",") : null;
   const { data: orders = [], isLoading, error } = useQuery({
-    queryKey: ["orders"],
+    queryKey: ["orders", restrictKey],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (restrictClientIds && restrictClientIds.length === 0) return [] as OrderSummaryRow[];
+      let q = supabase
         .from("order_summary")
         .select("*")
         .order("order_code", { ascending: false })
         .limit(500);
+      if (restrictClientIds && restrictClientIds.length > 0) {
+        q = q.in("client_id", restrictClientIds);
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as OrderSummaryRow[];
     },
@@ -601,6 +607,7 @@ export default function Orders() {
           onConverted={(orderId) => { setTab("pedidos"); setEditOrderId(orderId); }}
           newOpen={newQuoteOpen}
           onNewOpenChange={setNewQuoteOpen}
+          restrictClientIds={restrictClientIds ?? undefined}
         />
       )}
 
