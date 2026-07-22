@@ -1,45 +1,63 @@
-## What's off vs. the reference
+# Backfill 2026 Sales History → Pedidos + Facturas
 
-Comparing the current `/admin/clientes-dashboard` (image-217) to the ALPHA/NetSuite reference (image-216):
+Convert the NetSuite export `IMVVENTASDESGLOSADAS558-2.xls` (25,475 invoices, 62,018 line items, Jan–Jul 2026) into transactional records so all the AI/intelligence features have real 2026 history to work with.
 
-1. **Too wide** — 7 columns × 180px overflows the content area, so "Notas de venta" and "Aplicación de cobranza" get clipped and the user has to scroll horizontally. The reference fits the whole flow in one viewport.
-2. **Icons too small relative to gaps** — reference icons visually almost touch their neighbors; ours float in the middle of oversized cells, making arrows look like faint dashes.
-3. **Arrows too thin and too short** — reference arrows are chunky, dark, and clearly connect icon-to-icon. Ours are 3px muted-foreground at 0.85 opacity, and the padding (`ICON/2 + 6`) leaves a large empty gap so the arrow reads as a hyphen.
-4. **Arrowheads undersized** — 7×7 marker on a 3px stroke barely registers; reference arrowheads are big filled triangles.
-5. **Green chevron badge** — ours renders as a bordered rectangle with a tiny chevron. Reference is a flatter, wider pill with a bigger ▽ glyph, sitting flush under the label.
-6. **Row spacing** — reference rows are tighter vertically; ours has ~160px row height that spreads the three rows too far apart.
-7. **Color** — reference arrows are near-black gray (`#555`-ish), not the theme's muted-foreground which reads too light on white.
+## What gets created
 
-## Fix (single-file change to `src/components/dashboards/FlowDiagram.tsx`)
+Per unique `Número de documento` (INV…) in the file:
+- **1 pedido** — status `entregado`, folio = `INV#####`, one item per line
+- **1 factura** — status `pagada`, folio matches, `pagado = total`, `saldo = 0`, linked to the pedido
+- **N pedido_items + factura_items** — one per row, snapshotting product name/sku/unit
 
-**Geometry**
-- Shrink cell to `CELL_W = 150`, `CELL_H = 130` → total 1050×390, fits the admin content area without horizontal scroll on a 1280px+ viewport (keep the `overflow-x-auto` fallback for narrow screens).
-- Bump icon to `ICON = 88` and shrink arrow padding to `ICON/2 + 2` so arrows start/end right at the icon edge — short, punchy segments like the reference.
+Per file (in addition):
+- **sales_history** rows for every line, tagged with a shared `import_batch_id`
 
-**Arrows**
-- Stroke: `#4b5563` (slate-600) at `strokeWidth={4}`, opacity `1`, round caps.
-- Arrowhead marker: `12×12` viewBox, `markerWidth/Height = 10`, `refX = 9`, filled `#4b5563`. Big enough to read as a real triangle.
-- Keep the orthogonal path builder; just verify same-row/same-col paths are truly horizontal/vertical (currently the same-row branch mistakenly uses `p2.y` for the end Y — should be `p1.y`; that's why some arrows look slightly diagonal).
+All records land in the single existing empresa (`IMV`, id `1e977bb2-…`).
 
-**Green chevron pill**
-- Wider flat pill: `h-3.5 w-7`, `rounded-[3px]`, border `emerald-500/70`, bg `emerald-500/15`, chevron `10×6` at `stroke-width 2`. Sits `mt-0.5` under the label so it feels attached, not floating.
+## Money handling
 
-**Node**
-- Reduce label max-width to `130px`, font `11px`, tighter `leading-tight`, so two-line labels don't push the chevron down and break the grid rhythm.
-- Keep count badge, but make it `bg-foreground/90` and slightly smaller (`min-w-[18px]`, `text-[9px]`) so it doesn't compete with the icon.
+- Line `precio_unitario = ingresos_totales / cantidad`
+- `iva_pct = 0`, `ieps_pct = 0`
+- Pedido/factura `subtotal = total = SUM(line revenue)`, `iva = 0`
+- Lines with `ingresos_totales ≈ 0` (bonificaciones — hundreds in the file, e.g. `0.01`) are kept as-is so unit history is preserved.
 
-**No data changes** — `admin.clientes-dashboard.tsx` and `admin.almacen-dashboard.tsx` keep their existing `nodes` / `edges` arrays. Almacén dashboard inherits the same visual polish for free.
+## Reference resolution (auto-create stubs when missing)
 
-## Verification
+- **Cliente**: file has `"1471 NANCY M YAÑEZ SILVA"`. Strip leading numeric ID, match by exact `razon_social`, then case-insensitive. Missing → insert stub client with `razon_social = <clean name>`, `nickname = <netsuite id>`, `client_type = 'menudeo'`, `active = true`.
+- **Producto**: match by `sku` (exact). Missing → insert stub with `sku`, `nombre = descripción`, `unidad = 'PZA'`, `precio_base = precio_unitario`, `activo = true` (fill required fields with sensible defaults; empresa scoped).
+- **Representante**: match by `nombre` (exact, then case-insensitive). Missing → insert stub with `nombre`, `activo = true`, `comision_default_pct = 0`.
+- Assign `pedido.representante_id` = rep from the first line of that invoice; also set `factura.representante_id`.
 
-Load `/admin/clientes-dashboard` at ≥1280px width and confirm:
-- Full 7-column flow visible without horizontal scroll.
-- Arrows are visibly bold and clearly connect adjacent icons.
-- Green chevron pills sit directly under each active label.
-- Layout reads as one continuous flowchart, matching image-216.
+Resolution runs once up front, building three in-memory maps, so lookups during import are O(1).
 
-## Out of scope
+## Server function + migration
 
-- Icon artwork (already correct).
-- Node/edge topology (already matches the reference).
-- Almacén dashboard node data — it will inherit the visual fix automatically.
+New migration `db/migrations/0025_backfill_2026_helpers.sql`:
+- `ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS backfill_source text` (nullable; tag = `'netsuite_2026'` so we can find/undo the batch cleanly).
+- Same on `facturas`.
+- Indexes on `pedidos(folio)` and `facturas(folio)` (unique-if-null-safe partial) to make idempotent upserts fast.
+
+New server function file `src/lib/backfill-sales.functions.ts`:
+- `backfillNetsuiteSales2026Fn` (`.middleware([requireSupabaseAuth])`, admin-role checked via `has_role`) — accepts `{ rows: [...] }` chunks and does the resolve → insert work using `supabaseAdmin` (loaded inside the handler).
+- Uses transactions per invoice; on failure of one invoice, logs and continues.
+- Idempotent: `ON CONFLICT (folio)` update-nothing so re-runs skip already-imported invoices.
+
+## Admin UI to run the backfill
+
+New route/page: **`/admin/onboarding` → "Backfill ventas 2026" card** (or a new dedicated route `/admin/backfill-ventas` — matches existing sidebar pattern).
+- File upload (accepts `.xls`/`.xlsx`) using the same parser style as `sales-history-import.ts` but with streaming/chunked processing (file is 42 MB, 62k rows).
+- Parses in the browser (SheetJS), then POSTs chunks of ~500 rows at a time to the server function with a progress bar.
+- Also runs the existing `importSalesHistory` in parallel so `sales_history` gets populated with the same batch id.
+- Shows counters: parsed / created pedidos / created facturas / created client stubs / created product stubs / created rep stubs / duplicated (skipped) / errors.
+
+## Safety / rollback
+
+- Everything created is tagged `backfill_source = 'netsuite_2026'` → one SQL `DELETE` removes the entire batch if needed.
+- Stubs created for missing clients/products/reps get `notas = 'Auto-creado backfill NetSuite 2026-…'` so they're easy to spot and enrich later.
+- The importer is idempotent; running it twice does nothing on the second run.
+
+## Technical notes
+
+- File format is **SpreadsheetML 2003 XML** disguised as `.xls`. SheetJS reads it fine (`XLSX.read(..., { type: "array" })`), same as the existing `sales-history-import.ts` path.
+- 62k rows / ~25k pedidos: chunking + server-side batched inserts keeps this ~2–4 minutes.
+- No CFDI is generated (no Facturapi call) — these are historical records marked as issued/paid.
