@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { listRepQuotesFn, convertQuoteToPedidoFn } from "@/lib/rep-sales.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { toast } from "sonner";
 import { FileText, ArrowRight, Plus } from "lucide-react";
 import AIPageInsights from "@/components/ai/AIPageInsights";
 import ShareTicketButton from "@/components/rep/ShareTicketButton";
+import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
+
 
 
 const fmtMXN = (n: number) =>
