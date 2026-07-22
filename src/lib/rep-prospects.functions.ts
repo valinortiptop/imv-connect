@@ -62,7 +62,7 @@ export const createProspectFn = createServerFn({ method: "POST" })
         review_count: z.number().int().optional(),
         business_status: z.string().max(50).optional(),
         primary_type: z.string().max(80).optional(),
-        price_level: z.number().int().optional(),
+        price_level: z.union([z.number(), z.string()]).optional(),
         opening_hours: z.array(z.string()).optional(),
         description: z.string().max(2000).optional(),
       })
