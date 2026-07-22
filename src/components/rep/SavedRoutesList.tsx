@@ -158,6 +158,26 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 shrink-0"
+                            title="Duplicar ruta"
+                            disabled={duplicateMut.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const today = new Date().toISOString().slice(0, 10);
+                              const suggested = prompt(
+                                "Fecha para la ruta duplicada (YYYY-MM-DD):",
+                                r.fecha || today,
+                              );
+                              if (suggested === null) return;
+                              const fecha = suggested.trim() || r.fecha || today;
+                              duplicateMut.mutate({ id: r.id, fecha });
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm("¿Eliminar esta ruta guardada?")) removeMut.mutate(r.id);
