@@ -60,15 +60,24 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   }, [open]);
 
   const startVisit = useMutation({
-    mutationFn: () =>
-      doCheckIn({
-        data: {
-          clienteId,
-          lat: geo?.lat,
-          lng: geo?.lng,
-          overrideReason: overrideReason || undefined,
-        },
-      }),
+    mutationFn: async () => {
+      const tid = toast.loading("Registrando check-in…");
+      try {
+        const r = await doCheckIn({
+          data: {
+            clienteId,
+            lat: geo?.lat,
+            lng: geo?.lng,
+            overrideReason: overrideReason || undefined,
+          },
+        });
+        toast.dismiss(tid);
+        return r;
+      } catch (e) {
+        toast.dismiss(tid);
+        throw e;
+      }
+    },
     onSuccess: (r: any) => {
       setVisitId(r.visit.id);
       setDistanceInfo(r.distanceM ?? null);
@@ -80,38 +89,49 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
       );
     },
     onError: (e: any) => {
-      const msg = String(e.message ?? "Error");
-      if (msg.includes("override")) {
+      const msg = String(e?.message ?? e ?? "Error desconocido al registrar check-in");
+      if (msg.toLowerCase().includes("override")) {
         setNeedsOverride(true);
         const m = msg.match(/(\d+)m/);
         if (m) setDistanceInfo(parseInt(m[1]));
-        toast.error(msg);
+        toast.error(`Estás lejos del cliente. Ingresa un motivo para continuar.`);
       } else {
         toast.error(msg);
       }
     },
   });
 
+
   const finish = useMutation({
-    mutationFn: () =>
-      doCheckOut({
-        data: {
-          visitId: visitId!,
-          lat: geo?.lat,
-          lng: geo?.lng,
-          notes: notes || undefined,
-          outcome: (outcome || undefined) as any,
-          agreements: agreements.filter((a) => a.description.trim().length > 0),
-        },
-      }),
+    mutationFn: async () => {
+      const tid = toast.loading("Finalizando visita…");
+      try {
+        const r = await doCheckOut({
+          data: {
+            visitId: visitId!,
+            lat: geo?.lat,
+            lng: geo?.lng,
+            notes: notes || undefined,
+            outcome: (outcome || undefined) as any,
+            agreements: agreements.filter((a) => a.description.trim().length > 0),
+          },
+        });
+        toast.dismiss(tid);
+        return r;
+      } catch (e) {
+        toast.dismiss(tid);
+        throw e;
+      }
+    },
     onSuccess: () => {
       toast.success("Visita finalizada");
       qc.invalidateQueries({ queryKey: ["client-visits", clienteId] });
       qc.invalidateQueries({ queryKey: ["rep-visits"] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message ?? "Error"),
+    onError: (e: any) => toast.error(String(e?.message ?? e ?? "Error al finalizar visita")),
   });
+
 
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
