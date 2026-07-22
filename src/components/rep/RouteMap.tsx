@@ -35,6 +35,8 @@ import {
   Printer,
   Download,
   X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
 
