@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { buildWeeklyPlanFn, listMyVisitsFn } from "@/lib/rep.functions";
+import {
+  buildWeeklyPlanFn,
+  listMyVisitsFn,
+  listSavedRoutesFn,
+} from "@/lib/rep.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,9 +23,15 @@ const priorityColor: Record<string, string> = {
   seguimiento: "bg-blue-500/15 text-blue-600 border-blue-500/30",
 };
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function TodayPlan() {
   const buildWeek = useServerFn(buildWeeklyPlanFn);
   const listVisits = useServerFn(listMyVisitsFn);
+  const listSaved = useServerFn(listSavedRoutesFn);
 
   const weekQ = useQuery({
     queryKey: ["rep-week-plan"],
@@ -31,17 +41,48 @@ export default function TodayPlan() {
     queryKey: ["rep-visits"],
     queryFn: () => listVisits({ data: { limit: 100 } }),
   });
+  const savedQ = useQuery({
+    queryKey: ["rep-saved-routes"],
+    queryFn: () => listSaved({ data: { limit: 60 } }),
+  });
 
   const todayKey = DAY_KEYS[new Date().getDay()];
+  const iso = todayISO();
+
+  // Saved routes for today take precedence — the rep explicitly planned them.
   const today = useMemo(() => {
-    if (!weekQ.data) return null;
-    return (
-      weekQ.data.week.find((d: any) => d.dia === todayKey) ??
-      // if weekend, fall back to nearest weekday with items so rep still sees plan
-      weekQ.data.week.find((d: any) => d.clientes.length > 0) ??
-      null
+    const savedToday = (savedQ.data?.routes ?? []).filter(
+      (r: any) => String(r.fecha) === iso,
     );
-  }, [weekQ.data, todayKey]);
+    const weekToday =
+      weekQ.data?.week?.find((d: any) => d.dia === todayKey) ?? null;
+
+    if (savedToday.length > 0) {
+      const seen = new Set<string>();
+      const clientes: any[] = [];
+      for (const r of savedToday) {
+        for (const s of (r.ordered_stops as any[]) ?? []) {
+          const id = String(s.cliente_id ?? "");
+          if (!id || seen.has(id)) continue;
+          seen.add(id);
+          clientes.push({
+            cliente_id: id,
+            nombre: s.nombre ?? "Cliente",
+            razon: r.nombre ? `Ruta guardada · ${r.nombre}` : "Ruta guardada",
+            prioridad: null,
+          });
+        }
+      }
+      return {
+        dia: todayKey,
+        zona_principal: weekToday?.zona_principal ?? null,
+        clientes,
+      };
+    }
+
+    if (weekToday) return weekToday;
+    return weekQ.data?.week?.find((d: any) => d.clientes.length > 0) ?? null;
+  }, [weekQ.data, savedQ.data, todayKey, iso]);
 
   // Which planned clients already have a check-in today
   const visitedToday = useMemo(() => {
