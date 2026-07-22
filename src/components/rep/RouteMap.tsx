@@ -320,6 +320,7 @@ export default function RouteMap() {
       // Persist so it appears on Ruta history and Plan semanal
       saveRoute({
         data: {
+          fecha: routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
