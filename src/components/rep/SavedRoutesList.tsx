@@ -248,6 +248,44 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 shrink-0"
+                            title="Imprimir ruta"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              printRouteHtml({
+                                title: displayName,
+                                fecha: r.fecha,
+                                totalKm: r.total_km,
+                                totalMin: r.total_minutes,
+                                stops: (r.ordered_stops ?? []) as any,
+                                legs: (r.legs ?? []) as any,
+                              });
+                            }}
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Descargar PDF"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadRoutePdf({
+                                title: displayName,
+                                fecha: r.fecha,
+                                totalKm: r.total_km,
+                                totalMin: r.total_minutes,
+                                stops: (r.ordered_stops ?? []) as any,
+                                legs: (r.legs ?? []) as any,
+                              });
+                            }}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
                             title="Duplicar ruta"
                             disabled={duplicateMut.isPending}
                             onClick={(e) => {
