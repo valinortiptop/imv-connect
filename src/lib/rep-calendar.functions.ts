@@ -240,10 +240,17 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
 export const listRepresentantesFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await (context.supabase as any)
+    const supabase = context.supabase as any;
+    const { data: isAdminData } = await supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    let q = supabase
       .from("representantes")
       .select("id, nombre, activo")
       .eq("activo", true)
       .order("nombre");
+    if (!isAdminData) q = q.eq("user_id", context.userId);
+    const { data } = await q;
     return { representantes: (data ?? []) as { id: string; nombre: string; activo: boolean }[] };
   });
