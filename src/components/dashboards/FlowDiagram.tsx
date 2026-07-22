@@ -158,11 +158,11 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                   })()
                 )}
               </div>
-              <div className="mt-0.5 max-w-[130px] text-center text-[11px] font-medium leading-tight text-foreground">
+              <div className="mt-1 max-w-[180px] text-center text-[13px] font-medium leading-tight text-foreground">
                 {n.label}
               </div>
               {n.sublabel && (
-                <div className="max-w-[130px] text-center text-[10px] leading-tight text-muted-foreground">
+                <div className="max-w-[180px] text-center text-[11px] leading-tight text-muted-foreground">
                   {n.sublabel}
                 </div>
               )}
