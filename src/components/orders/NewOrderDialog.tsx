@@ -508,8 +508,15 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const updateLine = (idx: number, field: "quantity" | "unit_price", value: string) => {
     setLines(prev => prev.map((l, i) => {
       if (i !== idx) return l;
-      const parsed = value === "" ? ""
-        : (field === "quantity" ? parseInt(value) || "" : parseFloat(value) || "");
+      let parsed: number | string;
+      if (value === "") {
+        parsed = "";
+      } else if (field === "quantity") {
+        parsed = parseInt(value) || "";
+      } else {
+        // Allow trailing "." and partial decimals like "10." while typing.
+        parsed = /^\d*\.?\d*$/.test(value) ? (value as any) : (parseFloat(value) || "");
+      }
       // Cap damaged quantity at remaining_quantity
       if (field === "quantity" && l.is_damaged && l.damaged_max_qty != null && typeof parsed === "number") {
         return { ...l, quantity: Math.min(parsed, l.damaged_max_qty) as any };
