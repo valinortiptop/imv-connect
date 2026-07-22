@@ -75,6 +75,7 @@ import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminCentralesRouteImport } from './routes/admin.centrales'
 import { Route as AdminCatalogoRouteImport } from './routes/admin.catalogo'
 import { Route as AdminCalculadoraRouteImport } from './routes/admin.calculadora'
+import { Route as AdminBackfillVentasRouteImport } from './routes/admin.backfill-ventas'
 import { Route as AdminAlmacenesRouteImport } from './routes/admin.almacenes'
 import { Route as AdminAlmacenDashboardRouteImport } from './routes/admin.almacen-dashboard'
 import { Route as AdminAlmacenRouteImport } from './routes/admin.almacen'
@@ -470,6 +471,11 @@ const AdminCalculadoraRoute = AdminCalculadoraRouteImport.update({
   path: '/calculadora',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBackfillVentasRoute = AdminBackfillVentasRouteImport.update({
+  id: '/backfill-ventas',
+  path: '/backfill-ventas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAlmacenesRoute = AdminAlmacenesRouteImport.update({
   id: '/almacenes',
   path: '/almacenes',
@@ -827,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
   '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/backfill-ventas': typeof AdminBackfillVentasRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
@@ -956,6 +963,7 @@ export interface FileRoutesByTo {
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/backfill-ventas': typeof AdminBackfillVentasRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
@@ -1085,6 +1093,7 @@ export interface FileRoutesById {
   '/admin/almacen': typeof AdminAlmacenRouteWithChildren
   '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
   '/admin/almacenes': typeof AdminAlmacenesRoute
+  '/admin/backfill-ventas': typeof AdminBackfillVentasRoute
   '/admin/calculadora': typeof AdminCalculadoraRoute
   '/admin/catalogo': typeof AdminCatalogoRoute
   '/admin/centrales': typeof AdminCentralesRoute
@@ -1219,6 +1228,7 @@ export interface FileRouteTypes {
     | '/admin/almacen'
     | '/admin/almacen-dashboard'
     | '/admin/almacenes'
+    | '/admin/backfill-ventas'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
@@ -1348,6 +1358,7 @@ export interface FileRouteTypes {
     | '/admin/administracion'
     | '/admin/almacen-dashboard'
     | '/admin/almacenes'
+    | '/admin/backfill-ventas'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
@@ -1476,6 +1487,7 @@ export interface FileRouteTypes {
     | '/admin/almacen'
     | '/admin/almacen-dashboard'
     | '/admin/almacenes'
+    | '/admin/backfill-ventas'
     | '/admin/calculadora'
     | '/admin/catalogo'
     | '/admin/centrales'
@@ -2078,6 +2090,13 @@ declare module '@tanstack/react-router' {
       path: '/calculadora'
       fullPath: '/admin/calculadora'
       preLoaderRoute: typeof AdminCalculadoraRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/backfill-ventas': {
+      id: '/admin/backfill-ventas'
+      path: '/backfill-ventas'
+      fullPath: '/admin/backfill-ventas'
+      preLoaderRoute: typeof AdminBackfillVentasRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/almacenes': {
@@ -2724,6 +2743,7 @@ interface AdminRouteChildren {
   AdminAlmacenRoute: typeof AdminAlmacenRouteWithChildren
   AdminAlmacenDashboardRoute: typeof AdminAlmacenDashboardRoute
   AdminAlmacenesRoute: typeof AdminAlmacenesRoute
+  AdminBackfillVentasRoute: typeof AdminBackfillVentasRoute
   AdminCalculadoraRoute: typeof AdminCalculadoraRoute
   AdminCatalogoRoute: typeof AdminCatalogoRoute
   AdminCentralesRoute: typeof AdminCentralesRoute
@@ -2789,6 +2809,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAlmacenRoute: AdminAlmacenRouteWithChildren,
   AdminAlmacenDashboardRoute: AdminAlmacenDashboardRoute,
   AdminAlmacenesRoute: AdminAlmacenesRoute,
+  AdminBackfillVentasRoute: AdminBackfillVentasRoute,
   AdminCalculadoraRoute: AdminCalculadoraRoute,
   AdminCatalogoRoute: AdminCatalogoRoute,
   AdminCentralesRoute: AdminCentralesRoute,
