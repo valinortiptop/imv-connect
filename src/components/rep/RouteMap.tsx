@@ -551,24 +551,6 @@ export default function RouteMap() {
     });
   }, [clientsWithCoords, clientQuery]);
 
-  const buildRouteText = () => {
-    if (!routeInfo) return "";
-    const lines: string[] = [];
-    lines.push("Ruta optimizada");
-    lines.push(`Total: ${routeInfo.km} km · ${routeInfo.min} min`);
-    lines.push("");
-    lines.push("Inicio: Ubicación actual");
-    routeInfo.ordered.forEach((s, i) => {
-      const c = clientsById.get(s.cliente_id);
-      const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
-      const dir = c?.direccion ?? "";
-      const leg = routeInfo.legs[i];
-      const legTxt = leg ? ` (${leg.distance_text || `${leg.distance_km} km`} · ${leg.duration_text || `${leg.duration_min} min`})` : "";
-      lines.push(`${i + 1}. ${name}${legTxt}`);
-      if (dir) lines.push(`   ${dir}`);
-    });
-    return lines.join("\n");
-  };
 
   const buildExportRoute = () => {
     if (!routeInfo) return null;
