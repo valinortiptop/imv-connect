@@ -22,6 +22,9 @@ export type FlowEdge = {
   to: string;
   bend?: "hv" | "vh";
   bidirectional?: boolean;
+  /** perpendicular shift (px) applied to the middle segment of an L-shaped path,
+   * or to the whole line for straight paths. Use to separate parallel arrows. */
+  laneOffset?: number;
 };
 
 type Props = {
