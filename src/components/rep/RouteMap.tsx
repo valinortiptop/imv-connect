@@ -346,6 +346,94 @@ export default function RouteMap() {
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  // Drag-and-drop reorder + remove for the optimized route
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const applyNewOrder = (
+    newOrdered: { cliente_id: string; lat: number; lng: number }[],
+  ) => {
+    setRouteInfo((prev) =>
+      prev ? { ...prev, ordered: newOrdered, legs: [], path: [], km: 0, min: 0 } : prev,
+    );
+  };
+
+  const reorderStop = (from: number, to: number) => {
+    if (!routeInfo) return;
+    if (from === to || from < 0 || to < 0) return;
+    const arr = [...routeInfo.ordered];
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved);
+    applyNewOrder(arr);
+  };
+
+  const removeStop = (idx: number) => {
+    if (!routeInfo) return;
+    const arr = [...routeInfo.ordered];
+    const [removed] = arr.splice(idx, 1);
+    if (removed) {
+      setSelected((prev) => {
+        const n = new Set(prev);
+        n.delete(removed.cliente_id);
+        return n;
+      });
+    }
+    if (arr.length === 0) {
+      setRouteInfo(null);
+      toast.info("Ruta vacía");
+      return;
+    }
+    applyNewOrder(arr);
+  };
+
+  const recalcRoute = useMutation({
+    mutationFn: async () => {
+      if (!geo) throw new Error("Activa tu ubicación primero");
+      if (!routeInfo || routeInfo.ordered.length === 0)
+        throw new Error("Sin paradas");
+      return optimize({
+        data: {
+          startLat: geo.lat,
+          startLng: geo.lng,
+          stops: routeInfo.ordered.map((s) => ({
+            cliente_id: s.cliente_id,
+            lat: Number(s.lat),
+            lng: Number(s.lng),
+          })),
+          optimize: false,
+        },
+      });
+    },
+    onSuccess: (r: any) => {
+      const path = r.polyline ? decodePolyline(r.polyline) : [];
+      setRouteInfo({
+        km: r.total_km,
+        min: r.total_minutes,
+        path,
+        ordered: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+      });
+      toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
+      saveRoute({
+        data: {
+          totalKm: r.total_km,
+          totalMinutes: r.total_minutes,
+          polyline: r.polyline ?? null,
+          orderedStops: r.orderedStops ?? [],
+          legs: r.legs ?? [],
+          startLat: geo?.lat ?? null,
+          startLng: geo?.lng ?? null,
+          origen: "manual",
+        },
+      })
+        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
+        .catch(() => {});
+    },
+    onError: (e: any) => toast.error(e.message ?? "Error"),
+  });
+
+  const routeDirty = routeInfo ? routeInfo.legs.length === 0 : false;
+
   const aiSuggest = useMutation({
     mutationFn: async () => {
       const payload: any = { maxStops: 8 };
