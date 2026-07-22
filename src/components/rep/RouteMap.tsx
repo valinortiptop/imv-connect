@@ -849,12 +849,12 @@ export default function RouteMap() {
                       setDragIdx(null);
                       setDragOverIdx(null);
                     }}
-                    className={`flex items-stretch gap-1 rounded-md border transition ${
+                    className={`flex min-w-0 items-stretch gap-1 overflow-hidden rounded-md border transition ${
                       isDragging ? "opacity-40" : ""
                     } ${isOver ? "border-primary ring-2 ring-primary/30" : ""}`}
                   >
                     <div
-                      className="flex cursor-grab items-center px-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+                      className="hidden sm:flex cursor-grab items-center px-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
                       title="Arrastra para reordenar"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -863,7 +863,7 @@ export default function RouteMap() {
                     <button
                       type="button"
                       onClick={() => setCheckInClient({ id: s.cliente_id, nombre: name })}
-                      className="flex flex-1 items-start gap-3 rounded-md p-2 text-left transition hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      className="flex min-w-0 flex-1 items-start gap-2 rounded-md p-2 text-left transition hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         {i + 1}
@@ -882,7 +882,7 @@ export default function RouteMap() {
                         </div>
                       )}
                     </button>
-                    <div className="flex flex-col items-center justify-center gap-0.5 px-1">
+                    <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-1">
                       <button
                         type="button"
                         title="Subir"
@@ -906,7 +906,7 @@ export default function RouteMap() {
                       type="button"
                       title="Eliminar parada"
                       onClick={(e) => { e.stopPropagation(); removeStop(i); }}
-                      className="flex items-center px-2 text-muted-foreground hover:text-destructive"
+                      className="flex shrink-0 items-center px-2 text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
