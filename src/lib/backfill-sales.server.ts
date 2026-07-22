@@ -397,6 +397,7 @@ export async function runNetsuiteBackfillChunk(
     const fid = folioToFacturaId.get(folio);
     if (!fid) continue;
     for (const l of lines) {
+      if (!(l.qty > 0) || !(l.price >= 0)) continue;
       facItems.push({
         factura_id: fid,
         producto_id: l.producto_id,
@@ -409,6 +410,7 @@ export async function runNetsuiteBackfillChunk(
         ieps_pct: 0,
       });
     }
+
   }
   if (facItems.length) {
     for (let i = 0; i < facItems.length; i += 1000) {
