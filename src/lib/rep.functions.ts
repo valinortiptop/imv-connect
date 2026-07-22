@@ -858,6 +858,7 @@ export const optimizeRouteFn = createServerFn({ method: "POST" })
           )
           .min(1)
           .max(20),
+        optimize: z.boolean().optional().default(true),
       })
       .parse(input),
   )
@@ -870,7 +871,7 @@ export const optimizeRouteFn = createServerFn({ method: "POST" })
       origin,
       destination,
       waypoints: mid,
-      optimize: true,
+      optimize: data.optimize,
       mode: "driving",
     });
     if (resp.status !== "OK") {
