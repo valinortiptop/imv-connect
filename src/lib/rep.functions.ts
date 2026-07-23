@@ -24,6 +24,22 @@ async function getCurrentRep(supabase: any, userId: string) {
     | null;
 }
 
+/* ─── helper: paginate a supabase query builder past the 1000-row PostgREST cap ─── */
+async function fetchAllPaged<T = any>(makeQuery: () => any, pageSize = 1000): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  for (let i = 0; i < 500; i++) {
+    const to = from + pageSize - 1;
+    const { data, error } = await makeQuery().range(from, to);
+    if (error) throw error;
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 /* ─── 1. getMyRep ─── */
 export const getMyRepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -42,19 +58,17 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId);
 
-    let clientsQ = context.supabase
-      .from("clientes")
-      .select(
-        "id, razon_social, nombre_comercial, nickname, rfc, telefono, phone, direccion, codigo_postal, lat, lng, active, representante_id, credit_limit, payment_terms",
-      )
-      .eq("active", true);
 
-    if (rep) {
-      clientsQ = clientsQ.eq("representante_id", rep.id);
-    }
-
-    const { data: clientes, error } = await clientsQ.limit(500);
-    if (error) throw error;
+    const clientes = await fetchAllPaged<any>(() => {
+      let q = context.supabase
+        .from("clientes")
+        .select(
+          "id, razon_social, nombre_comercial, nickname, rfc, telefono, phone, direccion, codigo_postal, lat, lng, active, representante_id, credit_limit, payment_terms",
+        )
+        .eq("active", true);
+      if (rep) q = q.eq("representante_id", rep.id);
+      return q;
+    });
     const clientIds = (clientes ?? []).map((c: any) => c.id);
     if (clientIds.length === 0) return { rep, clients: [] };
 
@@ -1255,7 +1269,7 @@ export const generateRepAlertsFn = createServerFn({ method: "POST" })
       .select("id, nombre_comercial, razon_social, representante_id")
       .eq("active", true);
     if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
-    const { data: clientes } = await clientsQ.limit(1000);
+    const clientes = await fetchAllPaged<any>(() => clientsQ);
     const clientIds = (clientes ?? []).map((c: any) => c.id);
     if (clientIds.length === 0) return { created: 0 };
 
@@ -1919,7 +1933,7 @@ export const suggestRouteWithAIFn = createServerFn({ method: "POST" })
       .select("id, razon_social, nombre_comercial, lat, lng, representante_id")
       .eq("active", true);
     if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
-    const { data: clientes } = await clientsQ.limit(500);
+    const clientes = await fetchAllPaged<any>(() => clientsQ);
     const withCoords = (clientes ?? []).filter((c: any) => c.lat && c.lng);
     if (withCoords.length === 0) {
       return { ordered: [], rationale: "No hay clientes con coordenadas asignados al rep." };
