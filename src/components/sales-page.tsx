@@ -26,11 +26,18 @@ import {
   ClipboardList,
   ShoppingBag,
   Clock,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
 
 /* ── Helpers ── */
 
@@ -227,14 +234,150 @@ export default function Sales() {
     "#facc15",
   ];
 
+  const rangeLabel =
+    dateFrom && dateTo ? `${dateFrom} a ${dateTo}` : dateFrom ? `desde ${dateFrom}` : dateTo ? `hasta ${dateTo}` : "Todo el histórico";
+  const exportFileBase = `ventas_${(dateFrom || "inicio")}_${(dateTo || "actual")}`;
+
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const kpiRows = [
+      ["Rango", rangeLabel],
+      ["Ventas totales", kpis.totalRevenue],
+      ["Costo total", kpis.totalCost],
+      ["Venta sin IVA", kpis.totalVentaSinIva],
+      ["Utilidad realizada", kpis.realizedProfit],
+      ["Utilidad realizada c/ bonif.", kpis.realizedProfitBonif],
+      ["Utilidad implicada", kpis.impliedProfit],
+      ["Utilidad implicada c/ bonif.", kpis.impliedProfitBonif],
+      ["Pedidos únicos", kpis.uniqueOrders],
+      ["Ticket promedio", kpis.avgTicket],
+      ["Unidades", kpis.totalUnits],
+      ["Margen %", kpis.marginPct],
+      ["Margen c/ bonif. %", kpis.marginBonifPct],
+      ["Pedidos por cerrar", pendingKpis.orders],
+      ["Valor por cerrar", pendingKpis.revenue],
+      ["Utilidad estimada por cerrar", pendingKpis.profit],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Métrica", "Valor"], ...kpiRows]), "Resumen");
+    if (dailyTrend.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dailyTrend), "Tendencia diaria");
+    if (byClient.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byClient), "Por cliente");
+    if (byProduct.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byProduct), "Por producto");
+    if (byBrand.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byBrand), "Por marca");
+    if (byOrder.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byOrder), "Por pedido");
+    XLSX.writeFile(wb, `${exportFileBase}.xlsx`);
+  };
+
+  const handleExportPdf = () => {
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    doc.setFontSize(16);
+    doc.text("Reporte de Ventas", 40, 48);
+    doc.setFontSize(10);
+    doc.setTextColor(90);
+    doc.text(`Rango: ${rangeLabel}`, 40, 66);
+
+    autoTable(doc, {
+      startY: 84,
+      head: [["Métrica", "Valor"]],
+      body: [
+        ["Ventas totales", mxnFmt.format(kpis.totalRevenue)],
+        ["Pedidos únicos", String(kpis.uniqueOrders)],
+        ["Ticket promedio", mxnFmt.format(kpis.avgTicket)],
+        ["Utilidad realizada", mxnFmt.format(kpis.realizedProfit)],
+        ["Utilidad c/ bonif.", mxnFmt.format(kpis.realizedProfitBonif)],
+        ["Utilidad implicada", mxnFmt.format(kpis.impliedProfit)],
+        ["Margen %", pctFmt(kpis.marginPct)],
+        ["Margen c/ bonif. %", pctFmt(kpis.marginBonifPct)],
+        ["Pedidos por cerrar", `${pendingKpis.orders} · ${mxnFmt.format(pendingKpis.revenue)}`],
+      ],
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [17, 17, 17] },
+    });
+
+    const addSection = (title: string, head: string[], rows: any[][]) => {
+      if (!rows.length) return;
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text(title, 40, 48);
+      autoTable(doc, {
+        startY: 66,
+        head: [head],
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [17, 17, 17] },
+      });
+    };
+
+    addSection(
+      "Por cliente",
+      ["Cliente", "Pedidos", "Unidades", "Ventas", "Utilidad", "Margen %"],
+      byClient.slice(0, 100).map((r: any) => [
+        r.clientName || r.name || "—",
+        r.orders,
+        r.units,
+        mxnFmt.format(r.revenue),
+        mxnFmt.format(r.profit),
+        pctFmt(r.marginPct),
+      ]),
+    );
+    addSection(
+      "Por producto",
+      ["Producto", "SKU", "Unidades", "Ventas", "Utilidad", "Margen %"],
+      byProduct.slice(0, 100).map((r: any) => [
+        r.productName || r.name || "—",
+        r.sku || "",
+        r.units,
+        mxnFmt.format(r.revenue),
+        mxnFmt.format(r.profit),
+        pctFmt(r.marginPct),
+      ]),
+    );
+    addSection(
+      "Por marca",
+      ["Marca", "SKUs", "Unidades", "Ventas", "Utilidad", "Margen %"],
+      byBrand.slice(0, 100).map((r: any) => [
+        r.brand || r.name || "—",
+        r.skus,
+        r.units,
+        mxnFmt.format(r.revenue),
+        mxnFmt.format(r.profit),
+        pctFmt(r.marginPct),
+      ]),
+    );
+    addSection(
+      "Por pedido",
+      ["Pedido", "Cliente", "Ítems", "Ventas", "Utilidad", "Margen %"],
+      byOrder.slice(0, 200).map((r: any) => [
+        r.orderNumber || r.folio || r.id || "—",
+        r.clientName || "—",
+        r.items,
+        mxnFmt.format(r.revenue),
+        mxnFmt.format(r.profit),
+        pctFmt(r.marginPct),
+      ]),
+    );
+
+    doc.save(`${exportFileBase}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <AnimatedGridPattern className="fixed inset-0 opacity-30" />
       <div className="relative z-10 space-y-6 p-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Ventas</h1>
-          <p className="text-sm text-muted-foreground">Análisis de ventas, utilidades y márgenes</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Ventas</h1>
+            <p className="text-sm text-muted-foreground">Análisis de ventas, utilidades y márgenes</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={isLoading}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isLoading}>
+              <FileDown className="h-4 w-4 mr-2" /> PDF
+            </Button>
+          </div>
         </div>
 
         {/* Date filter */}
@@ -246,6 +389,7 @@ export default function Sales() {
             setDateTo(to);
           }}
         />
+
 
         <HistoricalSalesPanel from={dateFrom || undefined} to={dateTo || undefined} />
 
