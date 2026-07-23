@@ -1309,8 +1309,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
         {/* Count */}
         <p className="text-xs text-muted-foreground">
-          {filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
+          {viewMode === "list" && filtered.length > 0
+            ? `${pageStart}-${pageEnd} de ${filtered.length}`
+            : filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
         </p>
+
+        <PaginationControls />
 
         {/* Bulk action bar */}
         <div className="flex flex-wrap items-center gap-3 px-3 rounded-lg border border-border min-h-[48px]">
@@ -1375,7 +1379,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               {t("noClientsMatch")}
             </div>
           ) : (
-            filtered.map(c => (
+            paginatedClients.map(c => (
               <div
                 key={c.id}
                 className={cn(
@@ -1518,7 +1522,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               </colgroup>
               <TableHeader>
                 <TableRow className="border-border">
-                  <TableHead className="w-10 hidden md:table-cell"><Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} /></TableHead>
+                  <TableHead className="w-10 hidden md:table-cell">
+                    <Checkbox
+                      checked={paginatedClients.length > 0 && paginatedClients.every((c) => selectedIds.has(c.id))}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead className="w-10" />
                   <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
@@ -1551,7 +1560,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map(c => (
+                  paginatedClients.map(c => (
                     <React.Fragment key={c.id}>
                       <TableRow
                         id={`client-row-${c.id}`}
@@ -1654,6 +1663,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           </div>
         </GlowCard>
         </div>
+        <PaginationControls />
         </>)}
       </div>
 
