@@ -324,15 +324,17 @@ export default function RouteMap() {
         const isSel = selected.has(c.id);
         const risk = (c.churn_risk_score ?? 0) >= 0.6;
         const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
+        const dimmed = showHeatmap && !isSel;
         const marker = new maps.Marker({
           map,
           position: { lat: Number(c.lat), lng: Number(c.lng) },
           title: c.nombre_comercial ?? c.razon_social,
+          opacity: dimmed ? 0.55 : 1,
           icon: {
             path: maps.SymbolPath.CIRCLE,
             scale: isSel ? 10 : 7,
             fillColor: color,
-            fillOpacity: 0.9,
+            fillOpacity: dimmed ? 0.7 : 0.9,
             strokeColor: "#ffffff",
             strokeWeight: 2,
           },
