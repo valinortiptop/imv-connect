@@ -51,7 +51,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "Ventas",
     items: [
-      { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText },
+      { to: "/rep/cotizaciones", label: "Pedidos", icon: FileText },
       { to: "/rep/catalogo", label: "Catálogo", icon: ShoppingBag },
       { to: "/rep/devoluciones", label: "Devoluciones", icon: RotateCcw },
       { to: "/rep/cobranza", label: "Cobranza", icon: Banknote },
