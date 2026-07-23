@@ -1,35 +1,51 @@
-## Problem
+## Goal
+Make `/admin/clientes` feel fast again when opening the page, clicking a client, closing drawers/modals, and moving between the list and client detail.
 
-The last change made client navigation worse:
-- `defaultPreload: "intent"` + `defaultPreloadDelay: 50` in `src/router.tsx` triggers route-module preloading for every card the cursor passes over on the (2,200-line) clients page. Combined with `defaultPreloadStaleTime: 0`, it thrashes on the big list.
-- `pendingMs: 100` on `/admin/clientes/$id` shows the skeleton fast but does nothing to speed up the actual data load — the perceived "stall" is still there because the detail page fires three heavy queries (client + orders + a second orders-then-items-then-products chain) and then does all revenue/top-product aggregation client-side over thousands of rows.
-- Nothing in the last change actually reduced work; it only preloaded chunks and painted a skeleton earlier, which made the first click feel slower.
+## What I confirmed
+- The clients page fetches the client directory and renders every filtered client row at once.
+- The desktop list renders an extra expandable row for every client, even when most are collapsed.
+- The page also loads order summary data for dashboard cards on initial render.
+- The database currently has about 1,249 client rows and 25,481 order rows, so the main issue is front-end rendering/query shape, not needing a Supabase upgrade.
+- The full client detail route still fetches all orders for that client before doing recent-order item/product calculations.
 
 ## Plan
 
-### 1. Revert the router / route changes that regressed navigation
-- `src/router.tsx`: remove `defaultPreload: "intent"` and `defaultPreloadDelay: 50`. Keep `defaultPreloadStaleTime: 0` (required by Query integration) and `scrollRestoration`.
-- `src/routes/admin.clientes.$id.tsx`: keep the skeleton but drop `pendingMs: 100` (default is fine) so the transition behaves like it did before.
+### 1. Make the client list render lightweight
+- Add client-side pagination for the list/table/cards, defaulting to 100 rows per page.
+- Keep filters, search, counts, and dashboard stats based on the full filtered dataset, but only render the visible page.
+- Render expanded detail rows only for expanded clients instead of creating a hidden expanded row for every client.
+- Reset page number when search/filter/type changes.
 
-### 2. Cut the real cost in `src/components/client-detail-page.tsx`
-The stall is dominated by the "items" query and its downstream `useMemo`s. Replace the current three-step chain (orders → order_items → products → client-side aggregate) with a single lightweight fetch that returns only what the KPI strip and Top Products tab need:
+### 2. Make search and filter interactions feel instant
+- Use deferred search/filter values so typing does not block the UI.
+- Memoize the visible page slice and map payloads.
+- Add longer `staleTime`/`gcTime` to stable client directory and price-list queries so back/close/reopen does not refetch unnecessarily.
 
-- Consolidate into one query that:
-  - fetches `orders` (already needed for the Pedidos tab)
-  - fetches `order_items` filtered by `order_id in (...)` in one round-trip
-  - fetches the referenced `products` in one round-trip
-  - returns `{ orders, items, products }` as a single cached object
-- Keep the existing `useMemo` aggregations but run them over the already-fetched arrays (no extra queries).
-- Cap the initial load: only fetch items for the most recent N orders (e.g. 200) for the KPI/Top Products view; the Pedidos tab can lazy-load older items on demand. This is the single biggest win for clients with thousands of orders.
-- Leave `staleTime`/`gcTime` at the previously added values so back-navigation stays cached.
+### 3. Move dashboard calculations off the hot path
+- Stop loading broad order summary rows on the clients page just to calculate cards/top clients.
+- Replace that with a small server-side aggregate/RPC or a narrowly scoped query that returns only:
+  - ticket promedio
+  - pedidos por cliente
+  - cliente más frecuente
+  - total active clients
+  - top clients by sales
+- Keep cards showing full data, not just the 100 visible rows.
 
-### 3. Verification
-- Open a heavy client (e.g. one with many orders) from `/admin/clientes` and confirm:
-  - Row click no longer stalls; skeleton appears immediately and content fills in.
-  - Repeat navigation is instant (cache hit).
-  - KPI totals and Top Products still match previous values.
+### 4. Make client click/open smooth
+- On row click, open the Client 360 drawer immediately using the already-loaded client row as an instant header/placeholder.
+- Let heavier sections load progressively inside the drawer.
+- Keep the drawer mounted only when needed and avoid mounting expensive tabs/panels until selected.
 
-## Notes for the technical reviewer
+### 5. Optimize full client detail route
+- Limit the visible orders table to recent orders and fetch total counts/stats separately.
+- Avoid fetching all orders just to derive the recent order IDs.
+- Keep KPI numbers accurate by using server-side totals where needed.
 
-- No schema / RPC changes in this pass — this is a pure client-side fix so it can ship immediately. If the "recent N orders" cap is not acceptable for KPIs, the follow-up is a `client_detail_stats` RPC that returns totals + top products server-side; happy to do that as a phase 2.
-- `Client360Drawer` is unchanged; it already uses its own scoped queries.
+### 6. Add targeted database indexes if missing
+- Check existing indexes first.
+- Add only missing indexes for the hot access patterns, likely around client/order detail reads such as `orders.client_id + order_date`, `order_items.order_id`, and equivalent `pedidos/facturas` client/date lookups.
+
+### 7. Validate with the browser
+- Open `/admin/clientes`.
+- Click a client, close the drawer, click another client, and navigate to the full ficha.
+- Confirm the first click shows immediate feedback and repeat interactions do not stall.
