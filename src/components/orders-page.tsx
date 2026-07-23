@@ -295,51 +295,53 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
     return sorted;
   }, [dateFiltered, sort]);
 
-  // Dashboard stats
+  // Dashboard stats — aggregated server-side across ALL filtered orders
+  // (not just the current 100-row page), so KPI cards reflect the full set.
+  const { data: statsData } = useQuery({
+    queryKey: ["orders-dashboard-stats", restrictKey, dateFrom, dateTo, statusFilter, typeFilter, search.trim()],
+    queryFn: async () => {
+      if (restrictClientIds && restrictClientIds.length === 0) return null;
+      const cleanSearch = search.trim().replace(/[%*,]/g, " ").replace(/\s+/g, " ");
+      const { data, error } = await (supabase as any).rpc("orders_dashboard_stats", {
+        p_from: dateFrom || null,
+        p_to: dateTo || null,
+        p_client_ids: restrictClientIds && restrictClientIds.length > 0 ? restrictClientIds : null,
+        p_status: statusFilter === "all" ? null : statusFilter,
+        p_client_type: typeFilter === "all" ? null : typeFilter,
+        p_search: cleanSearch || null,
+      });
+      if (error) throw error;
+      return data as {
+        activos_count: number;
+        activos_bultos: number;
+        valor_transito: number;
+        entregados_count: number;
+        tiempo_promedio: number;
+        status_counts: Record<string, number>;
+      } | null;
+    },
+    staleTime: 30 * 1000,
+  });
+
   const dashboardStats = useMemo(() => {
-    if (orders.length === 0) return null;
-    const nonCancelled = dateFiltered.filter(o => o.status !== "Cancelado");
+    if (!statsData) return null;
+    return {
+      activosCount: Number(statsData.activos_count ?? 0),
+      activosBultos: Number(statsData.activos_bultos ?? 0),
+      valorTransito: Number(statsData.valor_transito ?? 0),
+      entregadosCount: Number(statsData.entregados_count ?? 0),
+      tiempoPromedio: Number(statsData.tiempo_promedio ?? 0),
+    };
+  }, [statsData]);
 
-    // Pedidos activos (not Entregado, not Cancelado)
-    const activos = nonCancelled.filter(o => o.status !== "Entregado");
-    const activosCount = activos.length;
-    const activosBultos = activos.reduce((s, o) => s + (o.line_items ?? 0), 0);
-
-    // Valor en tránsito (total of active orders)
-    const valorTransito = activos.reduce((s, o) => s + (o.total_with_iva ?? 0), 0);
-
-    // Entregados del periodo
-    const entregados = nonCancelled.filter(o => o.status === "Entregado");
-    const entregadosCount = entregados.length;
-
-    // Tiempo promedio de entrega (days between order_date and delivery_date)
-    let tiempoPromedio = 0;
-    const deliveredWithDates = entregados.filter(o => o.order_date && o.delivery_date);
-    if (deliveredWithDates.length > 0) {
-      const totalDays = deliveredWithDates.reduce((s, o) => {
-        const orderDate = parseLocalDate(o.order_date);
-        const deliveryDate = parseLocalDate(o.delivery_date);
-        return s + Math.max(0, (deliveryDate.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
-      }, 0);
-      tiempoPromedio = totalDays / deliveredWithDates.length;
-    }
-
-    return { activosCount, activosBultos, valorTransito, entregadosCount, tiempoPromedio };
-  }, [orders, dateFiltered]);
-
-  // Status distribution for pie chart
+  // Status distribution for pie chart — from server-side aggregate.
   const statusDistribution = useMemo(() => {
-    const nonCancelled = dateFiltered.filter(o => o.status !== "Cancelado");
-    const counts: Record<string, number> = {};
-    for (const o of nonCancelled) {
-      const s = o.status ?? "Nuevo";
-      counts[s] = (counts[s] ?? 0) + 1;
-    }
+    const counts = statsData?.status_counts ?? {};
     const statusOrder = ["Pendiente portal", "Nuevo", "Confirmado", "En preparacion", "En ruta", "Entregado"];
     return statusOrder
       .filter(s => (counts[s] ?? 0) > 0)
       .map(s => ({ status: s, label: s === "En preparacion" ? "En preparación" : s, count: counts[s] ?? 0 }));
-  }, [dateFiltered]);
+  }, [statsData]);
 
   useEffect(() => {
     if (error) toast.error(t("ordersLoadError"));
