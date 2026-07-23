@@ -48,29 +48,6 @@ function getPrevMonthRange(): [string, string] {
 
 /* ── Types ── */
 
-interface SaleItem {
-  order_id: string;
-  order_code: string;
-  order_date: string;
-  delivery_date: string | null;
-  status: string;
-  client_name: string;
-  client_id: string;
-  product_id: string;
-  product_clave: string;
-  product_name: string;
-  product_brand: string;
-  product_image_url: string | null;
-  quantity: number;
-  unit_price: number;          // actual sale price per unit (with IVA)
-  venta_sin_iva: number;       // unit_price / 1.16 × qty
-  costo_sin_iva: number;       // cost_without_iva × qty
-  costo_bonif_sin_iva: number; // cost_without_iva × (1 - bonif) × qty
-  profit: number;              // venta_sin_iva - costo_sin_iva
-  profit_bonif: number;        // venta_sin_iva - costo_bonif_sin_iva
-  revenue: number;             // unit_price × qty (with IVA, for display)
-}
-
 /* ── Component ── */
 
 export default function Sales() {
@@ -79,6 +56,7 @@ export default function Sales() {
   const setThisMonth = () => { setDateFrom(getFirstOfMonth()); setDateTo(getLastOfMonth()); };
   const setAllTime = () => { setDateFrom(""); setDateTo(""); };
   const [tab, setTab] = useState("overview");
+  const [prevFrom, prevTo] = getPrevMonthRange();
 
   const emptySalesStats = {
     kpis: {
@@ -124,7 +102,7 @@ export default function Sales() {
     revenue: toNumber(value?.revenue),
     profit: toNumber(value?.profit),
   });
-  const normalizeRows = <T extends Record<string, any>>(rows: T[] | undefined, numericFields: string[]) =>
+  const normalizeRows = (rows: Record<string, any>[] | undefined, numericFields: string[]) =>
     (rows ?? []).map((row) => {
       const next: Record<string, any> = { ...row };
       for (const field of numericFields) next[field] = toNumber(next[field]);
