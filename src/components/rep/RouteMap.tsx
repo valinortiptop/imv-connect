@@ -731,10 +731,38 @@ export default function RouteMap() {
               </div>
             </PopoverContent>
           </Popover>
-          <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)} disabled={routeMode}>
+          <Button
+            size="sm"
+            variant={showHeatmap ? "default" : "outline"}
+            onClick={() => {
+              const next = !showHeatmap;
+              if (next) {
+                const pts = (heatQ.data?.points ?? []) as Array<{ weight: number }>;
+                const hasSignal = pts.some((p) => Number(p.weight ?? 0) > 0.05);
+                if (!hasSignal) {
+                  toast.info("No hay suficientes datos de oportunidad todavía.");
+                }
+              }
+              setShowHeatmap(next);
+            }}
+            disabled={routeMode}
+          >
             <Flame className="mr-1 h-4 w-4" />
             <span className="hidden sm:inline">Heatmap</span>
           </Button>
+          {showHeatmap && !routeMode && (
+            <div className="hidden items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[10px] text-muted-foreground sm:flex">
+              <span>Baja</span>
+              <span
+                className="h-2 w-16 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, #10b981, #84cc16, #facc15, #f97316, #dc2626)",
+                }}
+              />
+              <span>Alta oportunidad</span>
+            </div>
+          )}
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0} className="hidden sm:inline-flex">
             Limpiar ({selected.size})
           </Button>
