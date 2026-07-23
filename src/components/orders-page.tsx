@@ -307,7 +307,7 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
         p_to: dateTo || null,
         p_client_ids: restrictClientIds && restrictClientIds.length > 0 ? restrictClientIds : null,
         p_status: statusFilter === "all" ? null : statusFilter,
-        p_client_type: typeFilter === "all" ? null : typeFilter,
+        p_client_type: typeFilter === "todos" ? null : typeFilter,
         p_search: cleanSearch || null,
       });
       if (error) throw error;
