@@ -248,18 +248,50 @@ export default function RouteMap() {
 
     // Heatmap only when NOT in route-focused mode
     if (showHeatmap && !routeMode) {
-      (heatQ.data?.points ?? []).forEach((p: any) => {
-        const circle = new maps.Circle({
+      const rawPoints = (heatQ.data?.points ?? []) as Array<{
+        lat: number;
+        lng: number;
+        weight: number;
+      }>;
+      const points = rawPoints.filter((p) => Number(p.weight ?? 0) > 0.05);
+
+      if (maps.visualization?.HeatmapLayer && points.length > 0) {
+        const layer = new maps.visualization.HeatmapLayer({
           map,
-          center: { lat: Number(p.lat), lng: Number(p.lng) },
-          radius: Math.min(2500, 350 + Number(p.weight ?? 1) * 260),
-          strokeWeight: 0,
-          fillColor: "#f97316",
-          fillOpacity: 0.25,
-          clickable: false,
+          data: points.map((p) => ({
+            location: new maps.LatLng(Number(p.lat), Number(p.lng)),
+            weight: Number(p.weight),
+          })),
+          radius: 42,
+          opacity: 0.75,
+          dissipating: true,
+          maxIntensity: 1,
+          gradient: [
+            "rgba(0, 0, 0, 0)",
+            "rgba(16, 185, 129, 0.55)",
+            "rgba(132, 204, 22, 0.7)",
+            "rgba(250, 204, 21, 0.8)",
+            "rgba(249, 115, 22, 0.9)",
+            "rgba(220, 38, 38, 1)",
+          ],
         });
-        overlaysRef.current.push(circle);
-      });
+        overlaysRef.current.push(layer);
+      } else {
+        // Fallback if visualization library did not load: draw brighter circles.
+        points.forEach((p) => {
+          const w = Number(p.weight ?? 0);
+          const circle = new maps.Circle({
+            map,
+            center: { lat: Number(p.lat), lng: Number(p.lng) },
+            radius: Math.min(2800, 500 + w * 2200),
+            strokeWeight: 0,
+            fillColor: w > 0.65 ? "#dc2626" : w > 0.4 ? "#f97316" : "#facc15",
+            fillOpacity: 0.55,
+            clickable: false,
+          });
+          overlaysRef.current.push(circle);
+        });
+      }
     }
 
     // In route mode, only render ordered stops with numbered markers.
@@ -292,15 +324,17 @@ export default function RouteMap() {
         const isSel = selected.has(c.id);
         const risk = (c.churn_risk_score ?? 0) >= 0.6;
         const color = isSel ? "#2563eb" : risk ? "#dc2626" : "#059669";
+        const dimmed = showHeatmap && !isSel;
         const marker = new maps.Marker({
           map,
           position: { lat: Number(c.lat), lng: Number(c.lng) },
           title: c.nombre_comercial ?? c.razon_social,
+          opacity: dimmed ? 0.55 : 1,
           icon: {
             path: maps.SymbolPath.CIRCLE,
             scale: isSel ? 10 : 7,
             fillColor: color,
-            fillOpacity: 0.9,
+            fillOpacity: dimmed ? 0.7 : 0.9,
             strokeColor: "#ffffff",
             strokeWeight: 2,
           },
@@ -697,10 +731,38 @@ export default function RouteMap() {
               </div>
             </PopoverContent>
           </Popover>
-          <Button size="sm" variant={showHeatmap ? "default" : "outline"} onClick={() => setShowHeatmap((v) => !v)} disabled={routeMode}>
+          <Button
+            size="sm"
+            variant={showHeatmap ? "default" : "outline"}
+            onClick={() => {
+              const next = !showHeatmap;
+              if (next) {
+                const pts = (heatQ.data?.points ?? []) as Array<{ weight: number }>;
+                const hasSignal = pts.some((p) => Number(p.weight ?? 0) > 0.05);
+                if (!hasSignal) {
+                  toast.info("No hay suficientes datos de oportunidad todavía.");
+                }
+              }
+              setShowHeatmap(next);
+            }}
+            disabled={routeMode}
+          >
             <Flame className="mr-1 h-4 w-4" />
             <span className="hidden sm:inline">Heatmap</span>
           </Button>
+          {showHeatmap && !routeMode && (
+            <div className="hidden items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[10px] text-muted-foreground sm:flex">
+              <span>Baja</span>
+              <span
+                className="h-2 w-16 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, #10b981, #84cc16, #facc15, #f97316, #dc2626)",
+                }}
+              />
+              <span>Alta oportunidad</span>
+            </div>
+          )}
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0} className="hidden sm:inline-flex">
             Limpiar ({selected.size})
           </Button>

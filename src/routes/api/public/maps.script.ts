@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/public/maps/script")({
           v: "weekly",
           language: "es",
           region: "MX",
+          libraries: "visualization,geometry,places",
         });
 
         const { callValinorRaw } = await import("@/lib/valinor-proxy.server");
