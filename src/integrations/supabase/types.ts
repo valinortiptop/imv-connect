@@ -11532,6 +11532,10 @@ export type Database = {
           }
       bank_account_saldo: { Args: { _cuenta: string }; Returns: number }
       bootstrap_admin: { Args: never; Returns: undefined }
+      clients_dashboard_stats: {
+        Args: { _date_from?: string; _date_to?: string }
+        Returns: Json
+      }
       crear_factura_desde_pedido: {
         Args: {
           _dias_credito?: number
