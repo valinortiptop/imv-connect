@@ -19,65 +19,47 @@ type Filters = {
   compact?: boolean;
 };
 
-type Row = {
-  fecha: string;
-  client_name: string | null;
-  rep_name: string | null;
-  lab_name: string | null;
-  sku: string | null;
-  description: string | null;
-  quantity: number;
-  revenue: number;
-  invoice_no: string | null;
+type Stats = {
+  totals: { lines: number; revenue: number; quantity: number; invoices: number };
+  by_month: { k: string; v: number }[];
+  top_rep: { k: string; v: number }[];
+  top_client: { k: string; v: number }[];
+  top_lab: { k: string; v: number }[];
+  top_product: { k: string; v: number }[];
 };
 
 export function HistoricalSalesPanel(props: Filters) {
   const { from, to, clientId, repId, productId, laboratorioId, title = "Historial de ventas (importado)", compact } = props;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["ventas_unified", "historico", { from, to, clientId, repId, productId, laboratorioId }],
-    queryFn: async () => {
-      const { fetchAllRows } = await import("@/lib/fetch-all");
-      const rows = await fetchAllRows<Row>(() => {
-        let q = (supabase as any)
-          .from("v_ventas_unified" as any)
-          .select("fecha, client_name, rep_name, lab_name, sku, description, quantity, revenue, invoice_no, client_id, representante_id, product_id, laboratorio_id, fuente")
-          .eq("fuente", "historico");
-        if (from) q = q.gte("fecha", from);
-        if (to) q = q.lte("fecha", to);
-        if (clientId) q = q.eq("client_id", clientId);
-        if (repId) q = q.eq("representante_id", repId);
-        if (productId) q = q.eq("product_id", productId);
-        if (laboratorioId) q = q.eq("laboratorio_id", laboratorioId);
-        return q.order("fecha", { ascending: false });
+    queryKey: ["ventas_unified_stats", { from, to, clientId, repId, productId, laboratorioId }],
+    queryFn: async (): Promise<Stats | null> => {
+      const { data, error } = await (supabase as any).rpc("ventas_unified_stats", {
+        p_from: from || null,
+        p_to: to || null,
+        p_client_id: clientId || null,
+        p_rep_id: repId || null,
+        p_product_id: productId || null,
+        p_lab_id: laboratorioId || null,
+        p_fuente: "historico",
+        p_top_n: 5,
       });
-      return rows;
+      if (error) throw error;
+      return data as Stats;
     },
+    staleTime: 60_000,
   });
 
-  const rows = data || [];
-  if (!isLoading && rows.length === 0) return null;
+  const lines = data?.totals?.lines ?? 0;
+  if (!isLoading && lines === 0) return null;
 
-  const total = rows.reduce((s, r) => s + Number(r.revenue || 0), 0);
-  const qty = rows.reduce((s, r) => s + Number(r.quantity || 0), 0);
-  const invoices = new Set(rows.map((r) => r.invoice_no).filter(Boolean)).size;
+  const total = Number(data?.totals?.revenue ?? 0);
+  const qty = Number(data?.totals?.quantity ?? 0);
+  const invoices = Number(data?.totals?.invoices ?? 0);
 
-  const byMonth = new Map<string, number>();
-  const byRep = new Map<string, number>();
-  const byClient = new Map<string, number>();
-  const byLab = new Map<string, number>();
-  const byProduct = new Map<string, number>();
-  for (const r of rows) {
-    const m = (r.fecha || "").slice(0, 7);
-    byMonth.set(m, (byMonth.get(m) || 0) + Number(r.revenue || 0));
-    if (r.rep_name) byRep.set(r.rep_name, (byRep.get(r.rep_name) || 0) + Number(r.revenue || 0));
-    if (r.client_name) byClient.set(r.client_name, (byClient.get(r.client_name) || 0) + Number(r.revenue || 0));
-    if (r.lab_name) byLab.set(r.lab_name, (byLab.get(r.lab_name) || 0) + Number(r.revenue || 0));
-    const p = r.description || r.sku;
-    if (p) byProduct.set(p, (byProduct.get(p) || 0) + Number(r.revenue || 0));
-  }
-  const top = (m: Map<string, number>, n = 5) =>
-    Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, n);
+  const byMonth: [string, number][] = (data?.by_month ?? []).map((r) => [r.k, Number(r.v)]);
+  const top = (rows: { k: string; v: number }[] = []): [string, number][] =>
+    rows.map((r) => [r.k, Number(r.v)]);
 
   return (
     <Card>
@@ -87,7 +69,7 @@ export function HistoricalSalesPanel(props: Filters) {
             <History className="h-4 w-4" /> {title}
           </CardTitle>
           <Badge variant="secondary" className="font-normal">
-            {isLoading ? "…" : `${rows.length.toLocaleString()} líneas`}
+            {isLoading ? "…" : `${lines.toLocaleString()} líneas`}
           </Badge>
         </div>
       </CardHeader>
@@ -100,11 +82,11 @@ export function HistoricalSalesPanel(props: Filters) {
 
         {!compact && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TopBlock title="Por mes" rows={Array.from(byMonth.entries()).sort((a, b) => (a[0] > b[0] ? 1 : -1))} />
-            <TopBlock title="Top representantes" rows={top(byRep)} />
-            <TopBlock title="Top clientes" rows={top(byClient)} />
-            <TopBlock title="Top laboratorios" rows={top(byLab)} />
-            <TopBlock title="Top productos" rows={top(byProduct)} />
+            <TopBlock title="Por mes" rows={byMonth} />
+            <TopBlock title="Top representantes" rows={top(data?.top_rep)} />
+            <TopBlock title="Top clientes" rows={top(data?.top_client)} />
+            <TopBlock title="Top laboratorios" rows={top(data?.top_lab)} />
+            <TopBlock title="Top productos" rows={top(data?.top_product)} />
           </div>
         )}
       </CardContent>
@@ -124,7 +106,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 }
 
 function TopBlock({ title, rows }: { title: string; rows: [string, number][] }) {
-  if (rows.length === 0) return null;
+  if (!rows || rows.length === 0) return null;
   const max = Math.max(...rows.map(([, v]) => v));
   return (
     <div className="rounded-lg border border-border p-3">
