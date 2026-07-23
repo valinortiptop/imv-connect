@@ -11769,6 +11769,17 @@ export type Database = {
       }
       mark_pickup_delivered: { Args: { p_order_id: string }; Returns: Json }
       oc_recalc_totales: { Args: { _oc: string }; Returns: undefined }
+      orders_dashboard_stats: {
+        Args: {
+          p_client_ids?: string[]
+          p_client_type?: string
+          p_from?: string
+          p_search?: string
+          p_status?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       pedidos_recalc_totals: {
         Args: { p_pedido_id: string }
         Returns: undefined
