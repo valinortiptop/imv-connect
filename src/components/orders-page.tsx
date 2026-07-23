@@ -78,6 +78,8 @@ function SortableTableHead<K extends string>({
   );
 }
 
+const ORDERS_PAGE_SIZE = 100;
+
 export default function Orders({ restrictClientIds, hideCotizaciones = false }: { restrictClientIds?: string[] | null; hideCotizaciones?: boolean } = {}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -153,6 +155,7 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   const [dateTo, setDateTo] = useState("");
   const setThisMonth = () => { setDateFrom(getFirstOfMonth()); setDateTo(""); };
   const setAllTime = () => { setDateFrom(""); setDateTo(""); };
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const openOrderId = searchParams.get("openOrderId");
@@ -167,33 +170,68 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   }, []);
 
   const restrictKey = restrictClientIds ? [...restrictClientIds].sort().join(",") : null;
-  const { data: orders = [], isLoading, error } = useQuery({
-    queryKey: ["orders", restrictKey],
+  useEffect(() => {
+    setPage(1);
+    setSelectedIds(new Set());
+  }, [dateFrom, dateTo, statusFilter, typeFilter, search, sort.key, sort.dir, restrictKey]);
+
+  const { data: ordersResult = { rows: [] as OrderSummaryRow[], count: 0 }, isLoading, isFetching, error } = useQuery({
+    queryKey: ["orders", restrictKey, dateFrom, dateTo, statusFilter, typeFilter, search.trim(), sort.key, sort.dir, page],
     queryFn: async () => {
-      if (restrictClientIds && restrictClientIds.length === 0) return [] as OrderSummaryRow[];
-      const { fetchAllRows } = await import("@/lib/fetch-all");
-      const rows = await fetchAllRows<OrderSummaryRow>(() => {
-        let q = supabase
-          .from("order_summary")
-          .select("*")
-          .order("order_code", { ascending: false });
-        if (restrictClientIds && restrictClientIds.length > 0) {
-          q = q.in("client_id", restrictClientIds);
-        }
-        return q;
-      });
-      return rows;
+      if (restrictClientIds && restrictClientIds.length === 0) return { rows: [] as OrderSummaryRow[], count: 0 };
+
+      const from = (page - 1) * ORDERS_PAGE_SIZE;
+      const to = from + ORDERS_PAGE_SIZE - 1;
+      const cleanSearch = search.trim().replace(/[%*,]/g, " ").replace(/\s+/g, " ");
+
+      let q = supabase
+        .from("order_summary")
+        .select("*", { count: "exact" });
+
+      if (restrictClientIds && restrictClientIds.length > 0) {
+        q = q.in("client_id", restrictClientIds);
+      }
+      if (dateFrom) q = q.gte("order_date", dateFrom);
+      if (dateTo) q = q.lte("order_date", dateTo);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (typeFilter === "mayoreo") q = q.or("client_type.eq.mayoreo,client_type.is.null");
+      if (typeFilter === "menudeo") q = q.eq("client_type", "menudeo");
+      if (cleanSearch) {
+        q = q.or(`client_name.ilike.%${cleanSearch}%,order_code.ilike.%${cleanSearch}%`);
+      }
+
+      const { data, error, count } = await q
+        .order(sort.key, { ascending: sort.dir === "asc", nullsFirst: false })
+        .order("order_code", { ascending: false, nullsFirst: false })
+        .range(from, to);
+
+      if (error) throw error;
+      return { rows: (data ?? []) as OrderSummaryRow[], count: count ?? 0 };
     },
   });
+  const orders = ordersResult.rows;
+  const ordersTotal = ordersResult.count;
+  const totalPages = Math.max(1, Math.ceil(ordersTotal / ORDERS_PAGE_SIZE));
+  const pageFrom = ordersTotal === 0 ? 0 : (page - 1) * ORDERS_PAGE_SIZE + 1;
+  const pageTo = Math.min(page * ORDERS_PAGE_SIZE, ordersTotal);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const visibleOrderIds = useMemo(() => orders.map((o) => o.id).filter(Boolean) as string[], [orders]);
+  const visibleOrderIdsKey = visibleOrderIds.join(",");
 
   // Fetch damaged item counts per order (only orders with is_damaged items)
   const { data: damagedByOrder = {} } = useQuery({
-    queryKey: ["orders-damaged-count"],
+    queryKey: ["orders-damaged-count", visibleOrderIdsKey],
+    enabled: visibleOrderIds.length > 0,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("order_items")
         .select("order_id, quantity")
-        .eq("is_damaged", true);
+        .eq("is_damaged", true)
+        .in("order_id", visibleOrderIds);
       if (error) throw error;
       const map: Record<string, number> = {};
       for (const row of data ?? []) {
@@ -208,12 +246,14 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   // overlay a green checkmark on the Download icon so admin can scan
   // the table and see which orders have a comprobante firmado.
   const { data: signedOrderIds = new Set<string>() } = useQuery({
-    queryKey: ["orders-signed"],
+    queryKey: ["orders-signed", visibleOrderIdsKey],
+    enabled: visibleOrderIds.length > 0,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("orders")
         .select("id")
-        .not("signed_at", "is", null);
+        .not("signed_at", "is", null)
+        .in("id", visibleOrderIds);
       if (error) throw error;
       return new Set<string>(((data ?? []) as { id: string }[]).map(r => r.id));
     },
@@ -222,38 +262,11 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
 
   // Date-filtered orders (for dashboard)
   const dateFiltered = useMemo(() => {
-    return orders.filter(o => {
-      if (!o.order_date) return true;
-      if (dateFrom && o.order_date < dateFrom) return false;
-      if (dateTo && o.order_date > dateTo) return false;
-      return true;
-    });
-  }, [orders, dateFrom, dateTo]);
+    return orders;
+  }, [orders]);
 
   const filtered = useMemo(() => {
     let result = dateFiltered;
-
-    if (statusFilter !== "all") {
-      result = result.filter((o) => o.status === statusFilter);
-    }
-
-    // Mayoreo/Menudeo segmentation — driven from the order's client.
-    // Treat null/missing client_type as 'mayoreo' so legacy orders
-    // that predate the segmentation column don't disappear when the
-    // user filters to Mayoreo.
-    if (typeFilter === "mayoreo") {
-      result = result.filter((o) => (o.client_type ?? "mayoreo") === "mayoreo");
-    } else if (typeFilter === "menudeo") {
-      result = result.filter((o) => o.client_type === "menudeo");
-    }
-
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter((o) =>
-        (o.client_name && o.client_name.toLowerCase().includes(q)) ||
-        (o.order_code && o.order_code.toLowerCase().includes(q))
-      );
-    }
 
     // Sort by chosen column. Rules:
     //  - Nulls always go to the bottom regardless of direction (so when
@@ -280,7 +293,7 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
       return cmp(a.order_code, b.order_code, "desc");
     });
     return sorted;
-  }, [dateFiltered, statusFilter, typeFilter, search, sort]);
+  }, [dateFiltered, sort]);
 
   // Dashboard stats
   const dashboardStats = useMemo(() => {
@@ -500,16 +513,15 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   // a Supabase round-trip BEFORE opening or copying, which iOS treats
   // as a programmatic popup / lost user gesture and blocks.
   const { data: tokenMap = {} } = useQuery({
-    queryKey: ["orders-signature-tokens"],
+    queryKey: ["orders-signature-tokens", visibleOrderIdsKey],
+    enabled: visibleOrderIds.length > 0,
     queryFn: async () => {
-      const { fetchAllRows } = await import("@/lib/fetch-all");
-      const rows = await fetchAllRows<{ id: string; signature_token: string | null; order_code: string | null }>(
-        () =>
-          (supabase as any)
-            .from("orders")
-            .select("id, signature_token, order_code")
-            .order("created_at", { ascending: false }),
-      );
+      const { data, error } = await (supabase as any)
+        .from("orders")
+        .select("id, signature_token, order_code")
+        .in("id", visibleOrderIds);
+      if (error) throw error;
+      const rows = (data ?? []) as { id: string; signature_token: string | null; order_code: string | null }[];
       const map: Record<string, { token: string | null; code: string | null }> = {};
       for (const o of rows) {
         map[o.id] = { token: o.signature_token, code: o.order_code };
@@ -839,6 +851,10 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
                 </button>
               </>
             )}
+            <span className="ml-auto text-muted-foreground tabular-nums">
+              {isFetching && !isLoading ? "Actualizando · " : ""}
+              Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de {ordersTotal.toLocaleString("es-MX")}
+            </span>
           </div>
 
           {/* Mobile sort pill — cards don't have headers to click, so
@@ -1240,6 +1256,32 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
               </TableBody>
             </Table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border px-3 py-2 text-sm">
+              <span className="text-muted-foreground tabular-nums">
+                Página {page.toLocaleString("es-MX")} de {totalPages.toLocaleString("es-MX")}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || isFetching}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || isFetching}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
