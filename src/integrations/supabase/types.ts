@@ -11820,6 +11820,19 @@ export type Database = {
         }[]
       }
       undo_movement: { Args: { p_movement_id: string }; Returns: undefined }
+      ventas_unified_stats: {
+        Args: {
+          p_client_id?: string
+          p_from?: string
+          p_fuente?: string
+          p_lab_id?: string
+          p_product_id?: string
+          p_rep_id?: string
+          p_to?: string
+          p_top_n?: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
