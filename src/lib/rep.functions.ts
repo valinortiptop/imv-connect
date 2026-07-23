@@ -24,6 +24,22 @@ async function getCurrentRep(supabase: any, userId: string) {
     | null;
 }
 
+/* ─── helper: paginate a supabase query builder past the 1000-row PostgREST cap ─── */
+async function fetchAllPaged<T = any>(makeQuery: () => any, pageSize = 1000): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  for (let i = 0; i < 500; i++) {
+    const to = from + pageSize - 1;
+    const { data, error } = await makeQuery().range(from, to);
+    if (error) throw error;
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 /* ─── 1. getMyRep ─── */
 export const getMyRepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
