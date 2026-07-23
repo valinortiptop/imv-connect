@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useDeferredValue } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useNavigate, Link } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,6 +116,8 @@ const emptyForm: ClientForm = {
 };
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
+const CLIENTS_PAGE_SIZE = 100;
+const EXPANDED_CLIENT_ORDERS_LIMIT = 50;
 
 const fmtDate = (d: string | null) => {
   if (!d) return "—";
@@ -138,60 +140,38 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
   // Fetch orders for this client (incl. discount so totals subtract it)
   const { data: allOrders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["client-orders", client.id],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("orders")
         .select("id, order_code, order_date, delivery_date, status, notes, discount_amount, discount_reason")
         .eq("client_id", client.id)
-        .order("order_date", { ascending: false });
+        .order("order_date", { ascending: false })
+        .limit(EXPANDED_CLIENT_ORDERS_LIMIT);
       return data ?? [];
     },
   });
 
-  // Fetch order items with product info for top products (2-step: no FK in view)
+  const expandedOrderIds = useMemo(() => allOrders.map((o: any) => o.id), [allOrders]);
+
+  // Fetch order items only for the visible recent orders. Expanding a row
+  // should never pull a client's complete historical purchase record.
   const { data: orderItems = [] } = useQuery({
-    queryKey: ["client-products", client.id],
+    queryKey: ["client-products", client.id, expandedOrderIds.join(",")],
+    enabled: expandedOrderIds.length > 0,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
-      const { data: clientOrders } = await supabase
-        .from("orders")
-        .select("id")
-        .eq("client_id", client.id);
-      if (!clientOrders?.length) return [];
-      const orderIds = clientOrders.map(o => o.id);
       const { data: items } = await supabase
         .from("order_items")
         .select("order_id, quantity, product_id, unit_price_override")
-        .in("order_id", orderIds);
+        .in("order_id", expandedOrderIds);
       if (!items?.length) return [];
       const productIds = [...new Set(items.map(i => i.product_id))];
       const { data: prods } = await supabase
         .from("products")
         .select("id, clave, name, sale_price_with_iva, image_url")
-        .in("id", productIds);
-      const pmap = new Map((prods ?? []).map(p => [p.id, p]));
-      return items.map(i => ({ ...i, products: pmap.get(i.product_id) ?? null }));
-    },
-  });
-
-  // Fetch totals from order_items per order (2-step)
-  const { data: orderTotals = [] } = useQuery({
-    queryKey: ["client-order-totals", client.id],
-    queryFn: async () => {
-      const { data: clientOrders } = await supabase
-        .from("orders")
-        .select("id")
-        .eq("client_id", client.id);
-      if (!clientOrders?.length) return [];
-      const orderIds = clientOrders.map(o => o.id);
-      const { data: items } = await supabase
-        .from("order_items")
-        .select("order_id, quantity, unit_price_override, product_id")
-        .in("order_id", orderIds);
-      if (!items?.length) return [];
-      const productIds = [...new Set(items.map(i => i.product_id))];
-      const { data: prods } = await supabase
-        .from("products")
-        .select("id, sale_price_with_iva")
         .in("id", productIds);
       const pmap = new Map((prods ?? []).map(p => [p.id, p]));
       return items.map(i => ({ ...i, products: pmap.get(i.product_id) ?? null }));
@@ -215,7 +195,7 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
   const orderTotalMap = useMemo(() => {
     // First pass: gross subtotal from line items
     const gross: Record<string, number> = {};
-    for (const item of orderTotals) {
+    for (const item of orderItems) {
       if (!filteredOrderIds.has(item.order_id)) continue;
       const price = item.unit_price_override ?? (item.products as any)?.sale_price_with_iva ?? 0;
       gross[item.order_id] = (gross[item.order_id] ?? 0) + price * item.quantity;
@@ -229,7 +209,7 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
       map[o.id] = Math.max(0, subtotal - discount);
     }
     return map;
-  }, [orderTotals, filteredOrderIds, allOrders]);
+  }, [orderItems, filteredOrderIds, allOrders]);
 
   const totalRevenue = useMemo(() => Object.values(orderTotalMap).reduce((s, v) => s + v, 0), [orderTotalMap]);
 
