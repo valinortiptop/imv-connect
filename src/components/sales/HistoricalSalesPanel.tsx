@@ -37,19 +37,21 @@ export function HistoricalSalesPanel(props: Filters) {
   const { data, isLoading } = useQuery({
     queryKey: ["ventas_unified", "historico", { from, to, clientId, repId, productId, laboratorioId }],
     queryFn: async () => {
-      let q = supabase
-        .from("v_ventas_unified" as any)
-        .select("fecha, client_name, rep_name, lab_name, sku, description, quantity, revenue, invoice_no, client_id, representante_id, product_id, laboratorio_id, fuente")
-        .eq("fuente", "historico");
-      if (from) q = q.gte("fecha", from);
-      if (to) q = q.lte("fecha", to);
-      if (clientId) q = q.eq("client_id", clientId);
-      if (repId) q = q.eq("representante_id", repId);
-      if (productId) q = q.eq("product_id", productId);
-      if (laboratorioId) q = q.eq("laboratorio_id", laboratorioId);
-      const { data, error } = await q.limit(50000).order("fecha", { ascending: false });
-      if (error) throw error;
-      return (data as any[]) as Row[];
+      const { fetchAllRows } = await import("@/lib/fetch-all");
+      const rows = await fetchAllRows<Row>(() => {
+        let q = (supabase as any)
+          .from("v_ventas_unified" as any)
+          .select("fecha, client_name, rep_name, lab_name, sku, description, quantity, revenue, invoice_no, client_id, representante_id, product_id, laboratorio_id, fuente")
+          .eq("fuente", "historico");
+        if (from) q = q.gte("fecha", from);
+        if (to) q = q.lte("fecha", to);
+        if (clientId) q = q.eq("client_id", clientId);
+        if (repId) q = q.eq("representante_id", repId);
+        if (productId) q = q.eq("product_id", productId);
+        if (laboratorioId) q = q.eq("laboratorio_id", laboratorioId);
+        return q.order("fecha", { ascending: false });
+      });
+      return rows;
     },
   });
 
