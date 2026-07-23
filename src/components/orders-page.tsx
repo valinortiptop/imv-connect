@@ -5,12 +5,40 @@ import { useSearchParams } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/orders/StatusBadge";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
@@ -25,7 +53,24 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/lib/date-utils";
 import { useNavigate } from "@/lib/router-compat";
-import { Plus, Search, ShoppingCart, DollarSign, TruckIcon, Clock, Download, AlertOctagon, Eye, Copy, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown, RotateCcw, Pin } from "lucide-react";
+import {
+  Plus,
+  Search,
+  ShoppingCart,
+  DollarSign,
+  TruckIcon,
+  Clock,
+  Download,
+  AlertOctagon,
+  Eye,
+  Copy,
+  CheckCircle2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  RotateCcw,
+  Pin,
+} from "lucide-react";
 import { exportOrderAsImage, exportOrderAsPdf } from "@/components/orders/SingleOrderImageCard";
 import { ChronoBar } from "@/components/ChronoBar";
 import { toast } from "sonner";
@@ -67,9 +112,11 @@ function SortableTableHead<K extends string>({
       >
         <span>{children}</span>
         {active ? (
-          currentSort.dir === "asc"
-            ? <ArrowUp className="h-3.5 w-3.5" />
-            : <ArrowDown className="h-3.5 w-3.5" />
+          currentSort.dir === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )
         ) : (
           <ArrowUpDown className="h-3.5 w-3.5 opacity-30 group-hover:opacity-60 transition-opacity" />
         )}
@@ -80,7 +127,10 @@ function SortableTableHead<K extends string>({
 
 const ORDERS_PAGE_SIZE = 100;
 
-export default function Orders({ restrictClientIds, hideCotizaciones = false }: { restrictClientIds?: string[] | null; hideCotizaciones?: boolean } = {}) {
+export default function Orders({
+  restrictClientIds,
+  hideCotizaciones = false,
+}: { restrictClientIds?: string[] | null; hideCotizaciones?: boolean } = {}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -90,7 +140,8 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   const [newQuoteOpen, setNewQuoteOpen] = useState(false);
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
-    if (tab === "cotizaciones") next.set("tab", "cotizaciones"); else next.delete("tab");
+    if (tab === "cotizaciones") next.set("tab", "cotizaciones");
+    else next.delete("tab");
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
@@ -106,7 +157,14 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   // user's choice survives reloads. Visible cue: when the choice is
   // anything other than the default, a "Vista guardada" caption appears
   // above the table with a Restablecer link.
-  type SortKey = "order_code" | "client_name" | "order_date" | "delivery_date" | "status" | "total_with_iva" | "line_items";
+  type SortKey =
+    | "order_code"
+    | "client_name"
+    | "order_date"
+    | "delivery_date"
+    | "status"
+    | "total_with_iva"
+    | "line_items";
   type SortDir = "asc" | "desc";
   const SORT_STORAGE_KEY = "orders-sort-v1";
   const DEFAULT_SORT: { key: SortKey; dir: SortDir } = { key: "order_code", dir: "desc" };
@@ -116,11 +174,17 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
       if (!raw) return DEFAULT_SORT;
       const parsed = JSON.parse(raw);
       if (parsed?.key && parsed?.dir) return parsed;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return DEFAULT_SORT;
   });
   useEffect(() => {
-    try { localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify(sort)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify(sort));
+    } catch {
+      /* ignore */
+    }
   }, [sort]);
   const isDefaultSort = sort.key === DEFAULT_SORT.key && sort.dir === DEFAULT_SORT.dir;
   const cycleSort = (key: SortKey) => {
@@ -131,7 +195,12 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
       if (prev.key === key) {
         return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
       }
-      const numericOrDate: SortKey[] = ["order_date", "delivery_date", "total_with_iva", "line_items"];
+      const numericOrDate: SortKey[] = [
+        "order_date",
+        "delivery_date",
+        "total_with_iva",
+        "line_items",
+      ];
       return { key, dir: numericOrDate.includes(key) ? "desc" : "asc" };
     });
   };
@@ -139,7 +208,11 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editOrderId, setEditOrderId] = useState<string | null>(null);
-  const [deleteOrder, setDeleteOrder] = useState<{ id: string; orderCode: string | null; clientName: string | null } | null>(null);
+  const [deleteOrder, setDeleteOrder] = useState<{
+    id: string;
+    orderCode: string | null;
+    clientName: string | null;
+  } | null>(null);
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<"status" | "delete" | null>(null);
@@ -153,19 +226,28 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   };
   const [dateFrom, setDateFrom] = useState(getFirstOfMonth());
   const [dateTo, setDateTo] = useState("");
-  const setThisMonth = () => { setDateFrom(getFirstOfMonth()); setDateTo(""); };
-  const setAllTime = () => { setDateFrom(""); setDateTo(""); };
+  const setThisMonth = () => {
+    setDateFrom(getFirstOfMonth());
+    setDateTo("");
+  };
+  const setAllTime = () => {
+    setDateFrom("");
+    setDateTo("");
+  };
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     const openOrderId = searchParams.get("openOrderId");
     if (openOrderId) {
       setSelectedOrderId(openOrderId);
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("openOrderId");
-        return next;
-      }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("openOrderId");
+          return next;
+        },
+        { replace: true },
+      );
     }
   }, []);
 
@@ -175,18 +257,33 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
     setSelectedIds(new Set());
   }, [dateFrom, dateTo, statusFilter, typeFilter, search, sort.key, sort.dir, restrictKey]);
 
-  const { data: ordersResult = { rows: [] as OrderSummaryRow[], count: 0 }, isLoading, isFetching, error } = useQuery({
-    queryKey: ["orders", restrictKey, dateFrom, dateTo, statusFilter, typeFilter, search.trim(), sort.key, sort.dir, page],
+  const {
+    data: ordersResult = { rows: [] as OrderSummaryRow[], count: 0 },
+    isLoading,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: [
+      "orders",
+      restrictKey,
+      dateFrom,
+      dateTo,
+      statusFilter,
+      typeFilter,
+      search.trim(),
+      sort.key,
+      sort.dir,
+      page,
+    ],
     queryFn: async () => {
-      if (restrictClientIds && restrictClientIds.length === 0) return { rows: [] as OrderSummaryRow[], count: 0 };
+      if (restrictClientIds && restrictClientIds.length === 0)
+        return { rows: [] as OrderSummaryRow[], count: 0 };
 
       const from = (page - 1) * ORDERS_PAGE_SIZE;
       const to = from + ORDERS_PAGE_SIZE - 1;
       const cleanSearch = search.trim().replace(/[%*,]/g, " ").replace(/\s+/g, " ");
 
-      let q = supabase
-        .from("order_summary")
-        .select("*", { count: "exact" });
+      let q = supabase.from("order_summary").select("*", { count: "exact" });
 
       if (restrictClientIds && restrictClientIds.length > 0) {
         q = q.in("client_id", restrictClientIds);
@@ -219,7 +316,10 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  const visibleOrderIds = useMemo(() => orders.map((o) => o.id).filter(Boolean) as string[], [orders]);
+  const visibleOrderIds = useMemo(
+    () => orders.map((o) => o.id).filter(Boolean) as string[],
+    [orders],
+  );
   const visibleOrderIdsKey = visibleOrderIds.join(",");
 
   // Fetch damaged item counts per order (only orders with is_damaged items)
@@ -255,7 +355,7 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
         .not("signed_at", "is", null)
         .in("id", visibleOrderIds);
       if (error) throw error;
-      return new Set<string>(((data ?? []) as { id: string }[]).map(r => r.id));
+      return new Set<string>(((data ?? []) as { id: string }[]).map((r) => r.id));
     },
     staleTime: 15 * 1000,
   });
@@ -278,8 +378,8 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
       const aNull = a == null || a === "";
       const bNull = b == null || b === "";
       if (aNull && bNull) return 0;
-      if (aNull) return 1;   // a goes after
-      if (bNull) return -1;  // a goes before
+      if (aNull) return 1; // a goes after
+      if (bNull) return -1; // a goes before
       let r = 0;
       if (typeof a === "number" && typeof b === "number") r = a - b;
       else r = String(a).localeCompare(String(b));
@@ -298,7 +398,15 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   // Dashboard stats — aggregated server-side across ALL filtered orders
   // (not just the current 100-row page), so KPI cards reflect the full set.
   const { data: statsData } = useQuery({
-    queryKey: ["orders-dashboard-stats", restrictKey, dateFrom, dateTo, statusFilter, typeFilter, search.trim()],
+    queryKey: [
+      "orders-dashboard-stats",
+      restrictKey,
+      dateFrom,
+      dateTo,
+      statusFilter,
+      typeFilter,
+      search.trim(),
+    ],
     queryFn: async () => {
       if (restrictClientIds && restrictClientIds.length === 0) return null;
       const cleanSearch = search.trim().replace(/[%*,]/g, " ").replace(/\s+/g, " ");
@@ -337,10 +445,21 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
   // Status distribution for pie chart — from server-side aggregate.
   const statusDistribution = useMemo(() => {
     const counts = statsData?.status_counts ?? {};
-    const statusOrder = ["Pendiente portal", "Nuevo", "Confirmado", "En preparacion", "En ruta", "Entregado"];
+    const statusOrder = [
+      "Pendiente portal",
+      "Nuevo",
+      "Confirmado",
+      "En preparacion",
+      "En ruta",
+      "Entregado",
+    ];
     return statusOrder
-      .filter(s => (counts[s] ?? 0) > 0)
-      .map(s => ({ status: s, label: s === "En preparacion" ? "En preparación" : s, count: counts[s] ?? 0 }));
+      .filter((s) => (counts[s] ?? 0) > 0)
+      .map((s) => ({
+        status: s,
+        label: s === "En preparacion" ? "En preparación" : s,
+        count: counts[s] ?? 0,
+      }));
   }, [statsData]);
 
   useEffect(() => {
@@ -349,18 +468,22 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
 
   const fmtDate = (d: string | null) => {
     if (!d) return "—";
-    try { return format(parseLocalDate(d), "dd/MM/yy"); } catch { return d; }
+    try {
+      return format(parseLocalDate(d), "dd/MM/yy");
+    } catch {
+      return d;
+    }
   };
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
   const toggleSelectAll = () => {
-    const validIds = filtered.filter(o => o.id).map(o => o.id!);
+    const validIds = filtered.filter((o) => o.id).map((o) => o.id!);
     if (selectedIds.size === validIds.length) {
       setSelectedIds(new Set());
     } else {
@@ -372,7 +495,10 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
     setBulkProcessing(true);
     try {
       const ids = Array.from(selectedIds);
-      const { error } = await supabase.from("orders").update({ status: bulkStatus as any }).in("id", ids);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: bulkStatus as any })
+        .in("id", ids);
       if (error) throw error;
       toast.success(`${ids.length} pedidos actualizados`);
       setSelectedIds(new Set());
@@ -437,8 +563,9 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
       }
       // Need to (re)generate. Alphabet excludes 0/O/1/l/I.
       const ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
-      const random4 = Array.from({ length: 4 }, () =>
-        ALPHABET[Math.floor(Math.random() * ALPHABET.length)],
+      const random4 = Array.from(
+        { length: 4 },
+        () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)],
       ).join("");
       const token = `${orderCode}-${random4}`;
       const { error: upErr } = await (supabase as any)
@@ -523,7 +650,11 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
         .select("id, signature_token, order_code")
         .in("id", visibleOrderIds);
       if (error) throw error;
-      const rows = (data ?? []) as { id: string; signature_token: string | null; order_code: string | null }[];
+      const rows = (data ?? []) as {
+        id: string;
+        signature_token: string | null;
+        order_code: string | null;
+      }[];
       const map: Record<string, { token: string | null; code: string | null }> = {};
       for (const o of rows) {
         map[o.id] = { token: o.signature_token, code: o.order_code };
@@ -586,7 +717,9 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
                 onClick={() => setTab("pedidos")}
                 className={cn(
                   "px-3 py-1.5 rounded-md font-medium transition-colors",
-                  tab === "pedidos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  tab === "pedidos"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Pedidos
@@ -596,7 +729,9 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
                 onClick={() => setTab("cotizaciones")}
                 className={cn(
                   "px-3 py-1.5 rounded-md font-medium transition-colors",
-                  tab === "cotizaciones" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  tab === "cotizaciones"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Cotizaciones
@@ -623,621 +758,425 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
 
       {tab === "cotizaciones" && (
         <CotizacionesTab
-          onConverted={(orderId) => { setTab("pedidos"); setEditOrderId(orderId); }}
+          onConverted={(orderId) => {
+            setTab("pedidos");
+            setEditOrderId(orderId);
+          }}
           newOpen={newQuoteOpen}
           onNewOpenChange={setNewQuoteOpen}
           restrictClientIds={restrictClientIds ?? undefined}
         />
       )}
 
-      {tab === "pedidos" && (<>
-        {/* —— Pedidos tab content (everything below this line) —— */}
-
-      {/* Date filter */}
-      <ChronoBar
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
-      />
-
-      {/* Dashboard */}
-      {dashboardStats && !isLoading && (
+      {tab === "pedidos" && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 [&>div]:min-h-[120px]">
-            {/* Pedidos activos — split card */}
-            <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-              <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
-                <div className="p-1.5 rounded-md bg-blue-500/10">
-                  <ShoppingCart className="h-4 w-4 text-blue-400" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedidos activos</p>
-              </div>
-              <div className="flex items-stretch flex-1">
-                <div className="flex-1 pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground">{dashboardStats.activosCount}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Pedidos</p>
-                </div>
-                <div className="w-px bg-border my-3" />
-                <div className="flex-1 pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground">{dashboardStats.activosBultos.toLocaleString("es-MX")}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">SKUs</p>
-                </div>
-              </div>
-            </div>
+          {/* —— Pedidos tab content (everything below this line) —— */}
 
-            {/* Valor en tránsito */}
-            <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-              <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
-                <div className="p-1.5 rounded-md bg-amber-500/10">
-                  <DollarSign className="h-4 w-4 text-amber-400" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor en tránsito</p>
-              </div>
-              <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                <p className="text-2xl font-bold text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {fmtMXN(dashboardStats.valorTransito)}
-                </p>
-              </div>
-            </div>
+          {/* Date filter */}
+          <ChronoBar
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onChange={(from, to) => {
+              setDateFrom(from);
+              setDateTo(to);
+            }}
+          />
 
-            {/* Entregados del periodo */}
-            <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-              <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
-                <div className="p-1.5 rounded-md bg-green-500/10">
-                  <TruckIcon className="h-4 w-4 text-green-400" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Entregados</p>
-              </div>
-              <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.entregadosCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">pedidos</p>
-              </div>
-            </div>
-
-            {/* Tiempo promedio de entrega */}
-            <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-              <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
-                <div className="p-1.5 rounded-md bg-purple-500/10">
-                  <Clock className="h-4 w-4 text-purple-400" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tiempo promedio</p>
-              </div>
-              <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                <p className="text-2xl font-bold text-foreground">{dashboardStats.tiempoPromedio.toFixed(1)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">días de entrega</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Status distribution pie chart — compact */}
-          {statusDistribution.length > 0 && (() => {
-            const total = statusDistribution.reduce((s, d) => s + d.count, 0);
-            const colors: Record<string, string> = {
-              "Pendiente portal": "#f59e0b",
-              "Nuevo": "#3b82f6",
-              "Confirmado": "#8b5cf6",
-              "En preparacion": "#f97316",
-              "En ruta": "#06b6d4",
-              "Entregado": "#22c55e",
-            };
-            let accumulated = 0;
-            const segments = statusDistribution.map(d => {
-              const pct = (d.count / total) * 100;
-              const start = accumulated;
-              accumulated += pct;
-              return { ...d, start, end: accumulated, color: colors[d.status] ?? "#6b7280" };
-            });
-            const conicGradient = segments.map(s => `${s.color} ${s.start}% ${s.end}%`).join(", ");
-
-            return (
-              <div className="w-full md:inline-flex md:w-auto max-w-full border border-border rounded-lg bg-card/50 overflow-hidden">
-                <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                  {/* Pie */}
-                  <div className="relative shrink-0">
-                    <div
-                      className="w-28 h-28 rounded-full"
-                      style={{
-                        background: `conic-gradient(${conicGradient})`,
-                        boxShadow: "0 0 20px rgba(59,130,246,0.15)",
-                      }}
-                    />
-                    <div className="absolute inset-[10px] rounded-full bg-background flex flex-col items-center justify-center">
-                      <p className="text-lg font-bold text-foreground">{total}</p>
-                      <p className="text-[10px] text-muted-foreground">pedidos</p>
+          {/* Dashboard */}
+          {dashboardStats && !isLoading && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 [&>div]:min-h-[120px]">
+                {/* Pedidos activos — split card */}
+                <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
+                  <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                    <div className="p-1.5 rounded-md bg-blue-500/10">
+                      <ShoppingCart className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Pedidos activos
+                    </p>
+                  </div>
+                  <div className="flex items-stretch flex-1">
+                    <div className="flex-1 pb-4 pt-1 flex flex-col items-center justify-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {dashboardStats.activosCount}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pedidos</p>
+                    </div>
+                    <div className="w-px bg-border my-3" />
+                    <div className="flex-1 pb-4 pt-1 flex flex-col items-center justify-center">
+                      <p className="text-2xl font-bold text-foreground">
+                        {dashboardStats.activosBultos.toLocaleString("es-MX")}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">SKUs</p>
                     </div>
                   </div>
-                  {/* Legend */}
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Distribución por estado</p>
-                    {segments.map(s => (
-                      <div key={s.status} className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 min-w-0 sm:min-w-[120px]">
-                          <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
-                          <span className="text-sm text-foreground">{s.label}</span>
-                        </div>
-                        <span className="text-sm font-bold text-foreground tabular-nums">{s.count}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">{((s.count / total) * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
+                </div>
+
+                {/* Valor en tránsito */}
+                <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
+                  <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                    <div className="p-1.5 rounded-md bg-amber-500/10">
+                      <DollarSign className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Valor en tránsito
+                    </p>
+                  </div>
+                  <div className="pb-4 pt-1 flex flex-col items-center justify-center">
+                    <p
+                      className="text-2xl font-bold text-foreground"
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {fmtMXN(dashboardStats.valorTransito)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Entregados del periodo */}
+                <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
+                  <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                    <div className="p-1.5 rounded-md bg-green-500/10">
+                      <TruckIcon className="h-4 w-4 text-green-400" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Entregados
+                    </p>
+                  </div>
+                  <div className="pb-4 pt-1 flex flex-col items-center justify-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {dashboardStats.entregadosCount}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">pedidos</p>
+                  </div>
+                </div>
+
+                {/* Tiempo promedio de entrega */}
+                <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
+                  <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                    <div className="p-1.5 rounded-md bg-purple-500/10">
+                      <Clock className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Tiempo promedio
+                    </p>
+                  </div>
+                  <div className="pb-4 pt-1 flex flex-col items-center justify-center">
+                    <p className="text-2xl font-bold text-foreground">
+                      {dashboardStats.tiempoPromedio.toFixed(1)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">días de entrega</p>
                   </div>
                 </div>
               </div>
-            );
-          })()}
-        </>
-      )}
 
-      {/* Search + Status filter */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("searchOrderPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("allStatuses")}</SelectItem>
-            {ORDER_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+              {/* Status distribution pie chart — compact */}
+              {statusDistribution.length > 0 &&
+                (() => {
+                  const total = statusDistribution.reduce((s, d) => s + d.count, 0);
+                  const colors: Record<string, string> = {
+                    "Pendiente portal": "#f59e0b",
+                    Nuevo: "#3b82f6",
+                    Confirmado: "#8b5cf6",
+                    "En preparacion": "#f97316",
+                    "En ruta": "#06b6d4",
+                    Entregado: "#22c55e",
+                  };
+                  let accumulated = 0;
+                  const segments = statusDistribution.map((d) => {
+                    const pct = (d.count / total) * 100;
+                    const start = accumulated;
+                    accumulated += pct;
+                    return { ...d, start, end: accumulated, color: colors[d.status] ?? "#6b7280" };
+                  });
+                  const conicGradient = segments
+                    .map((s) => `${s.color} ${s.start}% ${s.end}%`)
+                    .join(", ");
 
-      {/* Bulk action bar */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 rounded-lg border border-border min-h-[48px] hidden sm:flex">
-        <span className="text-sm font-medium text-foreground">{selectedIds.size} seleccionados</span>
-        <Button size="sm" variant="outline" onClick={() => setBulkAction("status")} disabled={bulkProcessing || selectedIds.size === 0}>
-          Cambiar estado
-        </Button>
-        <Button size="sm" variant="destructive" onClick={() => setBulkAction("delete")} disabled={bulkProcessing || selectedIds.size === 0}>
-          Eliminar
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Deseleccionar</Button>
-      </div>
+                  return (
+                    <div className="w-full md:inline-flex md:w-auto max-w-full border border-border rounded-lg bg-card/50 overflow-hidden">
+                      <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        {/* Pie */}
+                        <div className="relative shrink-0">
+                          <div
+                            className="w-28 h-28 rounded-full"
+                            style={{
+                              background: `conic-gradient(${conicGradient})`,
+                              boxShadow: "0 0 20px rgba(59,130,246,0.15)",
+                            }}
+                          />
+                          <div className="absolute inset-[10px] rounded-full bg-background flex flex-col items-center justify-center">
+                            <p className="text-lg font-bold text-foreground">{total}</p>
+                            <p className="text-[10px] text-muted-foreground">pedidos</p>
+                          </div>
+                        </div>
+                        {/* Legend */}
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                            Distribución por estado
+                          </p>
+                          {segments.map((s) => (
+                            <div key={s.status} className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 min-w-0 sm:min-w-[120px]">
+                                <div
+                                  className="h-2.5 w-2.5 rounded-sm shrink-0"
+                                  style={{ backgroundColor: s.color }}
+                                />
+                                <span className="text-sm text-foreground">{s.label}</span>
+                              </div>
+                              <span className="text-sm font-bold text-foreground tabular-nums">
+                                {s.count}
+                              </span>
+                              <span className="text-xs text-muted-foreground tabular-nums">
+                                {((s.count / total) * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+            </>
+          )}
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12 space-y-3">
-          <p className="text-muted-foreground">{t("noOrders")}</p>
-          <Button variant="outline" onClick={() => setNewOrderOpen(true)}>{t("createFirstOrder")}</Button>
-        </div>
-      ) : (
-        <>
-          {/* Sort indicator — ALWAYS rendered (not conditional) so the
+          {/* Search + Status filter */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <div className="relative flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t("searchOrderPlaceholder")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allStatuses")}</SelectItem>
+                {ORDER_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Bulk action bar */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 rounded-lg border border-border min-h-[48px] hidden sm:flex">
+            <span className="text-sm font-medium text-foreground">
+              {selectedIds.size} seleccionados
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setBulkAction("status")}
+              disabled={bulkProcessing || selectedIds.size === 0}
+            >
+              Cambiar estado
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setBulkAction("delete")}
+              disabled={bulkProcessing || selectedIds.size === 0}
+            >
+              Eliminar
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={selectedIds.size === 0}
+            >
+              Deseleccionar
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-12 space-y-3">
+              <p className="text-muted-foreground">{t("noOrders")}</p>
+              <Button variant="outline" onClick={() => setNewOrderOpen(true)}>
+                {t("createFirstOrder")}
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Sort indicator — ALWAYS rendered (not conditional) so the
               row never shifts when the user toggles a column header.
               Default state = muted "Vista estándar" pill. Custom state
               = primary-colored "Vista guardada" pill with active column
               + direction and a Restablecer link. Same vertical
               footprint either way → no layout jank. */}
-          <div className="flex items-center gap-2 text-xs">
-            {isDefaultSort ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border font-medium">
-                <Pin className="h-3 w-3 opacity-50" />
-                Vista estándar
-              </span>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 font-medium">
-                  <Pin className="h-3 w-3" />
-                  Vista guardada
-                  <span className="opacity-80">
-                    · Orden:{" "}
-                    {sort.key === "order_code" && "Pedido"}
-                    {sort.key === "client_name" && "Cliente"}
-                    {sort.key === "order_date" && "Fecha pedido"}
-                    {sort.key === "delivery_date" && "Fecha entrega"}
-                    {sort.key === "status" && "Estado"}
-                    {sort.key === "total_with_iva" && "Total"}
-                    {sort.key === "line_items" && "SKUs"}
-                    {sort.dir === "asc" ? " ↑" : " ↓"}
+              <div className="flex items-center gap-2 text-xs">
+                {isDefaultSort ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border font-medium">
+                    <Pin className="h-3 w-3 opacity-50" />
+                    Vista estándar
                   </span>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 font-medium">
+                      <Pin className="h-3 w-3" />
+                      Vista guardada
+                      <span className="opacity-80">
+                        · Orden: {sort.key === "order_code" && "Pedido"}
+                        {sort.key === "client_name" && "Cliente"}
+                        {sort.key === "order_date" && "Fecha pedido"}
+                        {sort.key === "delivery_date" && "Fecha entrega"}
+                        {sort.key === "status" && "Estado"}
+                        {sort.key === "total_with_iva" && "Total"}
+                        {sort.key === "line_items" && "SKUs"}
+                        {sort.dir === "asc" ? " ↑" : " ↓"}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={resetSort}
+                      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Restablecer
+                    </button>
+                  </>
+                )}
+                <span className="ml-auto text-muted-foreground tabular-nums">
+                  {isFetching && !isLoading ? "Actualizando · " : ""}
+                  Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de{" "}
+                  {ordersTotal.toLocaleString("es-MX")}
                 </span>
-                <button
-                  type="button"
-                  onClick={resetSort}
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  Restablecer
-                </button>
-              </>
-            )}
-            <span className="ml-auto text-muted-foreground tabular-nums">
-              {isFetching && !isLoading ? "Actualizando · " : ""}
-              Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de {ordersTotal.toLocaleString("es-MX")}
-            </span>
-          </div>
+              </div>
 
-          {/* Mobile sort pill — cards don't have headers to click, so
+              {/* Mobile sort pill — cards don't have headers to click, so
               this dropdown gives mobile users the same access. Same
               options as desktop column headers. */}
-          <div className="flex items-center justify-end md:hidden">
-            <Select
-              value={`${sort.key}|${sort.dir}`}
-              onValueChange={(v) => {
-                const [k, d] = v.split("|") as [SortKey, SortDir];
-                setSort({ key: k, dir: d });
-              }}
-            >
-              <SelectTrigger className="h-8 w-auto gap-1.5 text-xs">
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="order_code|desc">Pedido (más nuevo)</SelectItem>
-                <SelectItem value="order_code|asc">Pedido (más viejo)</SelectItem>
-                <SelectItem value="delivery_date|asc">Fecha entrega (próxima)</SelectItem>
-                <SelectItem value="delivery_date|desc">Fecha entrega (lejana)</SelectItem>
-                <SelectItem value="order_date|desc">Fecha pedido (reciente)</SelectItem>
-                <SelectItem value="order_date|asc">Fecha pedido (vieja)</SelectItem>
-                <SelectItem value="client_name|asc">Cliente (A→Z)</SelectItem>
-                <SelectItem value="client_name|desc">Cliente (Z→A)</SelectItem>
-                <SelectItem value="status|asc">Estado (A→Z)</SelectItem>
-                <SelectItem value="total_with_iva|desc">Total (mayor)</SelectItem>
-                <SelectItem value="total_with_iva|asc">Total (menor)</SelectItem>
-                <SelectItem value="line_items|desc">SKUs (más)</SelectItem>
-                <SelectItem value="line_items|asc">SKUs (menos)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* ── Mobile: Card view ── */}
-          <div className="space-y-3 md:hidden">
-            {filtered.map((o) => (
-              <div
-                key={o.id}
-                className="rounded-lg border bg-card p-4 space-y-3 cursor-pointer active:bg-muted/50 transition-colors"
-                onClick={() => o.id && setSelectedOrderId(o.id)}
-              >
-                {/* Row 1: Code + Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-blue-400">{o.order_code ?? "—"}</span>
-                    {o.status === "Pendiente portal" && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">Portal</span>
-                    )}
-                    {o.id && (damagedByOrder[o.id] ?? 0) > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30"
-                        title={`${damagedByOrder[o.id]} bultos dañados`}
-                      >
-                        <AlertOctagon className="h-2.5 w-2.5" />
-                        {damagedByOrder[o.id]} dañ.
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={o.status} />
-                    {(() => {
-                      // When the token is already known (common case), render
-                      // a real <a> for Eye and a sync onClick for Copy — both
-                      // are gesture-clean for iOS. Async fallback only fires
-                      // when the token doesn't exist yet, which is rare.
-                      const url = o.id ? knownSignatureUrl(o.id) : null;
-                      return (
-                        <>
-                          {url ? (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-foreground p-1"
-                              onClick={(e) => e.stopPropagation()}
-                              title="Ver/firmar entrega"
-                              aria-label="Ver/firmar entrega"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </a>
-                          ) : (
-                            <button
-                              className="text-muted-foreground hover:text-foreground p-1"
-                              onClick={(e) => { e.stopPropagation(); o.id && handlePreviewSignature(o.id); }}
-                              title="Ver/firmar entrega"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            className="text-muted-foreground hover:text-foreground p-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!o.id) return;
-                              if (url) copyTextSync(url);
-                              else handleCopySignatureLink(o.id);
-                            }}
-                            title="Copiar link de firma"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </>
-                      );
-                    })()}
-                    <button
-                      className="relative text-muted-foreground hover:text-foreground p-1"
-                      onClick={(e) => { e.stopPropagation(); o.id && exportOrderAsImage(o.id); }}
-                      title={o.id && signedOrderIds.has(o.id) ? "Descargar comprobante firmado" : "Descargar PDF"}
-                    >
-                      <Download className="h-4 w-4" />
-                      {o.id && signedOrderIds.has(o.id) && (
-                        <CheckCircle2 className="h-3 w-3 text-emerald-500 absolute -bottom-0.5 -right-0.5 bg-background rounded-full" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                {/* Row 2: Client */}
-                <p className="text-sm text-foreground font-medium truncate">{o.client_name ?? "—"}</p>
-                {/* Row 3: Details grid */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">Pedido: </span>
-                    <span className="text-foreground">{fmtDate(o.order_date)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-muted-foreground">Entrega: </span>
-                    <span className="text-foreground">{fmtDate(o.delivery_date)}</span>
-                    <DeliveryWindowChip
-                      from={o.delivery_window_from}
-                      until={o.delivery_window_until}
-                      notes={o.delivery_notes}
-                      isPickup={o.fulfillment_method === "pickup"}
-                    />
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">SKUs: </span>
-                    <span className="text-foreground">{o.line_items ?? "—"}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Total: </span>
-                    <span className="text-foreground font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMXN(o.total_with_iva)}</span>
-                    {Number(o.discount_amount ?? 0) > 0 && (
-                      <span
-                        className="ml-1.5 text-[10px] text-amber-500 font-medium"
-                        style={{ fontVariantNumeric: "tabular-nums" }}
-                        title={`Subtotal ${fmtMXN(o.subtotal ?? 0)} − descuento ${fmtMXN(o.discount_amount ?? 0)}${o.discount_reason ? ` · ${o.discount_reason}` : ""}`}
-                      >
-                        (−{fmtMXN(o.discount_amount ?? 0)})
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {o.fulfillment_method === "pickup" && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                      📦 Pickup
-                    </span>
-                  )}
-                  {o.needs_approval && (
-                    <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-500 border border-amber-500/40"
-                      title="El cliente pidió para antes de 3 días hábiles. Requiere tu aprobación."
-                    >
-                      ⚠ Aprobación
-                    </span>
-                  )}
-                  {(o as any).price_list_name && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                      {(o as any).price_list_name}
-                    </span>
-                  )}
-                  {(o.manual_price_count ?? 0) > 0 && !(o as any).price_list_name && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                      {o.manual_price_count} precio manual
-                    </span>
-                  )}
-                  {Number(o.discount_amount ?? 0) > 0 && (
-                    <span
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                      title={o.discount_reason ?? ""}
-                    >
-                      Descuento −{fmtMXN(o.discount_amount ?? 0)}
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center justify-end md:hidden">
+                <Select
+                  value={`${sort.key}|${sort.dir}`}
+                  onValueChange={(v) => {
+                    const [k, d] = v.split("|") as [SortKey, SortDir];
+                    setSort({ key: k, dir: d });
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-auto gap-1.5 text-xs">
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <SelectValue placeholder="Ordenar" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    <SelectItem value="order_code|desc">Pedido (más nuevo)</SelectItem>
+                    <SelectItem value="order_code|asc">Pedido (más viejo)</SelectItem>
+                    <SelectItem value="delivery_date|asc">Fecha entrega (próxima)</SelectItem>
+                    <SelectItem value="delivery_date|desc">Fecha entrega (lejana)</SelectItem>
+                    <SelectItem value="order_date|desc">Fecha pedido (reciente)</SelectItem>
+                    <SelectItem value="order_date|asc">Fecha pedido (vieja)</SelectItem>
+                    <SelectItem value="client_name|asc">Cliente (A→Z)</SelectItem>
+                    <SelectItem value="client_name|desc">Cliente (Z→A)</SelectItem>
+                    <SelectItem value="status|asc">Estado (A→Z)</SelectItem>
+                    <SelectItem value="total_with_iva|desc">Total (mayor)</SelectItem>
+                    <SelectItem value="total_with_iva|asc">Total (menor)</SelectItem>
+                    <SelectItem value="line_items|desc">SKUs (más)</SelectItem>
+                    <SelectItem value="line_items|asc">SKUs (menos)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-          </div>
 
-          {/* ── Desktop: Table view ── */}
-          <div className="rounded-md border hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10"><Checkbox checked={filtered.filter(o => o.id).length > 0 && selectedIds.size === filtered.filter(o => o.id).length} onCheckedChange={toggleSelectAll} /></TableHead>
-                  {/* Sortable column headers — click toggles asc/desc.
-                      Active column shows a colored chevron; inactive
-                      columns show a faint up/down icon to advertise the
-                      affordance without shouting. Persisted to
-                      localStorage so the choice sticks across reloads. */}
-                  <SortableTableHead className="w-[140px]" sortKey="order_code"   currentSort={sort} onClick={cycleSort}>{t("thOrder")}</SortableTableHead>
-                  <SortableTableHead                       sortKey="client_name"  currentSort={sort} onClick={cycleSort}>{t("thClient")}</SortableTableHead>
-                  <SortableTableHead                       sortKey="order_date"   currentSort={sort} onClick={cycleSort}>{t("thOrderDate")}</SortableTableHead>
-                  <SortableTableHead                       sortKey="delivery_date" currentSort={sort} onClick={cycleSort}>{t("thDeliveryDate")}</SortableTableHead>
-                  <SortableTableHead                       sortKey="status"        currentSort={sort} onClick={cycleSort}>{t("thStatus")}</SortableTableHead>
-                  <SortableTableHead className="text-right" sortKey="total_with_iva" currentSort={sort} onClick={cycleSort} align="right">{t("thTotal")}</SortableTableHead>
-                  <SortableTableHead className="text-right" sortKey="line_items"     currentSort={sort} onClick={cycleSort} align="right">SKUs</SortableTableHead>
-                  <TableHead className="w-[40px]" />
-                  <TableHead className="w-[50px]" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              {/* ── Mobile: Card view ── */}
+              <div className="space-y-3 md:hidden">
                 {filtered.map((o) => (
-                  <TableRow
+                  <div
                     key={o.id}
-                    className={cn("cursor-pointer", o.id && selectedIds.has(o.id) && "bg-muted/30")}
+                    className="rounded-lg border bg-card p-4 space-y-3 cursor-pointer active:bg-muted/50 transition-colors"
                     onClick={() => o.id && setSelectedOrderId(o.id)}
                   >
-                    <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={!!o.id && selectedIds.has(o.id)} onCheckedChange={() => o.id && toggleSelect(o.id)} /></TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-1.5 whitespace-nowrap">
-                        <button
-                          className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
-                          onClick={(e) => { e.stopPropagation(); o.id && setSelectedOrderId(o.id); }}
-                        >
-                          {o.order_code ?? "—"}
-                        </button>
+                    {/* Row 1: Code + Status */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-blue-400">{o.order_code ?? "—"}</span>
                         {o.status === "Pendiente portal" && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
                             Portal
                           </span>
                         )}
                         {o.id && (damagedByOrder[o.id] ?? 0) > 0 && (
                           <span
                             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30"
-                            title={`${damagedByOrder[o.id]} bultos dañados en este pedido`}
+                            title={`${damagedByOrder[o.id]} bultos dañados`}
                           >
                             <AlertOctagon className="h-2.5 w-2.5" />
-                            Dañados
+                            {damagedByOrder[o.id]} dañ.
                           </span>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        className="text-foreground hover:text-blue-400 hover:underline transition-colors"
-                        onClick={(e) => { e.stopPropagation(); if (o.client_id) navigate(`/admin/clientes?expandClient=${o.client_id}`); }}
-                      >
-                        {o.client_name ?? "—"}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{fmtDate(o.order_date)}</TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <span>{fmtDate(o.delivery_date)}</span>
-                        <DeliveryWindowChip
-                          from={o.delivery_window_from}
-                          until={o.delivery_window_until}
-                          notes={o.delivery_notes}
-                          isPickup={o.fulfillment_method === "pickup"}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell onClick={e => e.stopPropagation()} className="w-[140px] min-w-[140px]">
-                      <Select
-                        value={o.status}
-                        onValueChange={async (newStatus) => {
-                          if (!o.id || newStatus === o.status) return;
-                          const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", o.id);
-                          if (error) { toast.error("Error al cambiar estado", { description: error.message }); return; }
-                          toast.success(`${o.order_code ?? "Pedido"} → ${STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}`);
-                          queryClient.invalidateQueries({ queryKey: ["orders"] });
-                        }}
-                      >
-                        <SelectTrigger className="h-7 w-[130px] border-0 bg-transparent p-0 shadow-none ring-0 focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
-                          <StatusBadge status={o.status} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ORDER_STATUSES.map(s => (
-                            <SelectItem key={s} value={s}><StatusBadge status={s} /></SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {/* Two-column layout: badges sit in their own
-                          right-aligned column, price sits in a fixed-
-                          width column to its right. The price's right
-                          edge is constant across rows, which makes the
-                          badges' right edges line up vertically too. */}
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                          {o.fulfillment_method === "pickup" && (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                              title="Recoge en bodega"
-                            >
-                              📦 Pickup
-                            </span>
-                          )}
-                          {o.needs_approval && (
-                            <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-500 border border-amber-500/40"
-                              title="Pedido dentro de 3 días hábiles — requiere aprobación"
-                            >
-                              ⚠ Aprobación
-                            </span>
-                          )}
-                          {(o as any).price_list_name && (
-                            <span
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30"
-                              title={`Lista de precios: ${(o as any).price_list_name}`}
-                            >
-                              {(o as any).price_list_name}
-                            </span>
-                          )}
-                          {(o.manual_price_count ?? 0) > 0 && !(o as any).price_list_name && (
-                            <span
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                              title={`${o.manual_price_count} producto${(o.manual_price_count ?? 0) > 1 ? "s" : ""} con precio manual`}
-                            >
-                              {o.manual_price_count} manual
-                            </span>
-                          )}
-                          {Number(o.discount_amount ?? 0) > 0 && (
-                            <span
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                              title={`Subtotal ${fmtMXN(o.subtotal ?? 0)} − descuento ${fmtMXN(o.discount_amount ?? 0)}${o.discount_reason ? ` · ${o.discount_reason}` : ""}`}
-                            >
-                              −{fmtMXN(o.discount_amount ?? 0)}
-                            </span>
-                          )}
-                        </div>
-                        <span className="inline-block min-w-[110px] text-right">
-                          {fmtMXN(o.total_with_iva)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <button
-                        className="hover:text-blue-400 hover:underline transition-colors"
-                        onClick={(e) => { e.stopPropagation(); o.id && setSelectedOrderId(o.id); }}
-                      >
-                        {o.line_items ?? "—"}
-                      </button>
-                    </TableCell>
-                    <TableCell onClick={e => e.stopPropagation()} className="w-[120px]">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={o.status} />
+                        {(() => {
+                          // When the token is already known (common case), render
+                          // a real <a> for Eye and a sync onClick for Copy — both
+                          // are gesture-clean for iOS. Async fallback only fires
+                          // when the token doesn't exist yet, which is rare.
+                          const url = o.id ? knownSignatureUrl(o.id) : null;
+                          return (
+                            <>
+                              {url ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-muted-foreground hover:text-foreground p-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title="Ver/firmar entrega"
+                                  aria-label="Ver/firmar entrega"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </a>
+                              ) : (
+                                <button
+                                  className="text-muted-foreground hover:text-foreground p-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    o.id && handlePreviewSignature(o.id);
+                                  }}
+                                  title="Ver/firmar entrega"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                className="text-muted-foreground hover:text-foreground p-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!o.id) return;
+                                  if (url) copyTextSync(url);
+                                  else handleCopySignatureLink(o.id);
+                                }}
+                                title="Copiar link de firma"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                            </>
+                          );
+                        })()}
                         <button
-                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                          onClick={() => o.id && setSelectedOrderId(o.id)}
-                          title="Ver pedido"
-                          aria-label="Ver pedido"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                          onClick={async () => {
-                            if (!o.id) return;
-                            const link = `${window.location.origin}/admin/pedidos/${o.id}`;
-                            try {
-                              await navigator.clipboard.writeText(link);
-                              const { toast } = await import("sonner");
-                              toast.success("Link copiado");
-                            } catch {
-                              copyTextSync(link);
-                            }
+                          className="relative text-muted-foreground hover:text-foreground p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            o.id && exportOrderAsImage(o.id);
                           }}
-                          title="Copiar link del pedido"
-                          aria-label="Copiar link del pedido"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
-                          onClick={() => { o.id && exportOrderAsPdf(o.id); }}
-                          title={o.id && signedOrderIds.has(o.id) ? "Descargar PDF firmado" : "Descargar PDF"}
-                          aria-label="Descargar PDF"
+                          title={
+                            o.id && signedOrderIds.has(o.id)
+                              ? "Descargar comprobante firmado"
+                              : "Descargar PDF"
+                          }
                         >
                           <Download className="h-4 w-4" />
                           {o.id && signedOrderIds.has(o.id) && (
@@ -1245,113 +1184,518 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
                           )}
                         </button>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <OrderRowActions
-                        onView={() => o.id && setSelectedOrderId(o.id)}
-                        onEdit={() => o.id && setEditOrderId(o.id)}
-                        onDelete={() => o.id && setDeleteOrder({ id: o.id, orderCode: o.order_code, clientName: o.client_name })}
-                      />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    {/* Row 2: Client */}
+                    <p className="text-sm text-foreground font-medium truncate">
+                      {o.client_name ?? "—"}
+                    </p>
+                    {/* Row 3: Details grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Pedido: </span>
+                        <span className="text-foreground">{fmtDate(o.order_date)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-muted-foreground">Entrega: </span>
+                        <span className="text-foreground">{fmtDate(o.delivery_date)}</span>
+                        <DeliveryWindowChip
+                          from={o.delivery_window_from}
+                          until={o.delivery_window_until}
+                          notes={o.delivery_notes}
+                          isPickup={o.fulfillment_method === "pickup"}
+                        />
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">SKUs: </span>
+                        <span className="text-foreground">{o.line_items ?? "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Total: </span>
+                        <span
+                          className="text-foreground font-semibold"
+                          style={{ fontVariantNumeric: "tabular-nums" }}
+                        >
+                          {fmtMXN(o.total_with_iva)}
+                        </span>
+                        {Number(o.discount_amount ?? 0) > 0 && (
+                          <span
+                            className="ml-1.5 text-[10px] text-amber-500 font-medium"
+                            style={{ fontVariantNumeric: "tabular-nums" }}
+                            title={`Subtotal ${fmtMXN(o.subtotal ?? 0)} − descuento ${fmtMXN(o.discount_amount ?? 0)}${o.discount_reason ? ` · ${o.discount_reason}` : ""}`}
+                          >
+                            (−{fmtMXN(o.discount_amount ?? 0)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {o.fulfillment_method === "pickup" && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          📦 Pickup
+                        </span>
+                      )}
+                      {o.needs_approval && (
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-500 border border-amber-500/40"
+                          title="El cliente pidió para antes de 3 días hábiles. Requiere tu aprobación."
+                        >
+                          ⚠ Aprobación
+                        </span>
+                      )}
+                      {(o as any).price_list_name && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                          {(o as any).price_list_name}
+                        </span>
+                      )}
+                      {(o.manual_price_count ?? 0) > 0 && !(o as any).price_list_name && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          {o.manual_price_count} precio manual
+                        </span>
+                      )}
+                      {Number(o.discount_amount ?? 0) > 0 && (
+                        <span
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          title={o.discount_reason ?? ""}
+                        >
+                          Descuento −{fmtMXN(o.discount_amount ?? 0)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border px-3 py-2 text-sm">
-              <span className="text-muted-foreground tabular-nums">
-                Página {page.toLocaleString("es-MX")} de {totalPages.toLocaleString("es-MX")}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1 || isFetching}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages || isFetching}
-                >
-                  Siguiente
-                </Button>
               </div>
-            </div>
+
+              {/* ── Desktop: Table view ── */}
+              <div className="rounded-md border hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={
+                            filtered.filter((o) => o.id).length > 0 &&
+                            selectedIds.size === filtered.filter((o) => o.id).length
+                          }
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      {/* Sortable column headers — click toggles asc/desc.
+                      Active column shows a colored chevron; inactive
+                      columns show a faint up/down icon to advertise the
+                      affordance without shouting. Persisted to
+                      localStorage so the choice sticks across reloads. */}
+                      <SortableTableHead
+                        className="w-[140px]"
+                        sortKey="order_code"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                      >
+                        {t("thOrder")}
+                      </SortableTableHead>
+                      <SortableTableHead
+                        sortKey="client_name"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                      >
+                        {t("thClient")}
+                      </SortableTableHead>
+                      <SortableTableHead
+                        sortKey="order_date"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                      >
+                        {t("thOrderDate")}
+                      </SortableTableHead>
+                      <SortableTableHead
+                        sortKey="delivery_date"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                      >
+                        {t("thDeliveryDate")}
+                      </SortableTableHead>
+                      <SortableTableHead sortKey="status" currentSort={sort} onClick={cycleSort}>
+                        {t("thStatus")}
+                      </SortableTableHead>
+                      <SortableTableHead
+                        className="text-right"
+                        sortKey="total_with_iva"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                        align="right"
+                      >
+                        {t("thTotal")}
+                      </SortableTableHead>
+                      <SortableTableHead
+                        className="text-right"
+                        sortKey="line_items"
+                        currentSort={sort}
+                        onClick={cycleSort}
+                        align="right"
+                      >
+                        SKUs
+                      </SortableTableHead>
+                      <TableHead className="w-[40px]" />
+                      <TableHead className="w-[50px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((o) => (
+                      <TableRow
+                        key={o.id}
+                        className={cn(
+                          "cursor-pointer",
+                          o.id && selectedIds.has(o.id) && "bg-muted/30",
+                        )}
+                        onClick={() => o.id && setSelectedOrderId(o.id)}
+                      >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={!!o.id && selectedIds.has(o.id)}
+                            onCheckedChange={() => o.id && toggleSelect(o.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <button
+                              className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                o.id && setSelectedOrderId(o.id);
+                              }}
+                            >
+                              {o.order_code ?? "—"}
+                            </button>
+                            {o.status === "Pendiente portal" && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                                Portal
+                              </span>
+                            )}
+                            {o.id && (damagedByOrder[o.id] ?? 0) > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-500/15 text-orange-500 border border-orange-500/30"
+                                title={`${damagedByOrder[o.id]} bultos dañados en este pedido`}
+                              >
+                                <AlertOctagon className="h-2.5 w-2.5" />
+                                Dañados
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            className="text-foreground hover:text-blue-400 hover:underline transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (o.client_id)
+                                navigate(`/admin/clientes?expandClient=${o.client_id}`);
+                            }}
+                          >
+                            {o.client_name ?? "—"}
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {fmtDate(o.order_date)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span>{fmtDate(o.delivery_date)}</span>
+                            <DeliveryWindowChip
+                              from={o.delivery_window_from}
+                              until={o.delivery_window_until}
+                              notes={o.delivery_notes}
+                              isPickup={o.fulfillment_method === "pickup"}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-[140px] min-w-[140px]"
+                        >
+                          <Select
+                            value={o.status}
+                            onValueChange={async (newStatus) => {
+                              if (!o.id || newStatus === o.status) return;
+                              const { error } = await supabase
+                                .from("orders")
+                                .update({ status: newStatus as any })
+                                .eq("id", o.id);
+                              if (error) {
+                                toast.error("Error al cambiar estado", {
+                                  description: error.message,
+                                });
+                                return;
+                              }
+                              toast.success(
+                                `${o.order_code ?? "Pedido"} → ${STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}`,
+                              );
+                              queryClient.invalidateQueries({ queryKey: ["orders"] });
+                            }}
+                          >
+                            <SelectTrigger className="h-7 w-[130px] border-0 bg-transparent p-0 shadow-none ring-0 focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
+                              <StatusBadge status={o.status} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ORDER_STATUSES.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  <StatusBadge status={s} />
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell
+                          className="text-right font-medium"
+                          style={{ fontVariantNumeric: "tabular-nums" }}
+                        >
+                          {/* Two-column layout: badges sit in their own
+                          right-aligned column, price sits in a fixed-
+                          width column to its right. The price's right
+                          edge is constant across rows, which makes the
+                          badges' right edges line up vertically too. */}
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                              {o.fulfillment_method === "pickup" && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                                  title="Recoge en bodega"
+                                >
+                                  📦 Pickup
+                                </span>
+                              )}
+                              {o.needs_approval && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-500 border border-amber-500/40"
+                                  title="Pedido dentro de 3 días hábiles — requiere aprobación"
+                                >
+                                  ⚠ Aprobación
+                                </span>
+                              )}
+                              {(o as any).price_list_name && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                                  title={`Lista de precios: ${(o as any).price_list_name}`}
+                                >
+                                  {(o as any).price_list_name}
+                                </span>
+                              )}
+                              {(o.manual_price_count ?? 0) > 0 && !(o as any).price_list_name && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                  title={`${o.manual_price_count} producto${(o.manual_price_count ?? 0) > 1 ? "s" : ""} con precio manual`}
+                                >
+                                  {o.manual_price_count} manual
+                                </span>
+                              )}
+                              {Number(o.discount_amount ?? 0) > 0 && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                  title={`Subtotal ${fmtMXN(o.subtotal ?? 0)} − descuento ${fmtMXN(o.discount_amount ?? 0)}${o.discount_reason ? ` · ${o.discount_reason}` : ""}`}
+                                >
+                                  −{fmtMXN(o.discount_amount ?? 0)}
+                                </span>
+                              )}
+                            </div>
+                            <span className="inline-block min-w-[110px] text-right">
+                              {fmtMXN(o.total_with_iva)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <button
+                            className="hover:text-blue-400 hover:underline transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              o.id && setSelectedOrderId(o.id);
+                            }}
+                          >
+                            {o.line_items ?? "—"}
+                          </button>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()} className="w-[120px]">
+                          <div className="flex items-center gap-1">
+                            <button
+                              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                              onClick={() => o.id && setSelectedOrderId(o.id)}
+                              title="Ver pedido"
+                              aria-label="Ver pedido"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                              onClick={async () => {
+                                if (!o.id) return;
+                                const link = `${window.location.origin}/admin/pedidos/${o.id}`;
+                                try {
+                                  await navigator.clipboard.writeText(link);
+                                  const { toast } = await import("sonner");
+                                  toast.success("Link copiado");
+                                } catch {
+                                  copyTextSync(link);
+                                }
+                              }}
+                              title="Copiar link del pedido"
+                              aria-label="Copiar link del pedido"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
+                              onClick={() => {
+                                o.id && exportOrderAsPdf(o.id);
+                              }}
+                              title={
+                                o.id && signedOrderIds.has(o.id)
+                                  ? "Descargar PDF firmado"
+                                  : "Descargar PDF"
+                              }
+                              aria-label="Descargar PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                              {o.id && signedOrderIds.has(o.id) && (
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500 absolute -bottom-0.5 -right-0.5 bg-background rounded-full" />
+                              )}
+                            </button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <OrderRowActions
+                            onView={() => o.id && setSelectedOrderId(o.id)}
+                            onEdit={() => o.id && setEditOrderId(o.id)}
+                            onDelete={() =>
+                              o.id &&
+                              setDeleteOrder({
+                                id: o.id,
+                                orderCode: o.order_code,
+                                clientName: o.client_name,
+                              })
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                  <span className="text-muted-foreground tabular-nums">
+                    Página {page.toLocaleString("es-MX")} de {totalPages.toLocaleString("es-MX")}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1 || isFetching}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page >= totalPages || isFetching}
+                    >
+                      Siguiente
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
+          <NewOrderDialog
+            open={newOrderOpen}
+            onOpenChange={setNewOrderOpen}
+            onOrderCreated={(id) => setSelectedOrderId(id)}
+          />
+
+          <OrderDetailSheet
+            orderId={selectedOrderId}
+            open={!!selectedOrderId}
+            onOpenChange={(open) => {
+              if (!open) setSelectedOrderId(null);
+            }}
+            onEdit={(id) => setEditOrderId(id)}
+            onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
+          />
+
+          <EditOrderSheet
+            orderId={editOrderId}
+            open={!!editOrderId}
+            onOpenChange={(open) => {
+              if (!open) setEditOrderId(null);
+            }}
+            onOrderUpdated={() => {}}
+          />
+
+          <DeleteOrderDialog
+            orderId={deleteOrder?.id ?? null}
+            orderNumber={deleteOrder?.orderCode ?? null}
+            clientName={deleteOrder?.clientName ?? null}
+            open={!!deleteOrder}
+            onOpenChange={(open) => {
+              if (!open) setDeleteOrder(null);
+            }}
+            onDeleted={handleDeleteCompleted}
+          />
+
+          {/* Bulk Status Dialog */}
+          <Dialog
+            open={bulkAction === "status"}
+            onOpenChange={(open) => !open && setBulkAction(null)}
+          >
+            <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Cambiar estado</DialogTitle>
+                <DialogDescription>Cambiar {selectedIds.size} pedidos a:</DialogDescription>
+              </DialogHeader>
+              <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleBulkStatusChange}
+                disabled={bulkProcessing}
+                className="gradient-button text-white"
+              >
+                {bulkProcessing ? "Actualizando..." : "Aplicar"}
+              </Button>
+            </DialogContent>
+          </Dialog>
+
+          {/* Bulk Delete Confirmation */}
+          <AlertDialog
+            open={bulkAction === "delete"}
+            onOpenChange={(open) => !open && setBulkAction(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Eliminar {selectedIds.size} pedidos?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta accion no se puede deshacer. Se eliminaran tambien los articulos asociados.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBulkDelete} disabled={bulkProcessing}>
+                  {bulkProcessing ? "Eliminando..." : "Eliminar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
-
-      <NewOrderDialog
-        open={newOrderOpen}
-        onOpenChange={setNewOrderOpen}
-        onOrderCreated={(id) => setSelectedOrderId(id)}
-      />
-
-      <OrderDetailSheet
-        orderId={selectedOrderId}
-        open={!!selectedOrderId}
-        onOpenChange={(open) => { if (!open) setSelectedOrderId(null); }}
-        onEdit={(id) => setEditOrderId(id)}
-        onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
-      />
-
-      <EditOrderSheet
-        orderId={editOrderId}
-        open={!!editOrderId}
-        onOpenChange={(open) => { if (!open) setEditOrderId(null); }}
-        onOrderUpdated={() => {}}
-      />
-
-      <DeleteOrderDialog
-        orderId={deleteOrder?.id ?? null}
-        orderNumber={deleteOrder?.orderCode ?? null}
-        clientName={deleteOrder?.clientName ?? null}
-        open={!!deleteOrder}
-        onOpenChange={(open) => { if (!open) setDeleteOrder(null); }}
-        onDeleted={handleDeleteCompleted}
-      />
-
-      {/* Bulk Status Dialog */}
-      <Dialog open={bulkAction === "status"} onOpenChange={open => !open && setBulkAction(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Cambiar estado</DialogTitle>
-            <DialogDescription>Cambiar {selectedIds.size} pedidos a:</DialogDescription>
-          </DialogHeader>
-          <Select value={bulkStatus} onValueChange={setBulkStatus}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button onClick={handleBulkStatusChange} disabled={bulkProcessing} className="gradient-button text-white">
-            {bulkProcessing ? "Actualizando..." : "Aplicar"}
-          </Button>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Delete Confirmation */}
-      <AlertDialog open={bulkAction === "delete"} onOpenChange={open => !open && setBulkAction(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar {selectedIds.size} pedidos?</AlertDialogTitle>
-            <AlertDialogDescription>Esta accion no se puede deshacer. Se eliminaran tambien los articulos asociados.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} disabled={bulkProcessing}>
-              {bulkProcessing ? "Eliminando..." : "Eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      </>)}
     </div>
   );
 }
