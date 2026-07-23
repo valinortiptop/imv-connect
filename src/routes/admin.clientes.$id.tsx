@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/admin/clientes/$id")({
   component: ClientDetail,
-  pendingMs: 100,
   pendingComponent: () => (
     <div className="p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
