@@ -851,6 +851,10 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
                 </button>
               </>
             )}
+            <span className="ml-auto text-muted-foreground tabular-nums">
+              {isFetching && !isLoading ? "Actualizando · " : ""}
+              Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de {ordersTotal.toLocaleString("es-MX")}
+            </span>
           </div>
 
           {/* Mobile sort pill — cards don't have headers to click, so
@@ -1252,6 +1256,32 @@ export default function Orders({ restrictClientIds, hideCotizaciones = false }: 
               </TableBody>
             </Table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border px-3 py-2 text-sm">
+              <span className="text-muted-foreground tabular-nums">
+                Página {page.toLocaleString("es-MX")} de {totalPages.toLocaleString("es-MX")}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || isFetching}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || isFetching}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
