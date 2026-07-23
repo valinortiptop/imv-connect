@@ -48,6 +48,8 @@ export default function ClientDetail() {
   const { data: client, isLoading } = useQuery({
     queryKey: ["client-detail", id],
     enabled: !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients").select("*").eq("id", id!).single();
@@ -61,6 +63,8 @@ export default function ClientDetail() {
   const { data: clientTier } = useQuery({
     queryKey: ["client-tier", client?.price_list_id ?? null],
     enabled: !!client?.price_list_id,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("price_lists")
@@ -77,6 +81,8 @@ export default function ClientDetail() {
   const { data: orders = [] } = useQuery({
     queryKey: ["client-detail-orders", id],
     enabled: !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("orders")
@@ -90,6 +96,8 @@ export default function ClientDetail() {
   const { data: items = [] } = useQuery({
     queryKey: ["client-detail-items", id],
     enabled: !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       const { data: ords } = await supabase
         .from("orders").select("id").eq("client_id", id!);
