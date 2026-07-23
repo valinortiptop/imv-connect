@@ -1,20 +1,17 @@
 // @ts-nocheck
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ChronoBar } from "@/components/ChronoBar";
 import {
-  DollarSign, TrendingUp, ShoppingCart, Receipt, CalendarIcon,
+  DollarSign, TrendingUp,
   Users, Package, BarChart3, ClipboardList, ShoppingBag, Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,7 +22,6 @@ import { HistoricalSalesPanel } from "@/components/sales/HistoricalSalesPanel";
 /* ── Helpers ── */
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
-const mxnFmt2 = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 });
 const pctFmt = (n: number) => `${n.toFixed(1)}%`;
 
 function parseLocalDate(d: string) {
@@ -84,264 +80,91 @@ export default function Sales() {
   const setAllTime = () => { setDateFrom(""); setDateTo(""); };
   const [tab, setTab] = useState("overview");
 
-  // Fetch non-cancelled orders scoped to the visible date range (plus the
-  // previous month for the comparison delta). Fetching every order in the
-  // system (~25k+ backfilled rows) at once is what leaves this dashboard
-  // stuck on $0 — the browser can't hold or paginate that volume in time.
-  const [prevFrom, prevTo] = useMemo(() => getPrevMonthRange(), []);
-  const queryFrom = dateFrom ? (dateFrom < prevFrom ? dateFrom : prevFrom) : null;
-  const queryTo = dateTo || null;
-
-  const { data: saleItems = [], isLoading } = useQuery({
-    queryKey: ["sales-data", queryFrom, queryTo],
-    queryFn: async () => {
-      const { fetchAllRows } = await import("@/lib/fetch-all");
-      const orders = await fetchAllRows<any>(() => {
-        let q = (supabase as any)
-          .from("orders")
-          .select("id, order_code, order_date, delivery_date, status, client_id, discount_amount, clients(name)")
-          .neq("status", "Cancelado");
-        if (queryFrom) q = q.gte("order_date", queryFrom);
-        if (queryTo) q = q.lte("order_date", queryTo);
-        return q.order("order_date", { ascending: false });
-      });
-      if (!orders?.length) return [];
-
-
-      // Paged fetch so we get every line item across all 25k+ orders
-      const orderIds = orders.map((o: any) => o.id);
-      const items = await fetchAllRows<any>(() =>
-        supabase
-          .from("order_items")
-          .select("order_id, product_id, quantity, unit_price_override, products(clave, name, brand, sale_price_with_iva, image_url)")
-          .in("order_id", orderIds),
-      );
-
-      // Get cost & bonificación from margins table (matches dashboard logic)
-      const { data: marginData, error: marginErr } = await supabase
-        .from("margins")
-        .select("product_id, cost_without_iva, bonificacion_pct");
-      if (marginErr) throw marginErr;
-      const marginMap = new Map((marginData ?? []).map((m: any) => [m.product_id, { cost: Number(m.cost_without_iva) || 0, bonif: Number(m.bonificacion_pct) || 0 }]));
-
-      const orderMap = new Map(orders.map((o: any) => [o.id, o]));
-
-      // Pre-compute each order's gross subtotal so we can allocate the
-      // discount across lines proportionally. Without this, a single
-      // discount applied at the order level would be invisible in
-      // by-product / by-client / daily-trend aggregations.
-      const orderSubtotals = new Map<string, number>();
-      for (const item of (items ?? []) as any[]) {
-        const unitPrice = Number(item.unit_price_override ?? item.products?.sale_price_with_iva) || 0;
-        const qty = Number(item.quantity) || 0;
-        orderSubtotals.set(item.order_id, (orderSubtotals.get(item.order_id) ?? 0) + unitPrice * qty);
-      }
-
-      return (items ?? []).map((item: any) => {
-        const order = orderMap.get(item.order_id)! as any;
-        const unitPrice = Number(item.unit_price_override ?? item.products?.sale_price_with_iva) || 0;
-        const qty = Number(item.quantity) || 0;
-        const margin = marginMap.get(item.product_id) ?? { cost: 0, bonif: 0 };
-        const lineGrossRevenue = unitPrice * qty;
-
-        // Allocate the order-level discount proportionally to this line.
-        // Cap at the order's gross subtotal so we never go negative.
-        const orderSubtotal = orderSubtotals.get(item.order_id) ?? 0;
-        const orderDiscount = Math.min(Number(order.discount_amount) || 0, orderSubtotal);
-        const lineDiscount = orderSubtotal > 0
-          ? orderDiscount * (lineGrossRevenue / orderSubtotal)
-          : 0;
-        const lineDiscountSinIva = lineDiscount / 1.16;
-
-        // Net values: discount removed proportionally. profit and
-        // profit_bonif both drop by the discount-without-IVA since the
-        // discount comes out of margin, not cost.
-        const ventaSinIva = (lineGrossRevenue / 1.16) - lineDiscountSinIva;
-        const costoSinIva = margin.cost * qty;
-        const costoBonifSinIva = margin.cost * (1 - margin.bonif) * qty;
-        return {
-          order_id: item.order_id,
-          order_code: order.order_code,
-          order_date: order.order_date,
-          delivery_date: order.delivery_date,
-          status: order.status,
-          client_name: (order as any).clients?.name ?? "Sin cliente",
-          client_id: order.client_id,
-          product_id: item.product_id,
-          product_clave: item.products?.clave ?? "",
-          product_name: item.products?.name ?? "",
-          product_brand: item.products?.brand ?? "Sin marca",
-          product_image_url: item.products?.image_url ?? null,
-          quantity: qty,
-          unit_price: unitPrice,
-          venta_sin_iva: ventaSinIva,
-          costo_sin_iva: costoSinIva,
-          costo_bonif_sin_iva: costoBonifSinIva,
-          profit: ventaSinIva - costoSinIva,
-          profit_bonif: ventaSinIva - costoBonifSinIva,
-          revenue: lineGrossRevenue - lineDiscount,
-        } as SaleItem;
-      });
+  const emptySalesStats = {
+    kpis: {
+      totalRevenue: 0,
+      totalCost: 0,
+      totalVentaSinIva: 0,
+      realizedProfit: 0,
+      realizedProfitBonif: 0,
+      impliedProfit: 0,
+      impliedProfitBonif: 0,
+      uniqueOrders: 0,
+      avgTicket: 0,
+      totalUnits: 0,
+      marginPct: 0,
+      marginBonifPct: 0,
     },
+    pendingKpis: { orders: 0, revenue: 0, profit: 0 },
+    prevKpis: { totalRevenue: 0, realizedProfit: 0, realizedProfitBonif: 0 },
+    dailyTrend: [],
+    byClient: [],
+    byProduct: [],
+    byBrand: [],
+    byOrder: [],
+  };
+
+  const toNumber = (value: unknown) => Number(value ?? 0) || 0;
+  const normalizeKpis = (value: any) => ({
+    totalRevenue: toNumber(value?.totalRevenue),
+    totalCost: toNumber(value?.totalCost),
+    totalVentaSinIva: toNumber(value?.totalVentaSinIva),
+    realizedProfit: toNumber(value?.realizedProfit),
+    realizedProfitBonif: toNumber(value?.realizedProfitBonif),
+    impliedProfit: toNumber(value?.impliedProfit),
+    impliedProfitBonif: toNumber(value?.impliedProfitBonif),
+    uniqueOrders: toNumber(value?.uniqueOrders),
+    avgTicket: toNumber(value?.avgTicket),
+    totalUnits: toNumber(value?.totalUnits),
+    marginPct: toNumber(value?.marginPct),
+    marginBonifPct: toNumber(value?.marginBonifPct),
+  });
+  const normalizePending = (value: any) => ({
+    orders: toNumber(value?.orders),
+    revenue: toNumber(value?.revenue),
+    profit: toNumber(value?.profit),
+  });
+  const normalizeRows = <T extends Record<string, any>>(rows: T[] | undefined, numericFields: string[]) =>
+    (rows ?? []).map((row) => {
+      const next: Record<string, any> = { ...row };
+      for (const field of numericFields) next[field] = toNumber(next[field]);
+      return next;
+    });
+
+  const { data: salesStats = emptySalesStats, isLoading } = useQuery({
+    queryKey: ["sales-dashboard-stats", dateFrom || null, dateTo || null],
+    queryFn: async () => {
+      const [current, previous] = await Promise.all([
+        (supabase as any).rpc("sales_dashboard_stats", {
+          p_from: dateFrom || null,
+          p_to: dateTo || null,
+          p_fuente: "pedido",
+        }),
+        (supabase as any).rpc("sales_dashboard_stats", {
+          p_from: prevFrom,
+          p_to: prevTo,
+          p_fuente: "pedido",
+        }),
+      ]);
+      if (current.error) throw current.error;
+      if (previous.error) throw previous.error;
+      const data = current.data ?? {};
+      const prev = previous.data ?? {};
+      return {
+        kpis: normalizeKpis(data.kpis),
+        pendingKpis: normalizePending(data.pendingKpis),
+        prevKpis: normalizeKpis(prev.kpis),
+        dailyTrend: normalizeRows(data.dailyTrend, ["revenue", "profit", "profitBonif", "orders"]),
+        byClient: normalizeRows(data.byClient, ["orders", "revenue", "profit", "profitBonif", "marginPct", "marginBonifPct", "units"]),
+        byProduct: normalizeRows(data.byProduct, ["revenue", "profit", "profitBonif", "marginPct", "marginBonifPct", "units"]),
+        byBrand: normalizeRows(data.byBrand, ["revenue", "profit", "profitBonif", "marginPct", "marginBonifPct", "units", "skus"]),
+        byOrder: normalizeRows(data.byOrder, ["revenue", "profit", "profitBonif", "marginPct", "marginBonifPct", "units", "items"]),
+      };
+    },
+    staleTime: 30 * 1000,
   });
 
-  // Filter by date range (all non-cancelled orders in range)
-  const filtered = useMemo(() => {
-    return saleItems.filter(s => {
-      // Bucket by ORDER date — "April sales" = sold in April, regardless
-      // of when delivery is scheduled. Delivery date stays in the model
-      // for logistics/scheduling but is no longer the revenue clock.
-      const d = s.order_date;
-      if (dateFrom && d < dateFrom) return false;
-      if (dateTo && d > dateTo) return false;
-      return true;
-    });
-  }, [saleItems, dateFrom, dateTo]);
-
-  // Delivered only (for "realizada")
-  const delivered = useMemo(() => filtered.filter(s => s.status === "Entregado"), [filtered]);
-
-  // Pending (not delivered, not cancelled)
-  const pending = useMemo(() => filtered.filter(s => s.status !== "Entregado"), [filtered]);
-  const pendingKpis = useMemo(() => {
-    const orders = new Set(pending.map(s => s.order_id)).size;
-    const revenue = pending.reduce((s, i) => s + i.revenue, 0);
-    const profit = pending.reduce((s, i) => s + i.profit, 0);
-    return { orders, revenue, profit };
-  }, [pending]);
-
-  // Previous month data for comparison
-  const prevMonthData = useMemo(() => {
-    const [pFrom, pTo] = getPrevMonthRange();
-    return saleItems.filter(s => {
-      // Bucket by ORDER date — "April sales" = sold in April, regardless
-      // of when delivery is scheduled. Delivery date stays in the model
-      // for logistics/scheduling but is no longer the revenue clock.
-      const d = s.order_date;
-      return d >= pFrom && d <= pTo;
-    });
-  }, [saleItems]);
-
-  // ── KPIs ──
-  const kpis = useMemo(() => {
-    // Realized = delivered only
-    const realizedProfit = delivered.reduce((s, i) => s + i.profit, 0);
-    const realizedProfitBonif = delivered.reduce((s, i) => s + i.profit_bonif, 0);
-    // Implied = all non-cancelled in range
-    const impliedProfit = filtered.reduce((s, i) => s + i.profit, 0);
-    const impliedProfitBonif = filtered.reduce((s, i) => s + i.profit_bonif, 0);
-    // Revenue & general stats from delivered
-    const totalRevenue = delivered.reduce((s, i) => s + i.revenue, 0);
-    const totalCost = delivered.reduce((s, i) => s + i.costo_sin_iva, 0);
-    const totalVentaSinIva = delivered.reduce((s, i) => s + i.venta_sin_iva, 0);
-    const marginPct = totalVentaSinIva > 0 ? (realizedProfit / totalVentaSinIva) * 100 : 0;
-    const marginBonifPct = totalVentaSinIva > 0 ? (realizedProfitBonif / totalVentaSinIva) * 100 : 0;
-    const uniqueOrders = new Set(delivered.map(i => i.order_id)).size;
-    const avgTicket = uniqueOrders > 0 ? totalRevenue / uniqueOrders : 0;
-    const totalUnits = delivered.reduce((s, i) => s + i.quantity, 0);
-    return { totalRevenue, totalCost, totalVentaSinIva, realizedProfit, realizedProfitBonif, impliedProfit, impliedProfitBonif, marginPct, marginBonifPct, uniqueOrders, avgTicket, totalUnits };
-  }, [filtered, delivered]);
-
-  // Previous month KPIs for comparison
-  const prevKpis = useMemo(() => {
-    const prevDelivered = prevMonthData.filter(s => s.status === "Entregado");
-    const realizedProfit = prevDelivered.reduce((s, i) => s + i.profit, 0);
-    const realizedProfitBonif = prevDelivered.reduce((s, i) => s + i.profit_bonif, 0);
-    const totalRevenue = prevDelivered.reduce((s, i) => s + i.revenue, 0);
-    return { totalRevenue, realizedProfit, realizedProfitBonif };
-  }, [prevMonthData]);
-
-  // ── By Client ──
-  const byClient = useMemo(() => {
-    const map = new Map<string, { name: string; orders: Set<string>; revenue: number; ventaSinIva: number; costoSinIva: number; profit: number; profitBonif: number; units: number }>();
-    for (const s of delivered) {
-      const entry = map.get(s.client_id) ?? { name: s.client_name, orders: new Set(), revenue: 0, ventaSinIva: 0, costoSinIva: 0, profit: 0, profitBonif: 0, units: 0 };
-      entry.orders.add(s.order_id);
-      entry.revenue += s.revenue;
-      entry.ventaSinIva += s.venta_sin_iva;
-      entry.costoSinIva += s.costo_sin_iva;
-      entry.profit += s.profit;
-      entry.profitBonif += s.profit_bonif;
-      entry.units += s.quantity;
-      map.set(s.client_id, entry);
-    }
-    return [...map.entries()]
-      .map(([id, d]) => ({ id, name: d.name, orders: d.orders.size, revenue: d.revenue, profit: d.profit, profitBonif: d.profitBonif, marginPct: d.ventaSinIva > 0 ? (d.profit / d.ventaSinIva) * 100 : 0, marginBonifPct: d.ventaSinIva > 0 ? (d.profitBonif / d.ventaSinIva) * 100 : 0, units: d.units }))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [delivered]);
-
-  // ── By Product ──
-  const byProduct = useMemo(() => {
-    const map = new Map<string, { clave: string; name: string; brand: string; image_url: string | null; revenue: number; ventaSinIva: number; profit: number; profitBonif: number; units: number }>();
-    for (const s of delivered) {
-      const entry = map.get(s.product_id) ?? { clave: s.product_clave, name: s.product_name, brand: s.product_brand, image_url: s.product_image_url, revenue: 0, ventaSinIva: 0, profit: 0, profitBonif: 0, units: 0 };
-      entry.revenue += s.revenue;
-      entry.ventaSinIva += s.venta_sin_iva;
-      entry.profit += s.profit;
-      entry.profitBonif += s.profit_bonif;
-      entry.units += s.quantity;
-      map.set(s.product_id, entry);
-    }
-    return [...map.entries()]
-      .map(([id, d]) => ({ id, ...d, marginPct: d.ventaSinIva > 0 ? (d.profit / d.ventaSinIva) * 100 : 0, marginBonifPct: d.ventaSinIva > 0 ? (d.profitBonif / d.ventaSinIva) * 100 : 0 }))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [delivered]);
-
-  // ── By Brand ──
-  const byBrand = useMemo(() => {
-    const map = new Map<string, { revenue: number; ventaSinIva: number; profit: number; profitBonif: number; units: number; skus: Set<string> }>();
-    for (const s of delivered) {
-      const entry = map.get(s.product_brand) ?? { revenue: 0, ventaSinIva: 0, profit: 0, profitBonif: 0, units: 0, skus: new Set() };
-      entry.revenue += s.revenue;
-      entry.ventaSinIva += s.venta_sin_iva;
-      entry.profit += s.profit;
-      entry.profitBonif += s.profit_bonif;
-      entry.units += s.quantity;
-      entry.skus.add(s.product_id);
-      map.set(s.product_brand, entry);
-    }
-    return [...map.entries()]
-      .map(([name, d]) => ({ name, revenue: d.revenue, profit: d.profit, profitBonif: d.profitBonif, marginPct: d.ventaSinIva > 0 ? (d.profit / d.ventaSinIva) * 100 : 0, marginBonifPct: d.ventaSinIva > 0 ? (d.profitBonif / d.ventaSinIva) * 100 : 0, units: d.units, skus: d.skus.size }))
-      .sort((a, b) => b.revenue - a.revenue);
-  }, [delivered]);
-
-  // ── By Order ──
-  const byOrder = useMemo(() => {
-    const map = new Map<string, { code: string; date: string; clientName: string; revenue: number; ventaSinIva: number; profit: number; profitBonif: number; units: number; items: number }>();
-    for (const s of delivered) {
-      const entry = map.get(s.order_id) ?? { code: s.order_code, date: s.order_date, clientName: s.client_name, revenue: 0, ventaSinIva: 0, profit: 0, profitBonif: 0, units: 0, items: 0 };
-      entry.revenue += s.revenue;
-      entry.ventaSinIva += s.venta_sin_iva;
-      entry.profit += s.profit;
-      entry.profitBonif += s.profit_bonif;
-      entry.units += s.quantity;
-      entry.items += 1;
-      map.set(s.order_id, entry);
-    }
-    return [...map.entries()]
-      .map(([id, d]) => ({ id, ...d, marginPct: d.ventaSinIva > 0 ? (d.profit / d.ventaSinIva) * 100 : 0, marginBonifPct: d.ventaSinIva > 0 ? (d.profitBonif / d.ventaSinIva) * 100 : 0 }))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  }, [delivered]);
-
-  // ── Daily trend ──
-  const dailyTrend = useMemo(() => {
-    const map = new Map<string, { revenue: number; profit: number; profitBonif: number; orders: Set<string> }>();
-    for (const s of delivered) {
-      // Bucket by ORDER date — "April sales" = sold in April, regardless
-      // of when delivery is scheduled. Delivery date stays in the model
-      // for logistics/scheduling but is no longer the revenue clock.
-      const d = s.order_date;
-      const entry = map.get(d) ?? { revenue: 0, profit: 0, profitBonif: 0, orders: new Set() };
-      entry.revenue += s.revenue;
-      entry.profit += s.profit;
-      entry.profitBonif += s.profit_bonif;
-      entry.orders.add(s.order_id);
-      map.set(d, entry);
-    }
-    return [...map.entries()]
-      .map(([date, d]) => ({ date, revenue: d.revenue, profit: d.profit, profitBonif: d.profitBonif, orders: d.orders.size }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [delivered]);
+  const { kpis, pendingKpis, prevKpis, dailyTrend, byClient, byProduct, byBrand, byOrder } = salesStats;
 
   // Comparison deltas
   const deltaRevenue = prevKpis.totalRevenue > 0 ? ((kpis.totalRevenue - prevKpis.totalRevenue) / prevKpis.totalRevenue) * 100 : 0;
@@ -369,8 +192,8 @@ export default function Sales() {
         />
 
         <HistoricalSalesPanel
-          from={dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined}
-          to={dateTo ? format(dateTo, "yyyy-MM-dd") : undefined}
+          from={dateFrom || undefined}
+          to={dateTo || undefined}
         />
 
 
