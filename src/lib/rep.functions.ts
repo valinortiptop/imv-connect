@@ -1269,7 +1269,7 @@ export const generateRepAlertsFn = createServerFn({ method: "POST" })
       .select("id, nombre_comercial, razon_social, representante_id")
       .eq("active", true);
     if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
-    const { data: clientes } = await clientsQ.limit(1000);
+    const clientes = await fetchAllPaged<any>(() => clientsQ);
     const clientIds = (clientes ?? []).map((c: any) => c.id);
     if (clientIds.length === 0) return { created: 0 };
 
@@ -1933,7 +1933,7 @@ export const suggestRouteWithAIFn = createServerFn({ method: "POST" })
       .select("id, razon_social, nombre_comercial, lat, lng, representante_id")
       .eq("active", true);
     if (rep) clientsQ = clientsQ.eq("representante_id", rep.id);
-    const { data: clientes } = await clientsQ.limit(500);
+    const clientes = await fetchAllPaged<any>(() => clientsQ);
     const withCoords = (clientes ?? []).filter((c: any) => c.lat && c.lng);
     if (withCoords.length === 0) {
       return { ordered: [], rationale: "No hay clientes con coordenadas asignados al rep." };
