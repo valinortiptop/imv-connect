@@ -58,16 +58,6 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId);
 
-    let clientsQ = context.supabase
-      .from("clientes")
-      .select(
-        "id, razon_social, nombre_comercial, nickname, rfc, telefono, phone, direccion, codigo_postal, lat, lng, active, representante_id, credit_limit, payment_terms",
-      )
-      .eq("active", true);
-
-    if (rep) {
-      clientsQ = clientsQ.eq("representante_id", rep.id);
-    }
 
     const clientes = await fetchAllPaged<any>(() => {
       let q = context.supabase
