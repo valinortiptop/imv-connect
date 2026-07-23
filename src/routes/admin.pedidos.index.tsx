@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Orders from "@/components/orders-page";
 
-export const Route = createFileRoute("/admin/pedidos")({
+export const Route = createFileRoute("/admin/pedidos/")({
   head: () => ({
     meta: [
       { title: "Pedidos | IMV Catálogo Digital" },
