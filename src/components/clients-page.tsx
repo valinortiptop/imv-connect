@@ -918,11 +918,56 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
     });
   };
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
+    const visibleIds = viewMode === "map" ? filtered.map((e) => e.id) : paginatedClients.map((e) => e.id);
+    const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleIds.forEach((id) => next.delete(id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(filtered.map(e => e.id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleIds.forEach((id) => next.add(id));
+        return next;
+      });
     }
+  };
+
+  const showPagination = viewMode === "list" && filtered.length > CLIENTS_PAGE_SIZE;
+  const PaginationControls = () => {
+    if (!showPagination) return null;
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card/50 px-3 py-2">
+        <p className="text-xs text-muted-foreground">
+          Mostrando {pageStart}-{pageEnd} de {filtered.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage <= 1}
+            className="gap-1"
+          >
+            <ChevronRight className="h-4 w-4 rotate-180" /> Anterior
+          </Button>
+          <span className="min-w-16 text-center text-xs font-medium text-muted-foreground">
+            {currentPage} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage >= totalPages}
+            className="gap-1"
+          >
+            Siguiente <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   const handleBulkPaymentChange = async (method: string) => {
