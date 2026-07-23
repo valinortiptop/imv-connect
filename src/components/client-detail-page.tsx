@@ -93,20 +93,24 @@ export default function ClientDetail() {
     },
   });
 
+  // Only fetch items for the most recent N orders to keep the KPI/Top
+  // Products aggregations fast for clients with thousands of orders.
+  const RECENT_ORDERS_LIMIT = 200;
+  const recentOrderIds = useMemo(
+    () => (orders as any[]).slice(0, RECENT_ORDERS_LIMIT).map((o) => o.id),
+    [orders]
+  );
+
   const { data: items = [] } = useQuery({
-    queryKey: ["client-detail-items", id],
-    enabled: !!id,
+    queryKey: ["client-detail-items", id, recentOrderIds.length],
+    enabled: !!id && recentOrderIds.length > 0,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     queryFn: async () => {
-      const { data: ords } = await supabase
-        .from("orders").select("id").eq("client_id", id!);
-      if (!ords?.length) return [];
-      const ids = ords.map((o) => o.id);
       const { data: its } = await supabase
         .from("order_items")
         .select("order_id, quantity, product_id, unit_price_override")
-        .in("order_id", ids);
+        .in("order_id", recentOrderIds);
       if (!its?.length) return [];
       const pids = [...new Set(its.map((i: any) => i.product_id))];
       const { data: prods } = await supabase
@@ -117,6 +121,7 @@ export default function ClientDetail() {
       return its.map((i: any) => ({ ...i, products: pmap.get(i.product_id) ?? null }));
     },
   });
+
 
 
   // Totals — net of any per-order manual discount
