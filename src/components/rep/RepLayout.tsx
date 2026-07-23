@@ -24,30 +24,57 @@ const Ctx = createContext<RepCtx>({ rep: null, isAdmin: false, geo: null, refres
 export const useRepContext = () => useContext(Ctx);
 
 type NavItem = { to: string; label: string; icon: any; exact?: boolean; desktopOnly?: boolean; mobilePrimary?: boolean; adminOnly?: boolean };
-const NAV: NavItem[] = [
-  { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true, mobilePrimary: true },
-  { to: "/rep/clientes", label: "Clientes", icon: Users, mobilePrimary: true },
-  { to: "/rep/ruta", label: "Ruta", icon: MapIcon, mobilePrimary: true },
-  { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList, desktopOnly: true },
-  { to: "/rep/visitas", label: "Visitas", icon: ClipboardList, mobilePrimary: true },
-  { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText, desktopOnly: true },
-  { to: "/rep/cobranza", label: "Cobranza", icon: Banknote, desktopOnly: true },
-  { to: "/rep/devoluciones", label: "Devoluciones", icon: RotateCcw, desktopOnly: true },
-  { to: "/rep/prospectos", label: "Prospectos", icon: UserPlus, desktopOnly: true },
-
-  { to: "/rep/calendario", label: "Calendario", icon: CalendarDays, desktopOnly: true },
-  { to: "/rep/catalogo", label: "Catálogo", icon: ShoppingBag, desktopOnly: true },
-  { to: "/rep/inventario", label: "Inventario", icon: Boxes },
-
-
-  { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList, desktopOnly: true },
-  { to: "/rep/competencia", label: "Competencia", icon: Swords, desktopOnly: true },
-  { to: "/rep/metas", label: "Metas", icon: Target, desktopOnly: true },
-  { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2, desktopOnly: true },
-  { to: "/rep/coach", label: "Coach IA", icon: Sparkles, desktopOnly: true },
-  { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, desktopOnly: true, adminOnly: true },
-
+type NavSection = { title?: string; items: NavItem[] };
+const NAV_SECTIONS: NavSection[] = [
+  {
+    items: [
+      { to: "/rep", label: "Inicio", icon: LayoutDashboard, exact: true, mobilePrimary: true },
+    ],
+  },
+  {
+    title: "Clientes",
+    items: [
+      { to: "/rep/clientes", label: "Clientes", icon: Users, mobilePrimary: true },
+      { to: "/rep/prospectos", label: "Prospectos", icon: UserPlus },
+    ],
+  },
+  {
+    title: "Ruteo",
+    items: [
+      { to: "/rep/ruta", label: "Ruta", icon: MapIcon, mobilePrimary: true },
+      { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList },
+      { to: "/rep/visitas", label: "Visitas", icon: ClipboardList, mobilePrimary: true },
+      { to: "/rep/calendario", label: "Calendario", icon: CalendarDays },
+      { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2 },
+    ],
+  },
+  {
+    title: "Ventas",
+    items: [
+      { to: "/rep/cotizaciones", label: "Cotizaciones", icon: FileText },
+      { to: "/rep/catalogo", label: "Catálogo", icon: ShoppingBag },
+      { to: "/rep/devoluciones", label: "Devoluciones", icon: RotateCcw },
+      { to: "/rep/cobranza", label: "Cobranza", icon: Banknote },
+    ],
+  },
+  {
+    title: "Inventario",
+    items: [
+      { to: "/rep/inventario", label: "Inventario", icon: Boxes },
+      { to: "/rep/laboratorios", label: "Laboratorios", icon: ClipboardList },
+    ],
+  },
+  {
+    title: "Inteligencia",
+    items: [
+      { to: "/rep/metas", label: "Metas", icon: Target },
+      { to: "/rep/competencia", label: "Competencia", icon: Swords },
+      { to: "/rep/coach", label: "Coach IA", icon: Sparkles },
+      { to: "/rep/supervisor", label: "Supervisor", icon: Trophy, adminOnly: true },
+    ],
+  },
 ];
+const NAV: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
 
 export default function RepLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
