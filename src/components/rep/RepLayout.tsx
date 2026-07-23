@@ -113,28 +113,43 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           <div className="flex shrink-0 items-start justify-between px-5 pt-4 pb-3">
             <div className="min-w-0">
               <div className="text-lg font-semibold">Panel Rep</div>
-              <div className="mt-1 truncate text-xs text-muted-foreground">
-                {data?.rep?.nombre ?? "Cargando…"}
-              </div>
+              {data?.rep?.nombre && (
+                <div className="mt-1 truncate text-xs text-muted-foreground">
+                  {data.rep.nombre}
+                </div>
+              )}
             </div>
             <NotificationBell />
           </div>
-          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
-            {visibleNav.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive(n.to, n.exact)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                <n.icon className="h-4 w-4 shrink-0" />
-                {n.label}
-              </Link>
-            ))}
+          <nav className="flex flex-1 flex-col gap-3 overflow-y-auto px-3 py-2">
+            {NAV_SECTIONS.map((section, idx) => {
+              const items = section.items.filter((n) => !n.adminOnly || isAdmin);
+              if (!items.length) return null;
+              return (
+                <div key={idx} className="flex flex-col gap-1">
+                  {section.title && (
+                    <div className="px-3 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      {section.title}
+                    </div>
+                  )}
+                  {items.map((n) => (
+                    <Link
+                      key={n.to}
+                      to={n.to}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                        isActive(n.to, n.exact)
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      <n.icon className="h-4 w-4 shrink-0" />
+                      {n.label}
+                    </Link>
+                  ))}
+                </div>
+              );
+            })}
           </nav>
           <div className="shrink-0 space-y-2 border-t border-border bg-card p-3">
             <div className="px-2">
