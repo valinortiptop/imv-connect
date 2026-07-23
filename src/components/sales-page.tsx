@@ -238,39 +238,122 @@ export default function Sales() {
     dateFrom && dateTo ? `${dateFrom} a ${dateTo}` : dateFrom ? `desde ${dateFrom}` : dateTo ? `hasta ${dateTo}` : "Todo el histórico";
   const exportFileBase = `ventas_${(dateFrom || "inicio")}_${(dateTo || "actual")}`;
 
+  const tabMeta: Record<string, { label: string; sheet: string }> = {
+    overview: { label: "Resumen", sheet: "Resumen" },
+    clients: { label: "Por cliente", sheet: "Por cliente" },
+    orders: { label: "Por pedido", sheet: "Por pedido" },
+    products: { label: "Por producto", sheet: "Por producto" },
+    brands: { label: "Por marca", sheet: "Por marca" },
+  };
+
+  const getTabRows = (): { head: string[]; rows: any[][]; json: any[] } => {
+    if (tab === "clients") {
+      return {
+        head: ["Cliente", "Pedidos", "Unidades", "Ventas", "Utilidad", "Margen %"],
+        json: byClient,
+        rows: byClient.map((r: any) => [
+          r.clientName || r.name || "—",
+          r.orders,
+          r.units,
+          r.revenue,
+          r.profit,
+          r.marginPct,
+        ]),
+      };
+    }
+    if (tab === "products") {
+      return {
+        head: ["Producto", "SKU", "Unidades", "Ventas", "Utilidad", "Margen %"],
+        json: byProduct,
+        rows: byProduct.map((r: any) => [
+          r.productName || r.name || "—",
+          r.sku || "",
+          r.units,
+          r.revenue,
+          r.profit,
+          r.marginPct,
+        ]),
+      };
+    }
+    if (tab === "brands") {
+      return {
+        head: ["Marca", "SKUs", "Unidades", "Ventas", "Utilidad", "Margen %"],
+        json: byBrand,
+        rows: byBrand.map((r: any) => [
+          r.brand || r.name || "—",
+          r.skus,
+          r.units,
+          r.revenue,
+          r.profit,
+          r.marginPct,
+        ]),
+      };
+    }
+    if (tab === "orders") {
+      return {
+        head: ["Pedido", "Cliente", "Ítems", "Ventas", "Utilidad", "Margen %"],
+        json: byOrder,
+        rows: byOrder.map((r: any) => [
+          r.orderNumber || r.folio || r.id || "—",
+          r.clientName || "—",
+          r.items,
+          r.revenue,
+          r.profit,
+          r.marginPct,
+        ]),
+      };
+    }
+    // overview
+    return {
+      head: ["Fecha", "Ventas"],
+      json: dailyTrend,
+      rows: dailyTrend.map((d: any) => [d.date || d.day || "", d.revenue]),
+    };
+  };
+
+  const kpiRows: (string | number)[][] = [
+    ["Rango", rangeLabel],
+    ["Ventas totales", kpis.totalRevenue],
+    ["Costo total", kpis.totalCost],
+    ["Venta sin IVA", kpis.totalVentaSinIva],
+    ["Utilidad realizada", kpis.realizedProfit],
+    ["Utilidad realizada c/ bonif.", kpis.realizedProfitBonif],
+    ["Utilidad implicada", kpis.impliedProfit],
+    ["Utilidad implicada c/ bonif.", kpis.impliedProfitBonif],
+    ["Pedidos únicos", kpis.uniqueOrders],
+    ["Ticket promedio", kpis.avgTicket],
+    ["Unidades", kpis.totalUnits],
+    ["Margen %", kpis.marginPct],
+    ["Margen c/ bonif. %", kpis.marginBonifPct],
+    ["Pedidos por cerrar", pendingKpis.orders],
+    ["Valor por cerrar", pendingKpis.revenue],
+    ["Utilidad estimada por cerrar", pendingKpis.profit],
+  ];
+
   const handleExportExcel = () => {
+    const meta = tabMeta[tab] ?? tabMeta.overview;
     const wb = XLSX.utils.book_new();
-    const kpiRows = [
-      ["Rango", rangeLabel],
-      ["Ventas totales", kpis.totalRevenue],
-      ["Costo total", kpis.totalCost],
-      ["Venta sin IVA", kpis.totalVentaSinIva],
-      ["Utilidad realizada", kpis.realizedProfit],
-      ["Utilidad realizada c/ bonif.", kpis.realizedProfitBonif],
-      ["Utilidad implicada", kpis.impliedProfit],
-      ["Utilidad implicada c/ bonif.", kpis.impliedProfitBonif],
-      ["Pedidos únicos", kpis.uniqueOrders],
-      ["Ticket promedio", kpis.avgTicket],
-      ["Unidades", kpis.totalUnits],
-      ["Margen %", kpis.marginPct],
-      ["Margen c/ bonif. %", kpis.marginBonifPct],
-      ["Pedidos por cerrar", pendingKpis.orders],
-      ["Valor por cerrar", pendingKpis.revenue],
-      ["Utilidad estimada por cerrar", pendingKpis.profit],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Métrica", "Valor"], ...kpiRows]), "Resumen");
-    if (dailyTrend.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dailyTrend), "Tendencia diaria");
-    if (byClient.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byClient), "Por cliente");
-    if (byProduct.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byProduct), "Por producto");
-    if (byBrand.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byBrand), "Por marca");
-    if (byOrder.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(byOrder), "Por pedido");
-    XLSX.writeFile(wb, `${exportFileBase}.xlsx`);
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([["Métrica", "Valor"], ...kpiRows]),
+      "Resumen",
+    );
+    if (tab === "overview") {
+      if (dailyTrend.length)
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dailyTrend), "Tendencia diaria");
+    } else {
+      const { json } = getTabRows();
+      if (json.length)
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(json), meta.sheet);
+    }
+    XLSX.writeFile(wb, `${exportFileBase}_${tab}.xlsx`);
   };
 
   const handleExportPdf = () => {
+    const meta = tabMeta[tab] ?? tabMeta.overview;
     const doc = new jsPDF({ unit: "pt", format: "letter" });
     doc.setFontSize(16);
-    doc.text("Reporte de Ventas", 40, 48);
+    doc.text(`Reporte de Ventas — ${meta.label}`, 40, 48);
     doc.setFontSize(10);
     doc.setTextColor(90);
     doc.text(`Rango: ${rangeLabel}`, 40, 66);
@@ -283,82 +366,40 @@ export default function Sales() {
         ["Pedidos únicos", String(kpis.uniqueOrders)],
         ["Ticket promedio", mxnFmt.format(kpis.avgTicket)],
         ["Utilidad realizada", mxnFmt.format(kpis.realizedProfit)],
-        ["Utilidad c/ bonif.", mxnFmt.format(kpis.realizedProfitBonif)],
-        ["Utilidad implicada", mxnFmt.format(kpis.impliedProfit)],
         ["Margen %", pctFmt(kpis.marginPct)],
-        ["Margen c/ bonif. %", pctFmt(kpis.marginBonifPct)],
         ["Pedidos por cerrar", `${pendingKpis.orders} · ${mxnFmt.format(pendingKpis.revenue)}`],
       ],
       styles: { fontSize: 9, cellPadding: 5 },
       headStyles: { fillColor: [17, 17, 17] },
     });
 
-    const addSection = (title: string, head: string[], rows: any[][]) => {
-      if (!rows.length) return;
+    const { head, rows } = getTabRows();
+    if (rows.length) {
       doc.addPage();
       doc.setFontSize(14);
       doc.setTextColor(0);
-      doc.text(title, 40, 48);
+      doc.text(meta.label, 40, 48);
+      const formatted = rows.map((r) =>
+        r.map((c, i) => {
+          if (typeof c !== "number") return c;
+          const h = head[i]?.toLowerCase() ?? "";
+          if (h.includes("margen") || h.includes("%")) return pctFmt(c);
+          if (h.includes("venta") || h.includes("utilidad")) return mxnFmt.format(c);
+          return String(c);
+        }),
+      );
       autoTable(doc, {
         startY: 66,
         head: [head],
-        body: rows,
+        body: formatted,
         styles: { fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [17, 17, 17] },
       });
-    };
+    }
 
-    addSection(
-      "Por cliente",
-      ["Cliente", "Pedidos", "Unidades", "Ventas", "Utilidad", "Margen %"],
-      byClient.slice(0, 100).map((r: any) => [
-        r.clientName || r.name || "—",
-        r.orders,
-        r.units,
-        mxnFmt.format(r.revenue),
-        mxnFmt.format(r.profit),
-        pctFmt(r.marginPct),
-      ]),
-    );
-    addSection(
-      "Por producto",
-      ["Producto", "SKU", "Unidades", "Ventas", "Utilidad", "Margen %"],
-      byProduct.slice(0, 100).map((r: any) => [
-        r.productName || r.name || "—",
-        r.sku || "",
-        r.units,
-        mxnFmt.format(r.revenue),
-        mxnFmt.format(r.profit),
-        pctFmt(r.marginPct),
-      ]),
-    );
-    addSection(
-      "Por marca",
-      ["Marca", "SKUs", "Unidades", "Ventas", "Utilidad", "Margen %"],
-      byBrand.slice(0, 100).map((r: any) => [
-        r.brand || r.name || "—",
-        r.skus,
-        r.units,
-        mxnFmt.format(r.revenue),
-        mxnFmt.format(r.profit),
-        pctFmt(r.marginPct),
-      ]),
-    );
-    addSection(
-      "Por pedido",
-      ["Pedido", "Cliente", "Ítems", "Ventas", "Utilidad", "Margen %"],
-      byOrder.slice(0, 200).map((r: any) => [
-        r.orderNumber || r.folio || r.id || "—",
-        r.clientName || "—",
-        r.items,
-        mxnFmt.format(r.revenue),
-        mxnFmt.format(r.profit),
-        pctFmt(r.marginPct),
-      ]),
-    );
-
-    doc.save(`${exportFileBase}.pdf`);
+    doc.save(`${exportFileBase}_${tab}.pdf`);
   };
+
 
   return (
     <div className="min-h-screen bg-background relative">
