@@ -11816,6 +11816,10 @@ export type Database = {
         Args: { p_movement_id: string; p_note?: string }
         Returns: string
       }
+      sales_dashboard_stats: {
+        Args: { p_from?: string; p_fuente?: string; p_to?: string }
+        Returns: Json
+      }
       seed_cuentas_empresa: { Args: { _empresa: string }; Returns: undefined }
       suggest_source_slots_for_picking: {
         Args: { p_product_id: string; p_quantity?: number }
