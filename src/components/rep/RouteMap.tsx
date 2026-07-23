@@ -248,18 +248,50 @@ export default function RouteMap() {
 
     // Heatmap only when NOT in route-focused mode
     if (showHeatmap && !routeMode) {
-      (heatQ.data?.points ?? []).forEach((p: any) => {
-        const circle = new maps.Circle({
+      const rawPoints = (heatQ.data?.points ?? []) as Array<{
+        lat: number;
+        lng: number;
+        weight: number;
+      }>;
+      const points = rawPoints.filter((p) => Number(p.weight ?? 0) > 0.05);
+
+      if (maps.visualization?.HeatmapLayer && points.length > 0) {
+        const layer = new maps.visualization.HeatmapLayer({
           map,
-          center: { lat: Number(p.lat), lng: Number(p.lng) },
-          radius: Math.min(2500, 350 + Number(p.weight ?? 1) * 260),
-          strokeWeight: 0,
-          fillColor: "#f97316",
-          fillOpacity: 0.25,
-          clickable: false,
+          data: points.map((p) => ({
+            location: new maps.LatLng(Number(p.lat), Number(p.lng)),
+            weight: Number(p.weight),
+          })),
+          radius: 42,
+          opacity: 0.75,
+          dissipating: true,
+          maxIntensity: 1,
+          gradient: [
+            "rgba(0, 0, 0, 0)",
+            "rgba(16, 185, 129, 0.55)",
+            "rgba(132, 204, 22, 0.7)",
+            "rgba(250, 204, 21, 0.8)",
+            "rgba(249, 115, 22, 0.9)",
+            "rgba(220, 38, 38, 1)",
+          ],
         });
-        overlaysRef.current.push(circle);
-      });
+        overlaysRef.current.push(layer);
+      } else {
+        // Fallback if visualization library did not load: draw brighter circles.
+        points.forEach((p) => {
+          const w = Number(p.weight ?? 0);
+          const circle = new maps.Circle({
+            map,
+            center: { lat: Number(p.lat), lng: Number(p.lng) },
+            radius: Math.min(2800, 500 + w * 2200),
+            strokeWeight: 0,
+            fillColor: w > 0.65 ? "#dc2626" : w > 0.4 ? "#f97316" : "#facc15",
+            fillOpacity: 0.55,
+            clickable: false,
+          });
+          overlaysRef.current.push(circle);
+        });
+      }
     }
 
     // In route mode, only render ordered stops with numbered markers.
