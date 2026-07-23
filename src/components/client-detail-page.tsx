@@ -24,6 +24,7 @@ import { ChevronRight } from "lucide-react";
 const mxnFmt = new Intl.NumberFormat("es-MX", {
   style: "currency", currency: "MXN", maximumFractionDigits: 0,
 });
+const CLIENT_DETAIL_ORDERS_LIMIT = 100;
 
 const fmtDate = (d: string | null) => {
   if (!d) return "—";
@@ -88,8 +89,23 @@ export default function ClientDetail() {
         .from("orders")
         .select("id, order_code, order_date, delivery_date, status, notes, discount_amount, discount_reason")
         .eq("client_id", id!)
-        .order("order_date", { ascending: false });
+        .order("order_date", { ascending: false })
+        .limit(CLIENT_DETAIL_ORDERS_LIMIT);
       return data ?? [];
+    },
+  });
+
+  const { data: totalOrderCount = 0 } = useQuery({
+    queryKey: ["client-detail-orders-count", id],
+    enabled: !!id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      const { count } = await (supabase as any)
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", id!);
+      return count ?? 0;
     },
   });
 
@@ -275,18 +291,18 @@ export default function ClientDetail() {
           <Kpi
             icon={<ShoppingCart className="h-5 w-5" />}
             label="Total pedidos"
-            value={orders.length.toString()}
+            value={String(totalOrderCount || orders.length)}
             accent="blue"
           />
           <Kpi
             icon={<DollarSign className="h-5 w-5" />}
-            label="Total facturado"
+            label={totalOrderCount > orders.length ? `Facturado reciente (${orders.length})` : "Total facturado"}
             value={mxnFmt.format(totalRevenue)}
             accent="emerald"
           />
           <Kpi
             icon={<Receipt className="h-5 w-5" />}
-            label="Ticket promedio"
+            label={totalOrderCount > orders.length ? "Ticket promedio reciente" : "Ticket promedio"}
             value={mxnFmt.format(avgTicket)}
             accent="amber"
           />
@@ -305,7 +321,7 @@ export default function ClientDetail() {
               side. Gap-2 keeps clear separation between buttons. */}
           <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 h-auto gap-2 p-2 bg-muted/40">
             <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">Resumen</TabsTrigger>
-            <TabsTrigger value="pedidos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">Pedidos ({orders.length})</TabsTrigger>
+            <TabsTrigger value="pedidos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">Pedidos ({totalOrderCount || orders.length})</TabsTrigger>
             <TabsTrigger value="productos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">Productos</TabsTrigger>
             <TabsTrigger value="precios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">Precios</TabsTrigger>
             <TabsTrigger value="cfdi" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 rounded-md text-sm font-medium">CFDI</TabsTrigger>
@@ -367,7 +383,7 @@ export default function ClientDetail() {
                 <div className="flex items-center gap-2 px-5 py-3 border-b bg-muted/30">
                   <ShoppingCart className="h-4 w-4 text-blue-500" />
                   <h3 className="text-sm font-semibold uppercase tracking-wide">
-                    Pedidos ({orders.length})
+                    Pedidos recientes ({orders.length}{totalOrderCount > orders.length ? ` de ${totalOrderCount}` : ""})
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
