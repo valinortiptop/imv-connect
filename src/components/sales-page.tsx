@@ -84,23 +84,29 @@ export default function Sales() {
   const setAllTime = () => { setDateFrom(""); setDateTo(""); };
   const [tab, setTab] = useState("overview");
 
-  // Fetch all non-cancelled orders with items and product/margin info
+  // Fetch non-cancelled orders scoped to the visible date range (plus the
+  // previous month for the comparison delta). Fetching every order in the
+  // system (~25k+ backfilled rows) at once is what leaves this dashboard
+  // stuck on $0 — the browser can't hold or paginate that volume in time.
+  const [prevFrom, prevTo] = useMemo(() => getPrevMonthRange(), []);
+  const queryFrom = dateFrom ? (dateFrom < prevFrom ? dateFrom : prevFrom) : null;
+  const queryTo = dateTo || null;
+
   const { data: saleItems = [], isLoading } = useQuery({
-    queryKey: ["sales-data"],
+    queryKey: ["sales-data", queryFrom, queryTo],
     queryFn: async () => {
-      // Get non-cancelled orders with client name + discount fields. The
-      // order-level discount has to be allocated across line items
-      // proportionally so revenue/profit aggregates (by client, product,
-      // brand, day, etc.) all stay accurate.
       const { fetchAllRows } = await import("@/lib/fetch-all");
-      const orders = await fetchAllRows<any>(() =>
-        (supabase as any)
+      const orders = await fetchAllRows<any>(() => {
+        let q = (supabase as any)
           .from("orders")
           .select("id, order_code, order_date, delivery_date, status, client_id, discount_amount, clients(name)")
-          .neq("status", "Cancelado")
-          .order("delivery_date", { ascending: false }),
-      );
+          .neq("status", "Cancelado");
+        if (queryFrom) q = q.gte("order_date", queryFrom);
+        if (queryTo) q = q.lte("order_date", queryTo);
+        return q.order("order_date", { ascending: false });
+      });
       if (!orders?.length) return [];
+
 
       // Paged fetch so we get every line item across all 25k+ orders
       const orderIds = orders.map((o: any) => o.id);
