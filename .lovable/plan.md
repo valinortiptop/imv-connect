@@ -1,31 +1,50 @@
-# Fix the Heatmap toggle on `/rep/ruta`
+## Goal
 
-## Problem
+Make clicking a client → detail → back feel instant. Today it hangs because the router doesn't preload, the detail page refetches heavy data every visit, and it pulls thousands of rows the header doesn't need.
 
-Toggling **Heatmap** on the Ruta del día map produces no visible change. The server function `getOpportunityHeatmapFn` returns weighted points correctly (churn + recency + 12m value per client), but `RouteMap.tsx` renders them as `google.maps.Circle` overlays with `fillOpacity: 0.25` and a single orange color. On the default light map style, under the green client markers, they blend into the terrain and are essentially invisible.
+## Root causes found
 
-The doc `docs/panel-representantes.md` already states the intended implementation: `google.maps.visualization.HeatmapLayer` with the `visualization` library loaded — which produces the recognizable red/yellow/green density blobs users expect from a heatmap.
+1. `src/router.tsx` sets `defaultPreloadStaleTime: 0` but never sets `defaultPreload`, so hovering a client row triggers nothing. The route module + data only start loading on click.
+2. `src/components/client-detail-page.tsx` runs three `useQuery` calls with no `staleTime`. Closing and reopening the same client (or bouncing between clients) refetches everything from scratch.
+3. The `client-detail-items` query loads **every** `order_items` row for the client (up to ~1,100 rows for top clients), then all referenced products, only to compute header KPIs (revenue, bultos, avg ticket, top products). This is the single biggest stall.
+4. `Client360Drawer` embeds a Google Maps `<iframe>` unconditionally — it reloads on every drawer open even though the drawer is used from list rows.
+5. `clients-page.tsx` static-imports `html2canvas` (~200 KB) at the top of the list module, inflating first paint of the list itself.
 
-## Fix (frontend only, `src/components/rep/RouteMap.tsx`)
+## Fix plan (frontend only)
 
-1. **Use the real HeatmapLayer.** Replace the `maps.Circle` loop in the heatmap branch (around lines 249–263) with a single `new maps.visualization.HeatmapLayer({ data, map, ... })`.
-   - `data`: array of `{ location: new maps.LatLng(lat, lng), weight }` from `heatQ.data.points`, filtering out zero/near-zero weights so hot spots stand out.
-   - Config: `radius: 40`, `opacity: 0.75`, `dissipating: true`, and a gradient going from transparent → green → yellow → orange → red so it reads as an opportunity heatmap rather than uniform orange.
-   - Push the layer into `overlaysRef.current` and call `layer.setMap(null)` on cleanup (existing cleanup loop already calls `.setMap?.(null)` so this works as-is).
+### 1. Enable hover/intent preloading
+`src/router.tsx`: add `defaultPreload: "intent"` and `defaultPreloadDelay: 50`. Route chunk + loaders start on hover/touchstart, so click feels instant.
 
-2. **Ensure the visualization library is loaded.** The Google Maps loader in `src/lib/google-maps-loader.ts` / the script tag needs `libraries=visualization` (the doc says it already does). If `maps.visualization` is undefined at runtime, fall back to the current circle rendering so the toggle never becomes a no-op — but with brighter styling (`fillOpacity: 0.55`, radius scaled to weight, red fill) instead of the current pale orange.
+### 2. Cache detail queries across mounts
+In `client-detail-page.tsx`, add `staleTime: 60_000` and `gcTime: 5 * 60_000` to the three `useQuery` calls (`client-detail`, `client-detail-orders`, `client-detail-items`). Reopening the same client is then a cache hit; back-nav to the list keeps its own cache too.
 
-3. **Dim markers while heatmap is on.** When `showHeatmap && !routeMode`, render the client markers at reduced opacity (`opacity: 0.55`) so the heat blobs are the dominant visual. Toggle back to full opacity when heatmap is off.
+### 3. Move heavy aggregates server-side
+Replace the "load all items to compute KPIs" pattern with a lightweight RPC `client_detail_stats(client_id)` returning `{ total_revenue, total_bultos, avg_ticket, last_order_date, orders_count, top_products (top 10) }`. The page then only needs:
+- `orders` list (already cheap, one row per pedido)
+- `client_detail_stats` (single round-trip, aggregated in Postgres)
+- Items fetched **lazily** only when the "Pedidos" tab is opened and a specific order is expanded (fetch that order's items on demand instead of all items upfront).
 
-4. **Add a small legend chip.** Next to the Heatmap button, when active, show a compact gradient legend (`Baja → Alta oportunidad`) so the user immediately understands what the color ramp means.
+Result: initial detail render goes from ~1,100-row fetch + product join to a single aggregate row.
 
-5. **Empty-state feedback.** If `heatQ.data?.points` is empty or every weight is 0 (new rep with no orders/insights yet), show a toast on toggle: "No hay suficientes datos de oportunidad todavía." Currently the button silently does nothing in that case, which is indistinguishable from the current bug.
+### 4. Lazy-mount the drawer's map iframe
+In `Client360Drawer.tsx`, only render the Google Maps `<iframe>` when the user is on the "General" tab (which is the default) AND after a small mount delay, or gate it behind a "Ver mapa" toggle. Prevents iframe network cost on every quick open/close.
+
+### 5. Code-split heavy imports on the list
+In `clients-page.tsx`, convert `html2canvas` and `exportOrderAsImage` to dynamic `import()` inside the export handlers. Same for `ClientsImportDialog` / `ClientsMapView` via `React.lazy` + `Suspense` (they only mount when the user opens them). Keeps the list route lean.
+
+### 6. Small navigation polish
+- Add a lightweight `pendingComponent` on `/admin/clientes/$id` (skeleton header + tab shell) so the transition shows immediate feedback instead of the previous page freezing.
+- On the list, use `<Link preload="intent">` explicitly for the client row anchors that currently rely on `useNavigate`, so keyboard and hover both trigger preload.
+
+## Files to touch
+
+- `src/router.tsx` — preload defaults.
+- `src/components/client-detail-page.tsx` — query cache options, drop full-items fetch, use new RPC, lazy per-order items.
+- `src/components/clients/Client360Drawer.tsx` — gate map iframe.
+- `src/components/clients-page.tsx` — dynamic imports for html2canvas/import/map dialogs; ensure row link uses `<Link>` with `preload="intent"`.
+- `src/routes/admin.clientes.$id.tsx` — add `pendingComponent`.
+- One new SQL migration for `public.client_detail_stats(uuid)` RPC + grants.
 
 ## Out of scope
 
-No server-side changes. `getOpportunityHeatmapFn` scoring stays as-is (churn 0.5 + recency + log10(total) capped at 0.4). If we later want to tune weights or filter by lab/zone, that's a separate task.
-
-## Files touched
-
-- `src/components/rep/RouteMap.tsx` — heatmap rendering, marker dimming, legend, empty-state toast.
-- (Verify only) `src/lib/google-maps-loader.ts` and `src/routes/api/public/maps.script.ts` — confirm `libraries=visualization` is present; add it if missing.
+No business-logic changes: totals, discounts, tier resolution, CFDI upload, and tab contents behave identically. Only fetch shape, caching, and code-splitting change.
