@@ -475,6 +475,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   const [dateTo, setDateTo] = useState("");
 
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
   // Mayoreo / Menudeo / Todos. Default 'todos' so the page always
   // opens with every client visible — the toggle is a filter, not a
@@ -514,6 +515,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
   const [client360Id, setClient360Id] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [page, setPage] = useState(1);
   const { isAdmin } = useRoles();
 
   const [cfdiUploading, setCfdiUploading] = useState(false);
@@ -586,77 +588,50 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch order summaries for dashboard stats
-  const { data: orderSummaries = [] } = useQuery({
-    queryKey: ["client-dashboard-orders"],
+  // Dashboard stats are aggregated in Postgres. Pulling every order into the
+  // browser was the main source of stalls on the clients page.
+  const { data: dashboardPayload = null } = useQuery({
+    queryKey: ["client-dashboard-stats", dateFrom || null, dateTo || null],
+    enabled: !restrictClientIds,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("order_summary")
-        .select("client_id, client_name, total_with_iva, status, order_date");
+      const { data, error } = await supabase.rpc("clients_dashboard_stats", {
+        _date_from: dateFrom || null,
+        _date_to: dateTo || null,
+      });
       if (error) throw error;
-      return (data ?? []) as (typeof data extends (infer T)[] ? T & { order_date?: string } : never)[];
+      return data as any;
     },
   });
 
+  const dashboardStats = useMemo(() => {
+    if (!dashboardPayload) return null;
+    return {
+      ticketPromedio: Number(dashboardPayload.ticketPromedio ?? 0),
+      pedidosPorCliente: Number(dashboardPayload.pedidosPorCliente ?? 0),
+      topClient: dashboardPayload.topClient ?? null,
+      totalClientes: Number(dashboardPayload.totalClientes ?? 0),
+    };
+  }, [dashboardPayload]);
+
+  const topClientsBySales = useMemo(() => (
+    Array.isArray(dashboardPayload?.topClientsBySales)
+      ? dashboardPayload.topClientsBySales.map((c: any) => ({
+          name: String(c.name ?? "Cliente"),
+          total: Number(c.total ?? 0),
+          orders: Number(c.orders ?? 0),
+        }))
+      : []
+  ), [dashboardPayload]);
+
   const [barsAnimated, setBarsAnimated] = useState(false);
   useEffect(() => {
-    if (orderSummaries.length > 0) {
+    if (topClientsBySales.length > 0) {
       const t = setTimeout(() => setBarsAnimated(true), 100);
       return () => clearTimeout(t);
     }
-  }, [orderSummaries]);
-
-  // Filter orders by date range
-  const filteredOrders = useMemo(() => {
-    return orderSummaries.filter((o: any) => {
-      if (o.status === "Cancelado") return false;
-      if (!o.order_date) return true;
-      if (dateFrom && o.order_date < dateFrom) return false;
-      if (dateTo && o.order_date > dateTo) return false;
-      return true;
-    });
-  }, [orderSummaries, dateFrom, dateTo]);
-
-  // Dashboard stats
-  const dashboardStats = useMemo(() => {
-    if (!clients || orderSummaries.length === 0) return null;
-
-    const nonCancelled = filteredOrders;
-    const totalOrders = nonCancelled.length;
-    const totalSales = nonCancelled.reduce((s, o) => s + (o.total_with_iva ?? 0), 0);
-    const ticketPromedio = totalOrders > 0 ? totalSales / totalOrders : 0;
-
-    // Pedidos por cliente (average)
-    const activeClients = clients.filter(c => c.active);
-    const clientsWithOrders = new Set(nonCancelled.map(o => o.client_id)).size;
-    const pedidosPorCliente = clientsWithOrders > 0 ? totalOrders / clientsWithOrders : 0;
-
-    // Cliente más frecuente
-    const orderCountByClient: Record<string, { name: string; count: number }> = {};
-    for (const o of nonCancelled) {
-      if (!o.client_id) continue;
-      if (!orderCountByClient[o.client_id]) orderCountByClient[o.client_id] = { name: o.client_name ?? "", count: 0 };
-      orderCountByClient[o.client_id].count++;
-    }
-    const topClient = Object.values(orderCountByClient).sort((a, b) => b.count - a.count)[0] ?? null;
-
-    return { ticketPromedio, pedidosPorCliente, topClient, totalClientes: activeClients.length };
-  }, [clients, filteredOrders, orderSummaries]);
-
-  // Top 5 clients by sales
-  const topClientsBySales = useMemo(() => {
-    if (filteredOrders.length === 0) return [];
-    const salesByClient: Record<string, { name: string; total: number; orders: number }> = {};
-    for (const o of filteredOrders) {
-      if (!o.client_id) continue;
-      if (!salesByClient[o.client_id]) salesByClient[o.client_id] = { name: o.client_name ?? "", total: 0, orders: 0 };
-      salesByClient[o.client_id].total += o.total_with_iva ?? 0;
-      salesByClient[o.client_id].orders++;
-    }
-    return Object.values(salesByClient)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [filteredOrders]);
+  }, [topClientsBySales]);
 
   if (error) {
     toast({ title: t("error"), description: t("clientsLoadError"), variant: "destructive" });
@@ -686,8 +661,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         const b = (c as any).delivery_window_until;
         if (a && b) return false; // has complete window — exclude
       }
-      if (search.trim()) {
-        const q = search.toLowerCase();
+      if (deferredSearch.trim()) {
+        const q = deferredSearch.toLowerCase();
         if (
           !c.name?.toLowerCase().includes(q) &&
           !c.company?.toLowerCase().includes(q) &&
@@ -709,7 +684,28 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       });
     }
     return out;
-  }, [clients, search, activeFilter, typeFilter, sinHorarioOnly]);
+  }, [clients, deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+
+  useEffect(() => {
+    setPage(1);
+    setExpandedIds(new Set());
+  }, [deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTS_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paginatedClients = useMemo(() => {
+    if (viewMode === "map") return filtered;
+    const start = (currentPage - 1) * CLIENTS_PAGE_SIZE;
+    return filtered.slice(start, start + CLIENTS_PAGE_SIZE);
+  }, [filtered, currentPage, viewMode]);
+
+  const pageStart = filtered.length === 0 ? 0 : (currentPage - 1) * CLIENTS_PAGE_SIZE + 1;
+  const pageEnd = Math.min(filtered.length, currentPage * CLIENTS_PAGE_SIZE);
 
   const updateField = (field: keyof ClientForm, value: string | boolean | null) => {
     setForm(prev => ({ ...prev, [field]: value }));
