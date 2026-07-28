@@ -109,7 +109,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ rep: data?.rep ?? null, isAdmin, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
-        <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
           <div className="flex shrink-0 items-start justify-between px-5 pt-4 pb-3">
             <div className="min-w-0">
               <div className="text-lg font-semibold">Panel Rep</div>
@@ -168,7 +168,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
 
         {/* Main */}
         <main
-          className="min-w-0 flex-1 md:pb-6"
+          className="min-w-0 flex-1 md:ml-56 md:pb-6"
           style={{
             paddingBottom: "calc(6rem + env(safe-area-inset-bottom))",
           }}
