@@ -1,47 +1,44 @@
-## What the document asks vs. what exists today
+## Goal
 
-### Already implemented (verified)
-- **Recepción sobre OC** con lote, caducidad y cantidad (`RecepcionesPage` + `registrar_recepcion`).
-- **PDF por cada ingreso** con OC, proveedor, clave, descripción, lote, cantidad y caducidad (`almacen-pdf.ts`).
-- **Edición/corrección de recepciones** (`EditarRecepcionDialog` + `editar_recepcion`), con reversa de inventario.
-- **Traspasos entre almacenes** (origen/destino, clave, cantidad, lote) con PDF y listado (`TraspasosPage`, `ejecutar_traspaso`).
-- **Remisión de pedido**: pantalla con pedido, cliente, selección de lote y cantidad, descuento automático de inventario, edición (`editar_remision`), baja/cancelación (`cancelar_remision`) y PDF con ubicación (`RemisionesPage`, `NuevaRemisionDialog`).
-- **Trazabilidad OC → entrada → factura** y **pedido → remisión → factura** (pestañas en `ReportesAlmacenPage` sobre `v_trazabilidad_compra` / `v_trazabilidad_venta`).
-- **Corta caducidad** y **rotación / lento movimiento** con bloqueo manual de compra.
-- **Almacenes y ubicaciones de material** (`admin.almacenes`, `warehouse_slots`, floorplan).
-- **Alertas de compras** existen (`purchase_alerts` + cron), pero hoy solo se ven en el módulo de Compras.
+A full notifications system: a bell in the admin header, a dedicated Notifications Center page with filters by type/category/user, and a per-user preferences page with toggles for three channels — system (in-app), email (Resend via the Valinor proxy) and SMS (built but disabled/pending).
 
-### Faltante (a implementar)
-1. **Reporte de entradas** (clave, artículo, lote, cantidad, fecha de ingreso). La vista `v_entradas_report` ya existe en base de datos pero **ninguna pantalla la consume**.
-2. **Reporte de traslados entre almacenes** como reporte formal: `v_traspasos_report` existe, sin pantalla.
-3. **Reporte de salidas por remisión** a nivel partida (cliente, clave, artículo, cantidad, lote, caducidad, ubicación): `v_remisiones_report` existe, sin pantalla.
-4. **Reporte de productos sin movimiento de venta**: `v_sin_movimiento_venta` existe, sin pantalla.
-5. **Reporte de notas de crédito aplicadas a facturas de proveedor** — no existe vista ni pantalla.
-6. **Reporte de notas de crédito aplicadas a facturas de venta** — no existe vista ni pantalla.
-7. **Cardex de material completo** (entradas, salidas, notas de crédito, devoluciones a proveedor, traslados por artículo/lote). Hoy el "kardex" solo muestra movimientos de ubicación (`slot_movements`); la vista `v_kardex_movements` existe pero no se usa.
-8. **Listado de inventario filtrable por clase, laboratorio y almacén** — hoy solo filtra por proveedor y estado de stock.
-9. **Bloqueo automático de compra** por sobre-stock y por lento movimiento — hoy el bloqueo es solo manual con un botón.
-10. **Alertas de órdenes de compra al almacén** — visibles solo en Compras; falta el aviso dentro del módulo de Almacén.
+## Current state (verified)
 
-## Plan de implementación
+- `public.notifications` exists with: `id, type, category, priority, title, description, route, user_id, read_at, created_at`.
+- A bell already exists but only in the rep panel (`src/components/rep/NotificationBell.tsx`), with realtime insert/update subscription and "mark all read".
+- The admin header (`src/routes/admin.tsx`) has no bell.
+- Notifications are written today from `rep.functions.ts`, `rep-behavior.functions.ts`, `cobranza-fase5.functions.ts` (direct inserts).
+- Email already goes through the Valinor proxy (`sendEmail` in `valinor-proxy.server.ts`, provider `resend`) — no new API key needed.
 
-**Base de datos (una migración)**
-- Vistas nuevas: `v_notas_credito_proveedor_report` (NC proveedor ligada a factura/OC) y `v_notas_credito_venta_report` (NC de venta ligada a factura/cliente).
-- Vista `v_cardex_material` unificando entradas, salidas por remisión, traspasos, notas de crédito y devoluciones a proveedor por producto y lote.
-- Función `recalcular_bloqueos_compra()` ampliada para marcar automáticamente `bloqueo_compra` por sobre-stock (existencia > máximo/cobertura configurada) y por lento movimiento, con motivo; programarla en el cron diario existente.
+## Database (one migration)
 
-**Reportes de Almacén (`ReportesAlmacenPage`)**
-- Nuevas pestañas: Entradas, Traslados, Salidas por remisión, Sin movimiento de venta, NC proveedor, NC venta — con búsqueda, filtros de fecha/almacén y export PDF/Excel usando los helpers existentes.
+1. Extend `notifications` with `channel_status jsonb default '{}'`, `entity_id text`, `emailed_at timestamptz`, plus indexes on `(user_id, read_at)` and `(category)`.
+2. New `notification_preferences` table: `user_id`, `category`, `in_app boolean default true`, `email boolean default false`, `sms boolean default false`, timestamps, unique `(user_id, category)`. GRANTs for `authenticated` + `service_role`, RLS so a user only reads/writes their own rows; admins can read all.
+3. New `notification_deliveries` table (audit of email/SMS sends: notification_id, channel, status, error, sent_at) with the same grant/RLS pattern.
+4. Verify/patch `notifications` RLS so each user only sees rows where `user_id = auth.uid()` (admins may read all for the center's "by user" view).
 
-**Cardex**
-- Nueva pantalla `/admin/almacen/cardex`: selector de producto (y lote opcional) con línea de tiempo de todos los movimientos y saldo corrido, exportable a PDF.
+## Backend
 
-**Inventario**
-- Agregar filtros por clase/clasificación, laboratorio y almacén en `inventory-page.tsx`.
+- `src/lib/notifications.functions.ts` (thin wrapper; helpers in `notifications.server.ts`):
+  - `listNotificationsFn` — filters: category, type, priority, read/unread, date range, and `userId` for admins.
+  - `markReadFn` / `markAllReadFn` / `deleteNotificationFn`.
+  - `getMyNotificationPreferencesFn` / `saveNotificationPreferencesFn`.
+  - `createNotificationFn` — central dispatcher: inserts the in-app row when the recipient's preference allows, and if `email` is enabled sends via the existing Valinor `sendEmail` helper (Resend), logging the result in `notification_deliveries`. SMS branch is stubbed: preference toggle exists but is rendered disabled ("Próximamente") and the dispatcher records `status = 'pending'` without sending.
+- Existing direct `.from("notifications").insert(...)` call sites are switched to the dispatcher so preferences are respected.
 
-**Alertas y navegación**
-- Tarjeta de alertas de OC pendientes de recibir en el inicio del módulo Almacén.
-- Enlaces nuevos en el sidebar y nodos en el `almacen-dashboard`.
+## Frontend
 
-### Detalle técnico
-Se reutilizan las vistas ya creadas (`v_entradas_report`, `v_traspasos_report`, `v_remisiones_report`, `v_sin_movimiento_venta`) para evitar consultas pesadas en cliente; los reportes usan `fetchAllRows` con límites y paginación de 100 filas, y los PDF se generan con `src/lib/almacen-pdf.ts`.
+- **Header bell** — promote the rep bell to `src/components/notifications/NotificationBell.tsx` (shared), keep realtime + unread badge, add a "Ver todas" footer link; mount it in the `admin.tsx` header (top right) and reuse it in `RepLayout`.
+- **Notifications Center** — new route `/admin/notificaciones`:
+  - KPI strip (unread, today, by priority).
+  - Tabs by category (Cobranza, Compras, Almacén, Ventas, Rutas, Sistema) plus "Todas".
+  - Filter bar: type, priority, read state, date range, and a user selector (admins only; regular users see just their own).
+  - List with read/unread styling, route deep-links, mark-read and bulk actions, pagination (100/page).
+- **Preferences page** — new route `/admin/configuracion/notificaciones` (also linked from Administración): a table of categories × channels with switches for System / Email / SMS (SMS disabled), a master toggle per channel, and Guardar.
+- Sidebar entries added under the existing general/configuration group and registered in `permission_routes` so role permissions apply.
+
+## Technical notes
+
+- Email content: simple branded HTML template built server-side, sent with `sendEmail({ provider resend via Valinor })`; sender address taken from existing config used elsewhere in the app.
+- Realtime subscription stays inside `useEffect` with `removeChannel` cleanup.
+- No Lovable AI/email tooling used — everything routes through the Valinor proxy per project convention.
