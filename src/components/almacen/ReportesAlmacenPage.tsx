@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, FileDown, Lock, LockOpen, Printer, Search } from "lucide-react";
+import { BarChart3, FileDown, Lock, LockOpen, Printer, RefreshCw, Search } from "lucide-react";
 import { reportePdf } from "@/lib/almacen-pdf";
 import GenericReportTab, {
   fmtMXN as fmtMXNc,
