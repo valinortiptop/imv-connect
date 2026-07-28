@@ -127,6 +127,8 @@ import { Route as AdminBancosTraspasosRouteImport } from './routes/admin.bancos.
 import { Route as AdminBancosNominaRouteImport } from './routes/admin.bancos.nomina'
 import { Route as AdminBancosMovimientosRouteImport } from './routes/admin.bancos.movimientos'
 import { Route as AdminBancosEstadosRouteImport } from './routes/admin.bancos.estados'
+import { Route as AdminAlmacenTraspasosRouteImport } from './routes/admin.almacen.traspasos'
+import { Route as AdminAlmacenRemisionesRouteImport } from './routes/admin.almacen.remisiones'
 import { Route as AdminAlmacenRecepcionesRouteImport } from './routes/admin.almacen.recepciones'
 import { Route as AdminAlmacenOperacionRouteImport } from './routes/admin.almacen.operacion'
 import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
@@ -751,6 +753,16 @@ const AdminBancosEstadosRoute = AdminBancosEstadosRouteImport.update({
   path: '/bancos/estados',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAlmacenTraspasosRoute = AdminAlmacenTraspasosRouteImport.update({
+  id: '/traspasos',
+  path: '/traspasos',
+  getParentRoute: () => AdminAlmacenRoute,
+} as any)
+const AdminAlmacenRemisionesRoute = AdminAlmacenRemisionesRouteImport.update({
+  id: '/remisiones',
+  path: '/remisiones',
+  getParentRoute: () => AdminAlmacenRoute,
+} as any)
 const AdminAlmacenRecepcionesRoute = AdminAlmacenRecepcionesRouteImport.update({
   id: '/recepciones',
   path: '/recepciones',
@@ -908,6 +920,8 @@ export interface FileRoutesByFullPath {
   '/rep/': typeof RepIndexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
+  '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
+  '/admin/almacen/traspasos': typeof AdminAlmacenTraspasosRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -1037,6 +1051,8 @@ export interface FileRoutesByTo {
   '/rep': typeof RepIndexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
+  '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
+  '/admin/almacen/traspasos': typeof AdminAlmacenTraspasosRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -1172,6 +1188,8 @@ export interface FileRoutesById {
   '/rep/': typeof RepIndexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
+  '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
+  '/admin/almacen/traspasos': typeof AdminAlmacenTraspasosRoute
   '/admin/bancos/estados': typeof AdminBancosEstadosRoute
   '/admin/bancos/movimientos': typeof AdminBancosMovimientosRoute
   '/admin/bancos/nomina': typeof AdminBancosNominaRoute
@@ -1309,6 +1327,8 @@ export interface FileRouteTypes {
     | '/rep/'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
+    | '/admin/almacen/remisiones'
+    | '/admin/almacen/traspasos'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1438,6 +1458,8 @@ export interface FileRouteTypes {
     | '/rep'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
+    | '/admin/almacen/remisiones'
+    | '/admin/almacen/traspasos'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -1572,6 +1594,8 @@ export interface FileRouteTypes {
     | '/rep/'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
+    | '/admin/almacen/remisiones'
+    | '/admin/almacen/traspasos'
     | '/admin/bancos/estados'
     | '/admin/bancos/movimientos'
     | '/admin/bancos/nomina'
@@ -2482,6 +2506,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBancosEstadosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/almacen/traspasos': {
+      id: '/admin/almacen/traspasos'
+      path: '/traspasos'
+      fullPath: '/admin/almacen/traspasos'
+      preLoaderRoute: typeof AdminAlmacenTraspasosRouteImport
+      parentRoute: typeof AdminAlmacenRoute
+    }
+    '/admin/almacen/remisiones': {
+      id: '/admin/almacen/remisiones'
+      path: '/remisiones'
+      fullPath: '/admin/almacen/remisiones'
+      preLoaderRoute: typeof AdminAlmacenRemisionesRouteImport
+      parentRoute: typeof AdminAlmacenRoute
+    }
     '/admin/almacen/recepciones': {
       id: '/admin/almacen/recepciones'
       path: '/recepciones'
@@ -2593,12 +2631,16 @@ declare module '@tanstack/react-router' {
 interface AdminAlmacenRouteChildren {
   AdminAlmacenOperacionRoute: typeof AdminAlmacenOperacionRoute
   AdminAlmacenRecepcionesRoute: typeof AdminAlmacenRecepcionesRoute
+  AdminAlmacenRemisionesRoute: typeof AdminAlmacenRemisionesRoute
+  AdminAlmacenTraspasosRoute: typeof AdminAlmacenTraspasosRoute
   AdminAlmacenIndexRoute: typeof AdminAlmacenIndexRoute
 }
 
 const AdminAlmacenRouteChildren: AdminAlmacenRouteChildren = {
   AdminAlmacenOperacionRoute: AdminAlmacenOperacionRoute,
   AdminAlmacenRecepcionesRoute: AdminAlmacenRecepcionesRoute,
+  AdminAlmacenRemisionesRoute: AdminAlmacenRemisionesRoute,
+  AdminAlmacenTraspasosRoute: AdminAlmacenTraspasosRoute,
   AdminAlmacenIndexRoute: AdminAlmacenIndexRoute,
 }
 
