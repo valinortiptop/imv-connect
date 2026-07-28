@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { usePermissions } from "@/hooks/use-permissions";
 
 export const Route = createFileRoute("/admin")({
