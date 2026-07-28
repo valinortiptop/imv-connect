@@ -155,7 +155,22 @@ export default function ReportesAlmacenPage() {
     return m;
   }, [bloqueos.data]);
 
+  const recalcular = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("recalcular_bloqueos_compra" as never);
+      if (error) throw error;
+      return data as unknown as number;
+    },
+    onSuccess: (n) => {
+      toast.success(`Bloqueos recalculados (${n ?? 0} productos evaluados)`);
+      qc.invalidateQueries({ queryKey: ["stock-params-bloqueo"] });
+      qc.invalidateQueries({ queryKey: ["v_rotacion_inventario"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const toggleBloqueo = useMutation({
+
     mutationFn: async ({ producto_id, bloquear, motivo }: { producto_id: string; bloquear: boolean; motivo: string }) => {
       const { error } = await supabase
         .from("product_stock_params")
