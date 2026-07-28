@@ -108,6 +108,8 @@ function slotStyle(zone: string) {
 
 export default function WarehouseFloorplan() {
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
+  const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
+
 
   // Action-bar dialog state
   const [scannerOpen, setScannerOpen] = useState(false);
