@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, FileDown, Lock, LockOpen, Printer, Search } from "lucide-react";
+import { BarChart3, FileDown, Lock, LockOpen, Printer, RefreshCw, Search } from "lucide-react";
 import { reportePdf } from "@/lib/almacen-pdf";
 import GenericReportTab, {
   fmtMXN as fmtMXNc,
@@ -155,7 +155,22 @@ export default function ReportesAlmacenPage() {
     return m;
   }, [bloqueos.data]);
 
+  const recalcular = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("recalcular_bloqueos_compra" as never);
+      if (error) throw error;
+      return data as unknown as number;
+    },
+    onSuccess: (n) => {
+      toast.success(`Bloqueos recalculados (${n ?? 0} productos evaluados)`);
+      qc.invalidateQueries({ queryKey: ["stock-params-bloqueo"] });
+      qc.invalidateQueries({ queryKey: ["v_rotacion_inventario"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const toggleBloqueo = useMutation({
+
     mutationFn: async ({ producto_id, bloquear, motivo }: { producto_id: string; bloquear: boolean; motivo: string }) => {
       const { error } = await supabase
         .from("product_stock_params")
@@ -280,10 +295,22 @@ export default function ReportesAlmacenPage() {
             estancados directamente desde el reporte.
           </p>
         </div>
-        <div className="relative w-72">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar en el reporte…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="flex items-end gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={recalcular.isPending}
+            onClick={() => recalcular.mutate()}
+          >
+            <RefreshCw className={`mr-1 h-4 w-4 ${recalcular.isPending ? "animate-spin" : ""}`} />
+            Recalcular bloqueos
+          </Button>
+          <div className="relative w-72">
+            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-8" placeholder="Buscar en el reporte…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
         </div>
+
       </header>
 
       <Tabs defaultValue="rotacion">

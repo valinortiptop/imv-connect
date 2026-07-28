@@ -83,6 +83,26 @@ export function PurchaseOrderDialog({
   const [initialized, setInitialized] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Artículos bloqueados para compra (sobre stock / lento movimiento)
+  const [blockedByClave, setBlockedByClave] = useState<Record<string, string>>({});
+  React.useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("product_stock_params")
+        .select("bloqueo_motivo, productos!inner(sku)")
+        .eq("bloqueo_compra", true);
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) {
+        const sku = r.productos?.sku;
+        if (sku) map[sku] = r.bloqueo_motivo || "Bloqueado para compra";
+      }
+      setBlockedByClave(map);
+    })();
+  }, [open]);
+
+
+
   // Delivery days available (from rawLines)
   const deliveryDays = useMemo(() => {
     const set = new Set<string>();
@@ -158,8 +178,14 @@ export function PurchaseOrderDialog({
   };
 
   const addProducts = (claves: string[]) => {
+    const blocked = claves.filter(c => blockedByClave[c]);
+    if (blocked.length) {
+      toast.error(`Bloqueados para compra: ${blocked.slice(0, 5).join(", ")}${blocked.length > 5 ? "…" : ""}`);
+    }
     const toAdd = claves
+      .filter(c => !blockedByClave[c])
       .filter(c => !rows.some(r => r.clave === c))
+
       .map(c => {
         const product = allProducts.find(p => p.clave === c);
         if (!product) return null;
@@ -393,6 +419,12 @@ Reglas:
     if (poSupplier === "all") { toast.error("Selecciona un proveedor"); return; }
     const validRows = rows.filter(r => r.bultos > 0);
     if (validRows.length === 0) { toast.error("Agrega al menos un producto con bultos > 0"); return; }
+    const blockedRows = validRows.filter(r => blockedByClave[r.clave]);
+    if (blockedRows.length) {
+      toast.error(`No se puede comprar: ${blockedRows.map(r => `${r.clave} (${blockedByClave[r.clave]})`).slice(0, 3).join(", ")}`);
+      return;
+    }
+
     setCreating(true);
     try {
       // Resolve laboratorio by name
@@ -554,9 +586,10 @@ Reglas:
                 <div className="flex items-center justify-between px-1 pt-2 text-xs text-muted-foreground">
                   <button
                     className="hover:text-foreground"
-                    onClick={() => setAddSelection(new Set(filteredAddable.map(p => p.clave)))}
+                    onClick={() => setAddSelection(new Set(filteredAddable.filter(p => !blockedByClave[p.clave]).map(p => p.clave)))}
                   >
-                    Seleccionar todo ({filteredAddable.length})
+                    Seleccionar todo ({filteredAddable.filter(p => !blockedByClave[p.clave]).length})
+
                   </button>
                   {addSelection.size > 0 && (
                     <button
@@ -581,14 +614,17 @@ Reglas:
                   )}
                   {filteredAddable.map((p) => {
                     const checked = addSelection.has(p.clave);
+                    const blockedReason = blockedByClave[p.clave];
                     return (
                       <label
                         key={p.clave}
-                        className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                        className={`flex items-center gap-3 px-2 py-1.5 rounded text-sm ${blockedReason ? "opacity-60 cursor-not-allowed" : "hover:bg-muted cursor-pointer"}`}
                       >
                         <Checkbox
                           checked={checked}
+                          disabled={!!blockedReason}
                           onCheckedChange={(v) => {
+                            if (blockedReason) return;
                             setAddSelection(prev => {
                               const next = new Set(prev);
                               if (v) next.add(p.clave);
@@ -600,9 +636,13 @@ Reglas:
                         <ProductThumb src={p.image_url} size="sm" />
                         <span className="font-mono text-xs text-muted-foreground shrink-0">{p.clave}</span>
                         <span className="truncate">{p.product_name}</span>
+                        {blockedReason && (
+                          <Badge variant="destructive" className="ml-auto shrink-0 text-[10px]">{blockedReason}</Badge>
+                        )}
                       </label>
                     );
                   })}
+
                 </div>
               </div>
               <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
