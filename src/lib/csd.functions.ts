@@ -126,7 +126,8 @@ export const signContabilidadXml = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdminOrConta(supabase, userId);
 
-    const { data: csd, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: csd, error } = await supabaseAdmin
       .from("empresa_csd" as any)
       .select("cer_path, key_path, cer_pem, no_certificado, valid_from, valid_to")
       .eq("empresa_id", data.empresaId)
