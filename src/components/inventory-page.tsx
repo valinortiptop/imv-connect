@@ -215,6 +215,16 @@ export default function Inventory() {
     return Array.from(set).sort();
   }, [rawItems]);
 
+  const clases = useMemo(() => {
+    const set = new Set(rawItems.map(i => i.categoria).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [rawItems]);
+
+  const labsInStock = useMemo(() => {
+    const ids = new Set(rawItems.map(i => i.laboratorio_id).filter(Boolean) as string[]);
+    return (labs ?? []).filter(l => ids.has(l.id));
+  }, [rawItems, labs]);
+
   const items = useMemo(() => {
     let list = projectedItems;
 
@@ -230,6 +240,19 @@ export default function Inventory() {
     if (supplierFilter !== "all") {
       list = list.filter(i => i.supplier === supplierFilter);
     }
+
+    if (claseFilter !== "all") {
+      list = list.filter(i => (i.categoria ?? "") === claseFilter);
+    }
+
+    if (labFilter !== "all") {
+      list = list.filter(i => i.laboratorio_id === labFilter);
+    }
+
+    if (almacenFilter !== "all" && almacenProductIds) {
+      list = list.filter(i => almacenProductIds.has(i.id));
+    }
+
 
     if (stockFilter === "disponible") list = list.filter(i => i.stock_disponible > 0);
     else if (stockFilter === "low_stock") list = list.filter(i => i.stock_committed > 0 && i.stock_actual <= i.stock_committed);
