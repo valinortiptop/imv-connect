@@ -44,21 +44,19 @@ export const solicitarAutorizacionFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Notificar a admins/cobranza (via notifications table)
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: admins } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .in("role", ["admin", "contabilidad"]);
-    const notif = (admins ?? []).map((r: any) => ({
-      user_id: r.user_id,
-      type: "credito_autorizacion",
-      title: "Nueva solicitud de autorización",
-      body: `${data.tipo.replace(/_/g, " ")} — ${data.motivo.slice(0, 100)}`,
-      link: `/admin/credito-cobranza/autorizaciones`,
-      read: false,
-    }));
-    if (notif.length) await supabaseAdmin.from("notifications").insert(notif as any);
+    // Notificar a admins/cobranza vía el despachador central (respeta preferencias)
+    const { dispatchToUsers, usersWithRoles } = await import("@/lib/notifications.server");
+    const destinatarios = await usersWithRoles(["admin", "contabilidad", "cobranza"]);
+    if (destinatarios.length) {
+      await dispatchToUsers(destinatarios, {
+        type: "credito_autorizacion",
+        category: "cobranza",
+        priority: "alta",
+        title: "Nueva solicitud de autorización",
+        description: `${data.tipo.replace(/_/g, " ")} — ${data.motivo.slice(0, 100)}`,
+        route: "/admin/credito-cobranza/autorizaciones",
+      });
+    }
 
     return { id: (inserted as any).id };
   });
@@ -115,15 +113,16 @@ export const resolverAutorizacionFn = createServerFn({ method: "POST" })
 
     // Notificar al solicitante
     if (autz && (autz as any).solicitado_por) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.from("notifications").insert({
-        user_id: (autz as any).solicitado_por,
+      const { dispatchNotification } = await import("@/lib/notifications.server");
+      await dispatchNotification({
+        userId: (autz as any).solicitado_por,
         type: "credito_autorizacion",
+        category: "cobranza",
+        priority: "alta",
         title: data.aprobar ? "Autorización aprobada" : "Autorización rechazada",
-        body: data.respuesta ?? "",
-        link: `/admin/credito-cobranza/autorizaciones`,
-        read: false,
-      } as any);
+        description: data.respuesta ?? "",
+        route: "/admin/credito-cobranza/autorizaciones",
+      });
     }
 
     return { ok: true };

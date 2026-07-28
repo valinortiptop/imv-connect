@@ -5189,11 +5189,91 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          notification_id: string | null
+          sent_at: string | null
+          status: string
+          target: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          category: string
+          created_at: string
+          email: boolean
+          id: string
+          in_app: boolean
+          sms: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          sms?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: boolean
+          id?: string
+          in_app?: boolean
+          sms?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           category: string | null
+          channel_status: Json
           created_at: string
           description: string | null
+          emailed_at: string | null
+          entity_id: string | null
           id: string
           priority: string | null
           read_at: string | null
@@ -5204,8 +5284,11 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          channel_status?: Json
           created_at?: string
           description?: string | null
+          emailed_at?: string | null
+          entity_id?: string | null
           id?: string
           priority?: string | null
           read_at?: string | null
@@ -5216,8 +5299,11 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          channel_status?: Json
           created_at?: string
           description?: string | null
+          emailed_at?: string | null
+          entity_id?: string | null
           id?: string
           priority?: string | null
           read_at?: string | null
