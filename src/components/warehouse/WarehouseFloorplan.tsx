@@ -271,7 +271,9 @@ export default function WarehouseFloorplan() {
         className={cn(
           "h-6 w-full rounded border border-emerald-900/40 transition-all",
           filled ? "bg-emerald-500 hover:bg-emerald-400" : "bg-emerald-500/40 hover:bg-emerald-400/60",
+          focusSlotId === s.id && "ring-2 ring-amber-400 ring-offset-1",
         )}
+
       />
     );
   }
