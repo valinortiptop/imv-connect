@@ -280,10 +280,22 @@ export default function ReportesAlmacenPage() {
             estancados directamente desde el reporte.
           </p>
         </div>
-        <div className="relative w-72">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar en el reporte…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="flex items-end gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={recalcular.isPending}
+            onClick={() => recalcular.mutate()}
+          >
+            <RefreshCw className={`mr-1 h-4 w-4 ${recalcular.isPending ? "animate-spin" : ""}`} />
+            Recalcular bloqueos
+          </Button>
+          <div className="relative w-72">
+            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-8" placeholder="Buscar en el reporte…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
         </div>
+
       </header>
 
       <Tabs defaultValue="rotacion">
