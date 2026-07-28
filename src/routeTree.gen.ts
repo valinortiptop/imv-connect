@@ -132,6 +132,7 @@ import { Route as AdminAlmacenReportesRouteImport } from './routes/admin.almacen
 import { Route as AdminAlmacenRemisionesRouteImport } from './routes/admin.almacen.remisiones'
 import { Route as AdminAlmacenRecepcionesRouteImport } from './routes/admin.almacen.recepciones'
 import { Route as AdminAlmacenOperacionRouteImport } from './routes/admin.almacen.operacion'
+import { Route as AdminAlmacenCardexRouteImport } from './routes/admin.almacen.cardex'
 import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
@@ -779,6 +780,11 @@ const AdminAlmacenOperacionRoute = AdminAlmacenOperacionRouteImport.update({
   path: '/operacion',
   getParentRoute: () => AdminAlmacenRoute,
 } as any)
+const AdminAlmacenCardexRoute = AdminAlmacenCardexRouteImport.update({
+  id: '/cardex',
+  path: '/cardex',
+  getParentRoute: () => AdminAlmacenRoute,
+} as any)
 const AdminContabilidadPolizasIndexRoute =
   AdminContabilidadPolizasIndexRouteImport.update({
     id: '/',
@@ -924,6 +930,7 @@ export interface FileRoutesByFullPath {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
+  '/admin/almacen/cardex': typeof AdminAlmacenCardexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
   '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
@@ -1056,6 +1063,7 @@ export interface FileRoutesByTo {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin': typeof AdminIndexRoute
   '/rep': typeof RepIndexRoute
+  '/admin/almacen/cardex': typeof AdminAlmacenCardexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
   '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
@@ -1194,6 +1202,7 @@ export interface FileRoutesById {
   '/rep/visitas': typeof RepVisitasRoute
   '/admin/': typeof AdminIndexRoute
   '/rep/': typeof RepIndexRoute
+  '/admin/almacen/cardex': typeof AdminAlmacenCardexRoute
   '/admin/almacen/operacion': typeof AdminAlmacenOperacionRoute
   '/admin/almacen/recepciones': typeof AdminAlmacenRecepcionesRoute
   '/admin/almacen/remisiones': typeof AdminAlmacenRemisionesRoute
@@ -1334,6 +1343,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
+    | '/admin/almacen/cardex'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
     | '/admin/almacen/remisiones'
@@ -1466,6 +1476,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin'
     | '/rep'
+    | '/admin/almacen/cardex'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
     | '/admin/almacen/remisiones'
@@ -1603,6 +1614,7 @@ export interface FileRouteTypes {
     | '/rep/visitas'
     | '/admin/'
     | '/rep/'
+    | '/admin/almacen/cardex'
     | '/admin/almacen/operacion'
     | '/admin/almacen/recepciones'
     | '/admin/almacen/remisiones'
@@ -2553,6 +2565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAlmacenOperacionRouteImport
       parentRoute: typeof AdminAlmacenRoute
     }
+    '/admin/almacen/cardex': {
+      id: '/admin/almacen/cardex'
+      path: '/cardex'
+      fullPath: '/admin/almacen/cardex'
+      preLoaderRoute: typeof AdminAlmacenCardexRouteImport
+      parentRoute: typeof AdminAlmacenRoute
+    }
     '/admin/contabilidad/polizas/': {
       id: '/admin/contabilidad/polizas/'
       path: '/'
@@ -2648,6 +2667,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminAlmacenRouteChildren {
+  AdminAlmacenCardexRoute: typeof AdminAlmacenCardexRoute
   AdminAlmacenOperacionRoute: typeof AdminAlmacenOperacionRoute
   AdminAlmacenRecepcionesRoute: typeof AdminAlmacenRecepcionesRoute
   AdminAlmacenRemisionesRoute: typeof AdminAlmacenRemisionesRoute
@@ -2657,6 +2677,7 @@ interface AdminAlmacenRouteChildren {
 }
 
 const AdminAlmacenRouteChildren: AdminAlmacenRouteChildren = {
+  AdminAlmacenCardexRoute: AdminAlmacenCardexRoute,
   AdminAlmacenOperacionRoute: AdminAlmacenOperacionRoute,
   AdminAlmacenRecepcionesRoute: AdminAlmacenRecepcionesRoute,
   AdminAlmacenRemisionesRoute: AdminAlmacenRemisionesRoute,
