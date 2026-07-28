@@ -16,16 +16,20 @@ type Usuario = {
   roles: AppRole[];
 };
 
-const ROLES: AppRole[] = ["admin", "representante", "ventas", "almacen", "logistica", "contabilidad", "viewer"];
+const ROLES: AppRole[] = ["admin", "representante", "ventas", "compras", "almacen", "logistica", "facturacion", "cobranza", "contabilidad", "viewer"];
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
   representante: "Representante",
   ventas: "Ventas",
+  compras: "Compras",
   almacen: "Almacén",
   logistica: "Logística",
+  facturacion: "Facturación",
+  cobranza: "Cobranza",
   contabilidad: "Contabilidad",
   viewer: "Viewer",
 };
+
 
 function UsuariosPage() {
   const { isAdmin, isLoading: loadingRoles, roles } = useRoles();
