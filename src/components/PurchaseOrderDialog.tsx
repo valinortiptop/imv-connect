@@ -83,6 +83,26 @@ export function PurchaseOrderDialog({
   const [initialized, setInitialized] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Artículos bloqueados para compra (sobre stock / lento movimiento)
+  const [blockedByClave, setBlockedByClave] = useState<Record<string, string>>({});
+  React.useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("product_stock_params")
+        .select("bloqueo_motivo, productos!inner(sku)")
+        .eq("bloqueo_compra", true);
+      const map: Record<string, string> = {};
+      for (const r of (data ?? []) as any[]) {
+        const sku = r.productos?.sku;
+        if (sku) map[sku] = r.bloqueo_motivo || "Bloqueado para compra";
+      }
+      setBlockedByClave(map);
+    })();
+  }, [open]);
+
+
+
   // Delivery days available (from rawLines)
   const deliveryDays = useMemo(() => {
     const set = new Set<string>();
