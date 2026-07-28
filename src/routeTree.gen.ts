@@ -49,6 +49,7 @@ import { Route as AdminPortalRouteImport } from './routes/admin.portal'
 import { Route as AdminPnlRouteImport } from './routes/admin.pnl'
 import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminOnboardingRouteImport } from './routes/admin.onboarding'
+import { Route as AdminNotificacionesRouteImport } from './routes/admin.notificaciones'
 import { Route as AdminNecesidadesRouteImport } from './routes/admin.necesidades'
 import { Route as AdminManiobraRouteImport } from './routes/admin.maniobra'
 import { Route as AdminLogisticaRouteImport } from './routes/admin.logistica'
@@ -345,6 +346,11 @@ const AdminPartnersRoute = AdminPartnersRouteImport.update({
 const AdminOnboardingRoute = AdminOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificacionesRoute = AdminNotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNecesidadesRoute = AdminNecesidadesRouteImport.update({
@@ -894,6 +900,7 @@ export interface FileRoutesByFullPath {
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
+  '/admin/notificaciones': typeof AdminNotificacionesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/pnl': typeof AdminPnlRoute
@@ -1028,6 +1035,7 @@ export interface FileRoutesByTo {
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
+  '/admin/notificaciones': typeof AdminNotificacionesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/pnl': typeof AdminPnlRoute
@@ -1166,6 +1174,7 @@ export interface FileRoutesById {
   '/admin/logistica': typeof AdminLogisticaRoute
   '/admin/maniobra': typeof AdminManiobraRoute
   '/admin/necesidades': typeof AdminNecesidadesRoute
+  '/admin/notificaciones': typeof AdminNotificacionesRoute
   '/admin/onboarding': typeof AdminOnboardingRoute
   '/admin/partners': typeof AdminPartnersRoute
   '/admin/pnl': typeof AdminPnlRoute
@@ -1307,6 +1316,7 @@ export interface FileRouteTypes {
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
+    | '/admin/notificaciones'
     | '/admin/onboarding'
     | '/admin/partners'
     | '/admin/pnl'
@@ -1441,6 +1451,7 @@ export interface FileRouteTypes {
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
+    | '/admin/notificaciones'
     | '/admin/onboarding'
     | '/admin/partners'
     | '/admin/pnl'
@@ -1578,6 +1589,7 @@ export interface FileRouteTypes {
     | '/admin/logistica'
     | '/admin/maniobra'
     | '/admin/necesidades'
+    | '/admin/notificaciones'
     | '/admin/onboarding'
     | '/admin/partners'
     | '/admin/pnl'
@@ -1982,6 +1994,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/admin/onboarding'
       preLoaderRoute: typeof AdminOnboardingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notificaciones': {
+      id: '/admin/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/admin/notificaciones'
+      preLoaderRoute: typeof AdminNotificacionesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/necesidades': {
@@ -2857,6 +2876,7 @@ interface AdminRouteChildren {
   AdminLogisticaRoute: typeof AdminLogisticaRoute
   AdminManiobraRoute: typeof AdminManiobraRoute
   AdminNecesidadesRoute: typeof AdminNecesidadesRoute
+  AdminNotificacionesRoute: typeof AdminNotificacionesRoute
   AdminOnboardingRoute: typeof AdminOnboardingRoute
   AdminPartnersRoute: typeof AdminPartnersRoute
   AdminPnlRoute: typeof AdminPnlRoute
@@ -2926,6 +2946,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLogisticaRoute: AdminLogisticaRoute,
   AdminManiobraRoute: AdminManiobraRoute,
   AdminNecesidadesRoute: AdminNecesidadesRoute,
+  AdminNotificacionesRoute: AdminNotificacionesRoute,
   AdminOnboardingRoute: AdminOnboardingRoute,
   AdminPartnersRoute: AdminPartnersRoute,
   AdminPnlRoute: AdminPnlRoute,
