@@ -9,7 +9,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logPlatformAccess } from "@/lib/access-logger";
 
-export type AppRole = "admin" | "representante" | "ventas" | "almacen" | "logistica" | "contabilidad" | "viewer";
+export type AppRole = "admin" | "representante" | "ventas" | "compras" | "almacen" | "logistica" | "facturacion" | "cobranza" | "contabilidad" | "viewer";
 
 function applyRolePayload(
   data: unknown,

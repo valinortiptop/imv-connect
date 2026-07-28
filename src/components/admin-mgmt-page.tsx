@@ -76,17 +76,21 @@ interface UserOverride {
 }
 
 /* ─── constants ─── */
-const ROLES: AppRole[] = ["admin", "representante", "ventas", "almacen", "logistica", "contabilidad", "viewer"];
+const ROLES: AppRole[] = ["admin", "representante", "ventas", "compras", "almacen", "logistica", "facturacion", "cobranza", "contabilidad", "viewer"];
 
 const ROLE_COLORS: Record<AppRole, string> = {
   admin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   representante: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
   ventas: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  compras: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   almacen: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
   logistica: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  facturacion: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  cobranza: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
   contabilidad: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   viewer: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 };
+
 
 const ROUTE_LABELS: Record<string, { es: string; en: string }> = {
   // General
