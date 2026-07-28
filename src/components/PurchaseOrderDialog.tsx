@@ -613,14 +613,17 @@ Reglas:
                   )}
                   {filteredAddable.map((p) => {
                     const checked = addSelection.has(p.clave);
+                    const blockedReason = blockedByClave[p.clave];
                     return (
                       <label
                         key={p.clave}
-                        className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
+                        className={`flex items-center gap-3 px-2 py-1.5 rounded text-sm ${blockedReason ? "opacity-60 cursor-not-allowed" : "hover:bg-muted cursor-pointer"}`}
                       >
                         <Checkbox
                           checked={checked}
+                          disabled={!!blockedReason}
                           onCheckedChange={(v) => {
+                            if (blockedReason) return;
                             setAddSelection(prev => {
                               const next = new Set(prev);
                               if (v) next.add(p.clave);
@@ -632,9 +635,13 @@ Reglas:
                         <ProductThumb src={p.image_url} size="sm" />
                         <span className="font-mono text-xs text-muted-foreground shrink-0">{p.clave}</span>
                         <span className="truncate">{p.product_name}</span>
+                        {blockedReason && (
+                          <Badge variant="destructive" className="ml-auto shrink-0 text-[10px]">{blockedReason}</Badge>
+                        )}
                       </label>
                     );
                   })}
+
                 </div>
               </div>
               <div className="flex items-center justify-between p-2 border-t border-border gap-2 shrink-0">
