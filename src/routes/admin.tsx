@@ -54,6 +54,9 @@ function AdminLayout() {
             <span className="truncate text-sm font-medium text-muted-foreground">
               Panel de administración
             </span>
+            <div className="ml-auto flex items-center gap-1">
+              <NotificationBell />
+            </div>
           </header>
           <main data-mobile-safe className="w-full min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-8">
             <Outlet />
