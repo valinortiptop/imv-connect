@@ -180,80 +180,73 @@ export default function ReportesAlmacenPage() {
 
   const exportRotacion = (mode: "download" | "print") =>
     reportePdf(
-      {
-        titulo: "Rotación de inventario · productos de lento movimiento",
-        subtitulo: `${rotFiltered.length} productos · valor inmovilizado ${fmtMXN(
-          rotFiltered.reduce((s, r) => s + Number(r.valor_inmovilizado ?? 0), 0),
-        )}`,
-        columnas: ["Clave", "Artículo", "Laboratorio", "Existencia", "Días sin venta", "Valor", "Clasificación"],
-        filas: rotFiltered.map((r) => [
-          r.sku,
-          r.nombre,
-          r.laboratorio ?? "—",
-          Number(r.stock_fisico ?? 0).toFixed(2),
-          r.dias_sin_venta != null ? String(r.dias_sin_venta) : "Nunca",
-          fmtMXN(r.valor_inmovilizado),
-          r.clasificacion,
-        ]),
-      },
+      "Rotación de inventario · productos de lento movimiento",
+      ["Clave", "Artículo", "Laboratorio", "Existencia", "Días sin venta", "Valor", "Clasificación"],
+      rotFiltered.map((r) => [
+        r.sku,
+        r.nombre,
+        r.laboratorio ?? "—",
+        Number(r.stock_fisico ?? 0).toFixed(2),
+        r.dias_sin_venta != null ? String(r.dias_sin_venta) : "Nunca",
+        fmtMXN(r.valor_inmovilizado),
+        r.clasificacion,
+      ]),
+      [
+        `${rotFiltered.length} productos`,
+        `Valor inmovilizado: ${fmtMXN(rotFiltered.reduce((s, r) => s + Number(r.valor_inmovilizado ?? 0), 0))}`,
+      ],
       mode,
     );
 
   const exportCaducidad = (mode: "download" | "print") =>
     reportePdf(
-      {
-        titulo: "Corta caducidad y lento movimiento",
-        subtitulo: `${cadFiltered.length} lotes en riesgo`,
-        columnas: ["Clave", "Artículo", "Almacén", "Lote", "Caducidad", "Días", "Cantidad", "Clasificación"],
-        filas: cadFiltered.map((r) => [
-          r.clave,
-          r.articulo,
-          r.almacen ?? "—",
-          r.lote ?? "—",
-          r.caducidad ?? "—",
-          r.dias_para_caducar != null ? String(r.dias_para_caducar) : "—",
-          Number(r.cantidad ?? 0).toFixed(2),
-          r.clasificacion,
-        ]),
-      },
+      "Corta caducidad y lento movimiento",
+      ["Clave", "Artículo", "Almacén", "Lote", "Caducidad", "Días", "Cantidad", "Clasificación"],
+      cadFiltered.map((r) => [
+        r.clave,
+        r.articulo,
+        r.almacen ?? "—",
+        r.lote ?? "—",
+        r.caducidad ?? "—",
+        r.dias_para_caducar != null ? String(r.dias_para_caducar) : "—",
+        Number(r.cantidad ?? 0).toFixed(2),
+        r.clasificacion,
+      ]),
+      [`${cadFiltered.length} lotes en riesgo`],
       mode,
     );
 
   const exportCompra = (mode: "download" | "print") =>
     reportePdf(
-      {
-        titulo: "Trazabilidad de compra · OC → recepción → factura",
-        subtitulo: `${compraFiltered.length} órdenes`,
-        columnas: ["OC", "Fecha", "Proveedor", "Recepción", "Fecha rec.", "Factura prov.", "Total"],
-        filas: compraFiltered.map((r) => [
-          r.oc_folio ?? "—",
-          r.fecha_emision ?? "—",
-          r.proveedor ?? "—",
-          r.recepcion_folio ?? "Pendiente",
-          r.fecha_recepcion ?? "—",
-          r.factura_proveedor ?? "—",
-          fmtMXN(r.total),
-        ]),
-      },
+      "Trazabilidad de compra · OC → recepción → factura",
+      ["OC", "Fecha", "Proveedor", "Recepción", "Fecha rec.", "Factura prov.", "Total"],
+      compraFiltered.map((r) => [
+        r.oc_folio ?? "—",
+        r.fecha_emision ?? "—",
+        r.proveedor ?? "—",
+        r.recepcion_folio ?? "Pendiente",
+        r.fecha_recepcion ?? "—",
+        r.factura_proveedor ?? "—",
+        fmtMXN(r.total),
+      ]),
+      [`${compraFiltered.length} órdenes de compra`],
       mode,
     );
 
   const exportVenta = (mode: "download" | "print") =>
     reportePdf(
-      {
-        titulo: "Trazabilidad de venta · pedido → remisión → factura",
-        subtitulo: `${ventaFiltered.length} pedidos`,
-        columnas: ["Pedido", "Fecha", "Cliente", "Remisión", "Fecha rem.", "Factura", "Total"],
-        filas: ventaFiltered.map((r) => [
-          r.pedido_folio ?? "—",
-          r.pedido_fecha ? r.pedido_fecha.slice(0, 10) : "—",
-          r.cliente ?? "—",
-          r.remision_folio ?? "Pendiente",
-          r.remision_fecha ?? "—",
-          r.factura_folio ?? "Sin facturar",
-          fmtMXN(r.factura_total),
-        ]),
-      },
+      "Trazabilidad de venta · pedido → remisión → factura",
+      ["Pedido", "Fecha", "Cliente", "Remisión", "Fecha rem.", "Factura", "Total"],
+      ventaFiltered.map((r) => [
+        r.pedido_folio ?? "—",
+        r.pedido_fecha ? r.pedido_fecha.slice(0, 10) : "—",
+        r.cliente ?? "—",
+        r.remision_folio ?? "Pendiente",
+        r.remision_fecha ?? "—",
+        r.factura_folio ?? "Sin facturar",
+        fmtMXN(r.factura_total),
+      ]),
+      [`${ventaFiltered.length} pedidos`],
       mode,
     );
 
