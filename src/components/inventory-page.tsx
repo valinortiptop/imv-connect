@@ -332,7 +332,7 @@ export default function Inventory() {
     });
 
     return list;
-  }, [projectedItems, search, supplierFilter, stockFilter, sortKey, sortDir]);
+  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir]);
 
   // Stats — use projected items
   const stats = useMemo(() => {
