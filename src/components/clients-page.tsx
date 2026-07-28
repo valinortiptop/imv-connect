@@ -1580,7 +1580,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                       >
                         <TableCell className="hidden md:table-cell" onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} /></TableCell>
                         <TableCell className="px-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("tr") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}>
                             {expandedIds.has(c.id)
                               ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
                               : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
