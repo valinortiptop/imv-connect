@@ -25,6 +25,13 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,8 +45,10 @@ import {
   Undo2,
   History,
   Download,
+  Maximize2,
   Wrench,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { BarcodeScannerDialog, type ScannerMode } from "@/components/warehouse/BarcodeScannerDialog";
 import { RecentMovementsSheet } from "@/components/warehouse/RecentMovementsSheet";
@@ -93,12 +102,16 @@ const ZONE_STYLES: Record<string, { bg: string; text: string; label: string }> =
   migracion: { bg: "bg-amber-400", text: "text-neutral-900", label: "Migración (temporal)" },
 };
 
+const RACK_POSITIONS: Record<string, number> = { A: 5, B: 5, C: 5, D: 4, E: 4, F: 4 };
+
 function slotStyle(zone: string) {
   return ZONE_STYLES[zone] ?? { bg: "bg-neutral-200", text: "text-neutral-900", label: zone };
 }
 
 export default function WarehouseFloorplan() {
   const [openSlotId, setOpenSlotId] = useState<string | null>(null);
+  const [focusSlotId, setFocusSlotId] = useState<string | null>(null);
+
 
   // Action-bar dialog state
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -169,6 +182,15 @@ export default function WarehouseFloorplan() {
   }, [slots]);
 
   const openSlot = openSlotId ? slots.find((s) => s.id === openSlotId) ?? null : null;
+  const focusSlot = focusSlotId ? slots.find((s) => s.id === focusSlotId) ?? null : null;
+  const focusRackLetter = focusSlot
+    ? focusSlot.zone === "g1"
+      ? "G1"
+      : /^([A-F])-N\d+-P\d+$/.test(focusSlot.code)
+        ? focusSlot.code.charAt(0)
+        : null
+    : null;
+
   const openContents = openSlotId ? contentsBySlot.get(openSlotId) ?? [] : [];
 
   const findByCode = (code: string) => slotsByCode.get(code);
@@ -249,7 +271,9 @@ export default function WarehouseFloorplan() {
         className={cn(
           "h-6 w-full rounded border border-emerald-900/40 transition-all",
           filled ? "bg-emerald-500 hover:bg-emerald-400" : "bg-emerald-500/40 hover:bg-emerald-400/60",
+          focusSlotId === s.id && "ring-2 ring-amber-400 ring-offset-1",
         )}
+
       />
     );
   }
@@ -588,18 +612,90 @@ export default function WarehouseFloorplan() {
           </div>
           {openSlot && (
             <div className="mt-4 border-t pt-3">
-              <Button asChild variant="outline" size="sm" className="w-full gap-1.5">
-                <Link to="/admin/almacen/operacion">
-                  <Wrench className="h-4 w-4" /> Abrir en estación completa
-                </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5"
+                onClick={() => {
+                  setFocusSlotId(openSlot.id);
+                  setOpenSlotId(null);
+                }}
+              >
+                <Maximize2 className="h-4 w-4" /> Abrir en estación completa
               </Button>
               <p className="mt-2 text-[10px] text-muted-foreground">
-                Mover lotes, marcar dañado, ajustar cantidades y surtir pedidos.
+                Amplía esta sección del layout para ver sus posiciones y lotes.
               </p>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Zoomed section view */}
+      <Dialog open={!!focusSlot} onOpenChange={(v) => !v && setFocusSlotId(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {focusSlot?.code}
+              {focusSlot && (
+                <Badge className={cn(slotStyle(focusSlot.zone).bg, slotStyle(focusSlot.zone).text)}>
+                  {slotStyle(focusSlot.zone).label}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {focusRackLetter
+                ? `Rack ${focusRackLetter} ampliado — la posición seleccionada está resaltada.`
+                : "Sección ampliada del layout."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[65vh] overflow-auto rounded-md bg-neutral-50 p-4 dark:bg-neutral-900">
+            {focusRackLetter === "G1" ? (
+              <div className="mx-auto w-full max-w-md scale-[1.6] origin-top py-8">
+                <G1Block />
+              </div>
+            ) : focusRackLetter ? (
+              <div className="mx-auto w-full max-w-md scale-[1.6] origin-top py-8">
+                <Rack letter={focusRackLetter} positions={RACK_POSITIONS[focusRackLetter] ?? 4} />
+              </div>
+            ) : focusSlot ? (
+              <div className="mx-auto max-w-sm">
+                <div
+                  className={cn(
+                    "flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg p-6 text-center text-sm font-bold uppercase shadow",
+                    slotStyle(focusSlot.zone).bg,
+                    slotStyle(focusSlot.zone).text,
+                  )}
+                >
+                  <span>{slotStyle(focusSlot.zone).label}</span>
+                  <span className="text-xs font-mono opacity-80">{focusSlot.code}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {focusSlot && (
+            <div className="max-h-48 space-y-2 overflow-auto">
+              {(contentsBySlot.get(focusSlot.id) ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Posición vacía</p>
+              ) : (
+                (contentsBySlot.get(focusSlot.id) ?? []).map((c) => (
+                  <div key={c.id} className="rounded-md border border-border p-2 text-sm">
+                    <div className="font-semibold">{c.products?.clave ?? c.description ?? "Sin SKU"}</div>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <span>Qty: {c.quantity}</span>
+                      {c.lote && <span>Lote: {c.lote}</span>}
+                      {c.expiration_date && <span>Cad: {c.expiration_date}</span>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       {/* Action-bar dialogs */}
       <BarcodeScannerDialog
