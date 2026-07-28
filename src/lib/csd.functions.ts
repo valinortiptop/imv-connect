@@ -93,7 +93,8 @@ export const getCsdInfo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdminOrConta(supabase, userId);
-    const { data: row } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("empresa_csd" as any)
       .select("rfc, no_certificado, valid_from, valid_to, created_at")
       .eq("empresa_id", data.empresaId)
