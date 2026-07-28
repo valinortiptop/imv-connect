@@ -49,7 +49,11 @@ interface InventoryItem {
   stock_incoming: number;
   stock_disponible: number;
   active: boolean;
+  categoria: string | null;
+  linea: string | null;
+  laboratorio_id: string | null;
 }
+
 
 type SortKey = "clave" | "name" | "supplier" | "stock_actual" | "disponible" | "stock_committed" | "stock_incoming" | "valor";
 type SortDir = "asc" | "desc";
