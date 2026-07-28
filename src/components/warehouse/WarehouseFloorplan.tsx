@@ -180,6 +180,15 @@ export default function WarehouseFloorplan() {
   }, [slots]);
 
   const openSlot = openSlotId ? slots.find((s) => s.id === openSlotId) ?? null : null;
+  const focusSlot = focusSlotId ? slots.find((s) => s.id === focusSlotId) ?? null : null;
+  const focusRackLetter = focusSlot
+    ? focusSlot.zone === "g1"
+      ? "G1"
+      : /^([A-F])-N\d+-P\d+$/.test(focusSlot.code)
+        ? focusSlot.code.charAt(0)
+        : null
+    : null;
+
   const openContents = openSlotId ? contentsBySlot.get(openSlotId) ?? [] : [];
 
   const findByCode = (code: string) => slotsByCode.get(code);
