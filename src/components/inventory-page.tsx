@@ -105,7 +105,7 @@ export default function Inventory() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("v_products_with_stock")
-        .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active")
+        .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active, categoria, linea, laboratorio_id")
         .eq("active", true)
         .or("stock_actual.gt.0,stock_committed.gt.0,stock_incoming.gt.0")
         .order("clave");
@@ -113,6 +113,52 @@ export default function Inventory() {
       return (data ?? []) as InventoryItem[];
     },
   });
+
+  // Catálogos para los filtros de clase / laboratorio / almacén
+  const { data: labs = [] } = useQuery({
+    queryKey: ["labs-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("laboratorios")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nombre: string }[];
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: almacenes = [] } = useQuery({
+    queryKey: ["almacenes-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("almacenes")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nombre: string }[];
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: almacenProductIds } = useQuery({
+    queryKey: ["stock-by-almacen", almacenFilter],
+    enabled: almacenFilter !== "all",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock")
+        .select("producto_id, cantidad")
+        .eq("almacen_id", almacenFilter)
+        .gt("cantidad", 0);
+      if (error) throw error;
+      return new Set((data ?? []).map(r => r.producto_id as string));
+    },
+    staleTime: 60_000,
+  });
+
+
 
   // Fetch damaged bultos per product (disponible status only) to show badge
   const { data: damagedByProduct = {} } = useQuery({
