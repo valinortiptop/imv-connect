@@ -419,6 +419,12 @@ Reglas:
     if (poSupplier === "all") { toast.error("Selecciona un proveedor"); return; }
     const validRows = rows.filter(r => r.bultos > 0);
     if (validRows.length === 0) { toast.error("Agrega al menos un producto con bultos > 0"); return; }
+    const blockedRows = validRows.filter(r => blockedByClave[r.clave]);
+    if (blockedRows.length) {
+      toast.error(`No se puede comprar: ${blockedRows.map(r => `${r.clave} (${blockedByClave[r.clave]})`).slice(0, 3).join(", ")}`);
+      return;
+    }
+
     setCreating(true);
     try {
       // Resolve laboratorio by name
