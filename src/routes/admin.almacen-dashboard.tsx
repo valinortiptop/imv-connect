@@ -31,19 +31,25 @@ function AlmacenDashboard() {
 
   const nodes: FlowNode[] = [
     { id: "costos", label: "Integración de costos", icon: { src: costosIcon.url }, col: 2, row: 1, to: "/admin/kardex", count: data?.entradasHoy, accent: "success" },
+    { id: "recepciones", label: "Recepciones", icon: { src: fisicoIcon.url }, col: 3, row: 1, to: "/admin/almacen/recepciones", accent: "success" },
     { id: "almacenes", label: "Almacenes", icon: { src: almacenesIcon.url }, col: 1, row: 2, to: "/admin/almacenes", count: data?.almacenes, accent: "primary" },
     { id: "movs", label: "Movimientos", icon: { src: movimientosIcon.url }, col: 2, row: 2, to: "/admin/kardex", count: data?.movimientosHoy, accent: "primary" },
     { id: "fisico", label: "Inventario físico", icon: { src: fisicoIcon.url }, col: 3, row: 2, to: "/admin/inventario", accent: "warning" },
     { id: "consulta", label: "Consulta de inventario", icon: { src: consultaIcon.url }, col: 4, row: 2, to: "/admin/kardex", accent: "muted" },
     { id: "productos", label: "Productos / servicios", icon: { src: productosIcon.url }, col: 1, row: 3, to: "/admin/productos", count: data?.productos, accent: "muted" },
+    { id: "traspasos", label: "Traspasos", icon: { src: almacenesIcon.url }, col: 3, row: 3, to: "/admin/almacen/traspasos", accent: "primary" },
+    { id: "remisiones", label: "Remisiones", icon: { src: guiasIcon.url }, col: 4, row: 3, to: "/admin/almacen/remisiones", accent: "warning" },
     { id: "guias", label: "Guías de embarque", icon: { src: guiasIcon.url }, col: 2, row: 3, to: "/admin/logistica", accent: "muted" },
   ];
 
   const edges: FlowEdge[] = [
+    { from: "recepciones", to: "movs" },
     { from: "almacenes", to: "movs" },
     { from: "movs", to: "costos", bidirectional: true },
     { from: "movs", to: "fisico" },
     { from: "fisico", to: "consulta" },
+    { from: "movs", to: "traspasos" },
+    { from: "movs", to: "remisiones" },
     { from: "movs", to: "guias" },
   ];
 
