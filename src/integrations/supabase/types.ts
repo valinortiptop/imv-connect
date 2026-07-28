@@ -15184,6 +15184,9 @@ export type Database = {
         | "logistica"
         | "contabilidad"
         | "viewer"
+        | "compras"
+        | "facturacion"
+        | "cobranza"
       autorizacion_estado: "solicitada" | "aprobada" | "rechazada" | "cancelada"
       autorizacion_tipo:
         | "desbloqueo"
@@ -15403,6 +15406,9 @@ export const Constants = {
         "logistica",
         "contabilidad",
         "viewer",
+        "compras",
+        "facturacion",
+        "cobranza",
       ],
       autorizacion_estado: ["solicitada", "aprobada", "rechazada", "cancelada"],
       autorizacion_tipo: [
