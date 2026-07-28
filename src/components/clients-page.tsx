@@ -537,13 +537,24 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
     }
   }, []);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = (id: string, anchorEl?: HTMLElement | null) => {
+    // Keep the clicked row visually anchored: remember its offset from the top
+    // of the viewport and restore it after the expand/collapse re-render.
+    const before = anchorEl?.getBoundingClientRect().top ?? null;
     setExpandedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+    if (before != null && anchorEl) {
+      requestAnimationFrame(() => {
+        const after = anchorEl.getBoundingClientRect().top;
+        const delta = after - before;
+        if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
+      });
+    }
   };
+
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const el = e.currentTarget as HTMLElement;
