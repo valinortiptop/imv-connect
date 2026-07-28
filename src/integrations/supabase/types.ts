@@ -4575,6 +4575,60 @@ export type Database = {
         }
         Relationships: []
       }
+      message_templates: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          category: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          key: string
+          name: string
+          subject: string | null
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          category?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key: string
+          name: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          category?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key?: string
+          name?: string
+          subject?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       monthly_bonificaciones: {
         Row: {
           created_at: string

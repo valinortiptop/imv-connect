@@ -22,6 +22,10 @@ export type NotificationInput = {
   entityId?: string | null;
   /** Fuerza el envío por email aunque el usuario no lo tenga activado. */
   forceEmail?: boolean;
+  /** Plantilla de la librería a usar para el correo (default: notificacion_generica). */
+  templateKey?: string;
+  /** Variables extra para la plantilla. */
+  templateVars?: Record<string, unknown>;
 };
 
 type Prefs = { in_app: boolean; email: boolean; sms: boolean };
@@ -119,12 +123,31 @@ export async function dispatchNotification(input: NotificationInput) {
       });
     } else {
       try {
-        await sendEmail({
-          from,
-          to,
-          subject: input.title,
-          html: emailHtml({ ...input, category }, appUrl),
-        });
+        // Si existe una plantilla activa en la librería, se usa; si no, el HTML base.
+        let subject = input.title;
+        let html = emailHtml({ ...input, category }, appUrl);
+        try {
+          const { renderTemplate } = await import("@/lib/message-templates.server");
+          const { CATEGORY_LABEL } = await import("@/lib/notification-categories");
+          const rendered = await renderTemplate(
+            input.templateKey || "notificacion_generica",
+            {
+              title: input.title,
+              description: input.description ?? "",
+              category_label: CATEGORY_LABEL[category] ?? category,
+              link: input.route ? `${appUrl}${input.route}` : appUrl,
+              ...(input.templateVars ?? {}),
+            },
+            "email",
+          );
+          if (rendered?.html) {
+            html = rendered.html;
+            if (rendered.subject) subject = rendered.subject;
+          }
+        } catch {
+          /* fallback al HTML base */
+        }
+        await sendEmail({ from, to, subject, html });
         deliveries.push({
           notification_id: notificationId,
           user_id: input.userId,
