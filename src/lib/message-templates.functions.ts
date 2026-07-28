@@ -49,7 +49,7 @@ export const saveTemplateFn = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { extractVariables } = await import("@/lib/message-templates.server");
     const variables = extractVariables(data.subject, data.body_html, data.body_text);
-    const payload: Record<string, unknown> = {
+    const payload: any = {
       key: data.key,
       name: data.name,
       channel: data.channel,
