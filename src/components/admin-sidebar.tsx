@@ -137,6 +137,7 @@ const navGroups: NavGroup[] = [
       { key: "navRecepciones",   label: "Recepciones",          url: "/admin/almacen/recepciones", icon: icEntradas.url },
       { key: "navTraspasos",     label: "Traspasos",            url: "/admin/almacen/traspasos",  icon: icAlmacenes.url },
       { key: "navRemisiones",    label: "Remisiones",           url: "/admin/almacen/remisiones", icon: icKardex.url },
+      { key: "navRepAlmacen",    label: "Reportes almacén",     url: "/admin/almacen/reportes",   icon: icRotacion.url },
       { key: "navPurchaseNeeds",       label: "Compras",              url: "/admin/compras",              icon: icCompras.url, exact: true },
       { key: "navComprasPlaneacion",   label: "Planeación",           url: "/admin/compras/planeacion",   icon: icPlaneacion.url },
       { key: "navComprasOrdenes",      label: "Órdenes",              url: "/admin/compras/ordenes",      icon: icOrdenesCompra.url },
