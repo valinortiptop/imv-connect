@@ -140,7 +140,8 @@ export const signContabilidadXml = createServerFn({ method: "POST" })
     const now = new Date();
     if (new Date(rec.valid_to) < now) throw new Error("El CSD activo está vencido");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+
     const [cerDl, keyDl] = await Promise.all([
       supabaseAdmin.storage.from("csd").download(rec.cer_path),
       supabaseAdmin.storage.from("csd").download(rec.key_path),
