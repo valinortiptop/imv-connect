@@ -9,6 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, FileDown, Lock, LockOpen, Printer, Search } from "lucide-react";
 import { reportePdf } from "@/lib/almacen-pdf";
+import GenericReportTab, {
+  fmtMXN as fmtMXNc,
+  fmtNum,
+  fmtDate,
+  type ReportRow,
+} from "@/components/almacen/GenericReportTab";
+
 
 type Rotacion = {
   producto_id: string;
