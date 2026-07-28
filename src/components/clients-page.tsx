@@ -1408,7 +1408,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                     <div className="flex items-center gap-2 min-w-0">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("[data-client-row]") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}
                         className="shrink-0"
                         aria-label="Expandir"
                       >
