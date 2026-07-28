@@ -537,13 +537,24 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
     }
   }, []);
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = (id: string, anchorEl?: HTMLElement | null) => {
+    // Keep the clicked row visually anchored: remember its offset from the top
+    // of the viewport and restore it after the expand/collapse re-render.
+    const before = anchorEl?.getBoundingClientRect().top ?? null;
     setExpandedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+    if (before != null && anchorEl) {
+      requestAnimationFrame(() => {
+        const after = anchorEl.getBoundingClientRect().top;
+        const delta = after - before;
+        if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
+      });
+    }
   };
+
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const el = e.currentTarget as HTMLElement;
@@ -1397,7 +1408,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                     <div className="flex items-center gap-2 min-w-0">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("[data-client-row]") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}
                         className="shrink-0"
                         aria-label="Expandir"
                       >
@@ -1569,7 +1580,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                       >
                         <TableCell className="hidden md:table-cell" onClick={e => e.stopPropagation()}><Checkbox checked={selectedIds.has(c.id)} onCheckedChange={() => toggleSelect(c.id)} /></TableCell>
                         <TableCell className="px-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleExpand(c.id); }}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("tr") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}>
                             {expandedIds.has(c.id)
                               ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
                               : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
