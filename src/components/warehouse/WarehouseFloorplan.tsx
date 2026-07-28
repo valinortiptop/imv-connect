@@ -102,6 +102,8 @@ const ZONE_STYLES: Record<string, { bg: string; text: string; label: string }> =
   migracion: { bg: "bg-amber-400", text: "text-neutral-900", label: "Migración (temporal)" },
 };
 
+const RACK_POSITIONS: Record<string, number> = { A: 5, B: 5, C: 5, D: 4, E: 4, F: 4 };
+
 function slotStyle(zone: string) {
   return ZONE_STYLES[zone] ?? { bg: "bg-neutral-200", text: "text-neutral-900", label: zone };
 }
