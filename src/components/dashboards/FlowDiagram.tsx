@@ -154,7 +154,7 @@ export default function FlowDiagram({ nodes, edges, cols, rows }: Props) {
                     src={(n.icon as { src: string; alt?: string }).src}
                     alt={(n.icon as { src: string; alt?: string }).alt ?? n.label}
                     loading="lazy"
-                    className="h-full w-full object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)] transition-transform group-hover:scale-110"
+                    className="h-full w-full object-contain mix-blend-multiply transition-transform group-hover:scale-110"
                   />
                 ) : (
                   (() => {
