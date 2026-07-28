@@ -132,6 +132,8 @@ const navGroups: NavGroup[] = [
       { key: "navProducts",      label: "Productos",            url: "/admin/productos",          icon: icProductos.url },
       { key: "navInventory",     label: "Inventario",           url: "/admin/inventario",         icon: icConsultaInv.url },
       { key: "navInventario",    label: "Almacén",              url: "/admin/almacen",            icon: icAlmacenes.url },
+      { key: "navAlmacenesCat",  label: "Almacenes / ubicaciones", url: "/admin/almacenes",       icon: icAlmacenes.url },
+
       { key: "navKardex",        label: "Kardex",               url: "/admin/kardex",             icon: icKardex.url },
       { key: "navStock",         label: "Entradas",             url: "/admin/entradas",           icon: icEntradas.url },
       { key: "navRecepciones",   label: "Recepciones",          url: "/admin/almacen/recepciones", icon: icEntradas.url },
