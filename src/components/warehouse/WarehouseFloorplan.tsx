@@ -25,6 +25,13 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,8 +45,10 @@ import {
   Undo2,
   History,
   Download,
+  Maximize2,
   Wrench,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { BarcodeScannerDialog, type ScannerMode } from "@/components/warehouse/BarcodeScannerDialog";
 import { RecentMovementsSheet } from "@/components/warehouse/RecentMovementsSheet";
