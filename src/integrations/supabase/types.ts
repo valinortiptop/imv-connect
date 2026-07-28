@@ -626,6 +626,13 @@ export type Database = {
             foreignKeyName: "client_price_overrides_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -675,6 +682,20 @@ export type Database = {
             foreignKeyName: "client_price_overrides_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -696,6 +717,20 @@ export type Database = {
             foreignKeyName: "client_price_overrides_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -711,6 +746,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -808,6 +850,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: true
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -942,6 +991,13 @@ export type Database = {
             foreignKeyName: "cliente_documentos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_documentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -1027,6 +1083,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -1272,6 +1335,13 @@ export type Database = {
             foreignKeyName: "cobranza_alertas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_alertas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -1373,6 +1443,13 @@ export type Database = {
             foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -1396,6 +1473,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
           },
         ]
       }
@@ -1492,6 +1576,13 @@ export type Database = {
             foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -1515,6 +1606,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
           },
         ]
       }
@@ -1590,6 +1688,13 @@ export type Database = {
             foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -1613,6 +1718,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "cobranza_promesas_pago_gestion_id_fkey"
@@ -1725,6 +1837,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -1859,8 +1978,22 @@ export type Database = {
             foreignKeyName: "cost_history_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "cost_history_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_history_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
           },
           {
             foreignKeyName: "cost_history_producto_id_fkey"
@@ -1901,6 +2034,20 @@ export type Database = {
             foreignKeyName: "cost_history_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -1922,6 +2069,20 @@ export type Database = {
             foreignKeyName: "cost_history_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -1937,6 +2098,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "cost_history_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -2013,6 +2181,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -2234,6 +2409,20 @@ export type Database = {
             foreignKeyName: "damaged_batches_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -2255,6 +2444,20 @@ export type Database = {
             foreignKeyName: "damaged_batches_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2270,6 +2473,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "damaged_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -2380,6 +2590,20 @@ export type Database = {
             foreignKeyName: "delivery_trip_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -2401,6 +2625,20 @@ export type Database = {
             foreignKeyName: "delivery_trip_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2416,6 +2654,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "delivery_trip_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -2570,6 +2815,20 @@ export type Database = {
             foreignKeyName: "devolucion_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -2591,6 +2850,20 @@ export type Database = {
             foreignKeyName: "devolucion_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -2606,6 +2879,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "devolucion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -2705,6 +2985,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -2728,6 +3015,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "devoluciones_poliza_id_fkey"
@@ -3111,6 +3405,274 @@ export type Database = {
         }
         Relationships: []
       }
+      entradas_recepcion: {
+        Row: {
+          almacen_id: string
+          created_at: string
+          created_by: string | null
+          estado: string
+          factura_proveedor: string | null
+          fecha: string
+          folio: string | null
+          id: string
+          notas: string | null
+          oc_id: string | null
+          proveedor: string | null
+          updated_at: string
+        }
+        Insert: {
+          almacen_id: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          factura_proveedor?: string | null
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          oc_id?: string | null
+          proveedor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          almacen_id?: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          factura_proveedor?: string | null
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          oc_id?: string | null
+          proveedor?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entradas_recepcion_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
+          },
+        ]
+      }
+      entradas_recepcion_items: {
+        Row: {
+          caducidad: string | null
+          cantidad: number
+          costo_unitario: number
+          created_at: string
+          id: string
+          lote: string | null
+          notas: string | null
+          oc_item_id: string | null
+          producto_id: string
+          recepcion_id: string
+        }
+        Insert: {
+          caducidad?: string | null
+          cantidad?: number
+          costo_unitario?: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          notas?: string | null
+          oc_item_id?: string | null
+          producto_id: string
+          recepcion_id: string
+        }
+        Update: {
+          caducidad?: string | null
+          cantidad?: number
+          costo_unitario?: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          notas?: string | null
+          oc_item_id?: string | null
+          producto_id?: string
+          recepcion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entradas_recepcion_items_oc_item_id_fkey"
+            columns: ["oc_item_id"]
+            isOneToOne: false
+            referencedRelation: "oc_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_recepcion_id_fkey"
+            columns: ["recepcion_id"]
+            isOneToOne: false
+            referencedRelation: "entradas_recepcion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_recepcion_id_fkey"
+            columns: ["recepcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["recepcion_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_items_recepcion_id_fkey"
+            columns: ["recepcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["recepcion_id"]
+          },
+        ]
+      }
       factura_items: {
         Row: {
           cantidad: number
@@ -3160,6 +3722,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "factura_items_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
+          },
+          {
             foreignKeyName: "factura_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -3198,6 +3767,20 @@ export type Database = {
             foreignKeyName: "factura_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -3219,6 +3802,20 @@ export type Database = {
             foreignKeyName: "factura_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -3234,6 +3831,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "factura_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -3361,6 +3965,13 @@ export type Database = {
             foreignKeyName: "facturas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "facturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -3412,6 +4023,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_purchase_by_order"
             referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "facturas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
           },
           {
             foreignKeyName: "facturas_poliza_id_fkey"
@@ -3862,11 +4480,15 @@ export type Database = {
       movimientos_inventario: {
         Row: {
           almacen_id: string
+          caducidad: string | null
           cantidad: number
           created_at: string
           created_by: string | null
           id: string
+          lote: string | null
           notas: string | null
+          origen_id: string | null
+          origen_tipo: string | null
           pedido_id: string | null
           producto_id: string
           referencia: string | null
@@ -3874,11 +4496,15 @@ export type Database = {
         }
         Insert: {
           almacen_id: string
+          caducidad?: string | null
           cantidad: number
           created_at?: string
           created_by?: string | null
           id?: string
+          lote?: string | null
           notas?: string | null
+          origen_id?: string | null
+          origen_tipo?: string | null
           pedido_id?: string | null
           producto_id: string
           referencia?: string | null
@@ -3886,11 +4512,15 @@ export type Database = {
         }
         Update: {
           almacen_id?: string
+          caducidad?: string | null
           cantidad?: number
           created_at?: string
           created_by?: string | null
           id?: string
+          lote?: string | null
           notas?: string | null
+          origen_id?: string | null
+          origen_tipo?: string | null
           pedido_id?: string | null
           producto_id?: string
           referencia?: string | null
@@ -3954,6 +4584,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "movimientos_inventario_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -3992,6 +4629,20 @@ export type Database = {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4013,6 +4664,20 @@ export type Database = {
             foreignKeyName: "movimientos_inventario_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -4028,6 +4693,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -4084,6 +4756,268 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
+          },
+        ]
+      }
+      notas_credito_proveedor: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          factura_proveedor: string | null
+          fecha: string
+          folio: string | null
+          id: string
+          laboratorio_id: string | null
+          motivo: string | null
+          notas: string | null
+          oc_id: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          factura_proveedor?: string | null
+          fecha?: string
+          folio?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          motivo?: string | null
+          notas?: string | null
+          oc_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          factura_proveedor?: string | null
+          fecha?: string
+          folio?: string | null
+          id?: string
+          laboratorio_id?: string | null
+          motivo?: string | null
+          notas?: string | null
+          oc_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_credito_proveedor_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
+          },
+        ]
+      }
+      notas_credito_proveedor_items: {
+        Row: {
+          cantidad: number
+          costo_unitario: number
+          created_at: string
+          id: string
+          importe: number
+          lote: string | null
+          nc_id: string
+          producto_id: string | null
+        }
+        Insert: {
+          cantidad?: number
+          costo_unitario?: number
+          created_at?: string
+          id?: string
+          importe?: number
+          lote?: string | null
+          nc_id: string
+          producto_id?: string | null
+        }
+        Update: {
+          cantidad?: number
+          costo_unitario?: number
+          created_at?: string
+          id?: string
+          importe?: number
+          lote?: string | null
+          nc_id?: string
+          producto_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_credito_proveedor_items_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "notas_credito_proveedor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
           },
         ]
       }
@@ -4166,8 +5100,22 @@ export type Database = {
             foreignKeyName: "oc_items_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_items_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_items_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
           },
           {
             foreignKeyName: "oc_items_producto_id_fkey"
@@ -4208,6 +5156,20 @@ export type Database = {
             foreignKeyName: "oc_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4229,6 +5191,20 @@ export type Database = {
             foreignKeyName: "oc_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -4244,6 +5220,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "oc_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -4358,6 +5341,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           estado: Database["public"]["Enums"]["oc_estado"]
+          factura_proveedor: string | null
+          factura_proveedor_fecha: string | null
           fecha_emision: string
           fecha_esperada: string | null
           fecha_recepcion: string | null
@@ -4376,6 +5361,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estado?: Database["public"]["Enums"]["oc_estado"]
+          factura_proveedor?: string | null
+          factura_proveedor_fecha?: string | null
           fecha_emision?: string
           fecha_esperada?: string | null
           fecha_recepcion?: string | null
@@ -4394,6 +5381,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estado?: Database["public"]["Enums"]["oc_estado"]
+          factura_proveedor?: string | null
+          factura_proveedor_fecha?: string | null
           fecha_emision?: string
           fecha_esperada?: string | null
           fecha_recepcion?: string | null
@@ -4559,6 +5548,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "order_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "order_adjustments_order_item_id_fkey"
             columns: ["order_item_id"]
             isOneToOne: false
@@ -4618,6 +5614,20 @@ export type Database = {
             foreignKeyName: "order_adjustments_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -4639,6 +5649,20 @@ export type Database = {
             foreignKeyName: "order_adjustments_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -4654,6 +5678,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "order_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -4885,6 +5916,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "pagos_poliza_id_fkey"
@@ -5224,6 +6262,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -5262,6 +6307,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -5283,6 +6342,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -5298,6 +6371,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -5419,6 +6499,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -5776,6 +6863,13 @@ export type Database = {
             foreignKeyName: "precios_cliente_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -5825,6 +6919,20 @@ export type Database = {
             foreignKeyName: "precios_cliente_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -5846,6 +6954,20 @@ export type Database = {
             foreignKeyName: "precios_cliente_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -5861,6 +6983,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -5940,6 +7069,20 @@ export type Database = {
             foreignKeyName: "price_list_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -5961,6 +7104,20 @@ export type Database = {
             foreignKeyName: "price_list_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -5976,6 +7133,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "price_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -6083,8 +7247,22 @@ export type Database = {
             foreignKeyName: "product_batches_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "product_batches_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_batches_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
           },
           {
             foreignKeyName: "product_batches_producto_id_fkey"
@@ -6125,6 +7303,20 @@ export type Database = {
             foreignKeyName: "product_batches_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6146,6 +7338,20 @@ export type Database = {
             foreignKeyName: "product_batches_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -6161,6 +7367,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -6263,6 +7476,8 @@ export type Database = {
       }
       product_stock_params: {
         Row: {
+          bloqueo_compra: boolean
+          bloqueo_motivo: string | null
           dias_cobertura_objetivo: number
           dias_seguridad: number
           lead_time_dias: number
@@ -6273,6 +7488,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bloqueo_compra?: boolean
+          bloqueo_motivo?: string | null
           dias_cobertura_objetivo?: number
           dias_seguridad?: number
           lead_time_dias?: number
@@ -6283,6 +7500,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bloqueo_compra?: boolean
+          bloqueo_motivo?: string | null
           dias_cobertura_objetivo?: number
           dias_seguridad?: number
           lead_time_dias?: number
@@ -6332,6 +7551,20 @@ export type Database = {
             foreignKeyName: "product_stock_params_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: true
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6353,6 +7586,20 @@ export type Database = {
             foreignKeyName: "product_stock_params_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: true
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -6368,6 +7615,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: true
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_stock_params_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: true
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -6440,6 +7694,20 @@ export type Database = {
             foreignKeyName: "product_substitutes_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6461,6 +7729,20 @@ export type Database = {
             foreignKeyName: "product_substitutes_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -6476,6 +7758,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -6517,6 +7806,20 @@ export type Database = {
             foreignKeyName: "product_substitutes_sustituto_id_fkey"
             columns: ["sustituto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -6538,6 +7841,20 @@ export type Database = {
             foreignKeyName: "product_substitutes_sustituto_id_fkey"
             columns: ["sustituto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -6553,6 +7870,13 @@ export type Database = {
             columns: ["sustituto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_substitutes_sustituto_id_fkey"
+            columns: ["sustituto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -6944,8 +8268,22 @@ export type Database = {
             foreignKeyName: "purchase_alerts_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
           },
           {
             foreignKeyName: "purchase_alerts_producto_id_fkey"
@@ -6986,6 +8324,20 @@ export type Database = {
             foreignKeyName: "purchase_alerts_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -7007,6 +8359,20 @@ export type Database = {
             foreignKeyName: "purchase_alerts_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -7022,6 +8388,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -7204,6 +8577,338 @@ export type Database = {
         }
         Relationships: []
       }
+      remision_items: {
+        Row: {
+          caducidad: string | null
+          cantidad: number
+          created_at: string
+          id: string
+          lote: string | null
+          pedido_item_id: string | null
+          producto_id: string
+          remision_id: string
+          ubicacion: string | null
+        }
+        Insert: {
+          caducidad?: string | null
+          cantidad: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          pedido_item_id?: string | null
+          producto_id: string
+          remision_id: string
+          ubicacion?: string | null
+        }
+        Update: {
+          caducidad?: string | null
+          cantidad?: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          pedido_item_id?: string | null
+          producto_id?: string
+          remision_id?: string
+          ubicacion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remision_items_pedido_item_id_fkey"
+            columns: ["pedido_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_pedido_item_id_fkey"
+            columns: ["pedido_item_id"]
+            isOneToOne: false
+            referencedRelation: "pedido_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_pedido_item_id_fkey"
+            columns: ["pedido_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_order_item_breakdown"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "remision_items_remision_id_fkey"
+            columns: ["remision_id"]
+            isOneToOne: false
+            referencedRelation: "remisiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remision_items_remision_id_fkey"
+            columns: ["remision_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["remision_id"]
+          },
+          {
+            foreignKeyName: "remision_items_remision_id_fkey"
+            columns: ["remision_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["remision_id"]
+          },
+        ]
+      }
+      remisiones: {
+        Row: {
+          almacen_id: string
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha: string
+          folio: string | null
+          id: string
+          notas: string | null
+          pedido_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          almacen_id: string
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          pedido_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          almacen_id?: string
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          pedido_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remisiones_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+        ]
+      }
       rep_access_events: {
         Row: {
           accuracy: number | null
@@ -7363,6 +9068,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: true
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -7727,6 +9439,13 @@ export type Database = {
             foreignKeyName: "rep_visits_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -7771,6 +9490,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_purchase_by_order"
             referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
           },
           {
             foreignKeyName: "rep_visits_representante_id_fkey"
@@ -7998,6 +9724,13 @@ export type Database = {
             foreignKeyName: "sales_history_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -8082,6 +9815,20 @@ export type Database = {
             foreignKeyName: "sales_history_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8103,6 +9850,20 @@ export type Database = {
             foreignKeyName: "sales_history_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8118,6 +9879,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sales_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -8234,6 +10002,13 @@ export type Database = {
             foreignKeyName: "shortage_events_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -8294,6 +10069,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "shortage_events_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "shortage_events_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
@@ -8332,6 +10114,20 @@ export type Database = {
             foreignKeyName: "shortage_events_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8353,6 +10149,20 @@ export type Database = {
             foreignKeyName: "shortage_events_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8368,6 +10178,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -8458,6 +10275,20 @@ export type Database = {
             foreignKeyName: "sku_aliases_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8479,6 +10310,20 @@ export type Database = {
             foreignKeyName: "sku_aliases_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8494,6 +10339,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "sku_aliases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -8578,6 +10430,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "slot_contents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "slot_contents_order_item_id_fkey"
             columns: ["order_item_id"]
             isOneToOne: false
@@ -8637,6 +10496,20 @@ export type Database = {
             foreignKeyName: "slot_contents_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8658,6 +10531,20 @@ export type Database = {
             foreignKeyName: "slot_contents_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8673,6 +10560,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_contents_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -8777,6 +10671,20 @@ export type Database = {
             foreignKeyName: "slot_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8798,6 +10706,20 @@ export type Database = {
             foreignKeyName: "slot_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8813,6 +10735,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "slot_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
           {
@@ -8904,6 +10833,20 @@ export type Database = {
             foreignKeyName: "stock_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -8925,6 +10868,20 @@ export type Database = {
             foreignKeyName: "stock_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -8940,6 +10897,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -9024,6 +10988,20 @@ export type Database = {
             foreignKeyName: "stock_adjustments_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -9045,6 +11023,20 @@ export type Database = {
             foreignKeyName: "stock_adjustments_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -9060,6 +11052,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -9270,6 +11269,20 @@ export type Database = {
             foreignKeyName: "stock_entries_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -9291,6 +11304,20 @@ export type Database = {
             foreignKeyName: "stock_entries_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -9306,6 +11333,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "stock_entries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -9394,8 +11428,22 @@ export type Database = {
             foreignKeyName: "supplier_incidents_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
           },
         ]
       }
@@ -9508,6 +11556,231 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      traspasos_almacen: {
+        Row: {
+          almacen_destino_id: string
+          almacen_origen_id: string
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha: string
+          folio: string | null
+          id: string
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          almacen_destino_id: string
+          almacen_origen_id: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          almacen_destino_id?: string
+          almacen_origen_id?: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha?: string
+          folio?: string | null
+          id?: string
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traspasos_almacen_almacen_destino_id_fkey"
+            columns: ["almacen_destino_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_almacen_destino_id_fkey"
+            columns: ["almacen_destino_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_almacen_origen_id_fkey"
+            columns: ["almacen_origen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_almacen_origen_id_fkey"
+            columns: ["almacen_origen_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["almacen_id"]
+          },
+        ]
+      }
+      traspasos_almacen_items: {
+        Row: {
+          caducidad: string | null
+          cantidad: number
+          created_at: string
+          id: string
+          lote: string | null
+          producto_id: string
+          traspaso_id: string
+        }
+        Insert: {
+          caducidad?: string | null
+          cantidad: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          producto_id: string
+          traspaso_id: string
+        }
+        Update: {
+          caducidad?: string | null
+          cantidad?: number
+          created_at?: string
+          id?: string
+          lote?: string | null
+          producto_id?: string
+          traspaso_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_traspaso_id_fkey"
+            columns: ["traspaso_id"]
+            isOneToOne: false
+            referencedRelation: "traspasos_almacen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traspasos_almacen_items_traspaso_id_fkey"
+            columns: ["traspaso_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["traspaso_id"]
+          },
+        ]
       }
       user_permission_overrides: {
         Row: {
@@ -9708,6 +11981,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -10063,6 +12343,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -10101,6 +12388,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -10122,6 +12423,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -10137,6 +12452,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -10187,6 +12509,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -10298,6 +12627,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -10470,6 +12806,20 @@ export type Database = {
             foreignKeyName: "product_batches_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -10491,6 +12841,20 @@ export type Database = {
             foreignKeyName: "product_batches_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_stock_bajo"
             referencedColumns: ["producto_id"]
           },
@@ -10506,6 +12870,13 @@ export type Database = {
             columns: ["producto_id"]
             isOneToOne: false
             referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "product_batches_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
             referencedColumns: ["producto_id"]
           },
         ]
@@ -10577,6 +12948,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["producto_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -10593,6 +12978,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_purchase_needs"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "pedido_items_producto_id_fkey"
@@ -10616,6 +13015,13 @@ export type Database = {
             referencedColumns: ["producto_id"]
           },
           {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
@@ -10634,6 +13040,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -10788,6 +13201,23 @@ export type Database = {
           },
         ]
       }
+      v_corta_caducidad_lento: {
+        Row: {
+          almacen: string | null
+          articulo: string | null
+          batch_id: string | null
+          caducidad: string | null
+          cantidad: number | null
+          clasificacion: string | null
+          clave: string | null
+          dias_para_caducar: number | null
+          dias_sin_venta: number | null
+          laboratorio: string | null
+          lote: string | null
+          producto_id: string | null
+        }
+        Relationships: []
+      }
       v_dashboard_resumen: {
         Row: {
           comisiones_mes: number | null
@@ -10857,6 +13287,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -10874,7 +13311,38 @@ export type Database = {
             referencedRelation: "facturas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "devoluciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["factura_id"]
+          },
         ]
+      }
+      v_entradas_report: {
+        Row: {
+          almacen: string | null
+          articulo: string | null
+          caducidad: string | null
+          cantidad: number | null
+          clave: string | null
+          costo_unitario: number | null
+          created_at: string | null
+          estado: string | null
+          factura_proveedor: string | null
+          fecha: string | null
+          folio: string | null
+          importe: number | null
+          item_id: string | null
+          lote: string | null
+          oc_folio: string | null
+          oc_id: string | null
+          producto_id: string | null
+          proveedor: string | null
+          recepcion_id: string | null
+        }
+        Relationships: []
       }
       v_kardex_movements: {
         Row: {
@@ -10974,6 +13442,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -11059,6 +13534,13 @@ export type Database = {
             referencedColumns: ["order_id"]
           },
           {
+            foreignKeyName: "pedido_items_pedido_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+          {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -11097,6 +13579,20 @@ export type Database = {
             foreignKeyName: "pedido_items_producto_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "v_margen_productos"
             referencedColumns: ["producto_id"]
           },
@@ -11113,6 +13609,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_purchase_needs"
             referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
           },
           {
             foreignKeyName: "pedido_items_producto_id_fkey"
@@ -11136,6 +13646,13 @@ export type Database = {
             referencedColumns: ["producto_id"]
           },
           {
+            foreignKeyName: "pedido_items_producto_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -11154,6 +13671,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -11278,6 +13802,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_saldos_clientes"
             referencedColumns: ["cliente_id"]
           },
@@ -11303,6 +13834,71 @@ export type Database = {
         }
         Relationships: []
       }
+      v_remisiones_report: {
+        Row: {
+          almacen: string | null
+          articulo: string | null
+          caducidad: string | null
+          cantidad: number | null
+          clave: string | null
+          cliente: string | null
+          cliente_id: string | null
+          created_at: string | null
+          estado: string | null
+          fecha: string | null
+          folio: string | null
+          lote: string | null
+          pedido_folio: string | null
+          pedido_id: string | null
+          producto_id: string | null
+          remision_id: string | null
+          ubicacion: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "order_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_open_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_by_order"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "remisiones_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_venta"
+            referencedColumns: ["pedido_id"]
+          },
+        ]
+      }
       v_saldos_clientes: {
         Row: {
           cliente_id: string | null
@@ -11315,6 +13911,20 @@ export type Database = {
           saldo_corriente: number | null
           saldo_mas_90: number | null
           saldo_total: number | null
+        }
+        Relationships: []
+      }
+      v_sin_movimiento_venta: {
+        Row: {
+          articulo: string | null
+          categoria: string | null
+          clave: string | null
+          dias_sin_venta: number | null
+          existencia: number | null
+          laboratorio: string | null
+          marca: string | null
+          producto_id: string | null
+          ultima_venta: string | null
         }
         Relationships: []
       }
@@ -11372,6 +13982,60 @@ export type Database = {
           producto_id: string | null
           sku: string | null
           unidades: number | null
+        }
+        Relationships: []
+      }
+      v_traspasos_report: {
+        Row: {
+          almacen_destino: string | null
+          almacen_origen: string | null
+          articulo: string | null
+          caducidad: string | null
+          cantidad: number | null
+          clave: string | null
+          created_at: string | null
+          estado: string | null
+          fecha: string | null
+          folio: string | null
+          lote: string | null
+          notas: string | null
+          producto_id: string | null
+          traspaso_id: string | null
+        }
+        Relationships: []
+      }
+      v_trazabilidad_compra: {
+        Row: {
+          factura_proveedor: string | null
+          factura_proveedor_fecha: string | null
+          fecha_emision: string | null
+          fecha_recepcion: string | null
+          oc_estado: Database["public"]["Enums"]["oc_estado"] | null
+          oc_folio: string | null
+          oc_id: string | null
+          proveedor: string | null
+          recepcion_estado: string | null
+          recepcion_folio: string | null
+          recepcion_id: string | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      v_trazabilidad_venta: {
+        Row: {
+          cliente: string | null
+          factura_estado: Database["public"]["Enums"]["factura_estado"] | null
+          factura_fecha: string | null
+          factura_folio: string | null
+          factura_id: string | null
+          factura_total: number | null
+          pedido_fecha: string | null
+          pedido_folio: string | null
+          pedido_id: string | null
+          remision_estado: string | null
+          remision_fecha: string | null
+          remision_folio: string | null
+          remision_id: string | null
         }
         Relationships: []
       }
@@ -11434,6 +14098,10 @@ export type Database = {
       }
     }
     Functions: {
+      _alm_next_folio: {
+        Args: { _prefix: string; _table: unknown }
+        Returns: string
+      }
       _aplicar_stock: {
         Args: { _almacen: string; _delta: number; _producto: string }
         Returns: undefined
@@ -11446,6 +14114,17 @@ export type Database = {
       _find_periodo: {
         Args: { p_empresa: string; p_fecha: string }
         Returns: string
+      }
+      _mover_lote: {
+        Args: {
+          _almacen: string
+          _caducidad: string
+          _costo?: number
+          _delta: number
+          _lote: string
+          _producto: string
+        }
+        Returns: undefined
       }
       _next_poliza_folio: {
         Args: {
@@ -11532,6 +14211,14 @@ export type Database = {
           }
       bank_account_saldo: { Args: { _cuenta: string }; Returns: number }
       bootstrap_admin: { Args: never; Returns: undefined }
+      cancelar_recepcion: {
+        Args: { _motivo?: string; _rec: string }
+        Returns: undefined
+      }
+      cancelar_remision: {
+        Args: { _motivo?: string; _rem: string }
+        Returns: undefined
+      }
       clients_dashboard_stats: {
         Args: { _date_from?: string; _date_to?: string }
         Returns: Json
@@ -11557,6 +14244,15 @@ export type Database = {
           folio: string
           id: string
         }[]
+      }
+      crear_remision: {
+        Args: {
+          _almacen: string
+          _items: Json
+          _notas?: string
+          _pedido: string
+        }
+        Returns: string
       }
       create_order_with_client: {
         Args: {
@@ -11588,6 +14284,24 @@ export type Database = {
       }
       dev_recalc: { Args: { _dev: string }; Returns: undefined }
       dispatch_order: { Args: { p_order_id: string }; Returns: Json }
+      editar_recepcion: {
+        Args: { _factura?: string; _items: Json; _notas?: string; _rec: string }
+        Returns: string
+      }
+      editar_remision: {
+        Args: { _items: Json; _notas?: string; _rem: string }
+        Returns: string
+      }
+      ejecutar_traspaso: {
+        Args: {
+          _destino: string
+          _fecha?: string
+          _items: Json
+          _notas?: string
+          _origen: string
+        }
+        Returns: string
+      }
       facturar_pedido: {
         Args: { _dias_credito?: number; _pedido: string }
         Returns: Json
@@ -11800,7 +14514,12 @@ export type Database = {
       polizas_recalc: { Args: { _poliza: string }; Returns: undefined }
       post_factura_poliza: { Args: { p_factura_id: string }; Returns: string }
       post_pago_poliza: { Args: { p_pago_id: string }; Returns: string }
+      recalcular_bloqueos_compra: { Args: never; Returns: number }
       recibir_oc: { Args: { _items: Json; _oc: string }; Returns: undefined }
+      registrar_recepcion: {
+        Args: { _factura?: string; _items: Json; _notas?: string; _oc: string }
+        Returns: string
+      }
       remover_rol: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
