@@ -62,7 +62,11 @@ type StockFilter = "all" | "disponible" | "low_stock" | "committed";
 export default function Inventory() {
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("all");
+  const [claseFilter, setClaseFilter] = useState("all");
+  const [labFilter, setLabFilter] = useState("all");
+  const [almacenFilter, setAlmacenFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
