@@ -280,12 +280,162 @@ export default function ReportesAlmacenPage() {
       </header>
 
       <Tabs defaultValue="rotacion">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="rotacion">Rotación</TabsTrigger>
           <TabsTrigger value="caducidad">Corta caducidad</TabsTrigger>
+          <TabsTrigger value="entradas">Entradas</TabsTrigger>
+          <TabsTrigger value="traslados">Traslados</TabsTrigger>
+          <TabsTrigger value="salidas">Salidas por remisión</TabsTrigger>
+          <TabsTrigger value="sinventa">Sin movimiento</TabsTrigger>
+          <TabsTrigger value="ncprov">NC proveedor</TabsTrigger>
+          <TabsTrigger value="ncventa">NC venta</TabsTrigger>
           <TabsTrigger value="compra">Trazabilidad compra</TabsTrigger>
           <TabsTrigger value="venta">Trazabilidad venta</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="entradas">
+          <GenericReportTab
+            view="v_entradas_report"
+            title="Reporte de entradas · ingresos a almacén"
+            orderBy="fecha"
+            term={q}
+            unitLabel="partidas de entrada"
+            searchKeys={["folio", "clave", "articulo", "lote", "proveedor", "oc_folio", "almacen", "factura_proveedor"]}
+            columns={[
+              { key: "folio", label: "Entrada" },
+              { key: "fecha", label: "Fecha", fmt: fmtDate },
+              { key: "oc_folio", label: "OC" },
+              { key: "proveedor", label: "Proveedor" },
+              { key: "almacen", label: "Almacén" },
+              { key: "clave", label: "Clave" },
+              { key: "articulo", label: "Artículo" },
+              { key: "lote", label: "Lote" },
+              { key: "caducidad", label: "Caducidad", fmt: fmtDate },
+              { key: "cantidad", label: "Cantidad", align: "right", fmt: fmtNum },
+              { key: "importe", label: "Importe", align: "right", fmt: fmtMXNc },
+            ]}
+            summary={(rows) => [
+              `Piezas: ${rows.reduce((s, r) => s + Number(r.cantidad ?? 0), 0).toFixed(2)}`,
+              `Importe: ${fmtMXNc(rows.reduce((s, r) => s + Number(r.importe ?? 0), 0))}`,
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="traslados">
+          <GenericReportTab
+            view="v_traspasos_report"
+            title="Reporte de traslados entre almacenes"
+            orderBy="fecha"
+            term={q}
+            unitLabel="partidas trasladadas"
+            searchKeys={["folio", "clave", "articulo", "lote", "almacen_origen", "almacen_destino"]}
+            columns={[
+              { key: "folio", label: "Folio" },
+              { key: "fecha", label: "Fecha", fmt: fmtDate },
+              { key: "almacen_origen", label: "Origen" },
+              { key: "almacen_destino", label: "Destino" },
+              { key: "clave", label: "Clave" },
+              { key: "articulo", label: "Artículo" },
+              { key: "lote", label: "Lote" },
+              { key: "caducidad", label: "Caducidad", fmt: fmtDate },
+              { key: "cantidad", label: "Cantidad", align: "right", fmt: fmtNum },
+              { key: "estado", label: "Estado" },
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="salidas">
+          <GenericReportTab
+            view="v_remisiones_report"
+            title="Reporte de salidas por remisión"
+            orderBy="fecha"
+            term={q}
+            unitLabel="partidas remisionadas"
+            searchKeys={["folio", "cliente", "clave", "articulo", "lote", "ubicacion", "pedido_folio", "almacen"]}
+            columns={[
+              { key: "folio", label: "Remisión" },
+              { key: "fecha", label: "Fecha", fmt: fmtDate },
+              { key: "cliente", label: "Cliente" },
+              { key: "pedido_folio", label: "Pedido" },
+              { key: "clave", label: "Clave" },
+              { key: "articulo", label: "Artículo" },
+              { key: "lote", label: "Lote" },
+              { key: "caducidad", label: "Caducidad", fmt: fmtDate },
+              { key: "ubicacion", label: "Ubicación" },
+              { key: "cantidad", label: "Cantidad", align: "right", fmt: fmtNum },
+              { key: "estado", label: "Estado" },
+            ]}
+            summary={(rows) => [`Piezas: ${rows.reduce((s, r) => s + Number(r.cantidad ?? 0), 0).toFixed(2)}`]}
+          />
+        </TabsContent>
+
+        <TabsContent value="sinventa">
+          <GenericReportTab
+            view="v_sin_movimiento_venta"
+            title="Productos sin movimiento de venta"
+            orderBy="dias_sin_venta"
+            term={q}
+            unitLabel="productos sin venta"
+            searchKeys={["clave", "articulo", "laboratorio", "marca", "categoria"]}
+            columns={[
+              { key: "clave", label: "Clave" },
+              { key: "articulo", label: "Artículo" },
+              { key: "laboratorio", label: "Laboratorio" },
+              { key: "categoria", label: "Categoría" },
+              { key: "existencia", label: "Existencia", align: "right", fmt: fmtNum },
+              { key: "ultima_venta", label: "Última venta", fmt: (v) => (v ? String(v).slice(0, 10) : "Nunca") },
+              { key: "dias_sin_venta", label: "Días sin venta", align: "right", fmt: (v) => (v == null ? "—" : String(v)) },
+            ]}
+          />
+        </TabsContent>
+
+        <TabsContent value="ncprov">
+          <GenericReportTab
+            view="v_notas_credito_proveedor_report"
+            title="Notas de crédito aplicadas a facturas de proveedor"
+            orderBy="fecha"
+            term={q}
+            unitLabel="partidas de nota de crédito"
+            searchKeys={["folio", "factura_proveedor", "oc_folio", "laboratorio", "clave", "articulo", "lote", "motivo"]}
+            columns={[
+              { key: "folio", label: "NC" },
+              { key: "fecha", label: "Fecha", fmt: fmtDate },
+              { key: "laboratorio", label: "Proveedor / lab." },
+              { key: "factura_proveedor", label: "Factura prov." },
+              { key: "oc_folio", label: "OC" },
+              { key: "clave", label: "Clave" },
+              { key: "articulo", label: "Artículo" },
+              { key: "lote", label: "Lote" },
+              { key: "cantidad", label: "Cantidad", align: "right", fmt: fmtNum },
+              { key: "importe", label: "Importe", align: "right", fmt: fmtMXNc },
+              { key: "motivo", label: "Motivo" },
+            ]}
+            summary={(rows) => [`Importe: ${fmtMXNc(rows.reduce((s, r) => s + Number(r.importe ?? 0), 0))}`]}
+          />
+        </TabsContent>
+
+        <TabsContent value="ncventa">
+          <GenericReportTab
+            view="v_notas_credito_venta_report"
+            title="Notas de crédito aplicadas a facturas de venta"
+            orderBy="fecha"
+            term={q}
+            unitLabel="notas de crédito"
+            searchKeys={["folio", "factura_folio", "cliente", "devolucion_folio"]}
+            columns={[
+              { key: "folio", label: "NC" },
+              { key: "fecha", label: "Fecha", fmt: fmtDate },
+              { key: "cliente", label: "Cliente" },
+              { key: "factura_folio", label: "Factura" },
+              { key: "factura_total", label: "Total factura", align: "right", fmt: fmtMXNc },
+              { key: "devolucion_folio", label: "Devolución" },
+              { key: "nc_total", label: "Total NC", align: "right", fmt: fmtMXNc },
+              { key: "factura_estado", label: "Estado factura" },
+            ]}
+            summary={(rows) => [`Total NC: ${fmtMXNc(rows.reduce((s, r) => s + Number(r.nc_total ?? 0), 0))}`]}
+          />
+        </TabsContent>
+
 
         <TabsContent value="rotacion" className="space-y-3">
           <div className="flex items-center justify-between">
