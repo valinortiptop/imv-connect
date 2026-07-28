@@ -551,6 +551,34 @@ export default function Inventory() {
                 {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={claseFilter} onValueChange={setClaseFilter}>
+              <SelectTrigger className="w-full sm:w-[170px] bg-background">
+                <SelectValue placeholder="Clase" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las clases</SelectItem>
+                {clases.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={labFilter} onValueChange={setLabFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                <SelectValue placeholder="Laboratorio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los laboratorios</SelectItem>
+                {labsInStock.map(l => <SelectItem key={l.id} value={l.id}>{l.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={almacenFilter} onValueChange={setAlmacenFilter}>
+              <SelectTrigger className="w-full sm:w-[170px] bg-background">
+                <SelectValue placeholder="Almacén" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los almacenes</SelectItem>
+                {almacenes.map(a => <SelectItem key={a.id} value={a.id}>{a.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
             <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
               <SelectTrigger className="w-full sm:w-[180px] bg-background">
                 <SelectValue placeholder="Estado de stock" />
