@@ -60,9 +60,10 @@ export const uploadCsd = createServerFn({ method: "POST" })
     if (up2.error) throw new Error(`Subir .key: ${up2.error.message}`);
 
     // Desactiva CSDs previos e inserta el nuevo como activo
-    await supabase.from("empresa_csd" as any).update({ is_active: false }).eq("empresa_id", data.empresaId).eq("is_active", true);
+    // (tabla restringida a admin por RLS; el rol ya fue validado arriba)
+    await supabaseAdmin.from("empresa_csd" as any).update({ is_active: false }).eq("empresa_id", data.empresaId).eq("is_active", true);
 
-    const { error: insErr } = await supabase.from("empresa_csd" as any).insert({
+    const { error: insErr } = await supabaseAdmin.from("empresa_csd" as any).insert({
       empresa_id: data.empresaId,
       rfc: info.rfc,
       no_certificado: info.noCertificado,
@@ -92,7 +93,8 @@ export const getCsdInfo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdminOrConta(supabase, userId);
-    const { data: row } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("empresa_csd" as any)
       .select("rfc, no_certificado, valid_from, valid_to, created_at")
       .eq("empresa_id", data.empresaId)
@@ -109,7 +111,7 @@ export const deleteCsd = createServerFn({ method: "POST" })
     await assertAdminOrConta(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.storage.from("csd").remove([`${data.empresaId}/csd.cer`, `${data.empresaId}/csd.key`]);
-    await supabase.from("empresa_csd" as any).delete().eq("empresa_id", data.empresaId);
+    await supabaseAdmin.from("empresa_csd" as any).delete().eq("empresa_id", data.empresaId);
     return { ok: true };
   });
 
@@ -124,7 +126,8 @@ export const signContabilidadXml = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdminOrConta(supabase, userId);
 
-    const { data: csd, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: csd, error } = await supabaseAdmin
       .from("empresa_csd" as any)
       .select("cer_path, key_path, cer_pem, no_certificado, valid_from, valid_to")
       .eq("empresa_id", data.empresaId)
@@ -137,7 +140,8 @@ export const signContabilidadXml = createServerFn({ method: "POST" })
     const now = new Date();
     if (new Date(rec.valid_to) < now) throw new Error("El CSD activo está vencido");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+
     const [cerDl, keyDl] = await Promise.all([
       supabaseAdmin.storage.from("csd").download(rec.cer_path),
       supabaseAdmin.storage.from("csd").download(rec.key_path),
