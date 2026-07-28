@@ -113,6 +113,7 @@ import { Route as AdminContabilidadDiarioRouteImport } from './routes/admin.cont
 import { Route as AdminContabilidadCuentasRouteImport } from './routes/admin.contabilidad.cuentas'
 import { Route as AdminContabilidadBalanzaRouteImport } from './routes/admin.contabilidad.balanza'
 import { Route as AdminContabilidadAgrupadoresRouteImport } from './routes/admin.contabilidad.agrupadores'
+import { Route as AdminConfiguracionPlantillasRouteImport } from './routes/admin.configuracion.plantillas'
 import { Route as AdminConfiguracionNotificacionesRouteImport } from './routes/admin.configuracion.notificaciones'
 import { Route as AdminComprasRotacionRouteImport } from './routes/admin.compras.rotacion'
 import { Route as AdminComprasProveedoresRouteImport } from './routes/admin.compras.proveedores'
@@ -687,6 +688,12 @@ const AdminContabilidadAgrupadoresRoute =
     path: '/contabilidad/agrupadores',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminConfiguracionPlantillasRoute =
+  AdminConfiguracionPlantillasRouteImport.update({
+    id: '/configuracion/plantillas',
+    path: '/configuracion/plantillas',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminConfiguracionNotificacionesRoute =
   AdminConfiguracionNotificacionesRouteImport.update({
     id: '/configuracion/notificaciones',
@@ -966,6 +973,7 @@ export interface FileRoutesByFullPath {
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
   '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/configuracion/notificaciones': typeof AdminConfiguracionNotificacionesRoute
+  '/admin/configuracion/plantillas': typeof AdminConfiguracionPlantillasRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -1101,6 +1109,7 @@ export interface FileRoutesByTo {
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
   '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/configuracion/notificaciones': typeof AdminConfiguracionNotificacionesRoute
+  '/admin/configuracion/plantillas': typeof AdminConfiguracionPlantillasRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -1242,6 +1251,7 @@ export interface FileRoutesById {
   '/admin/compras/proveedores': typeof AdminComprasProveedoresRoute
   '/admin/compras/rotacion': typeof AdminComprasRotacionRoute
   '/admin/configuracion/notificaciones': typeof AdminConfiguracionNotificacionesRoute
+  '/admin/configuracion/plantillas': typeof AdminConfiguracionPlantillasRoute
   '/admin/contabilidad/agrupadores': typeof AdminContabilidadAgrupadoresRoute
   '/admin/contabilidad/balanza': typeof AdminContabilidadBalanzaRoute
   '/admin/contabilidad/cuentas': typeof AdminContabilidadCuentasRoute
@@ -1385,6 +1395,7 @@ export interface FileRouteTypes {
     | '/admin/compras/proveedores'
     | '/admin/compras/rotacion'
     | '/admin/configuracion/notificaciones'
+    | '/admin/configuracion/plantillas'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -1520,6 +1531,7 @@ export interface FileRouteTypes {
     | '/admin/compras/proveedores'
     | '/admin/compras/rotacion'
     | '/admin/configuracion/notificaciones'
+    | '/admin/configuracion/plantillas'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -1660,6 +1672,7 @@ export interface FileRouteTypes {
     | '/admin/compras/proveedores'
     | '/admin/compras/rotacion'
     | '/admin/configuracion/notificaciones'
+    | '/admin/configuracion/plantillas'
     | '/admin/contabilidad/agrupadores'
     | '/admin/contabilidad/balanza'
     | '/admin/contabilidad/cuentas'
@@ -2457,6 +2470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadAgrupadoresRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/configuracion/plantillas': {
+      id: '/admin/configuracion/plantillas'
+      path: '/configuracion/plantillas'
+      fullPath: '/admin/configuracion/plantillas'
+      preLoaderRoute: typeof AdminConfiguracionPlantillasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/configuracion/notificaciones': {
       id: '/admin/configuracion/notificaciones'
       path: '/configuracion/notificaciones'
@@ -2918,6 +2938,7 @@ interface AdminRouteChildren {
   AdminBancosTraspasosRoute: typeof AdminBancosTraspasosRoute
   AdminClientesIdRoute: typeof AdminClientesIdRouteWithChildren
   AdminConfiguracionNotificacionesRoute: typeof AdminConfiguracionNotificacionesRoute
+  AdminConfiguracionPlantillasRoute: typeof AdminConfiguracionPlantillasRoute
   AdminContabilidadAgrupadoresRoute: typeof AdminContabilidadAgrupadoresRoute
   AdminContabilidadBalanzaRoute: typeof AdminContabilidadBalanzaRoute
   AdminContabilidadCuentasRoute: typeof AdminContabilidadCuentasRoute
@@ -2989,6 +3010,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBancosTraspasosRoute: AdminBancosTraspasosRoute,
   AdminClientesIdRoute: AdminClientesIdRouteWithChildren,
   AdminConfiguracionNotificacionesRoute: AdminConfiguracionNotificacionesRoute,
+  AdminConfiguracionPlantillasRoute: AdminConfiguracionPlantillasRoute,
   AdminContabilidadAgrupadoresRoute: AdminContabilidadAgrupadoresRoute,
   AdminContabilidadBalanzaRoute: AdminContabilidadBalanzaRoute,
   AdminContabilidadCuentasRoute: AdminContabilidadCuentasRoute,
