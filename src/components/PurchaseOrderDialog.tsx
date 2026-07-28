@@ -178,8 +178,14 @@ export function PurchaseOrderDialog({
   };
 
   const addProducts = (claves: string[]) => {
+    const blocked = claves.filter(c => blockedByClave[c]);
+    if (blocked.length) {
+      toast.error(`Bloqueados para compra: ${blocked.slice(0, 5).join(", ")}${blocked.length > 5 ? "…" : ""}`);
+    }
     const toAdd = claves
+      .filter(c => !blockedByClave[c])
       .filter(c => !rows.some(r => r.clave === c))
+
       .map(c => {
         const product = allProducts.find(p => p.clave === c);
         if (!product) return null;
