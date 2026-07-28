@@ -114,7 +114,10 @@ export default function RecepcionesPage() {
         </div>
       </header>
 
+      <OcAlertsCard />
+
       {isLoading && <div className="text-sm text-muted-foreground">Cargando…</div>}
+
       {!isLoading && grouped.length === 0 && (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
           Aún no hay recepciones registradas. Se crean al recibir una orden de compra.
