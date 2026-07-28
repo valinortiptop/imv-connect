@@ -60,9 +60,10 @@ export const uploadCsd = createServerFn({ method: "POST" })
     if (up2.error) throw new Error(`Subir .key: ${up2.error.message}`);
 
     // Desactiva CSDs previos e inserta el nuevo como activo
-    await supabase.from("empresa_csd" as any).update({ is_active: false }).eq("empresa_id", data.empresaId).eq("is_active", true);
+    // (tabla restringida a admin por RLS; el rol ya fue validado arriba)
+    await supabaseAdmin.from("empresa_csd" as any).update({ is_active: false }).eq("empresa_id", data.empresaId).eq("is_active", true);
 
-    const { error: insErr } = await supabase.from("empresa_csd" as any).insert({
+    const { error: insErr } = await supabaseAdmin.from("empresa_csd" as any).insert({
       empresa_id: data.empresaId,
       rfc: info.rfc,
       no_certificado: info.noCertificado,
