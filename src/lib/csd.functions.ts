@@ -111,7 +111,7 @@ export const deleteCsd = createServerFn({ method: "POST" })
     await assertAdminOrConta(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.storage.from("csd").remove([`${data.empresaId}/csd.cer`, `${data.empresaId}/csd.key`]);
-    await supabase.from("empresa_csd" as any).delete().eq("empresa_id", data.empresaId);
+    await supabaseAdmin.from("empresa_csd" as any).delete().eq("empresa_id", data.empresaId);
     return { ok: true };
   });
 
