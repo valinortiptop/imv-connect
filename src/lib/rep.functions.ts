@@ -1307,7 +1307,18 @@ export const generateRepAlertsFn = createServerFn({ method: "POST" })
     }
 
     if (rows.length > 0) {
-      await context.supabase.from("notifications").insert(rows);
+      const { dispatchNotification } = await import("@/lib/notifications.server");
+      for (const r of rows) {
+        await dispatchNotification({
+          userId: r.user_id,
+          title: r.title,
+          description: r.description,
+          category: "rep",
+          type: r.type,
+          priority: "alta",
+          route: r.route,
+        });
+      }
     }
     return { created: rows.length };
   });
