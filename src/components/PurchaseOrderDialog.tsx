@@ -586,9 +586,10 @@ Reglas:
                 <div className="flex items-center justify-between px-1 pt-2 text-xs text-muted-foreground">
                   <button
                     className="hover:text-foreground"
-                    onClick={() => setAddSelection(new Set(filteredAddable.map(p => p.clave)))}
+                    onClick={() => setAddSelection(new Set(filteredAddable.filter(p => !blockedByClave[p.clave]).map(p => p.clave)))}
                   >
-                    Seleccionar todo ({filteredAddable.length})
+                    Seleccionar todo ({filteredAddable.filter(p => !blockedByClave[p.clave]).length})
+
                   </button>
                   {addSelection.size > 0 && (
                     <button
