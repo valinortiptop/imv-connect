@@ -626,6 +626,13 @@ export type Database = {
             foreignKeyName: "client_price_overrides_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "client_price_overrides_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -856,6 +863,13 @@ export type Database = {
             foreignKeyName: "cliente_credito_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: true
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_credito_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -991,6 +1005,13 @@ export type Database = {
             foreignKeyName: "cliente_documentos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_documentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -1083,6 +1104,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cliente_riesgo_snapshots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -1335,6 +1363,13 @@ export type Database = {
             foreignKeyName: "cobranza_alertas_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_alertas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -1443,6 +1478,13 @@ export type Database = {
             foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -1473,6 +1515,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_comunicaciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "cobranza_comunicaciones_factura_id_fkey"
@@ -1576,6 +1625,13 @@ export type Database = {
             foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -1606,6 +1662,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_gestiones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "cobranza_gestiones_factura_id_fkey"
@@ -1688,6 +1751,13 @@ export type Database = {
             foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -1718,6 +1788,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobranza_promesas_pago_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "cobranza_promesas_pago_factura_id_fkey"
@@ -1837,6 +1914,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "competitor_migrations_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -1979,6 +2063,13 @@ export type Database = {
             columns: ["oc_id"]
             isOneToOne: false
             referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "cost_history_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
             referencedColumns: ["oc_id"]
           },
           {
@@ -2181,6 +2272,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "credito_autorizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -2770,6 +2868,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "devolucion_items_devolucion_id_fkey"
+            columns: ["devolucion_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["devolucion_id"]
+          },
+          {
             foreignKeyName: "devolucion_items_factura_item_id_fkey"
             columns: ["factura_item_id"]
             isOneToOne: false
@@ -2985,6 +3090,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -3015,6 +3127,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "devoluciones_factura_id_fkey"
@@ -3481,6 +3600,13 @@ export type Database = {
             foreignKeyName: "entradas_recepcion_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "entradas_recepcion_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
           },
@@ -3725,6 +3851,13 @@ export type Database = {
             foreignKeyName: "factura_items_factura_id_fkey"
             columns: ["factura_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
+          },
+          {
+            foreignKeyName: "factura_items_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
             referencedRelation: "v_trazabilidad_venta"
             referencedColumns: ["factura_id"]
           },
@@ -3959,6 +4092,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "facturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -4751,11 +4891,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notas_credito_devolucion_id_fkey"
+            columns: ["devolucion_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["devolucion_id"]
+          },
+          {
             foreignKeyName: "notas_credito_factura_id_fkey"
             columns: ["factura_id"]
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "notas_credito_factura_id_fkey"
@@ -4856,6 +5010,13 @@ export type Database = {
             foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
           },
@@ -4906,6 +5067,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "notas_credito_proveedor"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["nc_id"]
           },
           {
             foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
@@ -5101,6 +5269,13 @@ export type Database = {
             columns: ["oc_id"]
             isOneToOne: false
             referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_items_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
             referencedColumns: ["oc_id"]
           },
           {
@@ -5921,6 +6096,13 @@ export type Database = {
             foreignKeyName: "pagos_factura_id_fkey"
             columns: ["factura_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
+          },
+          {
+            foreignKeyName: "pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
             referencedRelation: "v_trazabilidad_venta"
             referencedColumns: ["factura_id"]
           },
@@ -6505,6 +6687,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -6857,6 +7046,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "precios_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -7248,6 +7444,13 @@ export type Database = {
             columns: ["oc_id"]
             isOneToOne: false
             referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "product_batches_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
             referencedColumns: ["oc_id"]
           },
           {
@@ -8275,6 +8478,13 @@ export type Database = {
             foreignKeyName: "purchase_alerts_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "purchase_alerts_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
           },
@@ -8848,6 +9058,13 @@ export type Database = {
             foreignKeyName: "remisiones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "remisiones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -9068,6 +9285,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: true
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_client_insights_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -9439,6 +9663,13 @@ export type Database = {
             foreignKeyName: "rep_visits_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -9724,6 +9955,13 @@ export type Database = {
             foreignKeyName: "sales_history_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "sales_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -9996,6 +10234,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "shortage_events_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -11435,6 +11680,13 @@ export type Database = {
             foreignKeyName: "supplier_incidents_oc_id_fkey"
             columns: ["oc_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "supplier_incidents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
             referencedRelation: "v_ordenes_compra"
             referencedColumns: ["id"]
           },
@@ -11987,6 +12239,13 @@ export type Database = {
             foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "visit_shelf_photos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -12515,6 +12774,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -12627,6 +12893,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -13046,6 +13319,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -13062,6 +13342,138 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_top_clientes"
             referencedColumns: ["cliente_id"]
+          },
+        ]
+      }
+      v_cardex_material: {
+        Row: {
+          almacen: string | null
+          articulo: string | null
+          caducidad: string | null
+          cantidad: number | null
+          clave: string | null
+          fecha: string | null
+          id: string | null
+          lote: string | null
+          naturaleza: string | null
+          notas: string | null
+          origen: string | null
+          producto_id: string | null
+          referencia: string | null
+          tipo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "movimientos_inventario_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
           },
         ]
       }
@@ -13287,6 +13699,13 @@ export type Database = {
             foreignKeyName: "devoluciones_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "devoluciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -13310,6 +13729,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "facturas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devoluciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["factura_id"]
           },
           {
             foreignKeyName: "devoluciones_factura_id_fkey"
@@ -13390,6 +13816,162 @@ export type Database = {
         }
         Relationships: []
       }
+      v_notas_credito_proveedor_report: {
+        Row: {
+          articulo: string | null
+          cantidad: number | null
+          clave: string | null
+          costo_unitario: number | null
+          created_at: string | null
+          factura_proveedor: string | null
+          fecha: string | null
+          folio: string | null
+          importe: number | null
+          item_id: string | null
+          laboratorio: string | null
+          lote: string | null
+          motivo: string | null
+          nc_id: string | null
+          nc_total: number | null
+          notas: string | null
+          oc_folio: string | null
+          oc_id: string | null
+          producto_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_baja_rotacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_compras_planeacion"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_corta_caducidad_lento"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_products_with_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_purchase_needs"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_sin_movimiento_venta"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_bajo"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_productos"
+            referencedColumns: ["producto_id"]
+          },
+          {
+            foreignKeyName: "notas_credito_proveedor_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_traspasos_report"
+            referencedColumns: ["producto_id"]
+          },
+        ]
+      }
+      v_notas_credito_venta_report: {
+        Row: {
+          cliente: string | null
+          cliente_id: string | null
+          created_at: string | null
+          devolucion_folio: string | null
+          devolucion_id: string | null
+          factura_estado: Database["public"]["Enums"]["factura_estado"] | null
+          factura_folio: string | null
+          factura_id: string | null
+          factura_total: number | null
+          fecha: string | null
+          folio: string | null
+          nc_id: string | null
+          nc_total: number | null
+          notas: string | null
+        }
+        Relationships: []
+      }
       v_open_orders: {
         Row: {
           central: string | null
@@ -13436,6 +14018,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {
@@ -13677,6 +14266,13 @@ export type Database = {
             foreignKeyName: "pedidos_cliente_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "v_remisiones_report"
             referencedColumns: ["cliente_id"]
           },
@@ -13796,6 +14392,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
             referencedColumns: ["cliente_id"]
           },
           {

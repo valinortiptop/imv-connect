@@ -49,7 +49,11 @@ interface InventoryItem {
   stock_incoming: number;
   stock_disponible: number;
   active: boolean;
+  categoria: string | null;
+  linea: string | null;
+  laboratorio_id: string | null;
 }
+
 
 type SortKey = "clave" | "name" | "supplier" | "stock_actual" | "disponible" | "stock_committed" | "stock_incoming" | "valor";
 type SortDir = "asc" | "desc";
@@ -58,7 +62,11 @@ type StockFilter = "all" | "disponible" | "low_stock" | "committed";
 export default function Inventory() {
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("all");
+  const [claseFilter, setClaseFilter] = useState("all");
+  const [labFilter, setLabFilter] = useState("all");
+  const [almacenFilter, setAlmacenFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
@@ -97,7 +105,7 @@ export default function Inventory() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("v_products_with_stock")
-        .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active")
+        .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active, categoria, linea, laboratorio_id")
         .eq("active", true)
         .or("stock_actual.gt.0,stock_committed.gt.0,stock_incoming.gt.0")
         .order("clave");
@@ -105,6 +113,52 @@ export default function Inventory() {
       return (data ?? []) as InventoryItem[];
     },
   });
+
+  // Catálogos para los filtros de clase / laboratorio / almacén
+  const { data: labs = [] } = useQuery({
+    queryKey: ["labs-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("laboratorios")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nombre: string }[];
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: almacenes = [] } = useQuery({
+    queryKey: ["almacenes-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("almacenes")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nombre: string }[];
+    },
+    staleTime: 300_000,
+  });
+
+  const { data: almacenProductIds } = useQuery({
+    queryKey: ["stock-by-almacen", almacenFilter],
+    enabled: almacenFilter !== "all",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock")
+        .select("producto_id, cantidad")
+        .eq("almacen_id", almacenFilter)
+        .gt("cantidad", 0);
+      if (error) throw error;
+      return new Set((data ?? []).map(r => r.producto_id as string));
+    },
+    staleTime: 60_000,
+  });
+
+
 
   // Fetch damaged bultos per product (disponible status only) to show badge
   const { data: damagedByProduct = {} } = useQuery({
@@ -215,6 +269,16 @@ export default function Inventory() {
     return Array.from(set).sort();
   }, [rawItems]);
 
+  const clases = useMemo(() => {
+    const set = new Set(rawItems.map(i => i.categoria).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [rawItems]);
+
+  const labsInStock = useMemo(() => {
+    const ids = new Set(rawItems.map(i => i.laboratorio_id).filter(Boolean) as string[]);
+    return (labs ?? []).filter(l => ids.has(l.id));
+  }, [rawItems, labs]);
+
   const items = useMemo(() => {
     let list = projectedItems;
 
@@ -230,6 +294,19 @@ export default function Inventory() {
     if (supplierFilter !== "all") {
       list = list.filter(i => i.supplier === supplierFilter);
     }
+
+    if (claseFilter !== "all") {
+      list = list.filter(i => (i.categoria ?? "") === claseFilter);
+    }
+
+    if (labFilter !== "all") {
+      list = list.filter(i => i.laboratorio_id === labFilter);
+    }
+
+    if (almacenFilter !== "all" && almacenProductIds) {
+      list = list.filter(i => almacenProductIds.has(i.id));
+    }
+
 
     if (stockFilter === "disponible") list = list.filter(i => i.stock_disponible > 0);
     else if (stockFilter === "low_stock") list = list.filter(i => i.stock_committed > 0 && i.stock_actual <= i.stock_committed);
@@ -255,7 +332,7 @@ export default function Inventory() {
     });
 
     return list;
-  }, [projectedItems, search, supplierFilter, stockFilter, sortKey, sortDir]);
+  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir]);
 
   // Stats — use projected items
   const stats = useMemo(() => {
@@ -474,6 +551,34 @@ export default function Inventory() {
                 {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select value={claseFilter} onValueChange={setClaseFilter}>
+              <SelectTrigger className="w-full sm:w-[170px] bg-background">
+                <SelectValue placeholder="Clase" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las clases</SelectItem>
+                {clases.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={labFilter} onValueChange={setLabFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                <SelectValue placeholder="Laboratorio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los laboratorios</SelectItem>
+                {labsInStock.map(l => <SelectItem key={l.id} value={l.id}>{l.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={almacenFilter} onValueChange={setAlmacenFilter}>
+              <SelectTrigger className="w-full sm:w-[170px] bg-background">
+                <SelectValue placeholder="Almacén" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los almacenes</SelectItem>
+                {almacenes.map(a => <SelectItem key={a.id} value={a.id}>{a.nombre}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
             <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
               <SelectTrigger className="w-full sm:w-[180px] bg-background">
                 <SelectValue placeholder="Estado de stock" />

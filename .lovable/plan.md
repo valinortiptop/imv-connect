@@ -1,76 +1,47 @@
-## Módulo Almacén — brecha vs. lo solicitado
+## What the document asks vs. what exists today
 
-Auditoría de lo que ya existe hoy (verificado en código y base de datos) y lo que falta.
+### Already implemented (verified)
+- **Recepción sobre OC** con lote, caducidad y cantidad (`RecepcionesPage` + `registrar_recepcion`).
+- **PDF por cada ingreso** con OC, proveedor, clave, descripción, lote, cantidad y caducidad (`almacen-pdf.ts`).
+- **Edición/corrección de recepciones** (`EditarRecepcionDialog` + `editar_recepcion`), con reversa de inventario.
+- **Traspasos entre almacenes** (origen/destino, clave, cantidad, lote) con PDF y listado (`TraspasosPage`, `ejecutar_traspaso`).
+- **Remisión de pedido**: pantalla con pedido, cliente, selección de lote y cantidad, descuento automático de inventario, edición (`editar_remision`), baja/cancelación (`cancelar_remision`) y PDF con ubicación (`RemisionesPage`, `NuevaRemisionDialog`).
+- **Trazabilidad OC → entrada → factura** y **pedido → remisión → factura** (pestañas en `ReportesAlmacenPage` sobre `v_trazabilidad_compra` / `v_trazabilidad_venta`).
+- **Corta caducidad** y **rotación / lento movimiento** con bloqueo manual de compra.
+- **Almacenes y ubicaciones de material** (`admin.almacenes`, `warehouse_slots`, floorplan).
+- **Alertas de compras** existen (`purchase_alerts` + cron), pero hoy solo se ven en el módulo de Compras.
 
-### Ya existe
-- Órdenes de compra (`ordenes_compra`, `oc_items`) con recepción parcial vía `recibir_oc`, y captura de **lote/caducidad/cantidad** al recibir (`admin/compras/$id` inserta en `product_batches`).
-- Almacenes (`almacenes`) y ubicaciones físicas (`warehouse_slots`, `slot_contents`, `slot_movements`) con plano, escáner y reubicaciones.
-- Kardex (`/admin/kardex`) sobre la vista `v_kardex_movements` (movimientos de inventario + movimientos de slot).
-- Surtido de pedidos desde almacén (`FulfillOrderDialog`, `dispatch_order`, `pick_order_item_to_embarque`) con descuento automático de inventario.
-- Reportes existentes: caducidades (`v_caducidades`), baja rotación (`v_baja_rotacion`), stock bajo, inventario general, dañados, alertas de compra.
-
-### Falta (a implementar)
-
-**1. Recepción**
-- Alertas automáticas al generar/actualizar una orden de compra (hoy `purchase_alerts` no cubre este disparo).
-- **PDF por cada ingreso**: OC, proveedor, clave, descripción, lote, cantidad, caducidad.
-- **Editar/corregir un ingreso ya capturado** (hoy `recibir_oc` es de una sola vía, sin reversa ni edición).
-- Reporte de entradas (clave, artículo, lote, cantidad, fecha).
-- Reporte de notas de crédito aplicadas a facturas de **proveedor** (hoy `notas_credito` solo cubre ventas).
-- Reporte de trazabilidad OC → entrada → factura.
-
-**2. Traspasos entre almacenes** — no existe nada. Se crea completo: captura (almacén origen/destino, clave, lote, cantidad), PDF del traslado y reporte de traslados.
-
-**3. Remisión de pedido**
-- Pantalla de remisión formal con folio (pedido, cliente, selección de lote y cantidades) sobre el surtido actual.
-- Editar remisión y dar de baja/cancelar remisiones (revirtiendo inventario).
-- PDF de remisión: cliente, clave, artículo, cantidad, lote, caducidad, ubicación.
-- Reporte de salidas por remisión, reporte de notas de crédito de ventas y trazabilidad pedido → remisión → factura.
-
-**4. Inventario**
-- Filtros por **clase/tipo, laboratorio y almacén** en el listado de productos (hoy solo proveedor/stock).
-- Kardex ampliado con notas de crédito, devoluciones a proveedor y traspasos.
-- Reporte de productos **sin movimiento de venta**.
-- Reporte combinado **corta caducidad + lento movimiento**.
-- **Bloqueo de compra** para artículos con sobre-stock o lento movimiento (bandera visible y validación al crear OC).
-
----
+### Faltante (a implementar)
+1. **Reporte de entradas** (clave, artículo, lote, cantidad, fecha de ingreso). La vista `v_entradas_report` ya existe en base de datos pero **ninguna pantalla la consume**.
+2. **Reporte de traslados entre almacenes** como reporte formal: `v_traspasos_report` existe, sin pantalla.
+3. **Reporte de salidas por remisión** a nivel partida (cliente, clave, artículo, cantidad, lote, caducidad, ubicación): `v_remisiones_report` existe, sin pantalla.
+4. **Reporte de productos sin movimiento de venta**: `v_sin_movimiento_venta` existe, sin pantalla.
+5. **Reporte de notas de crédito aplicadas a facturas de proveedor** — no existe vista ni pantalla.
+6. **Reporte de notas de crédito aplicadas a facturas de venta** — no existe vista ni pantalla.
+7. **Cardex de material completo** (entradas, salidas, notas de crédito, devoluciones a proveedor, traslados por artículo/lote). Hoy el "kardex" solo muestra movimientos de ubicación (`slot_movements`); la vista `v_kardex_movements` existe pero no se usa.
+8. **Listado de inventario filtrable por clase, laboratorio y almacén** — hoy solo filtra por proveedor y estado de stock.
+9. **Bloqueo automático de compra** por sobre-stock y por lento movimiento — hoy el bloqueo es solo manual con un botón.
+10. **Alertas de órdenes de compra al almacén** — visibles solo en Compras; falta el aviso dentro del módulo de Almacén.
 
 ## Plan de implementación
 
-### Fase 1 — Base de datos (una migración)
-- `entradas_recepcion` + `entradas_recepcion_items`: cabecera de cada ingreso (folio, OC, proveedor, almacén, fecha, estado, usuario) con renglones (producto, lote, caducidad, cantidad, costo). `recibir_oc` pasa a registrar el ingreso aquí y se agrega `editar_recepcion` / `cancelar_recepcion` que revierten stock y `cantidad_recibida`.
-- `traspasos_almacen` + `traspasos_almacen_items` con RPC `ejecutar_traspaso` (salida en origen, entrada en destino, movimiento de lote y asiento de kardex).
-- `remisiones` + `remision_items` (folio, pedido, cliente, almacén, estado) enlazadas al surtido actual; RPC `cancelar_remision` para reversa de inventario.
-- `notas_credito_proveedor` (OC/factura de proveedor, folio, monto, motivo, items).
-- Campos de bloqueo en `product_stock_params`: `bloqueo_compra boolean`, `bloqueo_motivo text`; trigger/función que los calcula desde sobre-stock (`stock_max`) y baja rotación.
-- Vistas nuevas: `v_entradas_report`, `v_traspasos_report`, `v_remisiones_report`, `v_trazabilidad_compra`, `v_trazabilidad_venta`, `v_sin_movimiento_venta`, `v_corta_caducidad_lento`, y ampliación de `v_kardex_movements` para incluir traspasos, notas de crédito y devoluciones.
-- Todas las tablas nuevas con `GRANT` a `authenticated`/`service_role`, RLS activo y políticas por rol (admin, almacen, compras/contabilidad).
+**Base de datos (una migración)**
+- Vistas nuevas: `v_notas_credito_proveedor_report` (NC proveedor ligada a factura/OC) y `v_notas_credito_venta_report` (NC de venta ligada a factura/cliente).
+- Vista `v_cardex_material` unificando entradas, salidas por remisión, traspasos, notas de crédito y devoluciones a proveedor por producto y lote.
+- Función `recalcular_bloqueos_compra()` ampliada para marcar automáticamente `bloqueo_compra` por sobre-stock (existencia > máximo/cobertura configurada) y por lento movimiento, con motivo; programarla en el cron diario existente.
 
-### Fase 2 — Recepción
-- Nueva página `/admin/entradas/recepcion` (y refuerzo del diálogo de recepción en `admin/compras/$id`): captura por lote, edición y cancelación del ingreso.
-- Generador de PDF `src/lib/pdf/recepcion-pdf.ts` (jspdf + autotable, con branding IMV).
-- Alertas de OC: función que crea `purchase_alerts` al emitir una OC y las muestra en el panel de almacén.
+**Reportes de Almacén (`ReportesAlmacenPage`)**
+- Nuevas pestañas: Entradas, Traslados, Salidas por remisión, Sin movimiento de venta, NC proveedor, NC venta — con búsqueda, filtros de fecha/almacén y export PDF/Excel usando los helpers existentes.
 
-### Fase 3 — Traspasos
-- Nueva ruta `/admin/almacen/traspasos`: formulario origen→destino con selección de producto/lote/cantidad validada contra existencia por lote, listado histórico y PDF por traspaso.
+**Cardex**
+- Nueva pantalla `/admin/almacen/cardex`: selector de producto (y lote opcional) con línea de tiempo de todos los movimientos y saldo corrido, exportable a PDF.
 
-### Fase 4 — Remisiones
-- Nueva ruta `/admin/almacen/remisiones`: lista de pedidos por remisionar, pantalla de remisión con selección de lotes y cantidades, edición y baja.
-- PDF de remisión con ubicación del material; reporte de salidas por remisión.
+**Inventario**
+- Agregar filtros por clase/clasificación, laboratorio y almacén en `inventory-page.tsx`.
 
-### Fase 5 — Inventario y reportes
-- Filtros de clase, laboratorio y almacén en `inventory-page.tsx`.
-- Nueva ruta `/admin/almacen/reportes` con pestañas: Entradas, Traspasos, Salidas por remisión, NC proveedor, NC cliente, Trazabilidad compra, Trazabilidad venta, Sin movimiento, Corta caducidad y lento movimiento. Cada pestaña con exportación a Excel y PDF (mismo patrón usado en Ventas).
-- Kardex: incluir los nuevos tipos de movimiento y filtro por tipo.
-- Bloqueo de compras: indicador en inventario/planeación y validación al agregar el artículo a una OC, con opción de override para admin.
+**Alertas y navegación**
+- Tarjeta de alertas de OC pendientes de recibir en el inicio del módulo Almacén.
+- Enlaces nuevos en el sidebar y nodos en el `almacen-dashboard`.
 
-### Fase 6 — Navegación y verificación
-- Entradas del sidebar bajo "Almacén y Compras": Traspasos, Remisiones, Reportes de almacén.
-- Nodos correspondientes en el diagrama de `/admin/almacen-dashboard`.
-- Verificación end-to-end en preview: recibir OC con lote → editar → PDF; traspaso → PDF; remisión → PDF → cancelar y confirmar reversa de stock en kardex.
-
-### Notas técnicas
-- Toda la lógica de servidor va en `createServerFn` (`src/lib/almacen.functions.ts`), sin edge functions.
-- Los PDFs se generan en el cliente con jspdf/jspdf-autotable, ya presente en el proyecto.
-- Los folios usan el mismo patrón de secuencia que OC/facturas (`_next_poliza_folio`-style helper).
+### Detalle técnico
+Se reutilizan las vistas ya creadas (`v_entradas_report`, `v_traspasos_report`, `v_remisiones_report`, `v_sin_movimiento_venta`) para evitar consultas pesadas en cliente; los reportes usan `fetchAllRows` con límites y paginación de 100 filas, y los PDF se generan con `src/lib/almacen-pdf.ts`.
