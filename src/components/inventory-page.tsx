@@ -910,6 +910,14 @@ export default function Inventory() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
+                      {isExpanded && (
+                        <TableRow className="border-border bg-muted/20">
+                          <TableCell colSpan={10} className="py-3">
+                            <ProductLotsPanel productId={item.id} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </>
                     );
                   })
                 )}
