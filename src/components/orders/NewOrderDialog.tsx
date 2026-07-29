@@ -718,8 +718,11 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           event: isQuote ? "cotizacion_enviada" : "pedido_creado",
           vars: {
             pedido_id: orderId as string,
-            folio: createdFolio ?? "",
-            cliente: selectedClientName ?? "Cliente",
+            folio: "",
+            cliente:
+              clients.find((x: any) => x.id === selectedClientId)?.name ??
+              form.getValues("client_name") ??
+              "Cliente",
             total: fmtMXN(totalOrder),
             partidas: lines.length,
           },
