@@ -268,6 +268,30 @@ export default function Facturacion() {
     refetchInterval: 60_000,
   });
 
+  // Pedidos que aún no se han remisionado: no se pueden facturar todavía.
+  const { data: pedidosSinRemisionar = [] } = useQuery({
+    queryKey: ["pedidos-sin-remisionar"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_pedidos_sin_remisionar");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        folio: string | null;
+        order_code: string | null;
+        cliente_id: string;
+        cliente: string | null;
+        rfc: string | null;
+        estado: string;
+        delivery_date: string | null;
+        subtotal: number;
+        iva: number;
+        total: number;
+      }>;
+    },
+    refetchInterval: 60_000,
+  });
+
+
   // Pedidos ya facturados — permitir ver/descargar PDF y XML
   const { data: pedidosFacturados = [] } = useQuery({
     queryKey: ["pedidos-facturados"],
