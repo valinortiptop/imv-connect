@@ -43,6 +43,8 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { DeliveryWindowChip } from "@/components/clients/DeliveryWindowChip";
+import { Client360Drawer } from "@/components/clients/Client360Drawer";
+
 import { DeleteOrderDialog } from "@/components/orders/DeleteOrderDialog";
 import { OrderRowActions } from "@/components/orders/OrderRowActions";
 import { CotizacionesTab } from "@/components/orders/CotizacionesTab";
@@ -154,6 +156,8 @@ export default function Orders({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [statsOpen, setStatsOpen] = useState(false);
+  const [client360Id, setClient360Id] = useState<string | null>(null);
+
   // Mayoreo / Menudeo segmentation — mirrors the Clients tab filter
   // 1:1 so the same mental model applies to pedidos. Default 'todos'
   // so the page lists everything until the user narrows it down.
@@ -1402,12 +1406,12 @@ export default function Orders({
                             className="text-foreground hover:text-blue-400 hover:underline transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (o.client_id)
-                                navigate(`/admin/clientes?expandClient=${o.client_id}`);
+                              if (o.client_id) setClient360Id(o.client_id);
                             }}
                           >
                             {o.client_name ?? "—"}
                           </button>
+
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {fmtDate(o.order_date)}
@@ -1637,6 +1641,16 @@ export default function Orders({
             onEdit={(id) => setEditOrderId(id)}
             onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
           />
+
+          <Client360Drawer
+            clientId={client360Id}
+            open={!!client360Id}
+            onOpenChange={(open) => {
+              if (!open) setClient360Id(null);
+            }}
+          />
+
+
 
           {/* Editar pedido reutiliza el MISMO modal que "Nuevo Pedido" */}
           <NewOrderDialog
