@@ -121,10 +121,14 @@ interface NewOrderDialogProps {
   /** "order" creates a real pedido. "quote" creates a cotización (mock-up,
    *  doesn't subtract stock, doesn't show in dashboards). Default: "order". */
   mode?: "order" | "quote";
+  /** Cuando viene un id, el mismo modal funciona en modo edición del pedido. */
+  editOrderId?: string | null;
 }
 
-export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "order" }: NewOrderDialogProps) {
+export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "order", editOrderId = null }: NewOrderDialogProps) {
   const isQuote = mode === "quote";
+  const isEdit = !!editOrderId;
+
   const queryClient = useQueryClient();
   const [clientTab, setClientTab] = useState<string>("existing");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
