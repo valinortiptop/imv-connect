@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
@@ -801,7 +801,7 @@ export default function Inventory() {
                     const isExpanded = expandedId === item.id;
 
                     return (
-                      <>
+                      <Fragment key={item.id}>
                       <TableRow
                         key={item.id}
                         className={cn(
@@ -917,7 +917,7 @@ export default function Inventory() {
                           </TableCell>
                         </TableRow>
                       )}
-                      </>
+                      </Fragment>
                     );
                   })
                 )}
