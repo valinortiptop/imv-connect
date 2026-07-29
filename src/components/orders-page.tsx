@@ -43,7 +43,6 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { DeliveryWindowChip } from "@/components/clients/DeliveryWindowChip";
-import { EditOrderSheet } from "@/components/orders/EditOrderSheet";
 import { DeleteOrderDialog } from "@/components/orders/DeleteOrderDialog";
 import { OrderRowActions } from "@/components/orders/OrderRowActions";
 import { CotizacionesTab } from "@/components/orders/CotizacionesTab";
