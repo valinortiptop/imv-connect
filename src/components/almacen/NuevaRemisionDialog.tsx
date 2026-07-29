@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { notifyEventFn } from "@/lib/notifications.functions";
 
 type Almacen = { id: string; nombre: string };
@@ -42,6 +42,8 @@ export default function NuevaRemisionDialog({
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [notas, setNotas] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
+  // Renglones donde el usuario eligió capturar el lote a mano.
+  const [manualLote, setManualLote] = useState<Record<string, boolean>>({});
 
   const { data: almacenes = [] } = useQuery({
     queryKey: ["almacenes-activos"],
@@ -158,6 +160,27 @@ export default function NuevaRemisionDialog({
   });
 
   const patch = (key: string, p: Partial<Line>) => setLines((s) => s.map((l) => (l.key === key ? { ...l, ...p } : l)));
+
+  /** Existencia del lote elegido en el renglón (para mostrar al usuario). */
+  const selectedStock = (l: Line): number | null => {
+    if (!l.lote) return null;
+    const b = batches.find((x) => x.producto_id === l.producto_id && (x.lote ?? "") === l.lote);
+    return b ? Number(b.cantidad ?? 0) : null;
+  };
+
+  /** Duplica el renglón para surtir el mismo producto desde otro lote. */
+  const splitLine = (l: Line) =>
+    setLines((s) => {
+      const idx = s.findIndex((x) => x.key === l.key);
+      const copy: Line = {
+        ...l,
+        key: `${l.key}-split-${Date.now()}`,
+        cantidad: 0,
+        lote: "",
+        caducidad: "",
+      };
+      return [...s.slice(0, idx + 1), copy, ...s.slice(idx + 1)];
+    });
 
   const guardar = useMutation({
     mutationFn: async () => {
@@ -281,26 +304,38 @@ export default function NuevaRemisionDialog({
                 <div className="grid gap-2 sm:grid-cols-5">
                   <Input
                     type="number"
-                    step="0.01"
+                    step="1"
+                    min="0"
                     value={l.cantidad}
-                    onChange={(e) => patch(l.key, { cantidad: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const n = Math.max(0, Math.round(Number(e.target.value) || 0));
+                      patch(l.key, { cantidad: n });
+                    }}
                     placeholder="Cantidad"
                   />
                   {bs.length > 0 ? (
                     <select
                       className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                      value={l.lote}
+                      value={manualLote[l.key] ? "__manual__" : l.lote}
                       onChange={(e) => {
-                        const b = bs.find((x) => (x.lote ?? "") === e.target.value);
-                        patch(l.key, { lote: e.target.value, caducidad: b?.caducidad ?? "" });
+                        const v = e.target.value;
+                        if (v === "__manual__") {
+                          setManualLote((m) => ({ ...m, [l.key]: true }));
+                          patch(l.key, { lote: "" });
+                          return;
+                        }
+                        setManualLote((m) => ({ ...m, [l.key]: false }));
+                        const b = bs.find((x) => (x.lote ?? "") === v);
+                        patch(l.key, { lote: v, caducidad: b?.caducidad ?? "" });
                       }}
                     >
                       <option value="">Lote…</option>
                       {bs.map((b, i) => (
                         <option key={i} value={b.lote ?? ""}>
-                          {b.lote ?? "sin lote"} · {b.caducidad ?? "s/cad"} · {b.cantidad}
+                          {b.lote ?? "sin lote"} · cad {b.caducidad ?? "s/f"} · {b.cantidad} disp.
                         </option>
                       ))}
+                      <option value="__manual__">Otro lote (manual)…</option>
                     </select>
                   ) : (
                     <Input placeholder="Lote" value={l.lote} onChange={(e) => patch(l.key, { lote: e.target.value })} />
@@ -313,6 +348,30 @@ export default function NuevaRemisionDialog({
                   />
                   <Button variant="outline" onClick={() => setLines((s) => s.filter((x) => x.key !== l.key))}>
                     <Trash2 className="mr-1 h-4 w-4" /> Quitar
+                  </Button>
+                </div>
+
+                {bs.length > 0 && manualLote[l.key] && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Captura el lote manualmente"
+                    value={l.lote}
+                    onChange={(e) => patch(l.key, { lote: e.target.value })}
+                  />
+                )}
+
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {bs.length > 0
+                      ? `${bs.length} lote(s) · ${bs.reduce((a, b) => a + Number(b.cantidad || 0), 0)} disponibles${
+                          selectedStock(l) != null ? ` · lote seleccionado: ${selectedStock(l)} disp.` : ""
+                        }`
+                      : almacen
+                        ? "Sin lotes registrados en este almacén — captura el lote manualmente"
+                        : "Selecciona un almacén para ver los lotes"}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => splitLine(l)}>
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Surtir desde otro lote
                   </Button>
                 </div>
               </div>
