@@ -327,6 +327,17 @@ export const emitirComplementoPagoFn = createServerFn({ method: "POST" })
       complemento_error: null,
     } as any).eq("id", data.pagoId);
 
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent("complemento_pago_emitido", {
+      folio: f.folio,
+      cliente: cliente.razon_social || cliente.nombre_comercial || "Cliente",
+      cliente_id: cliente.id,
+      monto: fmtMoney((pago as any).monto),
+      fecha: (pago as any).fecha,
+      uuid: inv.uuid,
+      entity_id: f.id,
+    });
+
     return { ok: true, uuid: inv.uuid, id: inv.id };
   });
 
