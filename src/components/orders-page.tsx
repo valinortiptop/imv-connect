@@ -1638,6 +1638,16 @@ export default function Orders({
             onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
           />
 
+          <Client360Drawer
+            clientId={client360Id}
+            open={!!client360Id}
+            onOpenChange={(open) => {
+              if (!open) setClient360Id(null);
+            }}
+          />
+
+
+
           {/* Editar pedido reutiliza el MISMO modal que "Nuevo Pedido" */}
           <NewOrderDialog
             editOrderId={editOrderId}
