@@ -69,7 +69,14 @@ import {
   ArrowUpDown,
   RotateCcw,
   Pin,
+  ChevronDown,
+  BarChart3,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { exportOrderAsImage, exportOrderAsPdf } from "@/components/orders/SingleOrderImageCard";
 import { ChronoBar } from "@/components/ChronoBar";
 import { toast } from "sonner";
