@@ -20,10 +20,11 @@ import { ORDER_STATUSES, STATUS_LABELS } from "@/types/orders";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Trash2, CalendarIcon, Tag, AlertOctagon, Percent, X } from "lucide-react";
+import { Trash2, CalendarIcon, Tag, AlertOctagon, Percent, X, Plus, ChevronsUpDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { parseLocalDate, calendarDateToString } from "@/lib/date-utils";
 import { sortProducts } from "@/lib/sort-products";
@@ -77,6 +78,26 @@ interface EditOrderSheetProps {
 
 const EMPTY_ARR: any[] = [];
 
+const substringFilter = (value: string, search: string) => {
+  if (!search) return 1;
+  return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+};
+
+/** Highlights every case-insensitive occurrence of `query` inside `text`. */
+function HighlightMatch({ text, query }: { text: string | null | undefined; query: string }) {
+  const safe = text ?? "";
+  if (!query) return <>{safe}</>;
+  const idx = safe.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{safe}</>;
+  return (
+    <>
+      {safe.slice(0, idx)}
+      <mark className="bg-primary/25 text-inherit rounded-sm px-0.5">{safe.slice(idx, idx + query.length)}</mark>
+      <HighlightMatch text={safe.slice(idx + query.length)} query={query} />
+    </>
+  );
+}
+
 export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: EditOrderSheetProps) {
   const queryClient = useQueryClient();
   const [lines, setLines] = useState<OrderLine[]>([]);
@@ -84,6 +105,8 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
   const [deletedDamagedLines, setDeletedDamagedLines] = useState<{ damaged_batch_id: string; quantity: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerMode, setPickerMode] = useState<"normal" | "damaged">("normal");
+  const [bottomPickerOpen, setBottomPickerOpen] = useState(false);
+  const [bottomSearch, setBottomSearch] = useState("");
   // Multi-stop delivery state. Loaded from order_stops + order_stop_items
   // when the order opens; persisted on save (delete + re-insert).
   const [stops, setStops] = useState<StopValue[]>([]);
@@ -906,6 +929,51 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
                         </Button>
                       </div>
                     ))}
+                    {availableProducts.length > 0 && (
+                      <div className="py-2">
+                        <Popover open={bottomPickerOpen} onOpenChange={setBottomPickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button type="button" variant="outline" role="combobox" className="w-full justify-between font-normal border-dashed">
+                              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                                <Plus className="h-4 w-4" />
+                                Agregar otro producto...
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                            <Command filter={substringFilter}>
+                              <CommandInput
+                                placeholder="Buscar producto por clave o nombre..."
+                                value={bottomSearch}
+                                onValueChange={setBottomSearch}
+                              />
+                              <CommandList>
+                                <CommandEmpty>Sin resultados.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableProducts.map((p) => (
+                                    <CommandItem
+                                      key={`bottom-${p.id}`}
+                                      value={`${p.clave} ${p.name}`}
+                                      onSelect={() => { addProduct(`normal:${p.id}`); setBottomSearch(""); }}
+                                    >
+                                      <span className="inline-flex items-center gap-2">
+                                        <ProductThumb src={p.image_url} size="xs" />
+                                        <span className="font-mono text-xs"><HighlightMatch text={p.clave} query={bottomSearch} /></span>
+                                        <span><HighlightMatch text={p.name} query={bottomSearch} /></span>
+                                        {promoProductIds.has(p.id) && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
+                                        )}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                     {effectiveDiscount > 0 ? (
                       <>
                         <div className="grid grid-cols-[1fr_100px_120px_80px_40px] gap-2 py-1">
