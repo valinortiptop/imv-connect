@@ -146,6 +146,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [damagedPickerOpen, setDamagedPickerOpen] = useState(false);
+  // Second product picker rendered right under the last line, so long
+  // orders don't force a scroll back to the top picker.
+  const [bottomPickerOpen, setBottomPickerOpen] = useState(false);
+  const [bottomSearch, setBottomSearch] = useState("");
   // Success banner state — after "Crear Pedido" we swap the dialog body
   // for a summary card with email/copy-image/copy-link actions.
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
