@@ -1227,7 +1227,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         max={line.is_damaged ? line.damaged_max_qty : undefined}
                         value={line.quantity}
                         onChange={e => updateLine(idx, "quantity", e.target.value)}
-                        className="h-8 text-center"
+                        className={cn(
+                          "h-8 text-center",
+                          showErrors && (!Number(line.quantity) || Number(line.quantity) <= 0) && "border-destructive ring-1 ring-destructive",
+                        )}
                         placeholder=""
                       />
                       <Select
