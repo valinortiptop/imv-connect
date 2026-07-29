@@ -75,6 +75,8 @@ interface EditOrderSheetProps {
   onOrderUpdated: () => void;
 }
 
+const EMPTY_ARR: any[] = [];
+
 export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: EditOrderSheetProps) {
   const queryClient = useQueryClient();
   const [lines, setLines] = useState<OrderLine[]>([]);
@@ -86,7 +88,7 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
   // when the order opens; persisted on save (delete + re-insert).
   const [stops, setStops] = useState<StopValue[]>([]);
 
-  const { data: stopsData = [] } = useQuery({
+  const { data: stopsData = EMPTY_ARR } = useQuery({
     queryKey: ["edit-order-stops", orderId],
     queryFn: async () => {
       if (!orderId) return [];
@@ -105,7 +107,7 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
   useEffect(() => {
     if (!open) return;
     if (stopsData.length === 0) {
-      setStops([]);
+      setStops((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     setStops(stopsData.map((s: any) => ({
@@ -136,7 +138,7 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
     enabled: !!orderId && open,
   });
 
-  const { data: orderItems = [] } = useQuery({
+  const { data: orderItems = EMPTY_ARR } = useQuery({
     queryKey: ["edit-order-items", orderId],
     queryFn: async () => {
       const { data, error } = await (supabase as any).from("order_items").select("*, products(clave, name, sale_price_with_iva, image_url), damaged_batches(id, condition, remaining_quantity)").eq("order_id", orderId!);
@@ -184,7 +186,7 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: priceLists = [] } = useQuery({
+  const { data: priceLists = EMPTY_ARR } = useQuery({
     queryKey: ["price-lists-active"],
     queryFn: async () => {
       const { data, error } = await supabase.from("price_lists").select("id, name, markup_pct").eq("active", true).order("name") as any;

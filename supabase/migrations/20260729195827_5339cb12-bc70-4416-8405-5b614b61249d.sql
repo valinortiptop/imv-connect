@@ -1,0 +1,1 @@
+ALTER VIEW public.orders SET (security_invoker = on);
