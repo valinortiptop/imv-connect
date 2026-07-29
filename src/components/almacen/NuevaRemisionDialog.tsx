@@ -10,6 +10,12 @@ import { notifyEventFn } from "@/lib/notifications.functions";
 type Almacen = { id: string; nombre: string };
 type Pedido = { id: string; folio: string; cliente_id: string | null; clientes?: { razon_social?: string | null } | null };
 type Batch = { producto_id: string; lote: string | null; caducidad: string | null; cantidad: number };
+type FieldErrors = {
+  almacen: boolean;
+  pedido: boolean;
+  general?: string;
+  lines: Record<string, { cantidad?: boolean; lote?: boolean }>;
+};
 
 type Line = {
   key: string;
