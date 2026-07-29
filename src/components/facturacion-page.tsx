@@ -341,6 +341,7 @@ export default function Facturacion() {
       queryClient.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
       queryClient.invalidateQueries({ queryKey: ["pedidos-facturados"] });
       queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      queryClient.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
       navigate(`/admin/facturas/${res.factura_id}`);
     },
     onError: (err: any) => {
