@@ -107,7 +107,7 @@ export function EditOrderSheet({ orderId, open, onOpenChange, onOrderUpdated }: 
   useEffect(() => {
     if (!open) return;
     if (stopsData.length === 0) {
-      setStops([]);
+      setStops((prev) => (prev.length === 0 ? prev : []));
       return;
     }
     setStops(stopsData.map((s: any) => ({
