@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+
+// Stable empty array so query fallbacks keep referential identity between
+// renders — otherwise effects that depend on them loop forever.
+const EMPTY_OVERRIDES: Array<{ product_id: string; price_with_iva: number }> = [];
 import { DeliveryStopsEditor, validateStops, type StopValue } from "@/components/orders/DeliveryStopsEditor";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
