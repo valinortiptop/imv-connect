@@ -1721,9 +1721,8 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                     : `${isEdit ? "Guardar cambios" : isQuote ? "Crear Cotización" : "Crear Pedido"} — ${fmtMXN(totalOrder)}`}
                 </Button>
               </div>
-
-              </div>
             </div>
+
 
           </form>
         </Form>
