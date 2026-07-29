@@ -244,22 +244,23 @@ export default function Facturacion() {
     },
   });
 
-  // Pedidos pendientes de facturar — feeds the "Pedidos por facturar" panel
-  // that closes the loop Pedidos → Facturación.
-  const { data: pedidosPorFacturar = [] } = useQuery({
-    queryKey: ["pedidos-por-facturar"],
+  // Remisiones pendientes de facturar — sólo se factura lo ya remisionado.
+  const { data: remisionesPorFacturar = [] } = useQuery({
+    queryKey: ["remisiones-por-facturar"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_pedidos_por_facturar");
+      const { data, error } = await (supabase as any).rpc("list_remisiones_por_facturar");
       if (error) throw error;
       return (data ?? []) as Array<{
-        id: string;
+        remision_id: string;
+        remision_folio: string | null;
+        fecha: string | null;
+        pedido_id: string;
         folio: string | null;
         order_code: string | null;
         cliente_id: string;
         cliente: string | null;
         rfc: string | null;
         estado: string;
-        delivery_date: string | null;
         subtotal: number;
         iva: number;
         total: number;
@@ -268,28 +269,32 @@ export default function Facturacion() {
     refetchInterval: 60_000,
   });
 
-  // Pedidos que aún no se han remisionado: no se pueden facturar todavía.
-  const { data: pedidosSinRemisionar = [] } = useQuery({
-    queryKey: ["pedidos-sin-remisionar"],
+  // Remisiones ya facturadas (factura vigente, no cancelada).
+  const { data: remisionesFacturadas = [] } = useQuery({
+    queryKey: ["remisiones-facturadas"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_pedidos_sin_remisionar");
+      const { data, error } = await (supabase as any).rpc("list_remisiones_facturadas");
       if (error) throw error;
       return (data ?? []) as Array<{
-        id: string;
+        remision_id: string;
+        remision_folio: string | null;
+        fecha: string | null;
+        pedido_id: string;
         folio: string | null;
         order_code: string | null;
-        cliente_id: string;
         cliente: string | null;
-        rfc: string | null;
-        estado: string;
-        delivery_date: string | null;
-        subtotal: number;
-        iva: number;
+        factura_id: string;
+        factura_folio: string | null;
+        factura_estado: string;
+        uuid_fiscal: string | null;
+        cfdi_status: string | null;
         total: number;
+        fecha_emision: string | null;
       }>;
     },
     refetchInterval: 60_000,
   });
+
 
 
   // Pedidos ya facturados — permitir ver/descargar PDF y XML
