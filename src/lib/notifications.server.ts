@@ -239,3 +239,257 @@ export async function usersWithRoles(roles: string[]): Promise<string[]> {
     .in("role", roles as any);
   return Array.from(new Set(((data ?? []) as any[]).map((r) => r.user_id)));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Eventos de la plataforma → notificación + plantilla                */
+/* ------------------------------------------------------------------ */
+
+import type { NotificationEvent } from "@/lib/notification-events";
+
+type EventDef = {
+  category: string;
+  /** Plantilla de la librería (misma clave que el evento por defecto). */
+  templateKey?: string;
+  priority?: string;
+  type?: string;
+  /** Roles que reciben el aviso además de los usuarios explícitos. */
+  roles?: string[];
+  title: (v: Record<string, any>) => string;
+  description: (v: Record<string, any>) => string;
+  route?: (v: Record<string, any>) => string | null;
+};
+
+const s = (v: unknown) => (v === undefined || v === null ? "" : String(v));
+
+export const EVENT_MAP: Record<NotificationEvent, EventDef> = {
+  pedido_creado: {
+    category: "ventas",
+    roles: ["admin", "ventas"],
+    title: (v) => `Nuevo pedido ${s(v.folio)}`,
+    description: (v) => `${s(v.cliente)} · ${s(v.total)}`,
+    route: (v) => (v.pedido_id ? `/admin/pedidos/${v.pedido_id}` : "/admin/pedidos"),
+  },
+  pedido_confirmado: {
+    category: "ventas",
+    roles: ["admin", "ventas", "almacen"],
+    title: (v) => `Pedido ${s(v.folio)} confirmado`,
+    description: (v) => `${s(v.cliente)} · ${s(v.total)}`,
+    route: (v) => (v.pedido_id ? `/admin/pedidos/${v.pedido_id}` : "/admin/pedidos"),
+  },
+  pedido_cancelado: {
+    category: "ventas",
+    priority: "alta",
+    type: "warning",
+    roles: ["admin", "ventas"],
+    title: (v) => `Pedido ${s(v.folio)} cancelado`,
+    description: (v) => `${s(v.cliente)} · ${s(v.motivo)}`,
+    route: (v) => (v.pedido_id ? `/admin/pedidos/${v.pedido_id}` : "/admin/pedidos"),
+  },
+  cotizacion_enviada: {
+    category: "ventas",
+    roles: ["admin", "ventas"],
+    title: (v) => `Cotización ${s(v.folio)}`,
+    description: (v) => `${s(v.cliente)} · ${s(v.total)}`,
+    route: () => "/admin/pedidos",
+  },
+  pedido_en_ruta: {
+    category: "logistica",
+    roles: ["admin", "logistica"],
+    title: (v) => `Pedido ${s(v.folio)} en ruta`,
+    description: (v) => `${s(v.cliente)} · ETA ${s(v.eta)}`,
+    route: () => "/admin/logistica",
+  },
+  pedido_entregado: {
+    category: "logistica",
+    roles: ["admin", "logistica", "ventas"],
+    title: (v) => `Pedido ${s(v.folio)} entregado`,
+    description: (v) => `${s(v.cliente)} · recibió ${s(v.recibio)}`,
+    route: () => "/admin/logistica",
+  },
+  factura_emitida: {
+    category: "contabilidad",
+    roles: ["admin", "facturacion", "contabilidad"],
+    title: (v) => `Factura ${s(v.folio)} emitida`,
+    description: (v) => `${s(v.cliente)} · ${s(v.total)}`,
+    route: (v) => (v.factura_id ? `/admin/facturas/${v.factura_id}` : "/admin/facturas"),
+  },
+  factura_cancelada: {
+    category: "contabilidad",
+    priority: "alta",
+    type: "warning",
+    roles: ["admin", "facturacion", "contabilidad"],
+    title: (v) => `Factura ${s(v.folio)} cancelada`,
+    description: (v) => `${s(v.cliente)} · ${s(v.motivo)}`,
+    route: (v) => (v.factura_id ? `/admin/facturas/${v.factura_id}` : "/admin/facturas"),
+  },
+  complemento_pago_emitido: {
+    category: "contabilidad",
+    roles: ["admin", "facturacion", "contabilidad", "cobranza"],
+    title: (v) => `Complemento de pago ${s(v.folio)}`,
+    description: (v) => `${s(v.cliente)} · ${s(v.monto)}`,
+    route: () => "/admin/credito-cobranza/complementos",
+  },
+  pago_registrado: {
+    category: "cobranza",
+    roles: ["admin", "cobranza", "contabilidad"],
+    title: (v) => `Pago registrado — ${s(v.cliente)}`,
+    description: (v) => `${s(v.monto)} · ${s(v.documentos)}`,
+    route: () => "/admin/credito-cobranza/cartera",
+  },
+  credito_autorizacion_solicitud: {
+    category: "cobranza",
+    priority: "alta",
+    roles: ["admin", "cobranza"],
+    title: (v) => `Solicitud de autorización — ${s(v.cliente)}`,
+    description: (v) => `${s(v.tipo)} · ${s(v.monto)} · ${s(v.motivo)}`,
+    route: () => "/admin/credito-cobranza/autorizaciones",
+  },
+  credito_autorizacion_resuelta: {
+    category: "cobranza",
+    title: (v) => `Autorización ${s(v.resultado)} — ${s(v.cliente)}`,
+    description: (v) => `${s(v.tipo)} · ${s(v.respuesta)}`,
+    route: () => "/admin/credito-cobranza/autorizaciones",
+  },
+  cliente_bloqueado_credito: {
+    category: "cobranza",
+    priority: "critica",
+    type: "error",
+    roles: ["admin", "cobranza"],
+    title: (v) => `Cliente bloqueado — ${s(v.cliente)}`,
+    description: (v) => `${s(v.motivo)} · vencido ${s(v.saldo_vencido)}`,
+    route: (v) => (v.cliente_id ? `/admin/credito-cobranza/clientes/${v.cliente_id}` : "/admin/credito-cobranza/cartera"),
+  },
+  oc_creada: {
+    category: "compras",
+    roles: ["admin", "compras"],
+    title: (v) => `Orden de compra ${s(v.folio)}`,
+    description: (v) => `${s(v.proveedor)} · ${s(v.total)}`,
+    route: (v) => (v.oc_id ? `/admin/compras/${v.oc_id}` : "/admin/compras/ordenes"),
+  },
+  oc_recibida: {
+    category: "compras",
+    roles: ["admin", "compras", "almacen"],
+    title: (v) => `Recepción de OC ${s(v.folio)}`,
+    description: (v) => `${s(v.proveedor)} · ${s(v.estado)}`,
+    route: (v) => (v.oc_id ? `/admin/compras/${v.oc_id}` : "/admin/compras/ordenes"),
+  },
+  compras_alerta: {
+    category: "compras",
+    priority: "alta",
+    type: "warning",
+    roles: ["admin", "compras"],
+    title: (v) => `Alerta de abasto — ${s(v.producto)}`,
+    description: (v) => `${s(v.sku)} · existencia ${s(v.existencia)} / mínimo ${s(v.minimo)}`,
+    route: () => "/admin/compras/alertas",
+  },
+  almacen_recepcion: {
+    category: "almacen",
+    roles: ["admin", "almacen", "compras"],
+    title: (v) => `Recepción ${s(v.folio)} registrada`,
+    description: (v) => `${s(v.almacen)} · ${s(v.piezas)} piezas`,
+    route: () => "/admin/almacen/recepciones",
+  },
+  almacen_traspaso: {
+    category: "almacen",
+    roles: ["admin", "almacen"],
+    title: (v) => `Traspaso ${s(v.folio)}`,
+    description: (v) => `${s(v.origen)} → ${s(v.destino)} · ${s(v.piezas)} piezas`,
+    route: () => "/admin/almacen/traspasos",
+  },
+  almacen_stock_bajo: {
+    category: "almacen",
+    priority: "alta",
+    type: "warning",
+    roles: ["admin", "almacen", "compras"],
+    title: (v) => `Stock bajo — ${s(v.producto)}`,
+    description: (v) => `${s(v.existencia)} piezas (mínimo ${s(v.minimo)})`,
+    route: () => "/admin/inventario",
+  },
+  almacen_caducidad: {
+    category: "almacen",
+    priority: "alta",
+    type: "warning",
+    roles: ["admin", "almacen", "compras"],
+    title: (v) => `Lotes por caducar — ${s(v.almacen)}`,
+    description: (v) => `${s(v.piezas)} piezas próximas a caducar`,
+    route: () => "/admin/almacen/reportes",
+  },
+  devolucion_registrada: {
+    category: "almacen",
+    roles: ["admin", "almacen", "ventas"],
+    title: (v) => `Devolución ${s(v.folio)}`,
+    description: (v) => `${s(v.cliente)} · ${s(v.total)}`,
+    route: (v) => (v.devolucion_id ? `/admin/devoluciones/${v.devolucion_id}` : "/admin/devoluciones/lista"),
+  },
+  rep_ruta_asignada: {
+    category: "rep",
+    title: (v) => `Ruta del ${s(v.fecha)}`,
+    description: (v) => `${s(v.num_clientes)} visitas programadas`,
+    route: () => "/rep/ruta",
+  },
+  visita_registrada: {
+    category: "rep",
+    title: (v) => `Visita registrada — ${s(v.cliente)}`,
+    description: (v) => `${s(v.representante)} · ${s(v.resultado)}`,
+    route: () => "/rep/visitas",
+  },
+  tarea_asignada: {
+    category: "sistema",
+    priority: "alta",
+    title: (v) => `Nueva tarea: ${s(v.titulo)}`,
+    description: (v) => `${s(v.tablero)} · vence ${s(v.vence)}`,
+    route: () => "/admin/tareas",
+  },
+  usuario_bienvenida: {
+    category: "sistema",
+    title: (v) => `Bienvenido a IMV, ${s(v.nombre)}`,
+    description: (v) => `Tu rol asignado es ${s(v.rol)}`,
+    route: () => "/admin",
+  },
+  usuario_rol_actualizado: {
+    category: "sistema",
+    title: () => "Tu acceso fue actualizado",
+    description: (v) => `Rol: ${s(v.rol_anterior)} → ${s(v.rol_nuevo)}`,
+    route: () => "/admin/cuenta",
+  },
+};
+
+/**
+ * Dispara la notificación correspondiente a un evento de la plataforma.
+ * Nunca lanza: los avisos no deben tumbar la operación que los originó.
+ */
+export async function notifyEvent(
+  event: NotificationEvent,
+  vars: Record<string, any> = {},
+  opts: { userIds?: string[]; extraRoles?: string[]; forceEmail?: boolean } = {},
+) {
+  try {
+    const def = EVENT_MAP[event];
+    if (!def) return { ok: false, reason: "unknown_event" };
+
+    const roles = Array.from(new Set([...(def.roles ?? []), ...(opts.extraRoles ?? [])]));
+    const roleUsers = roles.length ? await usersWithRoles(roles) : [];
+    const recipients = Array.from(new Set([...(opts.userIds ?? []), ...roleUsers].filter(Boolean)));
+    if (!recipients.length) return { ok: true, total: 0 };
+
+    const appUrl = process.env.APP_PUBLIC_URL || "https://app.imv.lat";
+    const route = def.route?.(vars) ?? null;
+
+    const res = await dispatchToUsers(recipients, {
+      title: def.title(vars),
+      description: def.description(vars),
+      category: def.category,
+      type: def.type ?? "info",
+      priority: def.priority ?? "media",
+      route,
+      entityId: vars.entity_id ?? null,
+      forceEmail: opts.forceEmail,
+      templateKey: def.templateKey ?? event,
+      templateVars: { ...vars, link: route ? `${appUrl}${route}` : appUrl },
+    });
+    return { ok: true, ...res };
+  } catch (e) {
+    console.error(`[notifyEvent:${event}]`, (e as Error).message);
+    return { ok: false, reason: (e as Error).message };
+  }
+}
