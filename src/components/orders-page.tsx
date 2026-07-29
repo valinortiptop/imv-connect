@@ -156,6 +156,8 @@ export default function Orders({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [statsOpen, setStatsOpen] = useState(false);
+  const [client360Id, setClient360Id] = useState<string | null>(null);
+
   // Mayoreo / Menudeo segmentation — mirrors the Clients tab filter
   // 1:1 so the same mental model applies to pedidos. Default 'todos'
   // so the page lists everything until the user narrows it down.
