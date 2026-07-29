@@ -790,7 +790,15 @@ export default function Orders({
 
           {/* Dashboard */}
           {dashboardStats && !isLoading && (
-            <>
+            <Collapsible open={statsOpen} onOpenChange={setStatsOpen}>
+              <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg border border-border bg-card/50 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-card transition-colors">
+                <BarChart3 className="h-4 w-4" />
+                <span className="uppercase tracking-wider text-xs">Resumen</span>
+                <ChevronDown
+                  className={`ml-auto h-4 w-4 transition-transform ${statsOpen ? "rotate-180" : ""}`}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 [&>div]:min-h-[120px]">
                 {/* Pedidos activos — split card */}
                 <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
