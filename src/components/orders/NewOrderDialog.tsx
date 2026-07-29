@@ -29,6 +29,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { CentralRow } from "@/types/orders";
 import { sortProducts } from "@/lib/sort-products";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 const emptyToNull = (v: string | undefined) => {
   if (!v || v.trim() === "") return null;
@@ -712,6 +713,19 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
           }
         }
       }
+      void notifyEventFn({
+        data: {
+          event: isQuote ? "cotizacion_enviada" : "pedido_creado",
+          vars: {
+            pedido_id: orderId as string,
+            folio: createdFolio ?? "",
+            cliente: selectedClientName ?? "Cliente",
+            total: fmtMXN(totalOrder),
+            partidas: lines.length,
+          },
+        },
+      }).catch(() => {});
+
       return orderId as string;
     },
     onSuccess: (newId) => {
