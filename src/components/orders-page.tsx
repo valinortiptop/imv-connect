@@ -43,7 +43,6 @@ import { StatusBadge } from "@/components/orders/StatusBadge";
 import { NewOrderDialog } from "@/components/orders/NewOrderDialog";
 import { OrderDetailSheet } from "@/components/orders/OrderDetailSheet";
 import { DeliveryWindowChip } from "@/components/clients/DeliveryWindowChip";
-import { EditOrderSheet } from "@/components/orders/EditOrderSheet";
 import { DeleteOrderDialog } from "@/components/orders/DeleteOrderDialog";
 import { OrderRowActions } from "@/components/orders/OrderRowActions";
 import { CotizacionesTab } from "@/components/orders/CotizacionesTab";
@@ -1622,14 +1621,16 @@ export default function Orders({
             onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
           />
 
-          <EditOrderSheet
-            orderId={editOrderId}
+          {/* Editar pedido reutiliza el MISMO modal que "Nuevo Pedido" */}
+          <NewOrderDialog
+            editOrderId={editOrderId}
             open={!!editOrderId}
             onOpenChange={(open) => {
               if (!open) setEditOrderId(null);
             }}
-            onOrderUpdated={() => {}}
+            onOrderCreated={() => {}}
           />
+
 
           <DeleteOrderDialog
             orderId={deleteOrder?.id ?? null}
