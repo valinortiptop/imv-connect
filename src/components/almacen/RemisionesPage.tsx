@@ -10,6 +10,17 @@ import { Ban, FileDown, FileText, Pencil, Printer, Search } from "lucide-react";
 import { remisionPdf } from "@/lib/almacen-pdf";
 import NuevaRemisionDialog from "./NuevaRemisionDialog";
 
+type PendienteRow = {
+  id: string;
+  folio: string;
+  created_at: string;
+  estado: string | null;
+  total: number | null;
+  cliente_id: string | null;
+  clientes?: { razon_social?: string | null } | null;
+  remisiones?: { id: string; estado: string | null }[] | null;
+};
+
 type RemRow = {
   remision_id: string;
   folio: string;
@@ -33,6 +44,41 @@ export default function RemisionesPage() {
   const [q, setQ] = useState("");
   const [nueva, setNueva] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  const [pedidoPreset, setPedidoPreset] = useState<{
+    id: string;
+    folio: string;
+    cliente_id: string | null;
+    clientes?: { razon_social?: string | null } | null;
+  } | null>(null);
+
+  // Pedidos activos que todavía no tienen una remisión vigente.
+  const { data: pendientes = [], isLoading: loadingPend } = useQuery({
+    queryKey: ["pedidos-sin-remision"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select("id, folio, created_at, estado, total, cliente_id, clientes(razon_social), remisiones(id, estado)")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return ((data ?? []) as unknown as PendienteRow[]).filter((p) => {
+        const est = (p.estado ?? "").toLowerCase();
+        if (est.includes("cancel")) return false;
+        const vigentes = (p.remisiones ?? []).filter((r) => (r.estado ?? "") !== "cancelada");
+        return vigentes.length === 0;
+      });
+    },
+  });
+
+  const pendientesFiltrados = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return pendientes;
+    return pendientes.filter(
+      (p) =>
+        p.folio?.toLowerCase().includes(term) ||
+        (p.clientes?.razon_social ?? "").toLowerCase().includes(term),
+    );
+  }, [pendientes, q]);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["v_remisiones_report"],
@@ -115,6 +161,77 @@ export default function RemisionesPage() {
           <Button onClick={() => setNueva(true)}>Nueva remisión</Button>
         </div>
       </header>
+
+      {/* Pedidos pendientes de remisionar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">Pedidos sin remisionar</h2>
+              <p className="text-xs text-muted-foreground">
+                Pedidos activos que aún no tienen una remisión vigente.
+              </p>
+            </div>
+            <Badge variant="secondary">{pendientesFiltrados.length}</Badge>
+          </div>
+          {loadingPend ? (
+            <div className="text-sm text-muted-foreground">Cargando pedidos…</div>
+          ) : pendientesFiltrados.length === 0 ? (
+            <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Todos los pedidos tienen remisión.
+            </div>
+          ) : (
+            <div className="max-h-80 overflow-auto rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted/60 text-xs">
+                  <tr>
+                    <th className="px-2 py-1.5 text-left">Pedido</th>
+                    <th className="px-2 py-1.5 text-left">Fecha</th>
+                    <th className="px-2 py-1.5 text-left">Cliente</th>
+                    <th className="px-2 py-1.5 text-left">Estado</th>
+                    <th className="px-2 py-1.5 text-right">Total</th>
+                    <th className="px-2 py-1.5 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendientesFiltrados.map((p) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="px-2 py-1.5 font-medium">{p.folio}</td>
+                      <td className="px-2 py-1.5">{(p.created_at ?? "").slice(0, 10)}</td>
+                      <td className="px-2 py-1.5">{p.clientes?.razon_social ?? "—"}</td>
+                      <td className="px-2 py-1.5">
+                        <Badge variant="outline">{p.estado ?? "—"}</Badge>
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        {new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(
+                          Number(p.total ?? 0),
+                        )}
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setPedidoPreset({
+                              id: p.id,
+                              folio: p.folio,
+                              cliente_id: p.cliente_id,
+                              clientes: p.clientes ?? null,
+                            });
+                            setNueva(true);
+                          }}
+                        >
+                          Remisionar
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {isLoading && <div className="text-sm text-muted-foreground">Cargando…</div>}
       {!isLoading && grouped.length === 0 && (
@@ -200,14 +317,18 @@ export default function RemisionesPage() {
       {(nueva || editando) && (
         <NuevaRemisionDialog
           remisionId={editando}
+          pedidoPreset={editando ? null : pedidoPreset}
           onClose={() => {
             setNueva(false);
             setEditando(null);
+            setPedidoPreset(null);
           }}
           onSaved={() => {
             setNueva(false);
             setEditando(null);
+            setPedidoPreset(null);
             qc.invalidateQueries({ queryKey: ["v_remisiones_report"] });
+            qc.invalidateQueries({ queryKey: ["pedidos-sin-remision"] });
           }}
         />
       )}
