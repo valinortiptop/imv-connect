@@ -57,6 +57,13 @@ export const createUserFn = createServerFn({ method: "POST" })
       throw new Error(insErr.message);
     }
 
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent(
+      "usuario_bienvenida",
+      { nombre: data.full_name || data.email, email: data.email, rol: data.role },
+      { userIds: [newUserId], forceEmail: true },
+    );
+
     return { user_id: newUserId, email: data.email };
   });
 
