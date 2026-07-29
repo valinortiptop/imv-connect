@@ -201,7 +201,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // Per-client product price overrides — the TOP of the layered pricing
   // model. Override wins over the tier price, which wins over the catalog
   // price. Refetched whenever the selected client changes.
-  const { data: clientOverrides = [] } = useQuery({
+  const { data: clientOverrides = EMPTY_OVERRIDES } = useQuery({
     queryKey: ["client-overrides", selectedClientId],
     enabled: !!selectedClientId,
     queryFn: async () => {
