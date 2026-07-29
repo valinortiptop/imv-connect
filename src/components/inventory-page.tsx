@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
@@ -11,8 +11,9 @@ import { ProductThumb } from "@/components/ui/product-thumb";
 import {
   Search, Package, AlertTriangle, CalendarIcon,
   ArrowUpDown, ArrowUp, ArrowDown, DollarSign, Boxes, SlidersHorizontal,
-  Download, Loader2
+  Download, Loader2, ChevronRight, ChevronDown as ChevronDownIcon
 } from "lucide-react";
+import { ProductLotsPanel } from "@/components/inventory/ProductLotsPanel";
 import { cn } from "@/lib/utils";
 import { StockAdjustmentDialog } from "@/components/StockAdjustmentDialog";
 import { MarkAsDamagedDialog } from "@/components/MarkAsDamagedDialog";
@@ -66,6 +67,7 @@ export default function Inventory() {
   const [labFilter, setLabFilter] = useState("all");
   const [almacenFilter, setAlmacenFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -743,6 +745,7 @@ export default function Inventory() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
+                  <TableHead className="w-[36px]" />
                   <TableHead className="w-[100px] cursor-pointer select-none" onClick={() => toggleSort("clave")}>
                     <div className="flex items-center gap-1">SKU <SortIcon col="clave" /></div>
                   </TableHead>
@@ -778,14 +781,14 @@ export default function Inventory() {
                 {isLoading ? (
                   Array.from({ length: 10 }).map((_, i) => (
                     <TableRow key={i} className="border-border">
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-5 w-full bg-muted" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                       Sin resultados
                     </TableCell>
                   </TableRow>
@@ -795,8 +798,10 @@ export default function Inventory() {
                     const valor = item.stock_actual * item.cost_with_iva;
                     const isTight = item.stock_committed > 0 && item.stock_actual <= item.stock_committed;
                     const damagedCount = damagedByProduct[item.id] ?? 0;
+                    const isExpanded = expandedId === item.id;
 
                     return (
+                      <Fragment key={item.id}>
                       <TableRow
                         key={item.id}
                         className={cn(
@@ -804,6 +809,15 @@ export default function Inventory() {
                           isTight && "bg-amber-500/5"
                         )}
                       >
+                        <TableCell className="pr-0">
+                          <button
+                            className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                            title="Ver lotes"
+                            onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                          >
+                            {isExpanded ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setDrawerId(item.id)}>
                             <ProductThumb src={item.image_url} size="sm" />
@@ -896,6 +910,14 @@ export default function Inventory() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
+                      {isExpanded && (
+                        <TableRow className="border-border bg-muted/20">
+                          <TableCell colSpan={10} className="py-3">
+                            <ProductLotsPanel productId={item.id} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </Fragment>
                     );
                   })
                 )}
