@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { stampInvoiceFn, downloadInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
-  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp, Loader2,
+  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp, Loader2, Package,
 } from "lucide-react";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
