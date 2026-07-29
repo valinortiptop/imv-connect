@@ -141,6 +141,9 @@ function FacturaDetalle() {
       setPagoMonto(""); setPagoRef("");
       qc.invalidateQueries({ queryKey: ["factura", id] });
       qc.invalidateQueries({ queryKey: ["facturas"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
+      qc.invalidateQueries({ queryKey: ["pedidos-facturados"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -154,6 +157,9 @@ function FacturaDetalle() {
       toast.success("Pago eliminado");
       qc.invalidateQueries({ queryKey: ["factura", id] });
       qc.invalidateQueries({ queryKey: ["facturas"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
+      qc.invalidateQueries({ queryKey: ["pedidos-facturados"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -170,6 +176,9 @@ function FacturaDetalle() {
       toast.success("Factura cancelada");
       qc.invalidateQueries({ queryKey: ["factura", id] });
       qc.invalidateQueries({ queryKey: ["facturas"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
+      qc.invalidateQueries({ queryKey: ["pedidos-facturados"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -194,6 +203,9 @@ function FacturaDetalle() {
     onSuccess: () => {
       toast.success("CFDI cancelado ante SAT");
       qc.invalidateQueries({ queryKey: ["factura", id] });
+      qc.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
+      qc.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
+      qc.invalidateQueries({ queryKey: ["pedidos-facturados"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
