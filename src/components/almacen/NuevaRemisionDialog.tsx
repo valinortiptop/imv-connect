@@ -44,6 +44,8 @@ export default function NuevaRemisionDialog({
   const [lines, setLines] = useState<Line[]>([]);
   // Renglones donde el usuario eligió capturar el lote a mano.
   const [manualLote, setManualLote] = useState<Record<string, boolean>>({});
+  // Campos faltantes que se resaltan en rojo al intentar guardar.
+  const [errors, setErrors] = useState<FieldErrors>({ almacen: false, pedido: false, lines: {} });
 
   const { data: almacenes = [] } = useQuery({
     queryKey: ["almacenes-activos"],
@@ -182,9 +184,30 @@ export default function NuevaRemisionDialog({
       return [...s.slice(0, idx + 1), copy, ...s.slice(idx + 1)];
     });
 
+  /** Valida y devuelve los campos faltantes (para pintarlos en rojo). */
+  const validate = () => {
+    const errs: FieldErrors = { almacen: false, pedido: false, lines: {} };
+    if (!almacen) errs.almacen = true;
+    if (!remisionId && !pedido) errs.pedido = true;
+    if (lines.length === 0) errs.general = "Agrega al menos un producto";
+    lines.forEach((l) => {
+      const le: { cantidad?: boolean; lote?: boolean } = {};
+      if (!l.cantidad || l.cantidad <= 0) le.cantidad = true;
+      const hasBatches = batches.some((b) => b.producto_id === l.producto_id);
+      if (hasBatches && !l.lote) le.lote = true;
+      if (le.cantidad || le.lote) errs.lines[l.key] = le;
+    });
+    return errs;
+  };
+
+  const hasErrors = (e: FieldErrors) =>
+    e.almacen || e.pedido || !!e.general || Object.keys(e.lines).length > 0;
+
   const guardar = useMutation({
     mutationFn: async () => {
-      if (!almacen) throw new Error("Selecciona el almacén de salida");
+      const errs = validate();
+      setErrors(errs);
+      if (hasErrors(errs)) throw new Error("Completa los campos marcados en rojo");
       const items = lines
         .filter((l) => l.cantidad > 0)
         .map((l) => ({
@@ -195,7 +218,7 @@ export default function NuevaRemisionDialog({
           caducidad: l.caducidad || null,
           ubicacion: l.ubicacion || null,
         }));
-      if (items.length === 0) throw new Error("Captura al menos un renglón");
+
 
       if (remisionId) {
         const { error } = await supabase.rpc("editar_remision" as never, {
@@ -209,11 +232,9 @@ export default function NuevaRemisionDialog({
 
       const { error } = await supabase.rpc("crear_remision" as never, {
         _pedido: pedido?.id ?? null,
-        _cliente: pedido?.cliente_id ?? null,
         _almacen: almacen,
         _items: items,
         _notas: notas || null,
-        _fecha: fecha,
       } as never);
       if (error) throw error;
       if (!remisionId) {
@@ -247,7 +268,7 @@ export default function NuevaRemisionDialog({
           <div className="relative mb-3">
             <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-8"
+              className={`pl-8 ${errors.pedido ? "border-destructive ring-1 ring-destructive" : ""}`}
               placeholder="Buscar pedido por folio…"
               value={pedido ? `${pedido.folio} · ${pedido.clientes?.razon_social ?? ""}` : pedidoQuery}
               onChange={(e) => {
@@ -278,7 +299,7 @@ export default function NuevaRemisionDialog({
 
         <div className="mb-3 grid gap-2 sm:grid-cols-3">
           <select
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            className={`h-10 rounded-md border bg-background px-3 text-sm ${errors.almacen ? "border-destructive ring-1 ring-destructive" : "border-input"}`}
             value={almacen}
             onChange={(e) => setAlmacen(e.target.value)}
           >
@@ -306,6 +327,7 @@ export default function NuevaRemisionDialog({
                     type="number"
                     step="1"
                     min="0"
+                    className={errors.lines[l.key]?.cantidad ? "border-destructive ring-1 ring-destructive" : undefined}
                     value={l.cantidad}
                     onChange={(e) => {
                       const n = Math.max(0, Math.round(Number(e.target.value) || 0));
@@ -315,7 +337,7 @@ export default function NuevaRemisionDialog({
                   />
                   {bs.length > 0 ? (
                     <select
-                      className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className={`h-10 rounded-md border bg-background px-3 text-sm ${errors.lines[l.key]?.lote ? "border-destructive ring-1 ring-destructive" : "border-input"}`}
                       value={manualLote[l.key] ? "__manual__" : l.lote}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -378,6 +400,8 @@ export default function NuevaRemisionDialog({
             );
           })}
         </div>
+
+        {errors.general && <p className="mt-3 text-sm text-destructive">{errors.general}</p>}
 
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
