@@ -1402,12 +1402,12 @@ export default function Orders({
                             className="text-foreground hover:text-blue-400 hover:underline transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (o.client_id)
-                                navigate(`/admin/clientes?expandClient=${o.client_id}`);
+                              if (o.client_id) setClient360Id(o.client_id);
                             }}
                           >
                             {o.client_name ?? "—"}
                           </button>
+
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {fmtDate(o.order_date)}
