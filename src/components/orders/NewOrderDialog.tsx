@@ -156,6 +156,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const summaryRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState<"image" | "link" | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  // Se activa al intentar crear el pedido sin cumplir requisitos: marca en
+  // rojo los campos faltantes y muestra la lista de pendientes.
+  const [showErrors, setShowErrors] = useState(false);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list"],
@@ -552,6 +555,30 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const hasInvalidLines = lines.some(l => !Number(l.quantity) || Number(l.quantity) <= 0);
 
+  // ── Validación agregada: qué le falta al pedido para poder crearse ──
+  const stopsValidation = !isQuote && lines.length > 0
+    ? validateStops(stops, lines.map((l) => ({
+        lineKey: l.product_id,
+        label: `${l.clave} · ${l.name}`,
+        totalQuantity: Number(l.quantity) || 0,
+      })))
+    : { valid: true as boolean, reason: undefined as string | undefined };
+  const stopsBlock = !stopsValidation.valid && !allowNoAddress;
+
+  const missingClient =
+    (clientTab === "existing" && !selectedClientId) ||
+    (clientTab === "new" && !form.getValues("client_name")?.trim());
+
+  const missing: string[] = [
+    missingClient ? (clientTab === "existing" ? "Selecciona un cliente" : "Escribe el nombre del cliente") : null,
+    lines.length === 0 ? "Agrega al menos un producto" : null,
+    hasInvalidLines ? "Todos los productos deben tener cantidad mayor a 0" : null,
+    stopsBlock ? (stopsValidation.reason || "Completa las direcciones de entrega") : null,
+  ].filter(Boolean) as string[];
+
+  const canSubmit = missing.length === 0;
+
+
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (hasInvalidLines) { throw new Error("Todos los productos deben tener cantidad mayor a 0"); }
@@ -759,6 +786,63 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     },
   });
 
+  // ── Guardar como borrador ───────────────────────────────────────
+  // Un borrador se guarda en `quotes` + `quote_items` con status "draft":
+  // no descuenta inventario ni aparece en dashboards de ventas, y se puede
+  // retomar después desde Cotizaciones.
+  const draftMutation = useMutation({
+    mutationFn: async () => {
+      const values = form.getValues();
+      const clientName = (values.client_name || "").trim();
+      if (!clientName && !selectedClientId) throw new Error("Indica el cliente para guardar el borrador");
+
+      const subtotal = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0) / 1.16, 0);
+      const total = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
+
+      const { data: quote, error } = await (supabase as any)
+        .from("quotes")
+        .insert({
+          client_id: selectedClientId,
+          status: "draft",
+          source: "pedidos",
+          contact_name: clientName || null,
+          contact_phone: emptyToNull(values.phone),
+          shipping_address: emptyToNull(values.shipping_address),
+          notes: emptyToNull(values.notes),
+          delivery_date: emptyToNull(values.delivery_date),
+          payment_method: emptyToNull(values.payment_method) ?? "Transferencia",
+          price_list_id: appliedPriceList?.id ?? null,
+          subtotal,
+          total,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      if (lines.length > 0) {
+        const items = lines.map((l) => ({
+          quote_id: quote.id,
+          product_id: l.product_id,
+          product_name: l.name,
+          quantity: Number(l.quantity) || 0,
+          unit_price: Number(l.unit_price) || 0,
+          line_subtotal: (Number(l.quantity) || 0) * (Number(l.unit_price) || 0),
+        }));
+        const { error: itemsErr } = await (supabase as any).from("quote_items").insert(items);
+        if (itemsErr) throw itemsErr;
+      }
+      return quote.id as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      toast.success("Borrador guardado. Puedes retomarlo desde Cotizaciones.");
+      onOpenChange(false);
+    },
+    onError: (err: Error) => toast.error("No se pudo guardar el borrador: " + err.message),
+  });
+
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-[96vw] max-h-[92vh] p-0 flex flex-col gap-0">
@@ -810,7 +894,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                           type="button"
                           variant="outline"
                           role="combobox"
-                          className="w-full justify-between font-normal"
+                          className={cn(
+                            "w-full justify-between font-normal",
+                            showErrors && !selectedClientId && "border-destructive ring-1 ring-destructive",
+                          )}
                         >
                           <span className="truncate">
                             {selectedClientId
@@ -861,7 +948,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
                   <TabsContent value="new" className="mt-3 space-y-3">
                     <FormField control={form.control} name="client_name" render={({ field }) => (
-                      <FormItem><FormLabel>Nombre *</FormLabel><FormControl><Input placeholder="Nombre del cliente" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Nombre *</FormLabel><FormControl><Input placeholder="Nombre del cliente" {...field} className={cn(showErrors && !field.value?.trim() && "border-destructive ring-1 ring-destructive")} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <div className="grid grid-cols-2 gap-2">
                       <FormField control={form.control} name="phone" render={({ field }) => (
@@ -1140,7 +1227,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                         max={line.is_damaged ? line.damaged_max_qty : undefined}
                         value={line.quantity}
                         onChange={e => updateLine(idx, "quantity", e.target.value)}
-                        className="h-8 text-center"
+                        className={cn(
+                          "h-8 text-center",
+                          showErrors && (!Number(line.quantity) || Number(line.quantity) <= 0) && "border-destructive ring-1 ring-destructive",
+                        )}
                         placeholder=""
                       />
                       <Select
@@ -1357,28 +1447,51 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
             {/* Sticky footer — submit always visible, no scrolling needed */}
             <div className="border-t bg-background px-6 py-3 shrink-0">
-              {(() => {
-                const stopsValidation = !isQuote && lines.length > 0
-                  ? validateStops(stops, lines.map((l) => ({
-                      lineKey: l.product_id,
-                      label: `${l.clave} · ${l.name}`,
-                      totalQuantity: Number(l.quantity) || 0,
-                    })))
-                  : { valid: true };
-                const stopsBlock = !stopsValidation.valid && !allowNoAddress;
-                return (
-                  <>
-                    {stopsBlock && stopsValidation.reason && (
-                      <p className="text-xs text-destructive mb-2">⚠ {stopsValidation.reason}</p>
-                    )}
-                    <Button type="submit" className="w-full h-11 text-base gradient-button text-white"
-                      disabled={mutation.isPending || lines.length === 0 || hasInvalidLines || stopsBlock || (clientTab === "existing" && !selectedClientId) || (clientTab === "new" && !form.getValues("client_name")?.trim())}>
-                      {mutation.isPending ? "Creando..." : `${isQuote ? "Crear Cotización" : "Crear Pedido"} — ${fmtMXN(totalOrder)}`}
-                    </Button>
-                  </>
-                );
-              })()}
+              {showErrors && missing.length > 0 && (
+                <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+                  <p className="text-xs font-semibold text-destructive mb-1">
+                    Falta información para crear el {isQuote ? "la cotización" : "pedido"}:
+                  </p>
+                  <ul className="text-xs text-destructive list-disc pl-4 space-y-0.5">
+                    {missing.map((m) => <li key={m}>{m}</li>)}
+                  </ul>
+                </div>
+              )}
+              {!showErrors && stopsBlock && stopsValidation.reason && (
+                <p className="text-xs text-destructive mb-2">⚠ {stopsValidation.reason}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={draftMutation.isPending || mutation.isPending || lines.length === 0}
+                  onClick={() => draftMutation.mutate()}
+                >
+                  {draftMutation.isPending ? "Guardando..." : "Guardar borrador"}
+                </Button>
+                <Button
+                  type="button"
+                  className={cn(
+                    "flex-1 h-11 text-base text-white",
+                    canSubmit ? "gradient-button" : "bg-muted-foreground/60 hover:bg-muted-foreground/70",
+                  )}
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    if (!canSubmit) {
+                      setShowErrors(true);
+                      toast.error(missing[0]);
+                      return;
+                    }
+                    setShowErrors(false);
+                    form.handleSubmit((v) => mutation.mutate(v))();
+                  }}
+                >
+                  {mutation.isPending ? "Creando..." : `${isQuote ? "Crear Cotización" : "Crear Pedido"} — ${fmtMXN(totalOrder)}`}
+                </Button>
+              </div>
             </div>
+
           </form>
         </Form>
         )}
