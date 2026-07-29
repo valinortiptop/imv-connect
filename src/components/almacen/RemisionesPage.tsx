@@ -248,9 +248,20 @@ export default function RemisionesPage() {
           <Card key={g.head.remision_id}>
             <CardContent className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={() => setDetalle(g.head.remision_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setDetalle(g.head.remision_id);
+                    }
+                  }}
+                >
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{g.head.folio}</span>
+                    <span className="font-semibold underline-offset-2 hover:underline">{g.head.folio}</span>
                     <Badge variant={g.head.estado === "cancelada" ? "destructive" : "secondary"}>{g.head.estado}</Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
