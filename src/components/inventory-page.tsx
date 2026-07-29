@@ -745,6 +745,7 @@ export default function Inventory() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border">
+                  <TableHead className="w-[36px]" />
                   <TableHead className="w-[100px] cursor-pointer select-none" onClick={() => toggleSort("clave")}>
                     <div className="flex items-center gap-1">SKU <SortIcon col="clave" /></div>
                   </TableHead>
