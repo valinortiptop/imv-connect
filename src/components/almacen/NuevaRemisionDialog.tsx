@@ -167,7 +167,19 @@ export default function NuevaRemisionDialog({
     },
   });
 
+  /** Agrupa los renglones por producto para visualizar juntos los lotes surtidos. */
+  const groups = useMemo(() => {
+    const map = new Map<string, { producto_id: string; clave: string; articulo: string; lines: Line[] }>();
+    for (const l of lines) {
+      const g = map.get(l.producto_id);
+      if (g) g.lines.push(l);
+      else map.set(l.producto_id, { producto_id: l.producto_id, clave: l.clave, articulo: l.articulo, lines: [l] });
+    }
+    return [...map.values()];
+  }, [lines]);
+
   const patch = (key: string, p: Partial<Line>) => setLines((s) => s.map((l) => (l.key === key ? { ...l, ...p } : l)));
+
 
   /** Existencia del lote elegido en el renglón (para mostrar al usuario). */
   const selectedStock = (l: Line): number | null => {
@@ -320,85 +332,115 @@ export default function NuevaRemisionDialog({
 
         {loadingItems && <div className="text-sm text-muted-foreground">Cargando renglones del pedido…</div>}
 
-        <div className="space-y-2">
-          {lines.map((l) => {
-            const bs = batches.filter((b) => b.producto_id === l.producto_id);
+        <div className="space-y-3">
+          {groups.map((g) => {
+            const bs = batches.filter((b) => b.producto_id === g.producto_id);
+            const totalDisp = bs.reduce((a, b) => a + Number(b.cantidad || 0), 0);
+            const totalSurtido = g.lines.reduce((a, l) => a + Number(l.cantidad || 0), 0);
             return (
-              <div key={l.key} className="rounded-md border border-border p-3">
-                <div className="mb-2 text-sm font-medium">
-                  {l.articulo} <span className="text-xs text-muted-foreground">({l.clave})</span>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-5">
-                  <Input
-                    type="number"
-                    step="1"
-                    min="0"
-                    className={errors.lines[l.key]?.cantidad ? "border-destructive ring-1 ring-destructive" : undefined}
-                    value={l.cantidad}
-                    onChange={(e) => {
-                      const n = Math.max(0, Math.round(Number(e.target.value) || 0));
-                      patch(l.key, { cantidad: n });
-                    }}
-                    placeholder="Cantidad"
-                  />
-                  {bs.length > 0 ? (
-                    <select
-                      className={`h-10 rounded-md border bg-background px-3 text-sm ${errors.lines[l.key]?.lote ? "border-destructive ring-1 ring-destructive" : "border-input"}`}
-                      value={manualLote[l.key] ? "__manual__" : l.lote}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === "__manual__") {
-                          setManualLote((m) => ({ ...m, [l.key]: true }));
-                          patch(l.key, { lote: "" });
-                          return;
-                        }
-                        setManualLote((m) => ({ ...m, [l.key]: false }));
-                        const b = bs.find((x) => (x.lote ?? "") === v);
-                        patch(l.key, { lote: v, caducidad: b?.caducidad ?? "" });
-                      }}
-                    >
-                      <option value="">Lote…</option>
-                      {bs.map((b, i) => (
-                        <option key={i} value={b.lote ?? ""}>
-                          {b.lote ?? "sin lote"} · cad {b.caducidad ?? "s/f"} · {b.cantidad} disp.
-                        </option>
-                      ))}
-                      <option value="__manual__">Otro lote (manual)…</option>
-                    </select>
-                  ) : (
-                    <Input placeholder="Lote" value={l.lote} onChange={(e) => patch(l.key, { lote: e.target.value })} />
-                  )}
-                  <Input type="date" value={l.caducidad} onChange={(e) => patch(l.key, { caducidad: e.target.value })} />
-                  <Input
-                    placeholder="Ubicación"
-                    value={l.ubicacion}
-                    onChange={(e) => patch(l.key, { ubicacion: e.target.value })}
-                  />
-                  <Button variant="outline" onClick={() => setLines((s) => s.filter((x) => x.key !== l.key))}>
-                    <Trash2 className="mr-1 h-4 w-4" /> Quitar
-                  </Button>
+              <div key={g.producto_id} className="rounded-md border border-border p-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-medium">
+                    {g.articulo} <span className="text-xs text-muted-foreground">({g.clave})</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Surtido: <span className="font-medium text-foreground">{totalSurtido}</span>
+                    {" · "}
+                    {bs.length > 0
+                      ? `${bs.length} lote(s) · ${totalDisp} en existencia`
+                      : almacen
+                        ? "Sin lotes registrados en este almacén"
+                        : "Selecciona un almacén para ver los lotes"}
+                  </div>
                 </div>
 
-                {bs.length > 0 && manualLote[l.key] && (
-                  <Input
-                    className="mt-2"
-                    placeholder="Captura el lote manualmente"
-                    value={l.lote}
-                    onChange={(e) => patch(l.key, { lote: e.target.value })}
-                  />
+                {bs.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    {bs.map((b, i) => (
+                      <span
+                        key={i}
+                        className="rounded border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground"
+                      >
+                        {b.lote ?? "sin lote"} · cad {b.caducidad ?? "s/f"} · {b.cantidad} disp.
+                      </span>
+                    ))}
+                  </div>
                 )}
 
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span>
-                    {bs.length > 0
-                      ? `${bs.length} lote(s) · ${bs.reduce((a, b) => a + Number(b.cantidad || 0), 0)} disponibles${
-                          selectedStock(l) != null ? ` · lote seleccionado: ${selectedStock(l)} disp.` : ""
-                        }`
-                      : almacen
-                        ? "Sin lotes registrados en este almacén — captura el lote manualmente"
-                        : "Selecciona un almacén para ver los lotes"}
-                  </span>
-                  <Button size="sm" variant="ghost" onClick={() => splitLine(l)}>
+                <div className="space-y-2">
+                  {g.lines.map((l) => (
+                    <div key={l.key}>
+                      <div className="grid gap-2 sm:grid-cols-5">
+                        <Input
+                          type="number"
+                          step="1"
+                          min="0"
+                          className={errors.lines[l.key]?.cantidad ? "border-destructive ring-1 ring-destructive" : undefined}
+                          value={l.cantidad}
+                          onChange={(e) => {
+                            const n = Math.max(0, Math.round(Number(e.target.value) || 0));
+                            patch(l.key, { cantidad: n });
+                          }}
+                          placeholder="Cantidad"
+                        />
+                        {bs.length > 0 ? (
+                          <select
+                            className={`h-10 rounded-md border bg-background px-3 text-sm ${errors.lines[l.key]?.lote ? "border-destructive ring-1 ring-destructive" : "border-input"}`}
+                            value={manualLote[l.key] ? "__manual__" : l.lote}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "__manual__") {
+                                setManualLote((m) => ({ ...m, [l.key]: true }));
+                                patch(l.key, { lote: "" });
+                                return;
+                              }
+                              setManualLote((m) => ({ ...m, [l.key]: false }));
+                              const b = bs.find((x) => (x.lote ?? "") === v);
+                              patch(l.key, { lote: v, caducidad: b?.caducidad ?? "" });
+                            }}
+                          >
+                            <option value="">Lote…</option>
+                            {bs.map((b, i) => (
+                              <option key={i} value={b.lote ?? ""}>
+                                {b.lote ?? "sin lote"} · cad {b.caducidad ?? "s/f"} · {b.cantidad} disp.
+                              </option>
+                            ))}
+                            <option value="__manual__">Otro lote (manual)…</option>
+                          </select>
+                        ) : (
+                          <Input placeholder="Lote" value={l.lote} onChange={(e) => patch(l.key, { lote: e.target.value })} />
+                        )}
+                        <Input type="date" value={l.caducidad} onChange={(e) => patch(l.key, { caducidad: e.target.value })} />
+                        <Input
+                          placeholder="Ubicación"
+                          value={l.ubicacion}
+                          onChange={(e) => patch(l.key, { ubicacion: e.target.value })}
+                        />
+                        <Button variant="outline" onClick={() => setLines((s) => s.filter((x) => x.key !== l.key))}>
+                          <Trash2 className="mr-1 h-4 w-4" /> Quitar
+                        </Button>
+                      </div>
+
+                      {bs.length > 0 && manualLote[l.key] && (
+                        <Input
+                          className="mt-2"
+                          placeholder="Captura el lote manualmente"
+                          value={l.lote}
+                          onChange={(e) => patch(l.key, { lote: e.target.value })}
+                        />
+                      )}
+
+                      {selectedStock(l) != null && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Lote {l.lote}: {selectedStock(l)} en existencia
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-2 flex justify-end">
+                  <Button size="sm" variant="ghost" onClick={() => splitLine(g.lines[g.lines.length - 1])}>
                     <Plus className="mr-1 h-3.5 w-3.5" /> Surtir desde otro lote
                   </Button>
                 </div>
@@ -406,6 +448,7 @@ export default function NuevaRemisionDialog({
             );
           })}
         </div>
+
 
         {errors.general && <p className="mt-3 text-sm text-destructive">{errors.general}</p>}
 
