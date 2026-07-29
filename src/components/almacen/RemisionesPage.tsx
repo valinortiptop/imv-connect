@@ -32,6 +32,7 @@ type RemRow = {
   pedido_folio: string | null;
   pedido_id: string | null;
   almacen: string | null;
+  producto_id: string | null;
   clave: string;
   articulo: string;
   lote: string | null;
@@ -44,6 +45,7 @@ export default function RemisionesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [nueva, setNueva] = useState(false);
+  const [detalle, setDetalle] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
   const [pedidoPreset, setPedidoPreset] = useState<{
     id: string;
