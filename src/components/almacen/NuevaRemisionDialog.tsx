@@ -25,15 +25,19 @@ type Line = {
 
 export default function NuevaRemisionDialog({
   remisionId,
+  pedidoPreset,
   onClose,
   onSaved,
 }: {
   remisionId?: string | null;
+  /** Preselected pedido (used when starting a remisión from the
+   *  "pedidos sin remisionar" table). */
+  pedidoPreset?: Pedido | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [pedidoQuery, setPedidoQuery] = useState("");
-  const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [pedido, setPedido] = useState<Pedido | null>(pedidoPreset ?? null);
   const [almacen, setAlmacen] = useState("");
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [notas, setNotas] = useState("");
