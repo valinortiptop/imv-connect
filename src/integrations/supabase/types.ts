@@ -15081,6 +15081,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_or_create_embarque_slot: { Args: never; Returns: string }
+      get_order_for_signature: { Args: { p_token: string }; Returns: Json }
       get_order_fulfillment_state: {
         Args: { p_order_id: string }
         Returns: {
@@ -15346,6 +15347,15 @@ export type Database = {
         Returns: Json
       }
       seed_cuentas_empresa: { Args: { _empresa: string }; Returns: undefined }
+      submit_stop_signature: {
+        Args: {
+          p_signature_path: string
+          p_signed_by_name: string
+          p_stop_index: number
+          p_token: string
+        }
+        Returns: Json
+      }
       suggest_source_slots_for_picking: {
         Args: { p_product_id: string; p_quantity?: number }
         Returns: {
