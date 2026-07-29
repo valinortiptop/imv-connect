@@ -894,7 +894,10 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                           type="button"
                           variant="outline"
                           role="combobox"
-                          className="w-full justify-between font-normal"
+                          className={cn(
+                            "w-full justify-between font-normal",
+                            showErrors && !selectedClientId && "border-destructive ring-1 ring-destructive",
+                          )}
                         >
                           <span className="truncate">
                             {selectedClientId
