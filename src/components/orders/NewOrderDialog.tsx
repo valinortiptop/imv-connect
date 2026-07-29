@@ -1,5 +1,9 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+
+// Stable empty array so query fallbacks keep referential identity between
+// renders — otherwise effects that depend on them loop forever.
+const EMPTY_OVERRIDES: Array<{ product_id: string; price_with_iva: number }> = [];
 import { DeliveryStopsEditor, validateStops, type StopValue } from "@/components/orders/DeliveryStopsEditor";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -201,7 +205,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // Per-client product price overrides — the TOP of the layered pricing
   // model. Override wins over the tier price, which wins over the catalog
   // price. Refetched whenever the selected client changes.
-  const { data: clientOverrides = [] } = useQuery({
+  const { data: clientOverrides = EMPTY_OVERRIDES } = useQuery({
     queryKey: ["client-overrides", selectedClientId],
     enabled: !!selectedClientId,
     queryFn: async () => {
