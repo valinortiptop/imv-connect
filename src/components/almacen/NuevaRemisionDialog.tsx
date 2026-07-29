@@ -167,7 +167,19 @@ export default function NuevaRemisionDialog({
     },
   });
 
+  /** Agrupa los renglones por producto para visualizar juntos los lotes surtidos. */
+  const groups = useMemo(() => {
+    const map = new Map<string, { producto_id: string; clave: string; articulo: string; lines: Line[] }>();
+    for (const l of lines) {
+      const g = map.get(l.producto_id);
+      if (g) g.lines.push(l);
+      else map.set(l.producto_id, { producto_id: l.producto_id, clave: l.clave, articulo: l.articulo, lines: [l] });
+    }
+    return [...map.values()];
+  }, [lines]);
+
   const patch = (key: string, p: Partial<Line>) => setLines((s) => s.map((l) => (l.key === key ? { ...l, ...p } : l)));
+
 
   /** Existencia del lote elegido en el renglón (para mostrar al usuario). */
   const selectedStock = (l: Line): number | null => {
