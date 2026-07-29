@@ -781,14 +781,14 @@ export default function Inventory() {
                 {isLoading ? (
                   Array.from({ length: 10 }).map((_, i) => (
                     <TableRow key={i} className="border-border">
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-5 w-full bg-muted" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                       Sin resultados
                     </TableCell>
                   </TableRow>
@@ -798,8 +798,10 @@ export default function Inventory() {
                     const valor = item.stock_actual * item.cost_with_iva;
                     const isTight = item.stock_committed > 0 && item.stock_actual <= item.stock_committed;
                     const damagedCount = damagedByProduct[item.id] ?? 0;
+                    const isExpanded = expandedId === item.id;
 
                     return (
+                      <>
                       <TableRow
                         key={item.id}
                         className={cn(
@@ -807,6 +809,15 @@ export default function Inventory() {
                           isTight && "bg-amber-500/5"
                         )}
                       >
+                        <TableCell className="pr-0">
+                          <button
+                            className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                            title="Ver lotes"
+                            onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                          >
+                            {isExpanded ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setDrawerId(item.id)}>
                             <ProductThumb src={item.image_url} size="sm" />
