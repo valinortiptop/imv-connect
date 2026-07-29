@@ -900,7 +900,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   useEffect(() => {
     if (!open || !editOrderId) { hydratedFor.current = null; return; }
     if (hydratedFor.current === editOrderId) return;
-    if (!editOrder || !editItems) return;
+    // Wait for stops too — hydrating before they resolve would lock in an
+    // empty paradas list (hydratedFor blocks a second pass) and wipe them on save.
+    if (!editOrder || !editItems || !editStops) return;
     hydratedFor.current = editOrderId;
 
     setClientTab("existing");
