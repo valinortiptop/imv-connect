@@ -370,7 +370,7 @@ export default function NuevaRemisionDialog({
                 <div className="space-y-2">
                   {g.lines.map((l) => (
                     <div key={l.key}>
-                      <div className="grid gap-2 sm:grid-cols-5">
+                      <div className="grid gap-2 sm:grid-cols-6">
                         <Input
                           type="number"
                           step="1"
@@ -402,7 +402,7 @@ export default function NuevaRemisionDialog({
                             <option value="">Lote…</option>
                             {bs.map((b, i) => (
                               <option key={i} value={b.lote ?? ""}>
-                                {b.lote ?? "sin lote"} · cad {b.caducidad ?? "s/f"} · {b.cantidad} disp.
+                                {b.lote ?? "sin lote"}
                               </option>
                             ))}
                             <option value="__manual__">Otro lote (manual)…</option>
@@ -410,6 +410,13 @@ export default function NuevaRemisionDialog({
                         ) : (
                           <Input placeholder="Lote" value={l.lote} onChange={(e) => patch(l.key, { lote: e.target.value })} />
                         )}
+                        <Input
+                          readOnly
+                          tabIndex={-1}
+                          className="bg-muted text-muted-foreground"
+                          placeholder="Existencia"
+                          value={selectedStock(l) != null ? `${selectedStock(l)} disp.` : "—"}
+                        />
                         <Input type="date" value={l.caducidad} onChange={(e) => patch(l.key, { caducidad: e.target.value })} />
                         <Input
                           placeholder="Ubicación"
