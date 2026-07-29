@@ -80,9 +80,9 @@ function DevolucionDetail() {
           event: "devolucion_registrada",
           vars: {
             devolucion_id: id,
-            folio: (dev as any)?.folio ?? "",
-            cliente: (dev as any)?.cliente?.razon_social ?? "Cliente",
-            total: (dev as any)?.total ?? 0,
+            folio: (devQ.data as any)?.folio ?? "",
+            cliente: (devQ.data as any)?.cliente?.razon_social ?? "Cliente",
+            total: (devQ.data as any)?.total ?? 0,
           },
         },
       }).catch(() => {});

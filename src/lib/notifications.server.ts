@@ -487,7 +487,7 @@ export async function notifyEvent(
       templateKey: def.templateKey ?? event,
       templateVars: { ...vars, link: route ? `${appUrl}${route}` : appUrl },
     });
-    return { ok: true, ...res };
+    return { ...res, ok: true as const };
   } catch (e) {
     console.error(`[notifyEvent:${event}]`, (e as Error).message);
     return { ok: false, reason: (e as Error).message };

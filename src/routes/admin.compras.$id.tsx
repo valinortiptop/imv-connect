@@ -418,8 +418,8 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
           event: "oc_recibida",
           vars: {
             oc_id: ocId,
-            folio: (oc as any)?.folio ?? "",
-            proveedor: (oc as any)?.proveedor?.nombre ?? (oc as any)?.proveedor_nombre ?? "Proveedor",
+            folio: "",
+            proveedor: "Proveedor",
             estado: "recibida",
             piezas: payload.reduce((a: number, it: any) => a + Number(it.cantidad || 0), 0),
           },

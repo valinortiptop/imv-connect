@@ -196,7 +196,7 @@ export default function NuevaRemisionDialog({
             event: "pedido_en_ruta",
             vars: {
               folio: pedido?.folio ?? "—",
-              cliente: pedido?.cliente_nombre ?? "Cliente",
+              cliente: pedido?.clientes?.razon_social ?? "Cliente",
               piezas,
               eta: fecha,
             },
