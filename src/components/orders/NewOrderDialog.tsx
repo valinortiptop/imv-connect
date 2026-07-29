@@ -1202,7 +1202,58 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
                     </div>
                     );
                   })}
+                  {availableProducts.length > 0 && (
+                    <div className="py-2">
+                      <Popover open={bottomPickerOpen} onOpenChange={setBottomPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal border-dashed"
+                          >
+                            <span className="inline-flex items-center gap-2 text-muted-foreground">
+                              <Plus className="h-4 w-4" />
+                              Agregar otro producto...
+                            </span>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command filter={substringFilter}>
+                            <CommandInput
+                              placeholder="Buscar producto por clave o nombre..."
+                              value={bottomSearch}
+                              onValueChange={setBottomSearch}
+                            />
+                            <CommandList>
+                              <CommandEmpty>Sin resultados.</CommandEmpty>
+                              <CommandGroup>
+                                {availableProducts.map((p) => (
+                                  <CommandItem
+                                    key={`bottom-${p.id}`}
+                                    value={`${p.clave} ${p.name}`}
+                                    onSelect={() => { addProduct(`normal:${p.id}`); setBottomSearch(""); }}
+                                  >
+                                    <span className="inline-flex items-center gap-2">
+                                      <ProductThumb src={p.image_url} size="xs" />
+                                      <span className="font-mono text-xs"><HighlightMatch text={p.clave} query={bottomSearch} /></span>
+                                      <span><HighlightMatch text={p.name} query={bottomSearch} /></span>
+                                      {promoProductIds.has(p.id) && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">Promo</span>
+                                      )}
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
                   <div className="grid grid-cols-[1fr_80px_130px_110px_80px_40px] gap-2 py-2">
+
                     <div className="text-sm font-semibold">Total</div>
                     <div className="text-center text-sm font-medium">{lines.reduce((s, l) => s + (Number(l.quantity) || 0), 0)} bultos</div>
                     <div />
