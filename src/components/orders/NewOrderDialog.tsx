@@ -552,6 +552,30 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
   const hasInvalidLines = lines.some(l => !Number(l.quantity) || Number(l.quantity) <= 0);
 
+  // ── Validación agregada: qué le falta al pedido para poder crearse ──
+  const stopsValidation = !isQuote && lines.length > 0
+    ? validateStops(stops, lines.map((l) => ({
+        lineKey: l.product_id,
+        label: `${l.clave} · ${l.name}`,
+        totalQuantity: Number(l.quantity) || 0,
+      })))
+    : { valid: true as boolean, reason: undefined as string | undefined };
+  const stopsBlock = !stopsValidation.valid && !allowNoAddress;
+
+  const missingClient =
+    (clientTab === "existing" && !selectedClientId) ||
+    (clientTab === "new" && !form.getValues("client_name")?.trim());
+
+  const missing: string[] = [
+    missingClient ? (clientTab === "existing" ? "Selecciona un cliente" : "Escribe el nombre del cliente") : null,
+    lines.length === 0 ? "Agrega al menos un producto" : null,
+    hasInvalidLines ? "Todos los productos deben tener cantidad mayor a 0" : null,
+    stopsBlock ? (stopsValidation.reason || "Completa las direcciones de entrega") : null,
+  ].filter(Boolean) as string[];
+
+  const canSubmit = missing.length === 0;
+
+
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (hasInvalidLines) { throw new Error("Todos los productos deben tener cantidad mayor a 0"); }
