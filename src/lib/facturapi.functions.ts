@@ -183,9 +183,11 @@ export const cancelInvoiceFn = createServerFn({ method: "POST" })
       .from("facturas")
       .update({
         cfdi_status: res.status ?? "canceled",
+        estado: "cancelada",
         cancel_motivo: data.motivo,
         canceled_at: new Date().toISOString(),
       })
+
       .eq("id", data.facturaId);
 
     const { notifyEvent } = await import("@/lib/notifications.server");
