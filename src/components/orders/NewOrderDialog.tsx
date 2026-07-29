@@ -156,6 +156,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   const summaryRef = useRef<HTMLDivElement | null>(null);
   const [uploading, setUploading] = useState<"image" | "link" | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  // Se activa al intentar crear el pedido sin cumplir requisitos: marca en
+  // rojo los campos faltantes y muestra la lista de pendientes.
+  const [showErrors, setShowErrors] = useState(false);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-list"],
