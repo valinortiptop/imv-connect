@@ -870,7 +870,7 @@ export default function Facturacion() {
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-blue-500" />
                   <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                    Pedidos facturados
+                    FACTURAS
                   </Label>
                   <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
                     {pedidosFacturados.length}
