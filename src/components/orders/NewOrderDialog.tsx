@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { Trash2, CalendarIcon, AlertOctagon, ChevronsUpDown, CheckCircle2, Mail, Copy, LinkIcon, Loader2 } from "lucide-react";
+import { Trash2, CalendarIcon, AlertOctagon, ChevronsUpDown, CheckCircle2, Mail, Copy, LinkIcon, Loader2, Plus } from "lucide-react";
 import { toPng } from "html-to-image";
 import { useRef } from "react";
 import { format } from "date-fns";
