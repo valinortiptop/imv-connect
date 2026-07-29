@@ -842,13 +842,224 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   });
 
 
+  // ── Modo edición ────────────────────────────────────────────────
+  // Carga el pedido existente y rehidrata TODO el formulario, para que
+  // editar use exactamente la misma UI/lógica que crear.
+  const { data: editOrder } = useQuery({
+    queryKey: ["edit-order", editOrderId],
+    enabled: !!editOrderId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("orders").select("*").eq("id", editOrderId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: editItems } = useQuery({
+    queryKey: ["edit-order-items", editOrderId],
+    enabled: !!editOrderId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("order_items")
+        .select("*, products(clave, name, sale_price_with_iva, image_url)")
+        .eq("order_id", editOrderId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: editStops } = useQuery({
+    queryKey: ["edit-order-stops", editOrderId],
+    enabled: !!editOrderId && open,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("order_stops")
+        .select("stop_index, address, client_label, contact_name, contact_phone, notes, manual_maps_url, order_stop_items(order_item_id, quantity)")
+        .eq("order_id", editOrderId)
+        .order("stop_index");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const hydratedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open || !editOrderId) { hydratedFor.current = null; return; }
+    if (hydratedFor.current === editOrderId) return;
+    if (!editOrder || !editItems) return;
+    hydratedFor.current = editOrderId;
+
+    setClientTab("existing");
+    setSelectedClientId(editOrder.client_id ?? null);
+    form.reset({
+      client_name: editOrder.client_name ?? "",
+      phone: editOrder.phone ?? "",
+      rfc: editOrder.rfc ?? "",
+      shipping_address: editOrder.shipping_address ?? editOrder.address ?? "",
+      delivery_date: editOrder.delivery_date ?? "",
+      payment_method: editOrder.payment_method ?? "Transferencia",
+      notes: editOrder.notes ?? "",
+    });
+    const pl = priceLists.find((p) => p.id === editOrder.price_list_id) ?? null;
+    setAppliedPriceList(pl ? { id: pl.id, name: pl.name } : null);
+
+    setLines(
+      (editItems ?? []).map((it: any) => ({
+        product_id: it.product_id,
+        clave: it.clave_snapshot ?? it.products?.clave ?? "",
+        name: it.name_snapshot ?? it.products?.name ?? "",
+        image_url: it.products?.image_url ?? null,
+        quantity: Number(it.quantity) || 0,
+        unit_price: Number(it.unit_price_override ?? it.unit_price ?? it.products?.sale_price_with_iva ?? 0),
+        price_list_id: "__custom__",
+        damaged_batch_id: it.damaged_batch_id ?? undefined,
+        is_damaged: it.is_damaged ?? false,
+      })),
+    );
+
+    // Las paradas guardan order_item_id; el editor usa product_id como llave.
+    const productByItemId = new Map<string, string>(
+      (editItems ?? []).map((it: any) => [it.id, it.product_id]),
+    );
+    setStops(
+      (editStops ?? []).map((s: any) => ({
+        stop_index: s.stop_index,
+        address: s.address ?? "",
+        client_label: s.client_label,
+        contact_name: s.contact_name,
+        contact_phone: s.contact_phone,
+        notes: s.notes,
+        manual_maps_url: s.manual_maps_url,
+        allocations: Object.fromEntries(
+          (s.order_stop_items ?? [])
+            .map((it: any) => [productByItemId.get(it.order_item_id), it.quantity])
+            .filter(([k]: any) => !!k),
+        ),
+      })),
+    );
+  }, [open, editOrderId, editOrder, editItems, editStops, priceLists, form]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      if (hasInvalidLines) throw new Error("Todos los productos deben tener cantidad mayor a 0");
+
+      const { error: updErr } = await (supabase as any).from("orders").update({
+        client_name: values.client_name.trim(),
+        phone: emptyToNull(values.phone),
+        rfc: emptyToNull(values.rfc),
+        shipping_address: emptyToNull(values.shipping_address),
+        payment_method: emptyToNull(values.payment_method) ?? "Transferencia",
+        delivery_date: emptyToNull(values.delivery_date),
+        notes: emptyToNull(values.notes),
+        price_list_id: appliedPriceList?.id ?? null,
+      }).eq("id", editOrderId);
+      if (updErr) throw updErr;
+
+      // Devolver a inventario de dañados lo que tenía el pedido original,
+      // luego re-descontar según las líneas finales.
+      for (const it of editItems ?? []) {
+        if (!it.is_damaged || !it.damaged_batch_id) continue;
+        const { data: b } = await (supabase as any)
+          .from("damaged_batches").select("remaining_quantity").eq("id", it.damaged_batch_id).single();
+        if (!b) continue;
+        await (supabase as any).from("damaged_batches")
+          .update({ remaining_quantity: (b.remaining_quantity ?? 0) + (Number(it.quantity) || 0) })
+          .eq("id", it.damaged_batch_id);
+      }
+
+      const { error: delItemsErr } = await (supabase as any)
+        .from("order_items").delete().eq("order_id", editOrderId);
+      if (delItemsErr) throw delItemsErr;
+
+      if (lines.length > 0) {
+        const { error: insErr } = await (supabase as any).from("order_items").insert(
+          lines.map((l) => ({
+            order_id: editOrderId,
+            product_id: l.product_id,
+            quantity: Number(l.quantity) || 0,
+            unit_price_override: Number(l.unit_price) || 0,
+            name_snapshot: l.name,
+            clave_snapshot: l.clave ?? null,
+            damaged_batch_id: l.damaged_batch_id ?? null,
+            is_damaged: l.is_damaged ?? false,
+          })),
+        );
+        if (insErr) throw insErr;
+
+        for (const l of lines) {
+          if (!l.is_damaged || !l.damaged_batch_id) continue;
+          const { data: b } = await (supabase as any)
+            .from("damaged_batches").select("remaining_quantity").eq("id", l.damaged_batch_id).single();
+          if (!b) continue;
+          await (supabase as any).from("damaged_batches")
+            .update({ remaining_quantity: Math.max(0, (b.remaining_quantity ?? 0) - (Number(l.quantity) || 0)) })
+            .eq("id", l.damaged_batch_id);
+        }
+      }
+
+      // Paradas: borrar y re-insertar (cascade limpia stop_items).
+      await (supabase as any).from("order_stops").delete().eq("order_id", editOrderId);
+      if (stops.length > 0) {
+        const { data: newItems } = await (supabase as any)
+          .from("order_items").select("id, product_id").eq("order_id", editOrderId);
+        const itemIdByProduct = new Map<string, string>(
+          (newItems ?? []).map((r: any) => [r.product_id, r.id]),
+        );
+        for (const s of stops) {
+          const { data: stopRow, error: stopErr } = await (supabase as any)
+            .from("order_stops")
+            .insert({
+              order_id: editOrderId,
+              stop_index: s.stop_index,
+              address: (s.address ?? "").trim(),
+              client_label: s.client_label,
+              contact_name: s.contact_name,
+              contact_phone: s.contact_phone,
+              notes: s.notes,
+              manual_maps_url: s.manual_maps_url,
+            })
+            .select("id").single();
+          if (stopErr) throw stopErr;
+          const allocRows = Object.entries(s.allocations ?? {})
+            .filter(([, qty]: any) => (qty ?? 0) > 0)
+            .map(([productId, qty]: any) => ({
+              order_stop_id: stopRow.id,
+              order_item_id: itemIdByProduct.get(productId),
+              quantity: qty,
+            }))
+            .filter((r) => !!r.order_item_id);
+          if (allocRows.length > 0) {
+            const { error: allocErr } = await (supabase as any).from("order_stop_items").insert(allocRows);
+            if (allocErr) throw allocErr;
+          }
+        }
+      }
+      return editOrderId as string;
+    },
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["order-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["edit-order", id] });
+      queryClient.invalidateQueries({ queryKey: ["edit-order-items", id] });
+      queryClient.invalidateQueries({ queryKey: ["edit-order-stops", id] });
+      queryClient.invalidateQueries({ queryKey: ["damaged-available-for-order"] });
+      toast.success("Pedido actualizado");
+      onOpenChange(false);
+      onOrderCreated(id);
+    },
+    onError: (err: Error) => toast.error("Error al actualizar pedido: " + err.message),
+  });
+
+  const activeMutation = isEdit ? updateMutation : mutation;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-[96vw] max-h-[92vh] p-0 flex flex-col gap-0">
         <DialogHeader className="px-6 pt-6 pb-3 border-b shrink-0">
-          <DialogTitle className="text-xl">{isQuote ? "Nueva Cotización" : "Nuevo Pedido"}</DialogTitle>
+          <DialogTitle className="text-xl">{isEdit ? "Editar Pedido" : isQuote ? "Nueva Cotización" : "Nuevo Pedido"}</DialogTitle>
         </DialogHeader>
+
 
         {createdOrderId ? (
           <SuccessBanner
