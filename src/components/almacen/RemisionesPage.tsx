@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Ban, FileDown, FileText, Pencil, Printer, Search } from "lucide-react";
 import { remisionPdf } from "@/lib/almacen-pdf";
 import NuevaRemisionDialog from "./NuevaRemisionDialog";
+import RemisionDetalleDialog from "./RemisionDetalleDialog";
 
 type PendienteRow = {
   id: string;
