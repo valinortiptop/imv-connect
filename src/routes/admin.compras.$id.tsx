@@ -413,13 +413,18 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
         const { error: eB } = await supabase.from("product_batches").insert(allBatches);
         if (eB) throw eB;
       }
+      const { data: ocInfo } = await supabase
+        .from("ordenes_compra")
+        .select("folio, laboratorios(nombre)")
+        .eq("id", ocId)
+        .maybeSingle();
       void notifyEventFn({
         data: {
           event: "oc_recibida",
           vars: {
             oc_id: ocId,
-            folio: "",
-            proveedor: "Proveedor",
+            folio: (ocInfo as any)?.folio ?? "",
+            proveedor: (ocInfo as any)?.laboratorios?.nombre ?? "Proveedor",
             estado: "recibida",
             piezas: payload.reduce((a: number, it: any) => a + Number(it.cantidad || 0), 0),
           },
