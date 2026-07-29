@@ -328,6 +328,21 @@ export default function RemisionesPage() {
         ))}
       </div>
 
+      {detalle && (() => {
+        const g = grouped.find((x) => x.head.remision_id === detalle);
+        if (!g) return null;
+        return (
+          <RemisionDetalleDialog
+            head={g.head}
+            items={g.items}
+            onClose={() => setDetalle(null)}
+            onPdf={() => remisionPdf(pdfData(g), "download")}
+            onPrint={() => remisionPdf(pdfData(g), "print")}
+          />
+        );
+      })()}
+
+
       {(nueva || editando) && (
         <NuevaRemisionDialog
           remisionId={editando}
