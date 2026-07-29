@@ -900,7 +900,9 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     hydratedFor.current = editOrderId;
 
     setClientTab("existing");
+    if (editOrder.client_id && editOrder.client_id !== selectedClientId) skipStopResetRef.current = true;
     setSelectedClientId(editOrder.client_id ?? null);
+
     form.reset({
       client_name: editOrder.client_name ?? "",
       phone: editOrder.phone ?? "",
