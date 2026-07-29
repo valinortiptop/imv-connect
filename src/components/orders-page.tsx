@@ -951,7 +951,8 @@ export default function Orders({
                     </div>
                   );
                 })()}
-            </>
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Search + Status filter */}
