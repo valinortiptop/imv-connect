@@ -49,6 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductThumb } from "@/components/ui/product-thumb";
+import { notifyEventFn } from "@/lib/notifications.functions";
 import {
   Package,
   Truck,
@@ -177,6 +178,19 @@ export function FulfillOrderDialog({ open, onOpenChange, order }: Props) {
           ? `Orden entregada · ${s?.shipped_bultos ?? totals.picked} bultos`
           : `Orden despachada · ${s?.shipped_bultos ?? totals.picked} bultos · estado: ${s?.new_status ?? "En ruta"}`,
       );
+      void notifyEventFn({
+        data: {
+          event: isPickup ? "pedido_entregado" : "pedido_en_ruta",
+          vars: {
+            folio: (order as any)?.order_code ?? "",
+            cliente: (order as any)?.client_name ?? "Cliente",
+            bultos: s?.shipped_bultos ?? totals.picked,
+            eta: "—",
+            recibio: isPickup ? "Recolección en almacén" : "—",
+          },
+        },
+      }).catch(() => {});
+
       invalidateAll();
       setPendingDispatch(false);
       onOpenChange(false);

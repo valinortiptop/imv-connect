@@ -10,6 +10,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  *  - Historial de cambios en condiciones crediticias.
  */
 
+const fmtMoney = (n: unknown) =>
+  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(n ?? 0));
+
 // ── Autorizaciones ────────────────────────────────────────────
 const solicitarAutzInput = z.object({
   clienteId: z.string().uuid(),
@@ -44,19 +47,26 @@ export const solicitarAutorizacionFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    // Notificar a admins/cobranza vía el despachador central (respeta preferencias)
-    const { dispatchToUsers, usersWithRoles } = await import("@/lib/notifications.server");
-    const destinatarios = await usersWithRoles(["admin", "contabilidad", "cobranza"]);
-    if (destinatarios.length) {
-      await dispatchToUsers(destinatarios, {
-        type: "credito_autorizacion",
-        category: "cobranza",
-        priority: "alta",
-        title: "Nueva solicitud de autorización",
-        description: `${data.tipo.replace(/_/g, " ")} — ${data.motivo.slice(0, 100)}`,
-        route: "/admin/credito-cobranza/autorizaciones",
-      });
-    }
+    const { data: cli } = await supabase
+      .from("clientes")
+      .select("razon_social, nombre_comercial")
+      .eq("id", data.clienteId)
+      .maybeSingle();
+
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent(
+      "credito_autorizacion_solicitud",
+      {
+        cliente: (cli as any)?.razon_social || (cli as any)?.nombre_comercial || "Cliente",
+        cliente_id: data.clienteId,
+        tipo: data.tipo.replace(/_/g, " "),
+        monto: data.monto != null ? fmtMoney(data.monto) : "—",
+        dias: data.dias ?? "—",
+        motivo: data.motivo,
+        entity_id: (inserted as any).id,
+      },
+      { extraRoles: ["contabilidad"] },
+    );
 
     return { id: (inserted as any).id };
   });
@@ -81,7 +91,7 @@ export const resolverAutorizacionFn = createServerFn({ method: "POST" })
         respuesta: data.respuesta ?? null,
       } as any)
       .eq("id", data.autorizacionId)
-      .select("cliente_id, tipo, monto, dias, solicitado_por")
+      .select("cliente_id, tipo, monto, dias, solicitado_por, cliente:clientes(razon_social, nombre_comercial)")
       .single();
     if (e1) throw new Error(e1.message);
 
@@ -113,16 +123,20 @@ export const resolverAutorizacionFn = createServerFn({ method: "POST" })
 
     // Notificar al solicitante
     if (autz && (autz as any).solicitado_por) {
-      const { dispatchNotification } = await import("@/lib/notifications.server");
-      await dispatchNotification({
-        userId: (autz as any).solicitado_por,
-        type: "credito_autorizacion",
-        category: "cobranza",
-        priority: "alta",
-        title: data.aprobar ? "Autorización aprobada" : "Autorización rechazada",
-        description: data.respuesta ?? "",
-        route: "/admin/credito-cobranza/autorizaciones",
-      });
+      const a: any = autz;
+      const { notifyEvent } = await import("@/lib/notifications.server");
+      await notifyEvent(
+        "credito_autorizacion_resuelta",
+        {
+          cliente: a.cliente?.razon_social || a.cliente?.nombre_comercial || "Cliente",
+          cliente_id: a.cliente_id,
+          tipo: String(a.tipo ?? "").replace(/_/g, " "),
+          resultado: data.aprobar ? "aprobada" : "rechazada",
+          respuesta: data.respuesta ?? "",
+          entity_id: data.autorizacionId,
+        },
+        { userIds: [a.solicitado_por] },
+      );
     }
 
     return { ok: true };
@@ -187,6 +201,25 @@ export const aplicarPagoMultiFn = createServerFn({ method: "POST" })
         continue;
       }
       pagosCreados.push((p as any).id);
+    }
+
+    if (pagosCreados.length) {
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("razon_social, nombre_comercial")
+        .eq("id", data.clienteId)
+        .maybeSingle();
+      const totalPago = data.aplicaciones.reduce((a, x) => a + Number(x.monto || 0), 0);
+      const { notifyEvent } = await import("@/lib/notifications.server");
+      await notifyEvent("pago_registrado", {
+        cliente: (cli as any)?.razon_social || (cli as any)?.nombre_comercial || "Cliente",
+        cliente_id: data.clienteId,
+        monto: fmtMoney(totalPago),
+        metodo: data.metodo,
+        referencia: data.referencia ?? "—",
+        fecha: data.fecha,
+        documentos: `${pagosCreados.length} factura(s)`,
+      });
     }
 
     return { pagos: pagosCreados, errores };
@@ -293,6 +326,17 @@ export const emitirComplementoPagoFn = createServerFn({ method: "POST" })
       complemento_xml_url: `https://www.facturapi.io/v2/invoices/${inv.id}/xml`,
       complemento_error: null,
     } as any).eq("id", data.pagoId);
+
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent("complemento_pago_emitido", {
+      folio: f.folio,
+      cliente: cliente.razon_social || cliente.nombre_comercial || "Cliente",
+      cliente_id: cliente.id,
+      monto: fmtMoney((pago as any).monto),
+      fecha: (pago as any).fecha,
+      uuid: inv.uuid,
+      entity_id: f.id,
+    });
 
     return { ok: true, uuid: inv.uuid, id: inv.id };
   });

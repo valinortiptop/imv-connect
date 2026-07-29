@@ -242,3 +242,28 @@ export const listNotificationUsersFn = createServerFn({ method: "GET" })
       })),
     };
   });
+
+/* ─────────── Eventos de la plataforma (llamado desde la UI) ─────────── */
+
+import { NOTIFICATION_EVENTS } from "@/lib/notification-events";
+
+/**
+ * Dispara la notificación de un evento operativo (recepción, traspaso,
+ * entrega, factura, etc.). Cualquier usuario autenticado puede reportar un
+ * evento; los destinatarios se resuelven por rol en el servidor.
+ */
+export const notifyEventFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        event: z.enum(NOTIFICATION_EVENTS as unknown as [string, ...string[]]),
+        vars: z.record(z.string(), z.any()).default({}),
+        userIds: z.array(z.string().uuid()).max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    return notifyEvent(data.event as any, data.vars, { userIds: data.userIds });
+  });

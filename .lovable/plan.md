@@ -1,44 +1,62 @@
-## Goal
+## Objetivo
 
-A full notifications system: a bell in the admin header, a dedicated Notifications Center page with filters by type/category/user, and a per-user preferences page with toggles for three channels — system (in-app), email (Resend via the Valinor proxy) and SMS (built but disabled/pending).
+1. Que cada actividad relevante de la plataforma dispare su notificación (sistema / email según preferencias del usuario) usando la librería de plantillas.
+2. Rediseñar las plantillas de correo con identidad IMV: logo, encabezado, cuerpo y pie de página consistentes.
 
-## Current state (verified)
+## Parte 1 — Diseño de las plantillas de correo
 
-- `public.notifications` exists with: `id, type, category, priority, title, description, route, user_id, read_at, created_at`.
-- A bell already exists but only in the rep panel (`src/components/rep/NotificationBell.tsx`), with realtime insert/update subscription and "mark all read".
-- The admin header (`src/routes/admin.tsx`) has no bell.
-- Notifications are written today from `rep.functions.ts`, `rep-behavior.functions.ts`, `cobranza-fase5.functions.ts` (direct inserts).
-- Email already goes through the Valinor proxy (`sendEmail` in `valinor-proxy.server.ts`, provider `resend`) — no new API key needed.
+- Crear un layout base de correo (tabla HTML compatible con Outlook/Gmail, ancho 600px) con:
+  - **Header**: banda azul marino IMV con el logo `imv-logo-full-white.png` (URL absoluta `https://app.imv.lat/__l5e/assets-v1/...`) y la etiqueta de categoría.
+  - **Cuerpo**: título, texto, bloque de datos opcional (`{{detalle_html}}`), botón CTA "Abrir en la plataforma".
+  - **Footer**: datos de IMV, enlace a Configuración → Notificaciones para darse de baja/ajustar, aviso de correo automático.
+- Migración que actualiza el `body_html` de las 17 plantillas existentes al nuevo layout (conservando sus variables actuales) y su `body_text`.
+- El fallback HTML de `src/lib/notifications.server.ts` usa el mismo diseño, para que un correo sin plantilla también se vea bien.
 
-## Database (one migration)
+## Parte 2 — Plantillas faltantes (nuevas, `is_system`)
 
-1. Extend `notifications` with `channel_status jsonb default '{}'`, `entity_id text`, `emailed_at timestamptz`, plus indexes on `(user_id, read_at)` and `(category)`.
-2. New `notification_preferences` table: `user_id`, `category`, `in_app boolean default true`, `email boolean default false`, `sms boolean default false`, timestamps, unique `(user_id, category)`. GRANTs for `authenticated` + `service_role`, RLS so a user only reads/writes their own rows; admins can read all.
-3. New `notification_deliveries` table (audit of email/SMS sends: notification_id, channel, status, error, sent_at) with the same grant/RLS pattern.
-4. Verify/patch `notifications` RLS so each user only sees rows where `user_id = auth.uid()` (admins may read all for the center's "by user" view).
+| Clave | Canal | Evento |
+|---|---|---|
+| `pedido_creado` | email | Pedido nuevo registrado |
+| `pedido_cancelado` | email | Pedido cancelado |
+| `cotizacion_enviada` | email | Cotización creada para cliente |
+| `factura_cancelada` | email | CFDI cancelado |
+| `complemento_pago_emitido` | email | REP timbrado |
+| `pago_registrado` | email | Pago aplicado a facturas |
+| `oc_creada` / `oc_recibida` | email | Orden de compra emitida / recibida |
+| `almacen_recepcion` | email | Recepción registrada |
+| `almacen_traspaso` | email | Traspaso entre almacenes |
+| `almacen_stock_bajo` | email | Stock por debajo del mínimo |
+| `devolucion_registrada` | email | Devolución creada/aplicada |
+| `tarea_asignada` | email | Tarjeta de Kanban asignada |
+| `visita_registrada` | email | Check-in/out de representante |
+| `cliente_bloqueado_credito` | email | Cliente bloqueado por crédito |
+| `usuario_rol_actualizado` | email | Cambio de rol/permisos |
 
-## Backend
+Cada una también con su versión `sms` corta cuando aplique (recordatorio de pago, pedido en ruta, ruta del día ya existen; se añaden `sms_pedido_entregado` y `sms_tarea_asignada`).
 
-- `src/lib/notifications.functions.ts` (thin wrapper; helpers in `notifications.server.ts`):
-  - `listNotificationsFn` — filters: category, type, priority, read/unread, date range, and `userId` for admins.
-  - `markReadFn` / `markAllReadFn` / `deleteNotificationFn`.
-  - `getMyNotificationPreferencesFn` / `saveNotificationPreferencesFn`.
-  - `createNotificationFn` — central dispatcher: inserts the in-app row when the recipient's preference allows, and if `email` is enabled sends via the existing Valinor `sendEmail` helper (Resend), logging the result in `notification_deliveries`. SMS branch is stubbed: preference toggle exists but is rendered disabled ("Próximamente") and the dispatcher records `status = 'pending'` without sending.
-- Existing direct `.from("notifications").insert(...)` call sites are switched to the dispatcher so preferences are respected.
+## Parte 3 — Disparadores (wiring)
 
-## Frontend
+Se añade `dispatchNotification` / `dispatchToUsers(usersWithRoles([...]))` en:
 
-- **Header bell** — promote the rep bell to `src/components/notifications/NotificationBell.tsx` (shared), keep realtime + unread badge, add a "Ver todas" footer link; mount it in the `admin.tsx` header (top right) and reuse it in `RepLayout`.
-- **Notifications Center** — new route `/admin/notificaciones`:
-  - KPI strip (unread, today, by priority).
-  - Tabs by category (Cobranza, Compras, Almacén, Ventas, Rutas, Sistema) plus "Todas".
-  - Filter bar: type, priority, read state, date range, and a user selector (admins only; regular users see just their own).
-  - List with read/unread styling, route deep-links, mark-read and bulk actions, pagination (100/page).
-- **Preferences page** — new route `/admin/configuracion/notificaciones` (also linked from Administración): a table of categories × channels with switches for System / Email / SMS (SMS disabled), a master toggle per channel, and Guardar.
-- Sidebar entries added under the existing general/configuration group and registered in `permission_routes` so role permissions apply.
+- **Ventas / pedidos**: `createRepOrderFn`, `createRepQuoteFn` y el alta/cambio de estado de pedidos (confirmado, en ruta, entregado, cancelado) → notifica al representante dueño, a ventas y a logística según el estado.
+- **Facturación**: `stampInvoiceFn` (factura emitida), `cancelInvoiceFn`, `emitirComplementoPagoFn` → roles `facturacion`, `contabilidad`.
+- **Cobranza / crédito**: `solicitarAutorizacionFn` y `resolverAutorizacionFn` (ya parcialmente), `aplicarPagoMultiFn`, promesas de pago vencidas, cliente bloqueado por crédito → roles `cobranza`, `admin` y el rep del cliente.
+- **Compras**: `crearOCsDesdePlaneacion`, `recibir_oc`, `regenerarAlertasCompras`, `assignAlerta` → rol `compras` y usuario asignado.
+- **Almacén**: recepciones, traspasos, remisiones, alertas de caducidad y stock bajo → rol `almacen` + `compras` para caducidad.
+- **Representantes**: ruta asignada/guardada, visita registrada, alertas de riesgo (ya existentes) → el rep y su supervisor.
+- **Tareas (Kanban)**: al asignar una tarjeta → usuario asignado.
+- **Usuarios**: `createUserFn` (bienvenida, `forceEmail`) y `updateUserFn` con cambio de rol.
 
-## Technical notes
+Para no duplicar código se agrega un helper `notifyEvent(event, payload)` en `src/lib/notifications.server.ts` que mapea evento → categoría, plantilla, ruta y destinatarios (usuarios explícitos o por rol).
 
-- Email content: simple branded HTML template built server-side, sent with `sendEmail({ provider resend via Valinor })`; sender address taken from existing config used elsewhere in the app.
-- Realtime subscription stays inside `useEffect` with `removeChannel` cleanup.
-- No Lovable AI/email tooling used — everything routes through the Valinor proxy per project convention.
+## Parte 4 — Verificación
+
+- Página de librería: revisar que las plantillas nuevas aparecen con sus variables detectadas y que la vista previa renderiza el nuevo diseño.
+- Enviar un correo de prueba desde la vista previa para validar header/footer/logo.
+
+## Detalles técnicos
+
+- Los correos siguen saliendo por Resend a través del proxy de Valinor (`sendEmail` en `valinor-proxy.server.ts`); no se añade ningún otro proveedor.
+- El logo se referencia por URL absoluta del CDN de assets, ya que los clientes de correo no resuelven rutas relativas.
+- SMS permanece en estado `pending` (sin proveedor), solo se registran las plantillas y la intención de envío.
+- Todas las plantillas nuevas se insertan por migración con `is_system = true` y `GRANT`s existentes de `message_templates` (sin cambios de RLS).

@@ -91,6 +91,29 @@ export const Route = createFileRoute("/api/public/hooks/regenerate-compras-alert
           }
         }
 
+        // Resumen diario a compras/almacén (una sola notificación, no spam)
+        const criticas = inserts.filter((i) => i.severidad === "critica");
+        if (criticas.length > 0) {
+          const { notifyEvent } = await import("@/lib/notifications.server");
+          const stock = criticas.filter((i) => i.tipo === "stock_critico");
+          const caducidad = criticas.filter((i) => i.tipo === "caducidad");
+          if (stock.length) {
+            await notifyEvent("almacen_stock_bajo", {
+              producto: `${stock.length} producto(s) en stock crítico`,
+              existencia: 0,
+              minimo: "punto de reorden",
+              detalle: stock.slice(0, 5).map((i) => i.titulo).join(" · "),
+            });
+          }
+          if (caducidad.length) {
+            await notifyEvent("almacen_caducidad", {
+              almacen: "Todos",
+              piezas: caducidad.length,
+              detalle: caducidad.slice(0, 5).map((i) => i.titulo).join(" · "),
+            });
+          }
+        }
+
         return new Response(JSON.stringify({ ok: true, generadas: inserts.length }), {
           headers: { "Content-Type": "application/json" },
         });

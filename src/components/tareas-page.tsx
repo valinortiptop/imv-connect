@@ -28,6 +28,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 /* ── Types ── */
 interface Board { id: string; name: string; role: string | null; }
@@ -266,6 +267,21 @@ export default function Tareas() {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Card> }) => {
       const { error } = await supabase.from("kanban_cards").update(updates as any).eq("id", id);
       if (error) throw error;
+      if (updates.assigned_to && updates.assigned_to !== user?.id) {
+        const card = allCards.find((c) => c.id === id);
+        void notifyEventFn({
+          data: {
+            event: "tarea_asignada",
+            userIds: [updates.assigned_to],
+            vars: {
+              titulo: updates.title ?? card?.title ?? "Tarea",
+              tablero: "Tareas",
+              vence: (updates as any).due_date ?? (card as any)?.due_date ?? "sin fecha",
+              asignado_por: user?.email ?? "",
+            },
+          },
+        }).catch(() => {});
+      }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["kanban-cards", boardId] }),
     onError: (e: any) => toast({ title: "Error", description: e.message }),

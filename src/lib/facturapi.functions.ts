@@ -50,6 +50,9 @@ function pickPaymentForm(pf?: string | null): string {
   return map[v.toLowerCase()] ?? "99";
 }
 
+const fmtMoney = (n: unknown) =>
+  new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(n ?? 0));
+
 export const stampInvoiceFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => stampInput.parse(v))
@@ -147,6 +150,17 @@ export const stampInvoiceFn = createServerFn({ method: "POST" })
       await supabaseAdmin.from("clientes").update({ facturapi_id: inv.customer.id }).eq("id", cliente.id);
     }
 
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent("factura_emitida", {
+      factura_id: (factura as any).id,
+      folio: (factura as any).folio,
+      cliente: cliente.razon_social || cliente.nombre_comercial || "Cliente",
+      total: fmtMoney((factura as any).total),
+      fecha: (factura as any).fecha_emision ?? new Date().toISOString().slice(0, 10),
+      uuid: inv.uuid,
+      entity_id: (factura as any).id,
+    });
+
     return { ok: true, uuid: inv.uuid, id: inv.id };
   });
 
@@ -159,7 +173,7 @@ export const cancelInvoiceFn = createServerFn({ method: "POST" })
 
     const { data: f } = await supabaseAdmin
       .from("facturas")
-      .select("id, facturapi_id")
+      .select("id, folio, facturapi_id, cliente:clientes(razon_social, nombre_comercial)")
       .eq("id", data.facturaId)
       .single();
     if (!f?.facturapi_id) throw new Error("La factura no está timbrada");
@@ -173,6 +187,17 @@ export const cancelInvoiceFn = createServerFn({ method: "POST" })
         canceled_at: new Date().toISOString(),
       })
       .eq("id", data.facturaId);
+
+    const { notifyEvent } = await import("@/lib/notifications.server");
+    await notifyEvent("factura_cancelada", {
+      factura_id: (f as any).id,
+      folio: (f as any).folio,
+      cliente:
+        (f as any).cliente?.razon_social || (f as any).cliente?.nombre_comercial || "Cliente",
+      motivo: data.motivo,
+      entity_id: (f as any).id,
+    });
+
     return { ok: true };
   });
 
