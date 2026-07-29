@@ -1441,28 +1441,51 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
             {/* Sticky footer — submit always visible, no scrolling needed */}
             <div className="border-t bg-background px-6 py-3 shrink-0">
-              {(() => {
-                const stopsValidation = !isQuote && lines.length > 0
-                  ? validateStops(stops, lines.map((l) => ({
-                      lineKey: l.product_id,
-                      label: `${l.clave} · ${l.name}`,
-                      totalQuantity: Number(l.quantity) || 0,
-                    })))
-                  : { valid: true };
-                const stopsBlock = !stopsValidation.valid && !allowNoAddress;
-                return (
-                  <>
-                    {stopsBlock && stopsValidation.reason && (
-                      <p className="text-xs text-destructive mb-2">⚠ {stopsValidation.reason}</p>
-                    )}
-                    <Button type="submit" className="w-full h-11 text-base gradient-button text-white"
-                      disabled={mutation.isPending || lines.length === 0 || hasInvalidLines || stopsBlock || (clientTab === "existing" && !selectedClientId) || (clientTab === "new" && !form.getValues("client_name")?.trim())}>
-                      {mutation.isPending ? "Creando..." : `${isQuote ? "Crear Cotización" : "Crear Pedido"} — ${fmtMXN(totalOrder)}`}
-                    </Button>
-                  </>
-                );
-              })()}
+              {showErrors && missing.length > 0 && (
+                <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+                  <p className="text-xs font-semibold text-destructive mb-1">
+                    Falta información para crear el {isQuote ? "la cotización" : "pedido"}:
+                  </p>
+                  <ul className="text-xs text-destructive list-disc pl-4 space-y-0.5">
+                    {missing.map((m) => <li key={m}>{m}</li>)}
+                  </ul>
+                </div>
+              )}
+              {!showErrors && stopsBlock && stopsValidation.reason && (
+                <p className="text-xs text-destructive mb-2">⚠ {stopsValidation.reason}</p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  disabled={draftMutation.isPending || mutation.isPending || lines.length === 0}
+                  onClick={() => draftMutation.mutate()}
+                >
+                  {draftMutation.isPending ? "Guardando..." : "Guardar borrador"}
+                </Button>
+                <Button
+                  type="button"
+                  className={cn(
+                    "flex-1 h-11 text-base text-white",
+                    canSubmit ? "gradient-button" : "bg-muted-foreground/60 hover:bg-muted-foreground/70",
+                  )}
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    if (!canSubmit) {
+                      setShowErrors(true);
+                      toast.error(missing[0]);
+                      return;
+                    }
+                    setShowErrors(false);
+                    form.handleSubmit((v) => mutation.mutate(v))();
+                  }}
+                >
+                  {mutation.isPending ? "Creando..." : `${isQuote ? "Crear Cotización" : "Crear Pedido"} — ${fmtMXN(totalOrder)}`}
+                </Button>
+              </div>
             </div>
+
           </form>
         </Form>
         )}
