@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Ban, FileDown, FileText, Pencil, Printer, Search } from "lucide-react";
 import { remisionPdf } from "@/lib/almacen-pdf";
 import NuevaRemisionDialog from "./NuevaRemisionDialog";
+import RemisionDetalleDialog from "./RemisionDetalleDialog";
 
 type PendienteRow = {
   id: string;
@@ -31,6 +32,7 @@ type RemRow = {
   pedido_folio: string | null;
   pedido_id: string | null;
   almacen: string | null;
+  producto_id: string | null;
   clave: string;
   articulo: string;
   lote: string | null;
@@ -43,6 +45,7 @@ export default function RemisionesPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [nueva, setNueva] = useState(false);
+  const [detalle, setDetalle] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
   const [pedidoPreset, setPedidoPreset] = useState<{
     id: string;
@@ -245,9 +248,20 @@ export default function RemisionesPage() {
           <Card key={g.head.remision_id}>
             <CardContent className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={() => setDetalle(g.head.remision_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setDetalle(g.head.remision_id);
+                    }
+                  }}
+                >
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{g.head.folio}</span>
+                    <span className="font-semibold underline-offset-2 hover:underline">{g.head.folio}</span>
                     <Badge variant={g.head.estado === "cancelada" ? "destructive" : "secondary"}>{g.head.estado}</Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
@@ -313,6 +327,21 @@ export default function RemisionesPage() {
           </Card>
         ))}
       </div>
+
+      {detalle && (() => {
+        const g = grouped.find((x) => x.head.remision_id === detalle);
+        if (!g) return null;
+        return (
+          <RemisionDetalleDialog
+            head={g.head}
+            items={g.items}
+            onClose={() => setDetalle(null)}
+            onPdf={() => remisionPdf(pdfData(g), "download")}
+            onPrint={() => remisionPdf(pdfData(g), "print")}
+          />
+        );
+      })()}
+
 
       {(nueva || editando) && (
         <NuevaRemisionDialog

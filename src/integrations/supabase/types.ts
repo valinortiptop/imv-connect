@@ -15199,6 +15199,23 @@ export type Database = {
           total: number
         }[]
       }
+      list_pedidos_sin_remisionar: {
+        Args: never
+        Returns: {
+          cliente: string
+          cliente_id: string
+          created_at: string
+          delivery_date: string
+          estado: string
+          folio: string
+          id: string
+          iva: number
+          order_code: string
+          rfc: string
+          subtotal: number
+          total: number
+        }[]
+      }
       list_recent_reubicaciones: {
         Args: { p_limit?: number }
         Returns: {

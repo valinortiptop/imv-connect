@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { stampInvoiceFn, downloadInvoiceFn } from "@/lib/facturapi.functions";
 import {
   FileText, Download, Search, Building2, Plus, User, Receipt,
-  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp, Loader2,
+  Trash2, Edit2, Check, X, MoreVertical, Upload, ExternalLink, Stamp, Loader2, Package,
 } from "lucide-react";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -267,6 +267,30 @@ export default function Facturacion() {
     },
     refetchInterval: 60_000,
   });
+
+  // Pedidos que aún no se han remisionado: no se pueden facturar todavía.
+  const { data: pedidosSinRemisionar = [] } = useQuery({
+    queryKey: ["pedidos-sin-remisionar"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("list_pedidos_sin_remisionar");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        folio: string | null;
+        order_code: string | null;
+        cliente_id: string;
+        cliente: string | null;
+        rfc: string | null;
+        estado: string;
+        delivery_date: string | null;
+        subtotal: number;
+        iva: number;
+        total: number;
+      }>;
+    },
+    refetchInterval: 60_000,
+  });
+
 
   // Pedidos ya facturados — permitir ver/descargar PDF y XML
   const { data: pedidosFacturados = [] } = useQuery({
@@ -773,6 +797,67 @@ export default function Facturacion() {
             </div>
           </GlowCard>
         )}
+
+        {/* Pedidos pendientes de remisionar — no facturables hasta tener remisión */}
+        {pedidosSinRemisionar.length > 0 && (
+          <GlowCard>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-amber-500" />
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Pedidos pendientes de remisionar
+                  </Label>
+                  <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
+                    {pedidosSinRemisionar.length}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  No se pueden facturar hasta que almacén genere la remisión.
+                </span>
+              </div>
+
+              <div className="rounded-lg border overflow-x-auto max-h-[280px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-muted/60 text-xs">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left">Pedido</th>
+                      <th className="px-3 py-1.5 text-left">Cliente</th>
+                      <th className="px-3 py-1.5 text-left">Estado</th>
+                      <th className="px-3 py-1.5 text-right">Total</th>
+                      <th className="px-3 py-1.5 text-right">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidosSinRemisionar.map((p) => (
+                      <tr key={p.id} className="border-t">
+                        <td className="px-3 py-1.5 font-mono font-semibold">
+                          {p.order_code ?? p.folio ?? "—"}
+                        </td>
+                        <td className="px-3 py-1.5">{p.cliente ?? "—"}</td>
+                        <td className="px-3 py-1.5">
+                          <span className="rounded border px-1.5 py-0 text-[10px] text-muted-foreground">
+                            {p.estado}
+                          </span>
+                        </td>
+                        <td className="px-3 py-1.5 text-right tabular-nums">
+                          ${Number(p.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-3 py-1.5 text-right">
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to="/admin/almacen/remisiones">Remisionar</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </GlowCard>
+        )}
+
+
 
         {/* Pedidos facturados — histórico con enlaces al PDF y XML */}
         {pedidosFacturados.length > 0 && (
