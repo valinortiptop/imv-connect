@@ -437,11 +437,7 @@ export default function NuevaRemisionDialog({
                         />
                       )}
 
-                      {selectedStock(l) != null && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          Lote {l.lote}: {selectedStock(l)} en existencia
-                        </p>
-                      )}
+
                     </div>
                   ))}
                 </div>
