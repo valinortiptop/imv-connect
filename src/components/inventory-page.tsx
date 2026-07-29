@@ -11,8 +11,9 @@ import { ProductThumb } from "@/components/ui/product-thumb";
 import {
   Search, Package, AlertTriangle, CalendarIcon,
   ArrowUpDown, ArrowUp, ArrowDown, DollarSign, Boxes, SlidersHorizontal,
-  Download, Loader2
+  Download, Loader2, ChevronRight, ChevronDown as ChevronDownIcon
 } from "lucide-react";
+import { ProductLotsPanel } from "@/components/inventory/ProductLotsPanel";
 import { cn } from "@/lib/utils";
 import { StockAdjustmentDialog } from "@/components/StockAdjustmentDialog";
 import { MarkAsDamagedDialog } from "@/components/MarkAsDamagedDialog";
