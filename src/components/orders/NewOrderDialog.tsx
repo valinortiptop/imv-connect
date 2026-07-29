@@ -339,11 +339,16 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
   // When the user changes the client, reset stops so the default
   // address re-seeds from the new client. Allocations get re-derived
   // from the current `lines` automatically by the editor's self-heal.
+  // En modo edición se omite el primer disparo (la hidratación fija el
+  // cliente y ya trae sus paradas guardadas).
+  const skipStopResetRef = useRef(false);
   useEffect(() => {
+    if (skipStopResetRef.current) { skipStopResetRef.current = false; return; }
     setStops([]);
     setAllowNoAddress(false);
     setQuickAddress("");
   }, [selectedClientId, clientTab]);
+
 
   // The client_price_overrides query is async — when the user picks a
   // client, selectClient() runs applyPriceListToLines synchronously with
