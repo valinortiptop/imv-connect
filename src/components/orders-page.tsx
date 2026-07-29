@@ -1622,14 +1622,16 @@ export default function Orders({
             onDelete={(id, orderCode, clientName) => setDeleteOrder({ id, orderCode, clientName })}
           />
 
-          <EditOrderSheet
-            orderId={editOrderId}
+          {/* Editar pedido reutiliza el MISMO modal que "Nuevo Pedido" */}
+          <NewOrderDialog
+            editOrderId={editOrderId}
             open={!!editOrderId}
             onOpenChange={(open) => {
               if (!open) setEditOrderId(null);
             }}
-            onOrderUpdated={() => {}}
+            onOrderCreated={() => {}}
           />
+
 
           <DeleteOrderDialog
             orderId={deleteOrder?.id ?? null}
