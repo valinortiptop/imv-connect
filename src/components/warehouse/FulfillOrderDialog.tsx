@@ -49,8 +49,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductThumb } from "@/components/ui/product-thumb";
-import {
 import { notifyEventFn } from "@/lib/notifications.functions";
+import {
   Package,
   Truck,
   Hand,
