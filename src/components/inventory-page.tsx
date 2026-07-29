@@ -67,6 +67,7 @@ export default function Inventory() {
   const [labFilter, setLabFilter] = useState("all");
   const [almacenFilter, setAlmacenFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
