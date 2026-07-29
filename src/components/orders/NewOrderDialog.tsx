@@ -948,7 +948,7 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
 
                   <TabsContent value="new" className="mt-3 space-y-3">
                     <FormField control={form.control} name="client_name" render={({ field }) => (
-                      <FormItem><FormLabel>Nombre *</FormLabel><FormControl><Input placeholder="Nombre del cliente" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Nombre *</FormLabel><FormControl><Input placeholder="Nombre del cliente" {...field} className={cn(showErrors && !field.value?.trim() && "border-destructive ring-1 ring-destructive")} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <div className="grid grid-cols-2 gap-2">
                       <FormField control={form.control} name="phone" render={({ field }) => (
