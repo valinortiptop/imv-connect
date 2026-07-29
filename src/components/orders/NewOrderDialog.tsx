@@ -786,6 +786,63 @@ export function NewOrderDialog({ open, onOpenChange, onOrderCreated, mode = "ord
     },
   });
 
+  // ── Guardar como borrador ───────────────────────────────────────
+  // Un borrador se guarda en `quotes` + `quote_items` con status "draft":
+  // no descuenta inventario ni aparece en dashboards de ventas, y se puede
+  // retomar después desde Cotizaciones.
+  const draftMutation = useMutation({
+    mutationFn: async () => {
+      const values = form.getValues();
+      const clientName = (values.client_name || "").trim();
+      if (!clientName && !selectedClientId) throw new Error("Indica el cliente para guardar el borrador");
+
+      const subtotal = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0) / 1.16, 0);
+      const total = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
+
+      const { data: quote, error } = await (supabase as any)
+        .from("quotes")
+        .insert({
+          client_id: selectedClientId,
+          status: "draft",
+          source: "pedidos",
+          contact_name: clientName || null,
+          contact_phone: emptyToNull(values.phone),
+          shipping_address: emptyToNull(values.shipping_address),
+          notes: emptyToNull(values.notes),
+          delivery_date: emptyToNull(values.delivery_date),
+          payment_method: emptyToNull(values.payment_method) ?? "Transferencia",
+          price_list_id: appliedPriceList?.id ?? null,
+          subtotal,
+          total,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      if (lines.length > 0) {
+        const items = lines.map((l) => ({
+          quote_id: quote.id,
+          product_id: l.product_id,
+          product_name: l.name,
+          quantity: Number(l.quantity) || 0,
+          unit_price: Number(l.unit_price) || 0,
+          line_subtotal: (Number(l.quantity) || 0) * (Number(l.unit_price) || 0),
+        }));
+        const { error: itemsErr } = await (supabase as any).from("quote_items").insert(items);
+        if (itemsErr) throw itemsErr;
+      }
+      return quote.id as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      toast.success("Borrador guardado. Puedes retomarlo desde Cotizaciones.");
+      onOpenChange(false);
+    },
+    onError: (err: Error) => toast.error("No se pudo guardar el borrador: " + err.message),
+  });
+
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl w-[96vw] max-h-[92vh] p-0 flex flex-col gap-0">
