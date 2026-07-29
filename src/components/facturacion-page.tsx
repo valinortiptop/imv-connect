@@ -244,22 +244,23 @@ export default function Facturacion() {
     },
   });
 
-  // Pedidos pendientes de facturar — feeds the "Pedidos por facturar" panel
-  // that closes the loop Pedidos → Facturación.
-  const { data: pedidosPorFacturar = [] } = useQuery({
-    queryKey: ["pedidos-por-facturar"],
+  // Remisiones pendientes de facturar — sólo se factura lo ya remisionado.
+  const { data: remisionesPorFacturar = [] } = useQuery({
+    queryKey: ["remisiones-por-facturar"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_pedidos_por_facturar");
+      const { data, error } = await (supabase as any).rpc("list_remisiones_por_facturar");
       if (error) throw error;
       return (data ?? []) as Array<{
-        id: string;
+        remision_id: string;
+        remision_folio: string | null;
+        fecha: string | null;
+        pedido_id: string;
         folio: string | null;
         order_code: string | null;
         cliente_id: string;
         cliente: string | null;
         rfc: string | null;
         estado: string;
-        delivery_date: string | null;
         subtotal: number;
         iva: number;
         total: number;
@@ -268,28 +269,32 @@ export default function Facturacion() {
     refetchInterval: 60_000,
   });
 
-  // Pedidos que aún no se han remisionado: no se pueden facturar todavía.
-  const { data: pedidosSinRemisionar = [] } = useQuery({
-    queryKey: ["pedidos-sin-remisionar"],
+  // Remisiones ya facturadas (factura vigente, no cancelada).
+  const { data: remisionesFacturadas = [] } = useQuery({
+    queryKey: ["remisiones-facturadas"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("list_pedidos_sin_remisionar");
+      const { data, error } = await (supabase as any).rpc("list_remisiones_facturadas");
       if (error) throw error;
       return (data ?? []) as Array<{
-        id: string;
+        remision_id: string;
+        remision_folio: string | null;
+        fecha: string | null;
+        pedido_id: string;
         folio: string | null;
         order_code: string | null;
-        cliente_id: string;
         cliente: string | null;
-        rfc: string | null;
-        estado: string;
-        delivery_date: string | null;
-        subtotal: number;
-        iva: number;
+        factura_id: string;
+        factura_folio: string | null;
+        factura_estado: string;
+        uuid_fiscal: string | null;
+        cfdi_status: string | null;
         total: number;
+        fecha_emision: string | null;
       }>;
     },
     refetchInterval: 60_000,
   });
+
 
 
   // Pedidos ya facturados — permitir ver/descargar PDF y XML
@@ -333,9 +338,10 @@ export default function Facturacion() {
     },
     onSuccess: (res) => {
       toast({ title: "Factura creada", description: `Factura ${res.folio} generada correctamente` });
-      queryClient.invalidateQueries({ queryKey: ["pedidos-por-facturar"] });
+      queryClient.invalidateQueries({ queryKey: ["remisiones-por-facturar"] });
       queryClient.invalidateQueries({ queryKey: ["pedidos-facturados"] });
       queryClient.invalidateQueries({ queryKey: ["facturas"] });
+      queryClient.invalidateQueries({ queryKey: ["remisiones-facturadas"] });
       navigate(`/admin/facturas/${res.factura_id}`);
     },
     onError: (err: any) => {
@@ -720,19 +726,18 @@ export default function Facturacion() {
           </div>
         </div>
 
-        {/* Pedidos por facturar — closes the loop Pedidos → Facturación.
-            Any pedido without a linked factura shows here with a 1-click CTA. */}
-        {pedidosPorFacturar.length > 0 && (
+        {/* Remisiones pendientes de facturar */}
+        {remisionesPorFacturar.length > 0 && (
           <GlowCard>
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-4 w-4 text-emerald-500" />
                   <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                    Pedidos por facturar
+                    Remisiones pendientes de facturar
                   </Label>
                   <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
-                    {pedidosPorFacturar.length}
+                    {remisionesPorFacturar.length}
                   </span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">
@@ -741,16 +746,16 @@ export default function Facturacion() {
               </div>
 
               <div className="rounded-lg border divide-y max-h-[280px] overflow-y-auto">
-                {pedidosPorFacturar.map((p) => (
+                {remisionesPorFacturar.map((r) => (
                   <div
-                    key={p.id}
+                    key={r.remision_id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => setDetailOrderId(p.id)}
+                    onClick={() => setDetailOrderId(r.pedido_id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setDetailOrderId(p.id);
+                        setDetailOrderId(r.pedido_id);
                       }
                     }}
                     className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer focus:outline-none focus:bg-muted/40"
@@ -758,25 +763,28 @@ export default function Facturacion() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-semibold text-sm">
-                          {p.order_code ?? p.folio ?? "—"}
+                          {r.remision_folio ?? "—"}
                         </span>
                         <span className="rounded border px-1.5 py-0 text-[10px] text-muted-foreground">
-                          {p.estado}
+                          Pedido {r.order_code ?? r.folio ?? "—"}
                         </span>
-                        {p.rfc && (
-                          <span className="text-[10px] text-muted-foreground font-mono">{p.rfc}</span>
+                        {r.fecha && (
+                          <span className="text-[10px] text-muted-foreground tabular-nums">{r.fecha}</span>
+                        )}
+                        {r.rfc && (
+                          <span className="text-[10px] text-muted-foreground font-mono">{r.rfc}</span>
                         )}
                       </div>
                       <div className="text-sm truncate font-medium">
-                        {p.cliente ?? "—"}
+                        {r.cliente ?? "—"}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-sm font-semibold tabular-nums">
-                        ${Number(p.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                        ${Number(r.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                       </div>
                       <div className="text-[10px] text-muted-foreground tabular-nums">
-                        subt. ${Number(p.subtotal ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                        subt. ${Number(r.subtotal ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                       </div>
                     </div>
                     <Button
@@ -784,7 +792,7 @@ export default function Facturacion() {
                       className="gap-1 shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        facturarPedidoMutation.mutate(p.id);
+                        facturarPedidoMutation.mutate(r.pedido_id);
                       }}
                       disabled={facturarPedidoMutation.isPending}
                     >
@@ -798,22 +806,17 @@ export default function Facturacion() {
           </GlowCard>
         )}
 
-        {/* Pedidos pendientes de remisionar — no facturables hasta tener remisión */}
-        {pedidosSinRemisionar.length > 0 && (
+        {/* Remisiones ya facturadas */}
+        {remisionesFacturadas.length > 0 && (
           <GlowCard>
             <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-amber-500" />
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                    Pedidos pendientes de remisionar
-                  </Label>
-                  <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
-                    {pedidosSinRemisionar.length}
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  No se pueden facturar hasta que almacén genere la remisión.
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-blue-500" />
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Remisiones facturadas
+                </Label>
+                <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums">
+                  {remisionesFacturadas.length}
                 </span>
               </div>
 
@@ -821,32 +824,31 @@ export default function Facturacion() {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-muted/60 text-xs">
                     <tr>
+                      <th className="px-3 py-1.5 text-left">Remisión</th>
                       <th className="px-3 py-1.5 text-left">Pedido</th>
                       <th className="px-3 py-1.5 text-left">Cliente</th>
-                      <th className="px-3 py-1.5 text-left">Estado</th>
+                      <th className="px-3 py-1.5 text-left">Factura</th>
                       <th className="px-3 py-1.5 text-right">Total</th>
-                      <th className="px-3 py-1.5 text-right">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {pedidosSinRemisionar.map((p) => (
-                      <tr key={p.id} className="border-t">
-                        <td className="px-3 py-1.5 font-mono font-semibold">
-                          {p.order_code ?? p.folio ?? "—"}
-                        </td>
-                        <td className="px-3 py-1.5">{p.cliente ?? "—"}</td>
+                    {remisionesFacturadas.map((r) => (
+                      <tr
+                        key={r.remision_id}
+                        className="border-t cursor-pointer hover:bg-muted/40"
+                        onClick={() => navigate(`/admin/facturas/${r.factura_id}`)}
+                      >
+                        <td className="px-3 py-1.5 font-mono font-semibold">{r.remision_folio ?? "—"}</td>
+                        <td className="px-3 py-1.5 font-mono">{r.order_code ?? r.folio ?? "—"}</td>
+                        <td className="px-3 py-1.5">{r.cliente ?? "—"}</td>
                         <td className="px-3 py-1.5">
+                          <span className="font-mono">{r.factura_folio ?? "—"}</span>{" "}
                           <span className="rounded border px-1.5 py-0 text-[10px] text-muted-foreground">
-                            {p.estado}
+                            {r.cfdi_status || r.factura_estado}
                           </span>
                         </td>
                         <td className="px-3 py-1.5 text-right tabular-nums">
-                          ${Number(p.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-3 py-1.5 text-right">
-                          <Button size="sm" variant="outline" asChild>
-                            <Link to="/admin/almacen/remisiones">Remisionar</Link>
-                          </Button>
+                          ${Number(r.total ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     ))}
@@ -856,6 +858,7 @@ export default function Facturacion() {
             </div>
           </GlowCard>
         )}
+
 
 
 

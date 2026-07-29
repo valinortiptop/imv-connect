@@ -15235,6 +15235,48 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_remisiones_facturadas: {
+        Args: never
+        Returns: {
+          cfdi_status: string
+          cliente: string
+          cliente_id: string
+          factura_estado: string
+          factura_folio: string
+          factura_id: string
+          fecha: string
+          fecha_emision: string
+          folio: string
+          order_code: string
+          pdf_url: string
+          pedido_id: string
+          remision_folio: string
+          remision_id: string
+          rfc: string
+          total: number
+          uuid_fiscal: string
+          xml_url: string
+        }[]
+      }
+      list_remisiones_por_facturar: {
+        Args: never
+        Returns: {
+          cliente: string
+          cliente_id: string
+          created_at: string
+          estado: string
+          fecha: string
+          folio: string
+          iva: number
+          order_code: string
+          pedido_id: string
+          remision_folio: string
+          remision_id: string
+          rfc: string
+          subtotal: number
+          total: number
+        }[]
+      }
       listar_usuarios: {
         Args: never
         Returns: {
