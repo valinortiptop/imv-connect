@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 export const Route = createFileRoute("/admin/devoluciones/$id")({
   component: DevolucionDetail,
@@ -74,6 +75,17 @@ function DevolucionDetail() {
     mutationFn: async () => {
       const { error } = await supabase.rpc("aplicar_devolucion", { _dev: id });
       if (error) throw error;
+      void notifyEventFn({
+        data: {
+          event: "devolucion_registrada",
+          vars: {
+            devolucion_id: id,
+            folio: (dev as any)?.folio ?? "",
+            cliente: (dev as any)?.cliente?.razon_social ?? "Cliente",
+            total: (dev as any)?.total ?? 0,
+          },
+        },
+      }).catch(() => {});
     },
     onSuccess: () => {
       toast.success("Devolución aplicada · NC y stock actualizados");

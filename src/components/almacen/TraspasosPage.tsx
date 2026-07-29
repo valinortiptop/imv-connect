@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeftRight, FileDown, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { traspasoPdf } from "@/lib/almacen-pdf";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 type Almacen = { id: string; nombre: string };
 type Producto = { id: string; sku: string; nombre: string };
@@ -142,6 +143,18 @@ export default function TraspasosPage() {
         _fecha: fecha,
       } as never);
       if (error) throw error;
+      void notifyEventFn({
+        data: {
+          event: "almacen_traspaso",
+          vars: {
+            folio: String(data ?? ""),
+            origen: almacenes?.find((a: any) => a.id === origen)?.nombre ?? origen,
+            destino: almacenes?.find((a: any) => a.id === destino)?.nombre ?? destino,
+            piezas: items.reduce((a: number, it: any) => a + Number(it.cantidad || 0), 0),
+            fecha,
+          },
+        },
+      }).catch(() => {});
       return data as unknown as string;
     },
     onSuccess: () => {

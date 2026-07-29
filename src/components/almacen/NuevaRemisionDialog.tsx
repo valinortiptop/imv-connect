@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Trash2 } from "lucide-react";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 type Almacen = { id: string; nombre: string };
 type Pedido = { id: string; folio: string; cliente_id: string | null; clientes?: { razon_social?: string | null } | null };
@@ -188,6 +189,20 @@ export default function NuevaRemisionDialog({
         _fecha: fecha,
       } as never);
       if (error) throw error;
+      if (!remisionId) {
+        const piezas = items.reduce((a: number, it: any) => a + Number(it.cantidad || 0), 0);
+        void notifyEventFn({
+          data: {
+            event: "pedido_en_ruta",
+            vars: {
+              folio: pedido?.folio ?? "—",
+              cliente: pedido?.cliente_nombre ?? "Cliente",
+              piezas,
+              eta: fecha,
+            },
+          },
+        }).catch(() => {});
+      }
     },
     onSuccess: () => {
       toast.success(remisionId ? "Remisión actualizada" : "Remisión creada · inventario descontado");

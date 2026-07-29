@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { notifyEventFn } from "@/lib/notifications.functions";
 
 export const Route = createFileRoute("/admin/compras/$id")({
   component: OCDetail,
@@ -412,6 +413,18 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
         const { error: eB } = await supabase.from("product_batches").insert(allBatches);
         if (eB) throw eB;
       }
+      void notifyEventFn({
+        data: {
+          event: "oc_recibida",
+          vars: {
+            oc_id: ocId,
+            folio: (oc as any)?.folio ?? "",
+            proveedor: (oc as any)?.proveedor?.nombre ?? (oc as any)?.proveedor_nombre ?? "Proveedor",
+            estado: "recibida",
+            piezas: payload.reduce((a: number, it: any) => a + Number(it.cantidad || 0), 0),
+          },
+        },
+      }).catch(() => {});
     },
     onSuccess: () => {
       toast.success("Recepción registrada · stock y lotes actualizados");
