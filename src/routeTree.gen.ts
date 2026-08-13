@@ -140,6 +140,7 @@ import { Route as AdminAlmacenCardexRouteImport } from './routes/admin.almacen.c
 import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
+import { Route as ApiPublicHooksNetsuiteSyncRouteImport } from './routes/api/public/hooks/netsuite-sync'
 import { Route as ApiPublicHooksCobranzaRiesgoNocturnoRouteImport } from './routes/api/public/hooks/cobranza-riesgo-nocturno'
 import { Route as ApiPublicHooksCobranzaRecordatoriosRouteImport } from './routes/api/public/hooks/cobranza-recordatorios'
 import { Route as ApiPublicHooksCobranzaEdoCuentaRouteImport } from './routes/api/public/hooks/cobranza-edo-cuenta'
@@ -829,6 +830,12 @@ const ApiPublicHooksRegenerateComprasAlertsRoute =
     path: '/api/public/hooks/regenerate-compras-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNetsuiteSyncRoute =
+  ApiPublicHooksNetsuiteSyncRouteImport.update({
+    id: '/api/public/hooks/netsuite-sync',
+    path: '/api/public/hooks/netsuite-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCobranzaRiesgoNocturnoRoute =
   ApiPublicHooksCobranzaRiesgoNocturnoRouteImport.update({
     id: '/api/public/hooks/cobranza-riesgo-nocturno',
@@ -1024,6 +1031,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -1160,6 +1168,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
@@ -1304,6 +1313,7 @@ export interface FileRoutesById {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -1449,6 +1459,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1585,6 +1596,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas'
@@ -1728,6 +1740,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1748,6 +1761,7 @@ export interface RootRouteChildren {
   ApiPublicHooksCobranzaEdoCuentaRoute: typeof ApiPublicHooksCobranzaEdoCuentaRoute
   ApiPublicHooksCobranzaRecordatoriosRoute: typeof ApiPublicHooksCobranzaRecordatoriosRoute
   ApiPublicHooksCobranzaRiesgoNocturnoRoute: typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  ApiPublicHooksNetsuiteSyncRoute: typeof ApiPublicHooksNetsuiteSyncRoute
   ApiPublicHooksRegenerateComprasAlertsRoute: typeof ApiPublicHooksRegenerateComprasAlertsRoute
   ApiPublicMapsScriptRoute: typeof ApiPublicMapsScriptRoute
   ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
@@ -2672,6 +2686,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRegenerateComprasAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/netsuite-sync': {
+      id: '/api/public/hooks/netsuite-sync'
+      path: '/api/public/hooks/netsuite-sync'
+      fullPath: '/api/public/hooks/netsuite-sync'
+      preLoaderRoute: typeof ApiPublicHooksNetsuiteSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/cobranza-riesgo-nocturno': {
       id: '/api/public/hooks/cobranza-riesgo-nocturno'
       path: '/api/public/hooks/cobranza-riesgo-nocturno'
@@ -3127,6 +3148,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksCobranzaRecordatoriosRoute,
   ApiPublicHooksCobranzaRiesgoNocturnoRoute:
     ApiPublicHooksCobranzaRiesgoNocturnoRoute,
+  ApiPublicHooksNetsuiteSyncRoute: ApiPublicHooksNetsuiteSyncRoute,
   ApiPublicHooksRegenerateComprasAlertsRoute:
     ApiPublicHooksRegenerateComprasAlertsRoute,
   ApiPublicMapsScriptRoute: ApiPublicMapsScriptRoute,
