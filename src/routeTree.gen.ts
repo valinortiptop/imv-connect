@@ -90,6 +90,7 @@ import { Route as AdminAlmacenIndexRouteImport } from './routes/admin.almacen.in
 import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
 import { Route as ApiPublicBackfillNetsuite2026RouteImport } from './routes/api/public/backfill-netsuite-2026'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
+import { Route as AdminIntegracionesNetsuiteRouteImport } from './routes/admin.integraciones.netsuite'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
 import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devoluciones.lista'
@@ -139,6 +140,7 @@ import { Route as AdminAlmacenCardexRouteImport } from './routes/admin.almacen.c
 import { Route as AdminContabilidadPolizasIndexRouteImport } from './routes/admin.contabilidad.polizas.index'
 import { Route as ApiPublicMapsScriptRouteImport } from './routes/api/public/maps.script'
 import { Route as ApiPublicHooksRegenerateComprasAlertsRouteImport } from './routes/api/public/hooks/regenerate-compras-alerts'
+import { Route as ApiPublicHooksNetsuiteSyncRouteImport } from './routes/api/public/hooks/netsuite-sync'
 import { Route as ApiPublicHooksCobranzaRiesgoNocturnoRouteImport } from './routes/api/public/hooks/cobranza-riesgo-nocturno'
 import { Route as ApiPublicHooksCobranzaRecordatoriosRouteImport } from './routes/api/public/hooks/cobranza-recordatorios'
 import { Route as ApiPublicHooksCobranzaEdoCuentaRouteImport } from './routes/api/public/hooks/cobranza-edo-cuenta'
@@ -557,6 +559,12 @@ const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   path: '/pedidos/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIntegracionesNetsuiteRoute =
+  AdminIntegracionesNetsuiteRouteImport.update({
+    id: '/integraciones/netsuite',
+    path: '/integraciones/netsuite',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminFacturasIdRoute = AdminFacturasIdRouteImport.update({
   id: '/facturas/$id',
   path: '/facturas/$id',
@@ -822,6 +830,12 @@ const ApiPublicHooksRegenerateComprasAlertsRoute =
     path: '/api/public/hooks/regenerate-compras-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksNetsuiteSyncRoute =
+  ApiPublicHooksNetsuiteSyncRouteImport.update({
+    id: '/api/public/hooks/netsuite-sync',
+    path: '/api/public/hooks/netsuite-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCobranzaRiesgoNocturnoRoute =
   ApiPublicHooksCobranzaRiesgoNocturnoRouteImport.update({
     id: '/api/public/hooks/cobranza-riesgo-nocturno',
@@ -997,6 +1011,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1016,6 +1031,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -1132,6 +1148,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1151,6 +1168,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasIndexRoute
@@ -1275,6 +1293,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1294,6 +1313,7 @@ export interface FileRoutesById {
   '/api/public/hooks/cobranza-edo-cuenta': typeof ApiPublicHooksCobranzaEdoCuentaRoute
   '/api/public/hooks/cobranza-recordatorios': typeof ApiPublicHooksCobranzaRecordatoriosRoute
   '/api/public/hooks/cobranza-riesgo-nocturno': typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  '/api/public/hooks/netsuite-sync': typeof ApiPublicHooksNetsuiteSyncRoute
   '/api/public/hooks/regenerate-compras-alerts': typeof ApiPublicHooksRegenerateComprasAlertsRoute
   '/api/public/maps/script': typeof ApiPublicMapsScriptRoute
   '/admin/contabilidad/polizas/': typeof AdminContabilidadPolizasIndexRoute
@@ -1419,6 +1439,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -1438,6 +1459,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1554,6 +1576,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -1573,6 +1596,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas'
@@ -1696,6 +1720,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -1715,6 +1740,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/cobranza-edo-cuenta'
     | '/api/public/hooks/cobranza-recordatorios'
     | '/api/public/hooks/cobranza-riesgo-nocturno'
+    | '/api/public/hooks/netsuite-sync'
     | '/api/public/hooks/regenerate-compras-alerts'
     | '/api/public/maps/script'
     | '/admin/contabilidad/polizas/'
@@ -1735,6 +1761,7 @@ export interface RootRouteChildren {
   ApiPublicHooksCobranzaEdoCuentaRoute: typeof ApiPublicHooksCobranzaEdoCuentaRoute
   ApiPublicHooksCobranzaRecordatoriosRoute: typeof ApiPublicHooksCobranzaRecordatoriosRoute
   ApiPublicHooksCobranzaRiesgoNocturnoRoute: typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
+  ApiPublicHooksNetsuiteSyncRoute: typeof ApiPublicHooksNetsuiteSyncRoute
   ApiPublicHooksRegenerateComprasAlertsRoute: typeof ApiPublicHooksRegenerateComprasAlertsRoute
   ApiPublicMapsScriptRoute: typeof ApiPublicMapsScriptRoute
   ApiPublicMapsTileZXYRoute: typeof ApiPublicMapsTileZXYRoute
@@ -2309,6 +2336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/integraciones/netsuite': {
+      id: '/admin/integraciones/netsuite'
+      path: '/integraciones/netsuite'
+      fullPath: '/admin/integraciones/netsuite'
+      preLoaderRoute: typeof AdminIntegracionesNetsuiteRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/facturas/$id': {
       id: '/admin/facturas/$id'
       path: '/facturas/$id'
@@ -2652,6 +2686,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRegenerateComprasAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/netsuite-sync': {
+      id: '/api/public/hooks/netsuite-sync'
+      path: '/api/public/hooks/netsuite-sync'
+      fullPath: '/api/public/hooks/netsuite-sync'
+      preLoaderRoute: typeof ApiPublicHooksNetsuiteSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/cobranza-riesgo-nocturno': {
       id: '/api/public/hooks/cobranza-riesgo-nocturno'
       path: '/api/public/hooks/cobranza-riesgo-nocturno'
@@ -2951,6 +2992,7 @@ interface AdminRouteChildren {
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
   AdminContabilidadSatRoute: typeof AdminContabilidadSatRoute
   AdminFacturasIdRoute: typeof AdminFacturasIdRoute
+  AdminIntegracionesNetsuiteRoute: typeof AdminIntegracionesNetsuiteRoute
   AdminPedidosIdRoute: typeof AdminPedidosIdRoute
   AdminBancosIndexRoute: typeof AdminBancosIndexRoute
   AdminClientesIndexRoute: typeof AdminClientesIndexRoute
@@ -3023,6 +3065,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
   AdminContabilidadSatRoute: AdminContabilidadSatRoute,
   AdminFacturasIdRoute: AdminFacturasIdRoute,
+  AdminIntegracionesNetsuiteRoute: AdminIntegracionesNetsuiteRoute,
   AdminPedidosIdRoute: AdminPedidosIdRoute,
   AdminBancosIndexRoute: AdminBancosIndexRoute,
   AdminClientesIndexRoute: AdminClientesIndexRoute,
@@ -3105,6 +3148,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksCobranzaRecordatoriosRoute,
   ApiPublicHooksCobranzaRiesgoNocturnoRoute:
     ApiPublicHooksCobranzaRiesgoNocturnoRoute,
+  ApiPublicHooksNetsuiteSyncRoute: ApiPublicHooksNetsuiteSyncRoute,
   ApiPublicHooksRegenerateComprasAlertsRoute:
     ApiPublicHooksRegenerateComprasAlertsRoute,
   ApiPublicMapsScriptRoute: ApiPublicMapsScriptRoute,

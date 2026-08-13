@@ -209,6 +209,8 @@ const navGroups: NavGroup[] = [
       { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url },
       { key: "navPlantillas",         label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas",     icon: icDocumentos?.url ?? icAdmin.url },
       { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: icEstadoApis.url },
+      { key: "navNetsuite",    label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url },
+
       { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: icUsoApis.url },
       { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: icAdmin.url },
     ],

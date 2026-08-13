@@ -7,14 +7,14 @@ La pantalla *Datos secretos de API* de NetSuite guarda secretos para que los use
 ## Lo que necesitas generar en NetSuite (eres Administrador, así que puedes)
 
 1. **Habilitar funciones**: Configuración → Empresa → Habilitar funciones → SuiteCloud:
-   - `SERVICIOS WEB DE REST` (REST Web Services)
-   - `AUTENTICACIÓN BASADA EN TOKEN` (Token-Based Authentication)
+  - `SERVICIOS WEB DE REST` (REST Web Services)
+  - `AUTENTICACIÓN BASADA EN TOKEN` (Token-Based Authentication)
 2. **Crear el registro de integración**: Configuración → Integración → Administrar integraciones → Nuevo.
-   - Nombre: `IMV Portal Sync`, marcar *Token-Based Authentication*, desmarcar TBA authorization flow y OAuth 2.0.
-   - Al guardar, NetSuite muestra **una sola vez**: `Consumer Key` y `Consumer Secret`.
+  - Nombre: `IMV Portal Sync`, marcar *Token-Based Authentication*, desmarcar TBA authorization flow y OAuth 2.0.
+  - Al guardar, NetSuite muestra **una sola vez**: `Consumer Key` y `Consumer Secret`.
 3. **Crear un rol de solo lectura** (ej. `IMV Integration Read`) con permisos: REST Web Services, SuiteAnalytics Workbook, y *View* en Facturas, Clientes, Artículos, Inventario. Asignar el rol a un usuario de integración.
-4. **Crear el token de acceso**: Configuración → Usuarios/Roles → Tokens de acceso → Nuevo (Aplicación = IMV Portal Sync, Usuario, Rol). Muestra **una sola vez**: `Token ID` y `Token Secret`.
-5. **Account ID**: Configuración → Empresa → Información de la empresa (ej. `1234567` o `1234567_SB1`).
+  1. **Crear el token de acceso**: Configuración → Usuarios/Roles → Tokens de acceso → Nuevo (Aplicación = IMV Portal Sync, Usuario, Rol). Muestra **una sola vez**: `Token ID` y `Token Secret`.
+4. **Account ID**: Configuración → Empresa → Información de la empresa (ej. `1234567` o `1234567_SB1`).
 
 Estos 5 valores los guardaremos como secretos del proyecto:
 `NETSUITE_ACCOUNT_ID`, `NETSUITE_CONSUMER_KEY`, `NETSUITE_CONSUMER_SECRET`, `NETSUITE_TOKEN_ID`, `NETSUITE_TOKEN_SECRET`.
@@ -22,17 +22,20 @@ Estos 5 valores los guardaremos como secretos del proyecto:
 ## Qué vamos a construir (solo lectura, NetSuite → IMV)
 
 Sincronización programada + botón manual, para:
+
 - **Ventas / facturas** (líneas de factura → `sales_history`, reemplazando los backfills manuales de .xls)
 - **Clientes** (→ `clientes`, emparejando por RFC / nombre / ID de NetSuite)
 - **Productos y precios** (→ `productos` y precios, emparejando por SKU con `sku_aliases`)
 - **Inventario y lotes** (→ `stock` y `product_batches` por almacén/lote)
 
 ### Página nueva: Administración → Integraciones → NetSuite
+
 - Estado de conexión con botón **Probar conexión**.
 - Tarjeta por entidad (Ventas, Clientes, Productos, Inventario) con: última sincronización, filas nuevas/actualizadas, errores, y botón **Sincronizar ahora** (con selector de rango de fechas para ventas).
 - Bitácora de ejecuciones con detalle de errores y filas no emparejadas (SKUs o clientes desconocidos) para resolver a mano.
 
 ### Automatización
+
 - Sincronización nocturna programada (ventas del día anterior + incrementales de clientes/productos/inventario).
 - Inventario opcionalmente cada hora.
 
