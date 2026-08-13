@@ -20,19 +20,34 @@ async function assertAdmin(context: {
 /** Prueba de conexión contra NetSuite. */
 export const netsuitePingFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<{
+    ok: boolean;
+    configured: boolean;
+    account: string | null;
+    companyName: string | null;
+    error: string | null;
+  }> => {
     await assertAdmin(context as never);
     const { pingNetsuite, isNetsuiteConfigured } = await import("./netsuite.server");
     if (!isNetsuiteConfigured()) {
       return {
-        ok: false as const,
-        configured: false as const,
+        ok: false,
+        configured: false,
+        account: null,
+        companyName: null,
         error: "Faltan los secretos de NetSuite (NETSUITE_*).",
       };
     }
     const res = await pingNetsuite();
-    return { ...res, configured: true as const };
+    return {
+      ok: res.ok,
+      configured: true,
+      account: res.account ?? null,
+      companyName: res.companyName ?? null,
+      error: res.error ?? null,
+    };
   });
+
 
 /** Ejecuta una sincronización manual de una entidad. */
 export const netsuiteSyncFn = createServerFn({ method: "POST" })

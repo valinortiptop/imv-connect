@@ -90,6 +90,7 @@ import { Route as AdminAlmacenIndexRouteImport } from './routes/admin.almacen.in
 import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
 import { Route as ApiPublicBackfillNetsuite2026RouteImport } from './routes/api/public/backfill-netsuite-2026'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
+import { Route as AdminIntegracionesNetsuiteRouteImport } from './routes/admin.integraciones.netsuite'
 import { Route as AdminFacturasIdRouteImport } from './routes/admin.facturas.$id'
 import { Route as AdminDevolucionesNewRouteImport } from './routes/admin.devoluciones.new'
 import { Route as AdminDevolucionesListaRouteImport } from './routes/admin.devoluciones.lista'
@@ -557,6 +558,12 @@ const AdminPedidosIdRoute = AdminPedidosIdRouteImport.update({
   path: '/pedidos/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIntegracionesNetsuiteRoute =
+  AdminIntegracionesNetsuiteRouteImport.update({
+    id: '/integraciones/netsuite',
+    path: '/integraciones/netsuite',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminFacturasIdRoute = AdminFacturasIdRouteImport.update({
   id: '/facturas/$id',
   path: '/facturas/$id',
@@ -997,6 +1004,7 @@ export interface FileRoutesByFullPath {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1132,6 +1140,7 @@ export interface FileRoutesByTo {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1275,6 +1284,7 @@ export interface FileRoutesById {
   '/admin/devoluciones/lista': typeof AdminDevolucionesListaRoute
   '/admin/devoluciones/new': typeof AdminDevolucionesNewRoute
   '/admin/facturas/$id': typeof AdminFacturasIdRoute
+  '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
   '/rep/clientes/$id': typeof RepClientesIdRoute
@@ -1419,6 +1429,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -1554,6 +1565,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -1696,6 +1708,7 @@ export interface FileRouteTypes {
     | '/admin/devoluciones/lista'
     | '/admin/devoluciones/new'
     | '/admin/facturas/$id'
+    | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
     | '/rep/clientes/$id'
@@ -2307,6 +2320,13 @@ declare module '@tanstack/react-router' {
       path: '/pedidos/$id'
       fullPath: '/admin/pedidos/$id'
       preLoaderRoute: typeof AdminPedidosIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/integraciones/netsuite': {
+      id: '/admin/integraciones/netsuite'
+      path: '/integraciones/netsuite'
+      fullPath: '/admin/integraciones/netsuite'
+      preLoaderRoute: typeof AdminIntegracionesNetsuiteRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/facturas/$id': {
@@ -2951,6 +2971,7 @@ interface AdminRouteChildren {
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
   AdminContabilidadSatRoute: typeof AdminContabilidadSatRoute
   AdminFacturasIdRoute: typeof AdminFacturasIdRoute
+  AdminIntegracionesNetsuiteRoute: typeof AdminIntegracionesNetsuiteRoute
   AdminPedidosIdRoute: typeof AdminPedidosIdRoute
   AdminBancosIndexRoute: typeof AdminBancosIndexRoute
   AdminClientesIndexRoute: typeof AdminClientesIndexRoute
@@ -3023,6 +3044,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
   AdminContabilidadSatRoute: AdminContabilidadSatRoute,
   AdminFacturasIdRoute: AdminFacturasIdRoute,
+  AdminIntegracionesNetsuiteRoute: AdminIntegracionesNetsuiteRoute,
   AdminPedidosIdRoute: AdminPedidosIdRoute,
   AdminBancosIndexRoute: AdminBancosIndexRoute,
   AdminClientesIndexRoute: AdminClientesIndexRoute,
