@@ -1166,6 +1166,7 @@ export type Database = {
           id: string
           lat: number | null
           lng: number | null
+          netsuite_id: string | null
           nickname: string | null
           nombre_cfdi: string | null
           nombre_comercial: string | null
@@ -1207,6 +1208,7 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          netsuite_id?: string | null
           nickname?: string | null
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
@@ -1248,6 +1250,7 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          netsuite_id?: string | null
           nickname?: string | null
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
@@ -4898,6 +4901,69 @@ export type Database = {
           },
         ]
       }
+      netsuite_sync_runs: {
+        Row: {
+          created_at: string
+          date_from: string | null
+          date_to: string | null
+          duration_ms: number | null
+          entity: string
+          errors: Json
+          finished_at: string | null
+          id: string
+          rows_inserted: number
+          rows_read: number
+          rows_skipped: number
+          rows_updated: number
+          started_at: string
+          status: string
+          trigger_source: string
+          triggered_by: string | null
+          unmatched: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          duration_ms?: number | null
+          entity: string
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          rows_inserted?: number
+          rows_read?: number
+          rows_skipped?: number
+          rows_updated?: number
+          started_at?: string
+          status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+          unmatched?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          duration_ms?: number | null
+          entity?: string
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          rows_inserted?: number
+          rows_read?: number
+          rows_skipped?: number
+          rows_updated?: number
+          started_at?: string
+          status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+          unmatched?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notas_credito: {
         Row: {
           created_at: string
@@ -8246,6 +8312,7 @@ export type Database = {
           marca: string | null
           margen_bonif_pct: number | null
           margen_normal_pct: number | null
+          netsuite_id: string | null
           nombre: string
           peso_kg: number | null
           precio_lista: number
@@ -8287,6 +8354,7 @@ export type Database = {
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
+          netsuite_id?: string | null
           nombre: string
           peso_kg?: number | null
           precio_lista?: number
@@ -8328,6 +8396,7 @@ export type Database = {
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
+          netsuite_id?: string | null
           nombre?: string
           peso_kg?: number | null
           precio_lista?: number
@@ -10016,6 +10085,8 @@ export type Database = {
           invoice_no: string
           lab_name_raw: string | null
           laboratorio_id: string | null
+          netsuite_line_id: string | null
+          netsuite_tran_id: string | null
           product_id: string | null
           quantity: number
           rep_name_raw: string | null
@@ -10038,6 +10109,8 @@ export type Database = {
           invoice_no: string
           lab_name_raw?: string | null
           laboratorio_id?: string | null
+          netsuite_line_id?: string | null
+          netsuite_tran_id?: string | null
           product_id?: string | null
           quantity?: number
           rep_name_raw?: string | null
@@ -10060,6 +10133,8 @@ export type Database = {
           invoice_no?: string
           lab_name_raw?: string | null
           laboratorio_id?: string | null
+          netsuite_line_id?: string | null
+          netsuite_tran_id?: string | null
           product_id?: string | null
           quantity?: number
           rep_name_raw?: string | null
