@@ -104,7 +104,7 @@ function NetsuitePage() {
     }
   }
 
-  const connected = conn.data && "ok" in conn.data && conn.data.ok;
+  const connected = Boolean(conn.data?.ok);
 
   return (
     <section className="space-y-6">
