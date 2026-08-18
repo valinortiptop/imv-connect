@@ -198,8 +198,17 @@ function NetsuitePage() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <div>
                     Última: {new Date(last.started_at).toLocaleString()} ·{" "}
-                    <Badge variant={last.status === "ok" ? "secondary" : "destructive"}>
-                      {last.status}
+                    <Badge
+                      variant={
+                        last.status === "ok"
+                          ? "secondary"
+                          : last.status === "partial"
+                            ? "outline"
+                            : "destructive"
+                      }
+                      className={last.status === "partial" ? "text-destructive border-destructive" : undefined}
+                    >
+                      {last.status === "partial" ? "parcial" : last.status}
                     </Badge>
                   </div>
                   <div>
