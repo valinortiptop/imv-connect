@@ -13,7 +13,7 @@ export type NetsuiteEntity = "ventas" | "clientes" | "productos" | "inventario";
 export type SyncResult = {
   run_id: string | null;
   entity: NetsuiteEntity;
-  status: "ok" | "error";
+  status: "ok" | "partial" | "error";
   rows_read: number;
   rows_inserted: number;
   rows_updated: number;
@@ -569,7 +569,7 @@ export async function runNetsuiteSync(opts: {
     else if (opts.entity === "clientes") await syncClientes(res);
     else if (opts.entity === "productos") await syncProductos(res);
     else if (opts.entity === "inventario") await syncInventario(res);
-    if (res.errors.length) res.status = "ok";
+    if (res.errors.length) res.status = "partial";
   } catch (e) {
     res.status = "error";
     res.errors.push(e instanceof Error ? e.message : String(e));
