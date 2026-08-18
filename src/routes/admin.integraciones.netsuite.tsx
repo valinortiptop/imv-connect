@@ -268,7 +268,11 @@ function NetsuitePage() {
                   <td className="px-2 py-1 text-right">{r.rows_inserted}</td>
                   <td className="px-2 py-1 text-right">{r.rows_updated}</td>
                   <td className="px-2 py-1 text-right">{r.rows_skipped}</td>
-                  <td className="px-2 py-1">{r.status}</td>
+                  <td
+                    className={`px-2 py-1 ${r.status === "ok" ? "" : "text-destructive font-medium"}`}
+                  >
+                    {r.status === "partial" ? "parcial" : r.status}
+                  </td>
                   <td className="px-2 py-1 max-w-[36ch]">
                     {(r.errors ?? []).slice(0, 2).map((x, i) => (
                       <div key={`e${i}`} className="text-destructive truncate">
