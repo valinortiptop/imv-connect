@@ -13,7 +13,7 @@ export type NetsuiteEntity = "ventas" | "clientes" | "productos" | "inventario";
 export type SyncResult = {
   run_id: string | null;
   entity: NetsuiteEntity;
-  status: "ok" | "error";
+  status: "ok" | "partial" | "error";
   rows_read: number;
   rows_inserted: number;
   rows_updated: number;
