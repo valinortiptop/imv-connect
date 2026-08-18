@@ -569,7 +569,7 @@ export async function runNetsuiteSync(opts: {
     else if (opts.entity === "clientes") await syncClientes(res);
     else if (opts.entity === "productos") await syncProductos(res);
     else if (opts.entity === "inventario") await syncInventario(res);
-    if (res.errors.length) res.status = "ok";
+    if (res.errors.length) res.status = "partial";
   } catch (e) {
     res.status = "error";
     res.errors.push(e instanceof Error ? e.message : String(e));
