@@ -35,6 +35,57 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const CDMX_ALCALDIAS = [
+  "ALVARO OBREGON",
+  "AZCAPOTZALCO",
+  "BENITO JUAREZ",
+  "COYOACAN",
+  "CUAJIMALPA",
+  "CUAUHTEMOC",
+  "GUSTAVO A. MADERO",
+  "GUSTAVO A MADERO",
+  "IZTACALCO",
+  "IZTAPALAPA",
+  "LA MAGDALENA CONTRERAS",
+  "MAGDALENA CONTRERAS",
+  "MIGUEL HIDALGO",
+  "MILPA ALTA",
+  "TLALPAN",
+  "TLAHUAC",
+  "VENUSTIANO CARRANZA",
+  "XOCHIMILCO",
+];
+
+function normalizeAddr(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractAlcaldia(direccion: string | null | undefined): string | null {
+  if (!direccion) return null;
+  const norm = normalizeAddr(direccion);
+  // Prefer the municipality/alcaldía token that sits right before the 5-digit CP
+  // (standard Mexican address format: ... , COLONIA, ALCALDIA CP, STATE).
+  const m = norm.match(/,\s*([^,]+?)\s+\d{5}\b/);
+  if (m) {
+    const raw = normalizeAddr(m[1]);
+    if (raw.length > 2 && raw.length < 60) {
+      // Normalize to a known CDMX alcaldía name when possible.
+      const known = CDMX_ALCALDIAS.find((a) => raw.includes(a.replace(/\./g, "")));
+      return known ? known : raw;
+    }
+  }
+  // Fallback: look for any known alcaldía substring anywhere in the address.
+  for (const a of CDMX_ALCALDIAS) {
+    if (norm.includes(a.replace(/\./g, ""))) return a;
+  }
+  return null;
+}
+
 function Highlight({ text, query }: { text: string; query: string }) {
   const q = query.trim();
   if (!q) return <>{text}</>;
@@ -54,6 +105,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     </>
   );
 }
+
 
 function weekdayOf(fecha: string) {
   if (!fecha) return null;
