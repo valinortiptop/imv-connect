@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +28,62 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const CDMX_ALCALDIAS = [
+  "ALVARO OBREGON",
+  "AZCAPOTZALCO",
+  "BENITO JUAREZ",
+  "COYOACAN",
+  "CUAJIMALPA",
+  "CUAUHTEMOC",
+  "GUSTAVO A. MADERO",
+  "GUSTAVO A MADERO",
+  "IZTACALCO",
+  "IZTAPALAPA",
+  "LA MAGDALENA CONTRERAS",
+  "MAGDALENA CONTRERAS",
+  "MIGUEL HIDALGO",
+  "MILPA ALTA",
+  "TLALPAN",
+  "TLAHUAC",
+  "VENUSTIANO CARRANZA",
+  "XOCHIMILCO",
+];
+
+function normalizeAddr(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractAlcaldia(direccion: string | null | undefined): string | null {
+  if (!direccion) return null;
+  const norm = normalizeAddr(direccion);
+  // Prefer the municipality/alcaldía token that sits right before the 5-digit CP
+  // (standard Mexican address format: ... , COLONIA, ALCALDIA CP, STATE).
+  const m = norm.match(/,\s*([^,]+?)\s+\d{5}\b/);
+  if (m) {
+    const raw = normalizeAddr(m[1]);
+    if (raw.length > 2 && raw.length < 60) {
+      // Normalize to a known CDMX alcaldía name when possible.
+      const known = CDMX_ALCALDIAS.find((a) => raw.includes(a.replace(/\./g, "")));
+      return known ? known : raw;
+    }
+  }
+  // Fallback: look for any known alcaldía substring anywhere in the address.
+  for (const a of CDMX_ALCALDIAS) {
+    if (norm.includes(a.replace(/\./g, ""))) return a;
+  }
+  return null;
 }
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -46,6 +105,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
     </>
   );
 }
+
 
 function weekdayOf(fecha: string) {
   if (!fecha) return null;
@@ -77,15 +137,18 @@ export default function NewRouteWizardDialog({
     initialFecha || new Date().toISOString().slice(0, 10),
   );
   const [query, setQuery] = useState("");
+  const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
       setFecha(initialFecha || new Date().toISOString().slice(0, 10));
       setQuery("");
+      setAlcaldiaFilter("all");
       setSel(new Set());
     }
   }, [open, initialFecha]);
+
 
   const dow = weekdayOf(fecha);
   const dowLabel = dow === null ? "" : WEEKDAYS[dow];
@@ -120,18 +183,31 @@ export default function NewRouteWizardDialog({
     return [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 8);
   }, [routes, dow]);
 
+  const alcaldias = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of clients) {
+      const a = extractAlcaldia(c.direccion);
+      if (a) set.add(a);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [clients]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const withCoords = clients.filter((c: any) => c.lat && c.lng);
-    if (!q) return withCoords;
-    return withCoords.filter((c: any) =>
+    let list = clients.filter((c: any) => c.lat && c.lng);
+    if (alcaldiaFilter && alcaldiaFilter !== "all") {
+      list = list.filter((c: any) => extractAlcaldia(c.direccion) === alcaldiaFilter);
+    }
+    if (!q) return list;
+    return list.filter((c: any) =>
       [c.nombre_comercial, c.razon_social, c.nickname, c.direccion, c.codigo_postal, c.rfc]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(q),
     );
-  }, [clients, query]);
+  }, [clients, query, alcaldiaFilter]);
+
 
   const toggle = (id: string) =>
     setSel((prev) => {
@@ -285,6 +361,24 @@ export default function NewRouteWizardDialog({
                 className="h-10 pl-7 text-sm"
               />
             </div>
+            {alcaldias.length > 0 && (
+              <div className="mb-2">
+                <Select value={alcaldiaFilter} onValueChange={setAlcaldiaFilter}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Filtrar por alcaldía / municipio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las alcaldías</SelectItem>
+                    {alcaldias.map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
               <span>{filtered.length} resultados</span>
               <div className="flex gap-2">
