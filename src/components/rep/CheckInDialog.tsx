@@ -119,6 +119,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     },
     onSuccess: (r: any) => {
       setVisitId(r.visit.id);
+      setCheckInAt(r.visit.check_in_at ?? new Date().toISOString());
       setDistanceInfo(r.distanceM ?? null);
       setStep("in-visit");
       toast.success(
