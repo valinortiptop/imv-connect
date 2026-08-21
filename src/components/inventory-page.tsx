@@ -550,15 +550,17 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
                 className="pl-9 bg-background"
               />
             </div>
-            <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Proveedor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los proveedores</SelectItem>
-                {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {!isRep && (
+              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                  <SelectValue placeholder="Proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los proveedores</SelectItem>
+                  {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={claseFilter} onValueChange={setClaseFilter}>
               <SelectTrigger className="w-full sm:w-[170px] bg-background">
                 <SelectValue placeholder="Clase" />
@@ -587,17 +589,27 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
               </SelectContent>
             </Select>
 
-            <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Estado de stock" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="disponible">Disponible</SelectItem>
-                <SelectItem value="low_stock">Stock ajustado</SelectItem>
-                <SelectItem value="committed">Con comprometido</SelectItem>
-              </SelectContent>
-            </Select>
+            {isRep ? (
+              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-500 text-sm font-medium border border-green-500/20">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                Disponible en venta
+              </div>
+            ) : (
+              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                  <SelectValue placeholder="Estado de stock" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="disponible">Disponible</SelectItem>
+                  <SelectItem value="low_stock">Stock ajustado</SelectItem>
+                  <SelectItem value="committed">Con comprometido</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <span className="text-xs text-muted-foreground">{items.length} productos</span>
           </div>
         </GlowCard>
