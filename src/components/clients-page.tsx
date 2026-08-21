@@ -499,6 +499,19 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<ClientForm>(emptyForm);
+  // Vendedores para asignar el representante de ventas del cliente.
+  const { data: repOptions } = useQuery({
+    queryKey: ["representantes-options"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("representantes")
+        .select("id, nombre")
+        .eq("activo", true)
+        .order("nombre");
+      return (data ?? []) as { id: string; nombre: string }[];
+    },
+    staleTime: 5 * 60_000,
+  });
   const [saving, setSaving] = useState(false);
   const [deactivateClient, setDeactivateClient] = useState<Client | null>(null);
   const [importOpen, setImportOpen] = useState(false);
