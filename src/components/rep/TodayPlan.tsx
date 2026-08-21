@@ -3,14 +3,23 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   buildWeeklyPlanFn,
+  getMyClientsFn,
   listMyVisitsFn,
   listSavedRoutesFn,
 } from "@/lib/rep.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, CheckCircle2, ClipboardList, Navigation } from "lucide-react";
+import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import CheckInDialog from "./CheckInDialog";
 import { cn } from "@/lib/utils";
@@ -111,7 +120,37 @@ export default function TodayPlan() {
   }, [visitsQ.data]);
 
 
-  const [target, setTarget] = useState<{ id: string; nombre: string } | null>(null);
+  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean } | null>(null);
+
+  /* ─── Visita fuera de ruta: cliente ajeno al plan del día ─── */
+  const listClients = useServerFn(getMyClientsFn);
+  const [offRouteOpen, setOffRouteOpen] = useState(false);
+  const [offQuery, setOffQuery] = useState("");
+  const clientsQ = useQuery({
+    queryKey: ["rep-my-clients-offroute"],
+    queryFn: () => listClients({ data: {} } as any),
+    enabled: offRouteOpen,
+    staleTime: 5 * 60_000,
+  });
+  const plannedIds = useMemo(
+    () => new Set((today?.clientes ?? []).map((c: any) => String(c.cliente_id))),
+    [today],
+  );
+  const offRouteResults = useMemo(() => {
+    const q = offQuery.trim().toLowerCase();
+    const all = (clientsQ.data?.clients ?? []) as any[];
+    const base = all.filter((c) => !plannedIds.has(String(c.id)));
+    if (!q) return base.slice(0, 60);
+    return base
+      .filter((c) =>
+        [c.nombre_comercial, c.razon_social, c.nickname, c.direccion, c.rfc]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+      .slice(0, 60);
+  }, [clientsQ.data, offQuery, plannedIds]);
 
   const todayLabel = new Date().toLocaleDateString("es-MX", {
     weekday: "long",
@@ -133,11 +172,16 @@ export default function TodayPlan() {
               {today?.zona_principal ? ` · ${today.zona_principal}` : ""}
             </p>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/rep/ruta">
-              <Navigation className="mr-1 h-3.5 w-3.5" /> Ver mapa
-            </Link>
-          </Button>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOffRouteOpen(true)}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> Visita fuera de ruta
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/rep/ruta">
+                <Navigation className="mr-1 h-3.5 w-3.5" /> Ver mapa
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           {weekQ.isLoading && <Skeleton className="h-32 w-full" />}
@@ -232,8 +276,64 @@ export default function TodayPlan() {
           onOpenChange={(v) => !v && setTarget(null)}
           clienteId={target.id}
           clienteNombre={target.nombre}
+          unplanned={target.unplanned}
         />
       )}
+
+      {/* Selector de cliente para visitas improvisadas */}
+      <Dialog open={offRouteOpen} onOpenChange={setOffRouteOpen}>
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-0 sm:w-full">
+          <DialogHeader className="border-b px-4 py-3 pr-12 text-left sm:px-6">
+            <DialogTitle className="text-base">Visita fuera de ruta</DialogTitle>
+            <DialogDescription className="text-xs">
+              Elige el cliente que visitarás hoy sin estar en el plan. Se registrará ubicación,
+              fotos y notas igual que una visita planeada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 px-4 py-3 sm:px-6">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={offQuery}
+                onChange={(e) => setOffQuery(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="h-10 pl-7"
+              />
+            </div>
+            <div className="max-h-[50dvh] overflow-y-auto overscroll-contain rounded-md border">
+              {clientsQ.isLoading && (
+                <p className="px-3 py-6 text-center text-xs text-muted-foreground">Cargando clientes…</p>
+              )}
+              {!clientsQ.isLoading && offRouteResults.length === 0 && (
+                <p className="px-3 py-6 text-center text-xs text-muted-foreground">Sin coincidencias.</p>
+              )}
+              {offRouteResults.map((c: any) => (
+                <button
+                  key={c.id}
+                  className="flex w-full min-w-0 flex-col items-start gap-0.5 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-muted active:bg-muted"
+                  onClick={() => {
+                    setOffRouteOpen(false);
+                    setTarget({
+                      id: c.id,
+                      nombre: c.nombre_comercial ?? c.razon_social ?? "Cliente",
+                      unplanned: true,
+                    });
+                  }}
+                >
+                  <span className="break-words text-sm font-medium">
+                    {c.nombre_comercial ?? c.razon_social ?? "Cliente"}
+                  </span>
+                  {c.direccion && (
+                    <span className="line-clamp-2 break-words text-[11px] text-muted-foreground">
+                      {c.direccion}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
