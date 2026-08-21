@@ -109,6 +109,7 @@ export default function RouteMap() {
   const heatQ = useQuery({ queryKey: ["rep-heatmap"], queryFn: () => fetchHeat() });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set());
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{
     km: number;
@@ -149,6 +150,13 @@ export default function RouteMap() {
 
   const toggleSel = (id: string) =>
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const togglePickerSel = (id: string) =>
+    setPickerSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  useEffect(() => {
+    if (pickerOpen) setPickerSelected(new Set(selected));
+  }, [pickerOpen, selected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -654,13 +662,13 @@ export default function RouteMap() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>
-                    {selected.size} seleccionados · {filteredClients.length} resultados
+                    {pickerSelected.size} seleccionados · {filteredClients.length} resultados
                   </span>
                   <div className="flex gap-2">
                     <button
                       className="hover:underline"
                       onClick={() =>
-                        setSelected(
+                        setPickerSelected(
                           (prev) => {
                             const n = new Set(prev);
                             filteredClients.forEach((c: any) => n.add(c.id));
@@ -673,8 +681,8 @@ export default function RouteMap() {
                     </button>
                     <button
                       className="hover:underline"
-                      onClick={() => setSelected(new Set())}
-                      disabled={selected.size === 0}
+                      onClick={() => setPickerSelected(new Set())}
+                      disabled={pickerSelected.size === 0}
                     >
                       Ninguno
                     </button>
@@ -683,7 +691,7 @@ export default function RouteMap() {
               </div>
               <div className="max-h-80 overflow-y-auto py-1">
                 {filteredClients.slice(0, 200).map((c: any) => {
-                  const isSel = selected.has(c.id);
+                  const isSel = pickerSelected.has(c.id);
                   const name = c.nombre_comercial ?? c.razon_social ?? "";
                   return (
                     <label
@@ -692,7 +700,7 @@ export default function RouteMap() {
                     >
                       <Checkbox
                         checked={isSel}
-                        onCheckedChange={() => toggleSel(c.id)}
+                        onCheckedChange={() => togglePickerSel(c.id)}
                         className="mt-0.5"
                       />
                       <span className="min-w-0 flex-1">
@@ -728,6 +736,27 @@ export default function RouteMap() {
                       : "No hay clientes con coordenadas."}
                   </div>
                 )}
+              </div>
+              <div className="flex items-center justify-end gap-2 border-t p-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setPickerSelected(new Set(selected));
+                    setPickerOpen(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelected(new Set(pickerSelected));
+                    setPickerOpen(false);
+                  }}
+                >
+                  Aceptar
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
