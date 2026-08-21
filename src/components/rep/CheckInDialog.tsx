@@ -24,9 +24,11 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   clienteId: string;
   clienteNombre: string;
+  /** Visita improvisada: no estaba en la ruta planeada del día. */
+  unplanned?: boolean;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNombre }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNombre, unplanned }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -42,6 +44,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const [overrideReason, setOverrideReason] = useState("");
   const [needsOverride, setNeedsOverride] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState<number | null>(null);
+  const [unplannedReason, setUnplannedReason] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +57,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     setOverrideReason("");
     setNeedsOverride(false);
     setDistanceInfo(null);
+    setUnplannedReason("");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -108,6 +112,8 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
             lat: geo?.lat,
             lng: geo?.lng,
             overrideReason: overrideReason || undefined,
+            unplanned: unplanned || undefined,
+            unplannedReason: unplanned ? unplannedReason || undefined : undefined,
           },
         });
         toast.dismiss(tid);
@@ -168,6 +174,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
       toast.success(`Check-out registrado · duración ${mins} min`);
       qc.invalidateQueries({ queryKey: ["client-visits", clienteId] });
       qc.invalidateQueries({ queryKey: ["rep-visits"] });
+      qc.invalidateQueries({ queryKey: ["daily-routes-summary"] });
       onOpenChange(false);
     },
     onError: (e: any) => toast.error(String(e?.message ?? e ?? "Error al finalizar visita")),
@@ -181,7 +188,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-2xl overflow-y-auto overflow-x-hidden sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             {step === "start" ? "Iniciar visita" : "Visita en curso"}
@@ -210,6 +217,19 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                   : "Sin acceso a ubicación (requerida para anti-fraude)"}
               </div>
             </div>
+
+            {unplanned && (
+              <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+                <div className="text-sm font-medium text-amber-600">Visita fuera de ruta</div>
+                <Label className="text-xs">Motivo (opcional)</Label>
+                <Textarea
+                  rows={2}
+                  value={unplannedReason}
+                  onChange={(e) => setUnplannedReason(e.target.value)}
+                  placeholder="p.ej. el cliente llamó y pidió pasar hoy"
+                />
+              </div>
+            )}
 
             {needsOverride && (
               <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3">
