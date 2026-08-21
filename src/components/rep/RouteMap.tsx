@@ -632,10 +632,23 @@ export default function RouteMap() {
   const withoutCoords = (data?.clients ?? []).filter((c: any) => !c.lat || !c.lng);
 
   // Global search across name + address, used inside the picker popover.
+  const alcaldias = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of clientsWithCoords) {
+      const a = extractAlcaldia(c.direccion);
+      if (a) set.add(a);
+    }
+    return Array.from(set).sort();
+  }, [clientsWithCoords]);
+
   const filteredClients = useMemo(() => {
+    let list = clientsWithCoords;
+    if (alcaldiaFilter && alcaldiaFilter !== "all") {
+      list = list.filter((c: any) => extractAlcaldia(c.direccion) === alcaldiaFilter);
+    }
     const q = clientQuery.trim().toLowerCase();
-    if (!q) return clientsWithCoords;
-    return clientsWithCoords.filter((c: any) => {
+    if (!q) return list;
+    return list.filter((c: any) => {
       const haystack = [
         c.nombre_comercial,
         c.razon_social,
@@ -649,7 +662,7 @@ export default function RouteMap() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [clientsWithCoords, clientQuery]);
+  }, [clientsWithCoords, clientQuery, alcaldiaFilter]);
 
 
   const buildExportRoute = () => {
