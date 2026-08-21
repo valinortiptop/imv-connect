@@ -497,6 +497,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       return next;
     }, { replace: true });
   }, [typeFilter, setSearchParams]);
+  // Filter by assigned sales representative ("__none__" = clients without a rep).
+  const [repFilter, setRepFilter] = useState<string>("__all__");
+  // Sorting: key + direction (asc/desc).
+  const [sortKey, setSortKey] = useState<"name" | "company" | "phone" | "representante" | "payment_method" | "active">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<ClientForm>(emptyForm);
