@@ -61,13 +61,14 @@ type SortKey = "clave" | "name" | "supplier" | "stock_actual" | "disponible" | "
 type SortDir = "asc" | "desc";
 type StockFilter = "all" | "disponible" | "low_stock" | "committed";
 
-export default function Inventory() {
+export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }) {
+  const isRep = mode === "rep";
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [claseFilter, setClaseFilter] = useState("all");
   const [labFilter, setLabFilter] = useState("all");
   const [almacenFilter, setAlmacenFilter] = useState("all");
-  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [stockFilter, setStockFilter] = useState<StockFilter>(isRep ? "disponible" : "all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
