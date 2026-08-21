@@ -15119,6 +15119,7 @@ export type Database = {
         Args: { p_trip_id: string }
         Returns: number
       }
+      current_rep_id: { Args: never; Returns: string }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
