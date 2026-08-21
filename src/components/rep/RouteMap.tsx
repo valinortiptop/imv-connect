@@ -151,7 +151,12 @@ export default function RouteMap() {
   const toggleSel = (id: string) =>
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
+  const togglePickerSel = (id: string) =>
+    setPickerSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
   useEffect(() => {
+    if (pickerOpen) setPickerSelected(new Set(selected));
+  }, [pickerOpen, selected]);
     let cancelled = false;
     loadGoogleMapsViaValinor()
       .then((maps) => {
