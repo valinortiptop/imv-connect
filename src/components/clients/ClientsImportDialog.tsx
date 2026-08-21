@@ -33,7 +33,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { aiChatFn, googleGeocodeFn } from "@/lib/valinor.functions";
-import { stripVmPrefix, hadVmPrefix, GENERIC_RFC } from "@/lib/vm-client";
+import { GENERIC_RFC } from "@/lib/vm-client";
+import { parseClientName, clientNameKey } from "@/lib/client-name";
 
 type Status = "new" | "update" | "unchanged" | "error";
 
