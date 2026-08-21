@@ -109,6 +109,7 @@ export default function RouteMap() {
   const heatQ = useQuery({ queryKey: ["rep-heatmap"], queryFn: () => fetchHeat() });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set());
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{
     km: number;
