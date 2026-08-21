@@ -1,0 +1,352 @@
+// @ts-nocheck
+// Wizard modal to create a new route: pick a date, get smart suggestions based on
+// past routes for that weekday, duplicate a past route, and select clients.
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listSavedRoutesFn } from "@/lib/rep.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function Highlight({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const re = new RegExp(`(${escapeRegExp(q)})`, "ig");
+  const parts = String(text ?? "").split(re);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === q.toLowerCase() ? (
+          <mark key={i} className="rounded-sm bg-yellow-200 px-0.5 text-foreground dark:bg-yellow-500/40">
+            {p}
+          </mark>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function weekdayOf(fecha: string) {
+  if (!fecha) return null;
+  const d = new Date(fecha + "T00:00:00");
+  return Number.isNaN(d.getTime()) ? null : d.getDay();
+}
+
+export default function NewRouteWizardDialog({
+  open,
+  onOpenChange,
+  clients,
+  initialFecha,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  clients: any[];
+  initialFecha?: string;
+  onConfirm: (payload: { fecha: string; clientIds: string[]; optimize: boolean }) => void;
+}) {
+  const listSaved = useServerFn(listSavedRoutesFn);
+  const savedQ = useQuery({
+    queryKey: ["rep-saved-routes-wizard"],
+    queryFn: () => listSaved({ data: { limit: 80 } }),
+    enabled: open,
+  });
+
+  const [fecha, setFecha] = useState<string>(
+    initialFecha || new Date().toISOString().slice(0, 10),
+  );
+  const [query, setQuery] = useState("");
+  const [sel, setSel] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (open) {
+      setFecha(initialFecha || new Date().toISOString().slice(0, 10));
+      setQuery("");
+      setSel(new Set());
+    }
+  }, [open, initialFecha]);
+
+  const dow = weekdayOf(fecha);
+  const dowLabel = dow === null ? "" : WEEKDAYS[dow];
+
+  const routes = savedQ.data?.routes ?? [];
+
+  // Smart suggestions: past routes saved for the same weekday, most recent first.
+  const suggestions = useMemo(() => {
+    if (dow === null) return [];
+    return routes
+      .filter((r: any) => r.fecha && weekdayOf(String(r.fecha).slice(0, 10)) === dow)
+      .slice(0, 4);
+  }, [routes, dow]);
+
+  // Most frequent clients on that weekday
+  const frequentOnDow = useMemo(() => {
+    if (dow === null) return [];
+    const counts = new Map<string, { id: string; nombre: string; n: number }>();
+    for (const r of routes) {
+      if (!r.fecha || weekdayOf(String(r.fecha).slice(0, 10)) !== dow) continue;
+      for (const s of r.ordered_stops ?? []) {
+        const id = String(s?.cliente_id ?? "");
+        if (!id) continue;
+        const prev = counts.get(id);
+        counts.set(id, {
+          id,
+          nombre: s?.nombre ?? prev?.nombre ?? "Cliente",
+          n: (prev?.n ?? 0) + 1,
+        });
+      }
+    }
+    return [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 8);
+  }, [routes, dow]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const withCoords = clients.filter((c: any) => c.lat && c.lng);
+    if (!q) return withCoords;
+    return withCoords.filter((c: any) =>
+      [c.nombre_comercial, c.razon_social, c.nickname, c.direccion, c.codigo_postal, c.rfc]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [clients, query]);
+
+  const toggle = (id: string) =>
+    setSel((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+
+  const applyRoute = (r: any) => {
+    const ids = (r.ordered_stops ?? []).map((s: any) => String(s.cliente_id)).filter(Boolean);
+    if (ids.length === 0) {
+      toast.error("Esa ruta no tiene paradas");
+      return;
+    }
+    setSel(new Set(ids));
+    toast.success(`${ids.length} clientes cargados de "${r.nombre ?? "ruta"}"`);
+  };
+
+  const confirm = (optimize: boolean) => {
+    if (!fecha) return toast.error("Selecciona la fecha de la ruta");
+    if (sel.size < 2) return toast.error("Selecciona al menos 2 clientes");
+    onConfirm({ fecha, clientIds: [...sel], optimize });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Nueva ruta</DialogTitle>
+          <DialogDescription>
+            Elige la fecha, aprovecha las sugerencias y selecciona tus clientes.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Step 1 — date */}
+          <section className="rounded-lg border p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <CalendarDays className="h-4 w-4 text-primary" /> 1. Fecha de la ruta
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className="h-9 w-44"
+              />
+              {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
+            </div>
+          </section>
+
+          {/* Step 2 — smart suggestions */}
+          <section className="rounded-lg border p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" /> 2. Sugerencias inteligentes
+            </div>
+            {savedQ.isLoading ? (
+              <p className="text-xs text-muted-foreground">Analizando tu historial…</p>
+            ) : suggestions.length === 0 && frequentOnDow.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Aún no tenemos historial de rutas en {dowLabel || "este día"}. Selecciona los clientes manualmente y la próxima vez te sugeriremos esta ruta.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {suggestions.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-xs text-muted-foreground">
+                      Normalmente los <span className="font-medium capitalize">{dowLabel}</span> haces estas rutas:
+                    </p>
+                    <div className="space-y-1.5">
+                      {suggestions.map((r: any) => (
+                        <button
+                          key={r.id}
+                          onClick={() => applyRoute(r)}
+                          className="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-sm hover:bg-muted"
+                        >
+                          <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">
+                              {r.nombre ?? `Ruta ${String(r.fecha).slice(0, 10)}`}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground tabular-nums">
+                              {String(r.fecha).slice(0, 10)} · {(r.ordered_stops ?? []).length} paradas
+                              {r.total_km ? ` · ${r.total_km} km` : ""}
+                            </span>
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {frequentOnDow.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-xs text-muted-foreground">
+                      Clientes que visitas seguido en {dowLabel}:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {frequentOnDow.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => toggle(c.id)}
+                          className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                            sel.has(c.id)
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "hover:bg-muted"
+                          }`}
+                        >
+                          {c.nombre} · {c.n}×
+                        </button>
+                      ))}
+                      <button
+                        onClick={() =>
+                          setSel((prev) => {
+                            const n = new Set(prev);
+                            frequentOnDow.forEach((c) => n.add(c.id));
+                            return n;
+                          })
+                        }
+                        className="rounded-full border border-dashed px-2.5 py-1 text-[11px] hover:bg-muted"
+                      >
+                        Agregar todos
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Step 3 — clients */}
+          <section className="rounded-lg border p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Users className="h-4 w-4 text-primary" /> 3. Clientes
+              </div>
+              <Badge variant="outline">{sel.size} seleccionados</Badge>
+            </div>
+            <div className="relative mb-2">
+              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por nombre o dirección…"
+                className="h-9 pl-7 text-sm"
+              />
+            </div>
+            <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>{filtered.length} resultados</span>
+              <div className="flex gap-2">
+                <button
+                  className="hover:underline"
+                  onClick={() =>
+                    setSel((prev) => {
+                      const n = new Set(prev);
+                      filtered.slice(0, 200).forEach((c: any) => n.add(c.id));
+                      return n;
+                    })
+                  }
+                >
+                  Todos
+                </button>
+                <button className="hover:underline" onClick={() => setSel(new Set())}>
+                  Ninguno
+                </button>
+              </div>
+            </div>
+            <ScrollArea className="h-64 rounded-md border">
+              {filtered.slice(0, 200).map((c: any) => {
+                const name = c.nombre_comercial ?? c.razon_social ?? "";
+                return (
+                  <label
+                    key={c.id}
+                    className="flex cursor-pointer items-start gap-2 px-3 py-2 text-sm hover:bg-muted"
+                  >
+                    <Checkbox
+                      checked={sel.has(c.id)}
+                      onCheckedChange={() => toggle(c.id)}
+                      className="mt-0.5"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">
+                        <Highlight text={name} query={query} />
+                      </span>
+                      {c.direccion && (
+                        <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                          <Highlight text={c.direccion} query={query} />
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                  Sin coincidencias.
+                </div>
+              )}
+            </ScrollArea>
+          </section>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button variant="outline" onClick={() => confirm(false)}>
+            Solo seleccionar
+          </Button>
+          <Button onClick={() => confirm(true)}>
+            <Sparkles className="mr-1 h-4 w-4" /> Crear y optimizar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
