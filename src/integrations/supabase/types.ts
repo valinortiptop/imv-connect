@@ -1171,6 +1171,7 @@ export type Database = {
           nombre_cfdi: string | null
           nombre_comercial: string | null
           notas: string | null
+          parent_cliente_id: string | null
           payment_method: string | null
           payment_terms: number | null
           phone: string | null
@@ -1213,6 +1214,7 @@ export type Database = {
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
+          parent_cliente_id?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: string | null
@@ -1255,6 +1257,7 @@ export type Database = {
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
+          parent_cliente_id?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: string | null
@@ -1271,6 +1274,55 @@ export type Database = {
           uso_cfdi_default?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
           {
             foreignKeyName: "clientes_price_list_id_fkey"
             columns: ["price_list_id"]
