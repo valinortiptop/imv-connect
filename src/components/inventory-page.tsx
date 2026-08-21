@@ -61,13 +61,14 @@ type SortKey = "clave" | "name" | "supplier" | "stock_actual" | "disponible" | "
 type SortDir = "asc" | "desc";
 type StockFilter = "all" | "disponible" | "low_stock" | "committed";
 
-export default function Inventory() {
+export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }) {
+  const isRep = mode === "rep";
   const [search, setSearch] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [claseFilter, setClaseFilter] = useState("all");
   const [labFilter, setLabFilter] = useState("all");
   const [almacenFilter, setAlmacenFilter] = useState("all");
-  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [stockFilter, setStockFilter] = useState<StockFilter>(isRep ? "disponible" : "all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
@@ -480,61 +481,62 @@ export default function Inventory() {
           })}
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">SKUs en stock</span>
+        {!isRep && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">SKUs en stock</span>
+                </div>
+                {isLoading ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">{stats.skusInStock}</p>
+                )}
               </div>
-              {isLoading ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">{stats.skusInStock}</p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Boxes className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                  {isProjected ? "Disponible proyectado" : "Bultos en bodega"}
-                </span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Boxes className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                    {isProjected ? "Disponible proyectado" : "Bultos en bodega"}
+                  </span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">
+                    {isProjected
+                      ? stats.totalDisponible.toLocaleString()
+                      : stats.totalBultos.toLocaleString()}
+                  </p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">
-                  {isProjected
-                    ? stats.totalDisponible.toLocaleString()
-                    : stats.totalBultos.toLocaleString()}
-                </p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                  {isProjected ? "Pedidos del día" : "Comprometido"}
-                </span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                    {isProjected ? "Pedidos del día" : "Comprometido"}
+                  </span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-amber-400">{stats.totalCommitted.toLocaleString()}</p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-amber-400">{stats.totalCommitted.toLocaleString()}</p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Valor inventario</span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Valor inventario</span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">{fmtMXN(stats.totalValue)}</p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">{fmtMXN(stats.totalValue)}</p>
-              )}
-            </div>
-          </GlowCard>
-        </div>
+            </GlowCard>
+          </div>
+        )}
 
         {/* Filters */}
         <GlowCard>
@@ -548,15 +550,17 @@ export default function Inventory() {
                 className="pl-9 bg-background"
               />
             </div>
-            <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Proveedor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los proveedores</SelectItem>
-                {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {!isRep && (
+              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                  <SelectValue placeholder="Proveedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los proveedores</SelectItem>
+                  {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={claseFilter} onValueChange={setClaseFilter}>
               <SelectTrigger className="w-full sm:w-[170px] bg-background">
                 <SelectValue placeholder="Clase" />
@@ -585,17 +589,27 @@ export default function Inventory() {
               </SelectContent>
             </Select>
 
-            <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Estado de stock" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="disponible">Disponible</SelectItem>
-                <SelectItem value="low_stock">Stock ajustado</SelectItem>
-                <SelectItem value="committed">Con comprometido</SelectItem>
-              </SelectContent>
-            </Select>
+            {isRep ? (
+              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-500 text-sm font-medium border border-green-500/20">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                Disponible en venta
+              </div>
+            ) : (
+              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                  <SelectValue placeholder="Estado de stock" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="disponible">Disponible</SelectItem>
+                  <SelectItem value="low_stock">Stock ajustado</SelectItem>
+                  <SelectItem value="committed">Con comprometido</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <span className="text-xs text-muted-foreground">{items.length} productos</span>
           </div>
         </GlowCard>
