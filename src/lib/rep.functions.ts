@@ -13,12 +13,27 @@ import {
 } from "./rep-prompts";
 
 /* ─── helper: obtiene el representante actual (o null si es admin sin registro) ─── */
-async function getCurrentRep(supabase: any, userId: string) {
+async function getCurrentRep(supabase: any, userId: string, email?: string | null) {
+  const cols = "id, nombre, email, telefono, activo";
   const { data } = await supabase
     .from("representantes")
-    .select("id, nombre, email, telefono, activo")
+    .select(cols)
     .eq("user_id", userId)
     .maybeSingle();
+  if (data) return data as any;
+  // Fallback: liga por correo cuando el vendedor aún no tiene user_id
+  // (p. ej. la cuenta se creó después del registro del vendedor).
+  if (email) {
+    const { data: byEmail } = await supabase
+      .from("representantes")
+      .select(cols)
+      .ilike("email", email)
+      .maybeSingle();
+    if (byEmail) {
+      await supabase.from("representantes").update({ user_id: userId }).eq("id", byEmail.id);
+      return byEmail as any;
+    }
+  }
   return data as
     | { id: string; nombre: string; email: string | null; telefono: string | null; activo: boolean }
     | null;
@@ -44,7 +59,7 @@ async function fetchAllPaged<T = any>(makeQuery: () => any, pageSize = 1000): Pr
 export const getMyRepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     const { data: isAdminData } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
@@ -56,7 +71,7 @@ export const getMyRepFn = createServerFn({ method: "POST" })
 export const getMyClientsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
 
     const clientes = await fetchAllPaged<any>(() => {
@@ -630,7 +645,7 @@ export const buildDailyPlanFn = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
     let q = context.supabase
       .from("clientes")
@@ -740,7 +755,7 @@ export const checkInFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     if (!rep) throw new Error("Solo representantes pueden hacer check-in");
 
     // Compute distance to registered client location for anti-fraude
@@ -848,7 +863,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     if (!rep) return { visit: null };
     let q = context.supabase
       .from("rep_visits")
@@ -1337,7 +1352,7 @@ export const getReorderPredictionsFn = createServerFn({ method: "POST" })
 export const generateRepAlertsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
     // Recupera insights de riesgo alto
     let clientsQ = context.supabase
@@ -1405,7 +1420,7 @@ export const generateRepAlertsFn = createServerFn({ method: "POST" })
 export const detectOverVisitedFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     const since = new Date();
     since.setDate(since.getDate() - 60);
 
@@ -1825,7 +1840,7 @@ export const createRepOrderFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
     // Totales
     let subtotal = 0;
@@ -2012,7 +2027,7 @@ export const suggestRouteWithAIFn = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const rep = await getCurrentRep(context.supabase, context.userId);
+    const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
     // 1. Clientes del rep con coordenadas
     let clientsQ = context.supabase
