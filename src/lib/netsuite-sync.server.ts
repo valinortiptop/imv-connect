@@ -204,7 +204,7 @@ async function syncClientes(res: SyncResult) {
       byName.set(normalizeName(parentName), data.id);
       res.rows_inserted++;
     }
-    if (parentId === childId) continue;
+    if (!parentId || parentId === childId) continue;
     const { error } = await supabaseAdmin
       .from("clientes")
       .update({ parent_cliente_id: parentId })
