@@ -30,7 +30,10 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
+  const getOpenVisit = useServerFn(getOpenVisitFn);
   const [visitId, setVisitId] = useState<string | null>(null);
+  const [checkInAt, setCheckInAt] = useState<string | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
   const [step, setStep] = useState<"start" | "in-visit">("start");
   const [notes, setNotes] = useState("");
@@ -44,6 +47,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     if (!open) return;
     setStep("start");
     setVisitId(null);
+    setCheckInAt(null);
     setNotes("");
     setOutcome("");
     setAgreements([]);
@@ -57,7 +61,42 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
         { enableHighAccuracy: true, timeout: 8000 },
       );
     }
-  }, [open]);
+    // Reanudar visita abierta (check-in sin check-out) de este cliente
+    let cancelled = false;
+    getOpenVisit({ data: { clienteId } })
+      .then((r: any) => {
+        if (cancelled || !r?.visit) return;
+        setVisitId(r.visit.id);
+        setCheckInAt(r.visit.check_in_at);
+        setDistanceInfo(r.visit.distance_m ?? null);
+        setStep("in-visit");
+        toast.info("Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, clienteId, getOpenVisit]);
+
+  // Cronómetro de la visita en curso
+  useEffect(() => {
+    if (step !== "in-visit" || !checkInAt) return;
+    setNowTs(Date.now());
+    const t = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [step, checkInAt]);
+
+  const elapsedMs = checkInAt ? Math.max(0, nowTs - new Date(checkInAt).getTime()) : 0;
+  const elapsedLabel = (() => {
+    const total = Math.floor(elapsedMs / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return h > 0
+      ? `${h}h ${String(m).padStart(2, "0")}m`
+      : `${m}:${String(s).padStart(2, "0")}`;
+  })();
+
 
   const startVisit = useMutation({
     mutationFn: async () => {
