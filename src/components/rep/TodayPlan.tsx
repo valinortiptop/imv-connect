@@ -101,6 +101,16 @@ export default function TodayPlan() {
     return set;
   }, [visitsQ.data]);
 
+  // Visitas con check-in pero sin check-out (en curso)
+  const openByClient = useMemo(() => {
+    const map = new Map<string, string>();
+    (visitsQ.data?.visits ?? []).forEach((v: any) => {
+      if (!v.check_out_at && !map.has(v.cliente_id)) map.set(v.cliente_id, v.check_in_at);
+    });
+    return map;
+  }, [visitsQ.data]);
+
+
   const [target, setTarget] = useState<{ id: string; nombre: string } | null>(null);
 
   const todayLabel = new Date().toLocaleDateString("es-MX", {
