@@ -39,6 +39,47 @@ export function ClientsMapView({
   const markersRef = useRef<any[]>([]);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
+  // ── Auto-geocoding of clients without coordinates ──────────────────
+  const bulkGeocode = useServerFn(geocodeClientsBulkFn);
+  const queryClient = useQueryClient();
+  const [geoRunning, setGeoRunning] = useState(false);
+  const [geoDone, setGeoDone] = useState(0);
+  const [geoRemaining, setGeoRemaining] = useState<number | null>(null);
+  const startedRef = useRef(false);
+
+  async function runGeocoding() {
+    if (geoRunning) return;
+    setGeoRunning(true);
+    setGeoDone(0);
+    try {
+      // Chained batches — stops when nothing is left or a batch fails to
+      // resolve any address (avoids looping forever on bad addresses).
+      for (let i = 0; i < 60; i++) {
+        const res: any = await bulkGeocode({ data: { limit: 20 } });
+        setGeoDone((d) => d + (res?.updated ?? 0));
+        setGeoRemaining(res?.remaining ?? 0);
+        if (!res?.processed || !res?.updated) break;
+        if ((res?.remaining ?? 0) <= 0) break;
+      }
+      await queryClient.invalidateQueries();
+    } finally {
+      setGeoRunning(false);
+    }
+  }
+
+  // Kick off automatically the first time the map renders with clients
+  // that have no coordinates.
+  useEffect(() => {
+    if (startedRef.current) return;
+    const pendientes = clients.filter(
+      (c) => typeof c.lat !== "number" || typeof c.lng !== "number",
+    ).length;
+    if (pendientes === 0) return;
+    startedRef.current = true;
+    void runGeocoding();
+  }, [clients]);
+
+
   const points = useMemo<ClientPoint[]>(
     () =>
       clients
