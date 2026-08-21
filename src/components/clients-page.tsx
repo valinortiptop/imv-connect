@@ -67,6 +67,8 @@ type Client = {
   contact: string | null;
   representante_id: string | null;
   representante_nombre: string | null;
+  parent_cliente_id: string | null;
+  parent_name: string | null;
 };
 
 type ClientForm = {
@@ -1423,6 +1425,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                       <span className="font-semibold text-foreground truncate">
                         {stripVmPrefix(c.name) || c.name}
                       </span>
+                      {(c as any).parent_name && (
+                        <Badge variant="outline" className="text-[10px] font-medium shrink-0 max-w-[220px] truncate" title={`Subcuenta de ${(c as any).parent_name}`}>
+                          Subcuenta de {(c as any).parent_name}
+                        </Badge>
+                      )}
                       {isVmClient(c) && (
                         <Badge className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide shrink-0" title="Venta Mostrador">
                           VM
@@ -1598,6 +1605,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                             >
                               {stripVmPrefix(c.name) || c.name}
                             </span>
+                            {(c as any).parent_name && (
+                              <Badge variant="outline" className="text-[10px] font-medium max-w-[220px] truncate" title={`Subcuenta de ${(c as any).parent_name}`}>
+                                Subcuenta de {(c as any).parent_name}
+                              </Badge>
+                            )}
                             {isVmClient(c) && (
                               <Badge
                                 className="bg-amber-500/15 text-amber-700 border-amber-500/40 text-[10px] font-semibold tracking-wide"
