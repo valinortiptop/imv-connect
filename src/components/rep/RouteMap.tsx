@@ -179,6 +179,7 @@ export default function RouteMap() {
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
   const [routeFecha, setRouteFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
 
 
 
