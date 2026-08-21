@@ -367,6 +367,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           email,
           rfc,
           razon_social,
+          parent_name,
           address,
           codigo_postal,
           payment_method: pm || (client_type === "mayoreo" ? "credito" : "contado"),
