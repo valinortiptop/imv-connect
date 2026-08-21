@@ -571,13 +571,27 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         }
         const missingParents = parentNames.filter((n) => !parentIdByKey.has(clientNameKey(n)));
         if (missingParents.length > 0) {
+          // Heredar el representante de ventas de alguna subcuenta del mismo padre
+          const repByParentKey = new Map<string, string>();
+          for (const r of [...toInsert, ...toUpdate]) {
+            if (!r.parent_name || !r.representante_id) continue;
+            const k = clientNameKey(r.parent_name);
+            if (k && !repByParentKey.has(k)) repByParentKey.set(k, r.representante_id);
+          }
           const { data: newParents, error: pErr } = await supabase
             .from("clientes")
-            .insert(missingParents.map((razon_social) => ({ razon_social, active: true })) as any)
+            .insert(
+              missingParents.map((razon_social) => ({
+                razon_social,
+                active: true,
+                representante_id: repByParentKey.get(clientNameKey(razon_social)) ?? null,
+              })) as any,
+            )
             .select("id, razon_social");
           if (pErr) throw pErr;
           for (const p of newParents ?? []) parentIdByKey.set(clientNameKey(p.razon_social), p.id);
         }
+
       }
       const parentIdFor = (r: ImportRow) =>
         r.parent_name ? parentIdByKey.get(clientNameKey(r.parent_name)) ?? null : null;
