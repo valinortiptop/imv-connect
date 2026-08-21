@@ -131,14 +131,18 @@ async function syncClientes(res: SyncResult) {
   }
 
   const inserts: Record<string, unknown>[] = [];
+  const parentNameByRow = new Map<string, string>(); // nombre limpio -> nombre padre
   for (const r of rows) {
     const nsId = str(r["id"]);
     if (!nsId) continue;
-    const name = str(r["companyname"]) || str(r["altname"]) || str(r["entityid"]);
+    const rawName = str(r["companyname"]) || str(r["altname"]) || str(r["entityid"]);
+    const parsed = parseClientName(rawName);
+    const name = parsed.name;
     if (!name) {
       res.rows_skipped++;
       continue;
     }
+    if (parsed.parentName) parentNameByRow.set(name, parsed.parentName);
     const patch = {
       netsuite_id: nsId,
       razon_social: name,
@@ -169,9 +173,42 @@ async function syncClientes(res: SyncResult) {
     const { data, error } = await supabaseAdmin
       .from("clientes")
       .insert(chunk)
-      .select("id");
+      .select("id, razon_social");
     if (error) res.errors.push(`insert clientes: ${error.message}`);
-    else res.rows_inserted += data?.length ?? 0;
+    else {
+      res.rows_inserted += data?.length ?? 0;
+      for (const c of (data ?? []) as { id: string; razon_social: string | null }[]) {
+        if (c.razon_social) byName.set(normalizeName(c.razon_social), c.id);
+      }
+    }
+  }
+
+  // Ligar subcuentas ("PADRE : SUBCUENTA") con su cliente principal,
+  // creando el padre si aún no existe.
+  for (const [childName, parentName] of parentNameByRow) {
+    const childId = byName.get(normalizeName(childName));
+    if (!childId) continue;
+    let parentId = byName.get(normalizeName(parentName));
+    if (!parentId) {
+      const { data, error } = await supabaseAdmin
+        .from("clientes")
+        .insert({ razon_social: parentName, active: true, client_type: "menudeo" })
+        .select("id")
+        .single();
+      if (error) {
+        res.errors.push(`padre ${parentName}: ${error.message}`);
+        continue;
+      }
+      parentId = data.id;
+      byName.set(normalizeName(parentName), parentId);
+      res.rows_inserted++;
+    }
+    if (parentId === childId) continue;
+    const { error } = await supabaseAdmin
+      .from("clientes")
+      .update({ parent_cliente_id: parentId })
+      .eq("id", childId);
+    if (error) res.errors.push(`subcuenta ${childName}: ${error.message}`);
   }
 }
 
