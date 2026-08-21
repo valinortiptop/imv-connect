@@ -203,14 +203,14 @@ export default function TodayPlan() {
                     </div>
                     <Button
                       size="sm"
-                      variant={done ? "outline" : "default"}
+                      variant={openAt ? "default" : done ? "outline" : "default"}
                       className="shrink-0"
                       onClick={() =>
                         setTarget({ id: c.cliente_id, nombre: c.nombre })
                       }
                     >
                       <MapPin className="mr-1 h-3.5 w-3.5" />
-                      {done ? "Otra visita" : "Registrar"}
+                      {openAt ? "Check-out" : done ? "Otra visita" : "Check-in"}
                     </Button>
                   </li>
                 );
