@@ -751,6 +751,9 @@ export const checkInFn = createServerFn({ method: "POST" })
         lng: z.number().optional(),
         overrideReason: z.string().max(500).optional(),
         maxDistanceM: z.number().default(300),
+        // Visita improvisada (no estaba en el plan/ruta del día)
+        unplanned: z.boolean().optional(),
+        unplannedReason: z.string().max(500).optional(),
       })
       .parse(input),
   )
@@ -799,6 +802,8 @@ export const checkInFn = createServerFn({ method: "POST" })
         check_in_lng: data.lng ?? null,
         distance_m: distanceM,
         override_reason: data.overrideReason?.trim() || null,
+        unplanned: data.unplanned ?? false,
+        unplanned_reason: data.unplannedReason?.trim() || null,
       })
       .select()
       .single();
@@ -880,6 +885,128 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
 
 
 /* ─── 8. listMyVisits ─── */
+/* ─── Resumen de rutas del día por representante (supervisor) ─── */
+export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ fecha: z.string().optional() }).parse(input ?? {}))
+  .handler(async ({ data, context }) => {
+    const fecha = data.fecha || new Date().toISOString().slice(0, 10);
+    const dayStart = new Date(`${fecha}T00:00:00`).toISOString();
+    const dayEnd = new Date(`${fecha}T23:59:59.999`).toISOString();
+
+    const isAdmin = (await context.supabase.rpc("has_any_role", {
+      _user_id: context.userId,
+      _roles: ["admin", "contabilidad"],
+    })).data;
+    const rep = isAdmin
+      ? null
+      : await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
+
+    let visitsQ = context.supabase
+      .from("rep_visits")
+      .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, unplanned, distance_m, pedido_id")
+      .gte("check_in_at", dayStart)
+      .lte("check_in_at", dayEnd)
+      .order("check_in_at");
+    if (rep) visitsQ = visitsQ.eq("representante_id", rep.id);
+    const { data: visits } = await visitsQ;
+
+    let routesQ = context.supabase
+      .from("rep_rutas_guardadas")
+      .select("id, representante_id, nombre, fecha, ordered_stops, total_km, total_min")
+      .eq("fecha", fecha);
+    if (rep) routesQ = routesQ.eq("representante_id", rep.id);
+    const { data: routes } = await routesQ;
+
+    const repIds = [
+      ...new Set([
+        ...(visits ?? []).map((v: any) => v.representante_id),
+        ...(routes ?? []).map((r: any) => r.representante_id),
+      ].filter(Boolean)),
+    ];
+    const { data: reps } = repIds.length
+      ? await context.supabase.from("representantes").select("id, nombre").in("id", repIds)
+      : { data: [] as any[] };
+    const repName = new Map((reps ?? []).map((r: any) => [r.id, r.nombre]));
+
+    const clientIds = [...new Set((visits ?? []).map((v: any) => v.cliente_id).filter(Boolean))];
+    const { data: clientes } = clientIds.length
+      ? await context.supabase
+          .from("clientes")
+          .select("id, nombre_comercial, razon_social")
+          .in("id", clientIds)
+      : { data: [] as any[] };
+    const clientName = new Map(
+      (clientes ?? []).map((c: any) => [c.id, c.nombre_comercial ?? c.razon_social ?? "Cliente"]),
+    );
+
+    const durationMin = (v: any) =>
+      v.check_out_at
+        ? Math.max(0, Math.round((new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000))
+        : null;
+
+    const byRep = repIds.map((id) => {
+      const rv = (visits ?? []).filter((v: any) => v.representante_id === id);
+      const rr = (routes ?? []).filter((r: any) => r.representante_id === id);
+      const plannedIds = new Set<string>();
+      for (const r of rr) for (const s of (r.ordered_stops as any[]) ?? []) {
+        if (s?.cliente_id) plannedIds.add(String(s.cliente_id));
+      }
+      const visitedIds = new Set(rv.map((v: any) => String(v.cliente_id)));
+      const plannedDone = [...plannedIds].filter((c) => visitedIds.has(c)).length;
+      const unplanned = rv.filter((v: any) => v.unplanned || !plannedIds.has(String(v.cliente_id))).length;
+      const durations = rv.map(durationMin).filter((n): n is number => n != null);
+      const closed = rv.filter((v: any) => v.check_out_at).length;
+      return {
+        representante_id: id,
+        nombre: repName.get(id) ?? "Representante",
+        planned: plannedIds.size,
+        planned_done: plannedDone,
+        visits: rv.length,
+        unplanned,
+        closed,
+        open: rv.length - closed,
+        pedidos: rv.filter((v: any) => v.pedido_id).length,
+        avg_min: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null,
+        total_min: durations.reduce((a, b) => a + b, 0),
+        efficiency: plannedIds.size ? Math.round((plannedDone / plannedIds.size) * 100) : null,
+        routes: rr.map((r: any) => ({
+          id: r.id,
+          nombre: r.nombre,
+          stops: ((r.ordered_stops as any[]) ?? []).length,
+          total_km: r.total_km,
+          total_min: r.total_min,
+        })),
+        detalle: rv.map((v: any) => ({
+          id: v.id,
+          cliente: clientName.get(v.cliente_id) ?? "Cliente",
+          check_in_at: v.check_in_at,
+          check_out_at: v.check_out_at,
+          minutos: durationMin(v),
+          unplanned: !!v.unplanned || !plannedIds.has(String(v.cliente_id)),
+          outcome: v.outcome,
+        })),
+      };
+    });
+
+    const totals = {
+      planned: byRep.reduce((a, r) => a + r.planned, 0),
+      planned_done: byRep.reduce((a, r) => a + r.planned_done, 0),
+      visits: byRep.reduce((a, r) => a + r.visits, 0),
+      unplanned: byRep.reduce((a, r) => a + r.unplanned, 0),
+      pedidos: byRep.reduce((a, r) => a + r.pedidos, 0),
+      reps: byRep.length,
+    };
+    return {
+      fecha,
+      totals: {
+        ...totals,
+        efficiency: totals.planned ? Math.round((totals.planned_done / totals.planned) * 100) : null,
+      },
+      reps: byRep.sort((a, b) => b.visits - a.visits),
+    };
+  });
+
 export const listMyVisitsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
