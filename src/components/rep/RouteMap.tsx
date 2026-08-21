@@ -40,8 +40,10 @@ import {
   GripVertical,
   Trash2,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
+import NewRouteWizardDialog from "./NewRouteWizardDialog";
 import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 
@@ -121,6 +123,7 @@ export default function RouteMap() {
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
