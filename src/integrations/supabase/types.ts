@@ -9857,6 +9857,8 @@ export type Database = {
           representante_id: string
           signature_path: string | null
           signed_by_name: string | null
+          unplanned: boolean
+          unplanned_reason: string | null
         }
         Insert: {
           check_in_at?: string
@@ -9877,6 +9879,8 @@ export type Database = {
           representante_id: string
           signature_path?: string | null
           signed_by_name?: string | null
+          unplanned?: boolean
+          unplanned_reason?: string | null
         }
         Update: {
           check_in_at?: string
@@ -9897,6 +9901,8 @@ export type Database = {
           representante_id?: string
           signature_path?: string | null
           signed_by_name?: string | null
+          unplanned?: boolean
+          unplanned_reason?: string | null
         }
         Relationships: [
           {
