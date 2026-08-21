@@ -399,15 +399,16 @@ export default function RouteMap() {
 
 
   const doOptimize = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (vars?: { ids?: string[]; fecha?: string }) => {
       if (!geo) throw new Error("Activa tu ubicación primero");
+      const idSet = vars?.ids ? new Set(vars.ids) : selected;
       const stops = clientsWithCoords
-        .filter((c: any) => selected.has(c.id))
+        .filter((c: any) => idSet.has(c.id))
         .map((c: any) => ({ cliente_id: c.id, lat: Number(c.lat), lng: Number(c.lng) }));
       if (stops.length === 0) throw new Error("Selecciona al menos un cliente");
       return optimize({ data: { startLat: geo.lat, startLng: geo.lng, stops } });
     },
-    onSuccess: (r: any) => {
+    onSuccess: (r: any, vars?: { ids?: string[]; fecha?: string }) => {
       const path = r.polyline ? decodePolyline(r.polyline) : [];
       setRouteInfo({
         km: r.total_km,
@@ -420,7 +421,7 @@ export default function RouteMap() {
       // Persist so it appears on Ruta history and Plan semanal
       saveRoute({
         data: {
-          fecha: routeFecha,
+          fecha: vars?.fecha ?? routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
@@ -433,6 +434,7 @@ export default function RouteMap() {
       })
         .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
         .catch(() => {});
+
 
       // Fit map to route
       const maps = (window as any).google?.maps;
