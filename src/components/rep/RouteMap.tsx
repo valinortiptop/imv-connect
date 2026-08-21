@@ -22,6 +22,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useRepContext } from "./RepLayout";
 import {
@@ -91,6 +98,61 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
+const CDMX_ALCALDIAS = [
+  "ALVARO OBREGON",
+  "AZCAPOTZALCO",
+  "BENITO JUAREZ",
+  "COYOACAN",
+  "CUAJIMALPA",
+  "CUAUHTEMOC",
+  "GUSTAVO A. MADERO",
+  "GUSTAVO A MADERO",
+  "IZTACALCO",
+  "IZTAPALAPA",
+  "LA MAGDALENA CONTRERAS",
+  "MAGDALENA CONTRERAS",
+  "MIGUEL HIDALGO",
+  "MILPA ALTA",
+  "TLALPAN",
+  "TLAHUAC",
+  "VENUSTIANO CARRANZA",
+  "XOCHIMILCO",
+];
+
+function normalizeAddr(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractAlcaldia(direccion: string | null | undefined): string | null {
+  if (!direccion) return null;
+  const norm = normalizeAddr(direccion);
+  // Prefer the municipality/alcaldía token that sits right before the 5-digit CP
+  // (standard Mexican address format: ... , COLONIA, ALCALDIA CP, STATE).
+  const m = norm.match(/,\s*([^,]+?)\s+\d{5}\b/);
+  if (m) {
+    const raw = normalizeAddr(m[1]);
+    if (raw.length > 2 && raw.length < 60) {
+      // Normalize to a known CDMX alcaldía name when possible.
+      for (const a of CDMX_ALCALDIAS) {
+        const na = normalizeAddr(a);
+        if (raw === na || raw.includes(na)) return a;
+      }
+      // Otherwise return the raw municipality (for non-CDMX addresses).
+      return raw;
+    }
+  }
+  // Fallback: look for known alcaldía names anywhere in the address.
+  for (const a of CDMX_ALCALDIAS) {
+    if (norm.includes(normalizeAddr(a))) return a;
+  }
+  return null;
+}
+
 export default function RouteMap() {
   const { geo } = useRepContext();
   const fetchClients = useServerFn(getMyClientsFn);
@@ -128,6 +190,7 @@ export default function RouteMap() {
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
   const [routeFecha, setRouteFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
 
 
 
@@ -580,10 +643,23 @@ export default function RouteMap() {
   const withoutCoords = (data?.clients ?? []).filter((c: any) => !c.lat || !c.lng);
 
   // Global search across name + address, used inside the picker popover.
+  const alcaldias = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of clientsWithCoords) {
+      const a = extractAlcaldia(c.direccion);
+      if (a) set.add(a);
+    }
+    return Array.from(set).sort();
+  }, [clientsWithCoords]);
+
   const filteredClients = useMemo(() => {
+    let list = clientsWithCoords;
+    if (alcaldiaFilter && alcaldiaFilter !== "all") {
+      list = list.filter((c: any) => extractAlcaldia(c.direccion) === alcaldiaFilter);
+    }
     const q = clientQuery.trim().toLowerCase();
-    if (!q) return clientsWithCoords;
-    return clientsWithCoords.filter((c: any) => {
+    if (!q) return list;
+    return list.filter((c: any) => {
       const haystack = [
         c.nombre_comercial,
         c.razon_social,
@@ -597,7 +673,7 @@ export default function RouteMap() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [clientsWithCoords, clientQuery]);
+  }, [clientsWithCoords, clientQuery, alcaldiaFilter]);
 
 
   const buildExportRoute = () => {
@@ -671,6 +747,21 @@ export default function RouteMap() {
                     placeholder="Buscar por nombre o dirección…"
                     className="h-8 pl-7 text-sm"
                   />
+                </div>
+                <div className="mt-2">
+                  <Select value={alcaldiaFilter} onValueChange={setAlcaldiaFilter}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Filtrar por alcaldía / municipio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las alcaldías</SelectItem>
+                      {alcaldias.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {a}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>
