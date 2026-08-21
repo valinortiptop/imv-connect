@@ -737,6 +737,21 @@ export default function RouteMap() {
                     className="h-8 pl-7 text-sm"
                   />
                 </div>
+                <div className="mt-2">
+                  <Select value={alcaldiaFilter} onValueChange={setAlcaldiaFilter}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Filtrar por alcaldía / municipio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las alcaldías</SelectItem>
+                      {alcaldias.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {a}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>
                     {pickerSelected.size} seleccionados · {filteredClients.length} resultados
