@@ -623,6 +623,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const fields = new Set(r.diff_fields ?? []);
         const patch: Record<string, unknown> = {};
         if (fields.has("nombre")) patch.razon_social = r.name;
+        const pid = parentIdFor(r);
+        if (pid && pid !== r.existing_id) patch.parent_cliente_id = pid;
         if (fields.has("empresa")) {
           patch.company = r.company || null;
           patch.nombre_comercial = r.company || null;
