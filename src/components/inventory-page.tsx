@@ -1,5 +1,6 @@
 import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -105,14 +106,15 @@ export default function Inventory() {
   const { data: rawItems = [], isLoading } = useQuery({
     queryKey: ["inventory-stock"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("v_products_with_stock")
-        .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active, categoria, linea, laboratorio_id")
-        .eq("active", true)
-        .or("stock_actual.gt.0,stock_committed.gt.0,stock_incoming.gt.0")
-        .order("clave");
-      if (error) throw error;
-      return (data ?? []) as InventoryItem[];
+      const data = await fetchAllRows<InventoryItem>(() =>
+        supabase
+          .from("v_products_with_stock")
+          .select("id, clave, name, supplier, brand, weight_kg, cost_with_iva, cost_without_iva, bonificacion_pct, sale_price_with_iva, image_url, stock_actual, stock_committed, stock_incoming, stock_disponible, active, categoria, linea, laboratorio_id")
+          .eq("active", true)
+          .or("stock_actual.gt.0,stock_committed.gt.0,stock_incoming.gt.0")
+          .order("clave"),
+      );
+      return data;
     },
   });
 
@@ -149,13 +151,14 @@ export default function Inventory() {
     queryKey: ["stock-by-almacen", almacenFilter],
     enabled: almacenFilter !== "all",
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stock")
-        .select("producto_id, cantidad")
-        .eq("almacen_id", almacenFilter)
-        .gt("cantidad", 0);
-      if (error) throw error;
-      return new Set((data ?? []).map(r => r.producto_id as string));
+      const data = await fetchAllRows<{ producto_id: string; cantidad: number }>(() =>
+        supabase
+          .from("stock")
+          .select("producto_id, cantidad")
+          .eq("almacen_id", almacenFilter)
+          .gt("cantidad", 0),
+      );
+      return new Set(data.map((r) => r.producto_id));
     },
     staleTime: 60_000,
   });
@@ -166,14 +169,15 @@ export default function Inventory() {
   const { data: damagedByProduct = {} } = useQuery({
     queryKey: ["damaged-by-product"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("damaged_batches")
-        .select("product_id, remaining_quantity")
-        .eq("status", "disponible")
-        .gt("remaining_quantity", 0);
-      if (error) throw error;
+      const data = await fetchAllRows<{ product_id: string; remaining_quantity: number }>(() =>
+        (supabase as any)
+          .from("damaged_batches")
+          .select("product_id, remaining_quantity")
+          .eq("status", "disponible")
+          .gt("remaining_quantity", 0),
+      );
       const map: Record<string, number> = {};
-      for (const row of data ?? []) {
+      for (const row of data) {
         map[row.product_id] = (map[row.product_id] ?? 0) + row.remaining_quantity;
       }
       return map;
