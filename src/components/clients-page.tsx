@@ -18,10 +18,11 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TimePicker } from "@/components/ui/time-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ChronoBar } from "@/components/ChronoBar";
-import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin } from "lucide-react";
+import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { parseCfdiPdf, type CfdiData } from "@/lib/cfdi-parser";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
@@ -496,6 +497,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       return next;
     }, { replace: true });
   }, [typeFilter, setSearchParams]);
+  // Filter by assigned sales representative ("__none__" = clients without a rep).
+  const [repFilter, setRepFilter] = useState<string>("__all__");
+  // Sorting: key + direction (asc/desc).
+  const [sortKey, setSortKey] = useState<"name" | "company" | "phone" | "representante" | "payment_method" | "active">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<ClientForm>(emptyForm);
