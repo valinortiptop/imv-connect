@@ -157,6 +157,8 @@ export default function RouteMap() {
   useEffect(() => {
     if (pickerOpen) setPickerSelected(new Set(selected));
   }, [pickerOpen, selected]);
+
+  useEffect(() => {
     let cancelled = false;
     loadGoogleMapsViaValinor()
       .then((maps) => {
