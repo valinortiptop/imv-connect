@@ -9692,6 +9692,73 @@ export type Database = {
           },
         ]
       }
+      rep_lab_access: {
+        Row: {
+          created_at: string
+          id: string
+          laboratorio_id: string
+          representante_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          laboratorio_id: string
+          representante_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          laboratorio_id?: string
+          representante_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_lab_access_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "laboratorios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_lab_access_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "rep_lab_access_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_stock_productos"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "rep_lab_access_laboratorio_id_fkey"
+            columns: ["laboratorio_id"]
+            isOneToOne: false
+            referencedRelation: "v_supplier_kpis"
+            referencedColumns: ["laboratorio_id"]
+          },
+          {
+            foreignKeyName: "rep_lab_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_lab_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: false
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_rutas_guardadas: {
         Row: {
           created_at: string
