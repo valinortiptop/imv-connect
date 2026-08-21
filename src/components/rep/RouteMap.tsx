@@ -98,6 +98,50 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
+const CDMX_ALCALDIAS = [
+  "ALVARO OBREGON",
+  "AZCAPOTZALCO",
+  "BENITO JUAREZ",
+  "COYOACAN",
+  "CUAJIMALPA",
+  "CUAUHTEMOC",
+  "GUSTAVO A. MADERO",
+  "GUSTAVO A MADERO",
+  "IZTACALCO",
+  "IZTAPALAPA",
+  "LA MAGDALENA CONTRERAS",
+  "MAGDALENA CONTRERAS",
+  "MIGUEL HIDALGO",
+  "MILPA ALTA",
+  "TLALPAN",
+  "TLAHUAC",
+  "VENUSTIANO CARRANZA",
+  "XOCHIMILCO",
+];
+
+function normalizeAddr(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractAlcaldia(direccion: string | null | undefined): string | null {
+  if (!direccion) return null;
+  const norm = normalizeAddr(direccion);
+  for (const a of CDMX_ALCALDIAS) {
+    if (norm.includes(normalizeAddr(a))) return a;
+  }
+  const m = norm.match(/,\s*([^,]+?)\s+\d{5}\b/);
+  if (m) {
+    const raw = m[1].trim();
+    if (raw.length > 2 && raw.length < 60) return raw;
+  }
+  return null;
+}
+
 export default function RouteMap() {
   const { geo } = useRepContext();
   const fetchClients = useServerFn(getMyClientsFn);
