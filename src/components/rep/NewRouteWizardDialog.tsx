@@ -183,18 +183,31 @@ export default function NewRouteWizardDialog({
     return [...counts.values()].sort((a, b) => b.n - a.n).slice(0, 8);
   }, [routes, dow]);
 
+  const alcaldias = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of clients) {
+      const a = extractAlcaldia(c.direccion);
+      if (a) set.add(a);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [clients]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const withCoords = clients.filter((c: any) => c.lat && c.lng);
-    if (!q) return withCoords;
-    return withCoords.filter((c: any) =>
+    let list = clients.filter((c: any) => c.lat && c.lng);
+    if (alcaldiaFilter && alcaldiaFilter !== "all") {
+      list = list.filter((c: any) => extractAlcaldia(c.direccion) === alcaldiaFilter);
+    }
+    if (!q) return list;
+    return list.filter((c: any) =>
       [c.nombre_comercial, c.razon_social, c.nickname, c.direccion, c.codigo_postal, c.rfc]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(q),
     );
-  }, [clients, query]);
+  }, [clients, query, alcaldiaFilter]);
+
 
   const toggle = (id: string) =>
     setSel((prev) => {
