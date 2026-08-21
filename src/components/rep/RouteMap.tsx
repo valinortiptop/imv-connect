@@ -1074,6 +1074,20 @@ export default function RouteMap() {
           clienteNombre={checkInClient.nombre}
         />
       )}
+
+      <NewRouteWizardDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        clients={data?.clients ?? []}
+        initialFecha={routeFecha}
+        onConfirm={({ fecha, clientIds, optimize: doOpt }) => {
+          setRouteFecha(fecha);
+          setSelected(new Set(clientIds));
+          setRouteInfo(null);
+          didFitRef.current = false;
+          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha });
+        }}
+      />
     </div>
   );
 }
