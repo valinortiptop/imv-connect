@@ -348,12 +348,16 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                   ))}
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => onOpenChange(false)}>Cerrar</Button>
+              <DialogFooter className="flex-col gap-2 sm:flex-row">
+                <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                  Cerrar sin check-out
+                </Button>
                 <Button disabled={finish.isPending} onClick={() => finish.mutate()}>
-                  Finalizar visita
+                  <Clock className="mr-1 h-4 w-4" />
+                  Registrar check-out ({elapsedLabel})
                 </Button>
               </DialogFooter>
+
             </TabsContent>
           </Tabs>
         )}
