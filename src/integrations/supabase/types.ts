@@ -1171,6 +1171,7 @@ export type Database = {
           nombre_cfdi: string | null
           nombre_comercial: string | null
           notas: string | null
+          parent_cliente_id: string | null
           payment_method: string | null
           payment_terms: number | null
           phone: string | null
@@ -1213,6 +1214,7 @@ export type Database = {
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
+          parent_cliente_id?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: string | null
@@ -1255,6 +1257,7 @@ export type Database = {
           nombre_cfdi?: string | null
           nombre_comercial?: string | null
           notas?: string | null
+          parent_cliente_id?: string | null
           payment_method?: string | null
           payment_terms?: number | null
           phone?: string | null
@@ -1271,6 +1274,55 @@ export type Database = {
           uso_cfdi_default?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
           {
             foreignKeyName: "clientes_price_list_id_fkey"
             columns: ["price_list_id"]
@@ -12589,6 +12641,8 @@ export type Database = {
           nickname: string | null
           nombre_cfdi: string | null
           notes: string | null
+          parent_cliente_id: string | null
+          parent_name: string | null
           payment_method: string | null
           payment_terms: number | null
           phone: string | null
@@ -12601,79 +12655,56 @@ export type Database = {
           token_portal: string | null
           updated_at: string | null
         }
-        Insert: {
-          active?: boolean | null
-          address?: string | null
-          central?: string | null
-          cfdi_pdf_path?: string | null
-          client_type?: string | null
-          codigo_postal?: string | null
-          company?: string | null
-          contact?: string | null
-          created_at?: string | null
-          credit_limit?: number | null
-          curp?: string | null
-          delivery_notes?: string | null
-          delivery_window_from?: string | null
-          delivery_window_until?: string | null
-          email?: string | null
-          google_place_id?: string | null
-          id?: string | null
-          lat?: number | null
-          lng?: number | null
-          name?: string | null
-          nickname?: string | null
-          nombre_cfdi?: string | null
-          notes?: string | null
-          payment_method?: string | null
-          payment_terms?: number | null
-          phone?: never
-          portal_activo?: boolean | null
-          price_list_id?: string | null
-          razon_social?: string | null
-          representante_id?: string | null
-          required_documents?: Json | null
-          rfc?: string | null
-          token_portal?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          address?: string | null
-          central?: string | null
-          cfdi_pdf_path?: string | null
-          client_type?: string | null
-          codigo_postal?: string | null
-          company?: string | null
-          contact?: string | null
-          created_at?: string | null
-          credit_limit?: number | null
-          curp?: string | null
-          delivery_notes?: string | null
-          delivery_window_from?: string | null
-          delivery_window_until?: string | null
-          email?: string | null
-          google_place_id?: string | null
-          id?: string | null
-          lat?: number | null
-          lng?: number | null
-          name?: string | null
-          nickname?: string | null
-          nombre_cfdi?: string | null
-          notes?: string | null
-          payment_method?: string | null
-          payment_terms?: number | null
-          phone?: never
-          portal_activo?: boolean | null
-          price_list_id?: string | null
-          razon_social?: string | null
-          representante_id?: string | null
-          required_documents?: Json | null
-          rfc?: string | null
-          token_portal?: string | null
-          updated_at?: string | null
-        }
         Relationships: [
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_cliente_credito_360"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_venta_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_remisiones_report"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_saldos_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "clientes_parent_cliente_id_fkey"
+            columns: ["parent_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "v_top_clientes"
+            referencedColumns: ["cliente_id"]
+          },
           {
             foreignKeyName: "clientes_price_list_id_fkey"
             columns: ["price_list_id"]

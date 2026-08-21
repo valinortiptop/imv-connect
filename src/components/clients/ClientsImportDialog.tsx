@@ -33,7 +33,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { aiChatFn, googleGeocodeFn } from "@/lib/valinor.functions";
-import { stripVmPrefix, hadVmPrefix, GENERIC_RFC } from "@/lib/vm-client";
+import { GENERIC_RFC } from "@/lib/vm-client";
+import { parseClientName, clientNameKey } from "@/lib/client-name";
 
 type Status = "new" | "update" | "unchanged" | "error";
 
@@ -45,6 +46,8 @@ type ImportRow = {
   email: string;
   rfc: string;
   razon_social: string;
+  /** cliente principal cuando la fila viene como "PADRE : SUBCUENTA" */
+  parent_name?: string | null;
   address: string;
   codigo_postal: string;
   payment_method: string;
@@ -321,13 +324,17 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const rawName = pick(ai?.name, h.name);
         const rawCompany = pick(ai?.company, h.company);
         const rawRazon = pick(ai?.razon_social, h.razon_social);
-        // VM detection: strip the "VM " prefix from name/company/razón social
-        // and force the generic SAT RFC for these "Venta Mostrador" clients.
-        const wasVm =
-          hadVmPrefix(rawName) || hadVmPrefix(rawCompany) || hadVmPrefix(rawRazon);
-        const name = stripVmPrefix(rawName) || rawName;
-        const company = stripVmPrefix(rawCompany) || rawCompany;
-        const razon_social = stripVmPrefix(rawRazon) || rawRazon;
+        // VM / subcuentas: "PADRE : 1928 VM SUBCUENTA" -> nombre limpio de la
+        // subcuenta + nombre del padre; se fuerza el RFC genérico para VM.
+        const parsedName = parseClientName(rawName);
+        const parsedCompany = parseClientName(rawCompany);
+        const parsedRazon = parseClientName(rawRazon);
+        const wasVm = parsedName.wasVm || parsedCompany.wasVm || parsedRazon.wasVm;
+        const name = parsedName.name || rawName;
+        const company = parsedCompany.name || rawCompany;
+        const razon_social = parsedRazon.name || rawRazon;
+        const parent_name =
+          parsedName.parentName ?? parsedRazon.parentName ?? parsedCompany.parentName ?? null;
         const nickname = pick(ai?.nickname, h.nickname);
         const phone = pick(ai?.phone, h.phone);
         const email = pick(ai?.email, h.email);
@@ -360,6 +367,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           email,
           rfc,
           razon_social,
+          parent_name,
           address,
           codigo_postal,
           payment_method: pm || (client_type === "mayoreo" ? "credito" : "contado"),
@@ -536,10 +544,49 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         dedupedInsert.push(r);
       }
 
+      // Subcuentas: asegurar que exista el cliente principal de cada fila
+      // "PADRE : SUBCUENTA" y quedarnos con su id para ligarlas.
+      const parentIdByKey = new Map<string, string>();
+      const parentNames = Array.from(
+        new Map(
+          [...toInsert, ...toUpdate]
+            .map((r) => r.parent_name)
+            .filter((n): n is string => !!n && clientNameKey(n) !== "")
+            .map((n) => [clientNameKey(n), n] as const),
+        ).values(),
+      );
+      if (parentNames.length > 0) {
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabase
+            .from("clientes")
+            .select("id, razon_social")
+            .range(from, from + 999);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          for (const c of data) {
+            const k = clientNameKey(c.razon_social);
+            if (k && !parentIdByKey.has(k)) parentIdByKey.set(k, c.id);
+          }
+          if (data.length < 1000) break;
+        }
+        const missingParents = parentNames.filter((n) => !parentIdByKey.has(clientNameKey(n)));
+        if (missingParents.length > 0) {
+          const { data: newParents, error: pErr } = await supabase
+            .from("clientes")
+            .insert(missingParents.map((razon_social) => ({ razon_social, active: true })) as any)
+            .select("id, razon_social");
+          if (pErr) throw pErr;
+          for (const p of newParents ?? []) parentIdByKey.set(clientNameKey(p.razon_social), p.id);
+        }
+      }
+      const parentIdFor = (r: ImportRow) =>
+        r.parent_name ? parentIdByKey.get(clientNameKey(r.parent_name)) ?? null : null;
+
       let inserted = 0;
       if (dedupedInsert.length > 0) {
         const payload = dedupedInsert.map((r) => ({
           razon_social: r.razon_social || r.name,
+          parent_cliente_id: parentIdFor(r),
           nombre_comercial: r.company || r.nickname || null,
           nickname: r.nickname || null,
           company: r.company || null,
@@ -576,6 +623,8 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const fields = new Set(r.diff_fields ?? []);
         const patch: Record<string, unknown> = {};
         if (fields.has("nombre")) patch.razon_social = r.name;
+        const pid = parentIdFor(r);
+        if (pid && pid !== r.existing_id) patch.parent_cliente_id = pid;
         if (fields.has("empresa")) {
           patch.company = r.company || null;
           patch.nombre_comercial = r.company || null;
