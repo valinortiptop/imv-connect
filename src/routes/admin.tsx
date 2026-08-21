@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useRepOnly } from "@/hooks/use-rep-only";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -23,6 +24,13 @@ function AdminLayout() {
   const [email, setEmail] = useState<string | null>(null);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { allowedRoutePaths, canAccess, loading, permissive } = usePermissions();
+  const { loading: repLoading, repOnly } = useRepOnly();
+
+  // Vendedores (rol representante únicamente) solo tienen acceso al portal /rep.
+  useEffect(() => {
+    if (repLoading) return;
+    if (repOnly) navigate({ to: "/rep", replace: true });
+  }, [repLoading, repOnly, navigate]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
@@ -31,18 +39,23 @@ function AdminLayout() {
   // Redirect users to their first allowed page if they hit a route they
   // cannot see (e.g. landing on /admin or /admin/productos as a viewer).
   useEffect(() => {
+    if (repOnly) return;
     if (loading || permissive) return;
     if (allowedRoutePaths.length === 0) return;
     if (!canAccess(pathname)) {
       navigate({ to: allowedRoutePaths[0], replace: true });
     }
-  }, [loading, permissive, allowedRoutePaths, pathname, canAccess, navigate]);
+  }, [loading, permissive, repOnly, allowedRoutePaths, pathname, canAccess, navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   };
 
+
+  if (repLoading || repOnly) {
+    return <div className="p-6 text-sm text-muted-foreground">Redirigiendo al panel de representantes…</div>;
+  }
 
   return (
     <SidebarProvider>
