@@ -481,61 +481,62 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
           })}
         </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">SKUs en stock</span>
+        {!isRep && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">SKUs en stock</span>
+                </div>
+                {isLoading ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">{stats.skusInStock}</p>
+                )}
               </div>
-              {isLoading ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">{stats.skusInStock}</p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Boxes className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                  {isProjected ? "Disponible proyectado" : "Bultos en bodega"}
-                </span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Boxes className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                    {isProjected ? "Disponible proyectado" : "Bultos en bodega"}
+                  </span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">
+                    {isProjected
+                      ? stats.totalDisponible.toLocaleString()
+                      : stats.totalBultos.toLocaleString()}
+                  </p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">
-                  {isProjected
-                    ? stats.totalDisponible.toLocaleString()
-                    : stats.totalBultos.toLocaleString()}
-                </p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                  {isProjected ? "Pedidos del día" : "Comprometido"}
-                </span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                    {isProjected ? "Pedidos del día" : "Comprometido"}
+                  </span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-amber-400">{stats.totalCommitted.toLocaleString()}</p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-amber-400">{stats.totalCommitted.toLocaleString()}</p>
-              )}
-            </div>
-          </GlowCard>
-          <GlowCard>
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Valor inventario</span>
+            </GlowCard>
+            <GlowCard>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Valor inventario</span>
+                </div>
+                {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
+                  <p className="text-2xl font-bold text-foreground">{fmtMXN(stats.totalValue)}</p>
+                )}
               </div>
-              {(isLoading || projectionLoading) ? <Skeleton className="h-8 w-20 bg-muted" /> : (
-                <p className="text-2xl font-bold text-foreground">{fmtMXN(stats.totalValue)}</p>
-              )}
-            </div>
-          </GlowCard>
-        </div>
+            </GlowCard>
+          </div>
+        )}
 
         {/* Filters */}
         <GlowCard>
