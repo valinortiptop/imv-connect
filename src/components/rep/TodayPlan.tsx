@@ -101,6 +101,16 @@ export default function TodayPlan() {
     return set;
   }, [visitsQ.data]);
 
+  // Visitas con check-in pero sin check-out (en curso)
+  const openByClient = useMemo(() => {
+    const map = new Map<string, string>();
+    (visitsQ.data?.visits ?? []).forEach((v: any) => {
+      if (!v.check_out_at && !map.has(v.cliente_id)) map.set(v.cliente_id, v.check_in_at);
+    });
+    return map;
+  }, [visitsQ.data]);
+
+
   const [target, setTarget] = useState<{ id: string; nombre: string } | null>(null);
 
   const todayLabel = new Date().toLocaleDateString("es-MX", {
@@ -145,6 +155,7 @@ export default function TodayPlan() {
             <ol className="space-y-2">
               {today.clientes.map((c: any, i: number) => {
                 const done = visitedToday.has(c.cliente_id);
+                const openAt = openByClient.get(c.cliente_id);
                 return (
                   <li
                     key={c.cliente_id}
@@ -192,14 +203,14 @@ export default function TodayPlan() {
                     </div>
                     <Button
                       size="sm"
-                      variant={done ? "outline" : "default"}
+                      variant={openAt ? "default" : done ? "outline" : "default"}
                       className="shrink-0"
                       onClick={() =>
                         setTarget({ id: c.cliente_id, nombre: c.nombre })
                       }
                     >
                       <MapPin className="mr-1 h-3.5 w-3.5" />
-                      {done ? "Otra visita" : "Registrar"}
+                      {openAt ? "Check-out" : done ? "Otra visita" : "Check-in"}
                     </Button>
                   </li>
                 );

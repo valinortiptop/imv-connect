@@ -839,6 +839,31 @@ export const checkOutFn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ─── 7b. Visita abierta (sin check-out) ─── */
+export const getOpenVisitFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ clienteId: z.string().uuid().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const rep = await getCurrentRep(context.supabase, context.userId);
+    if (!rep) return { visit: null };
+    let q = context.supabase
+      .from("rep_visits")
+      .select("id, cliente_id, check_in_at, distance_m")
+      .eq("representante_id", rep.id)
+      .is("check_out_at", null)
+      .order("check_in_at", { ascending: false })
+      .limit(1);
+    if (data.clienteId) q = q.eq("cliente_id", data.clienteId);
+    const { data: rows } = await q;
+    return { visit: rows?.[0] ?? null };
+  });
+
+
+
 /* ─── 8. listMyVisits ─── */
 export const listMyVisitsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
