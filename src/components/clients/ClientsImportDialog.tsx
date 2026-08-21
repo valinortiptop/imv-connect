@@ -321,13 +321,17 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const rawName = pick(ai?.name, h.name);
         const rawCompany = pick(ai?.company, h.company);
         const rawRazon = pick(ai?.razon_social, h.razon_social);
-        // VM detection: strip the "VM " prefix from name/company/razón social
-        // and force the generic SAT RFC for these "Venta Mostrador" clients.
-        const wasVm =
-          hadVmPrefix(rawName) || hadVmPrefix(rawCompany) || hadVmPrefix(rawRazon);
-        const name = stripVmPrefix(rawName) || rawName;
-        const company = stripVmPrefix(rawCompany) || rawCompany;
-        const razon_social = stripVmPrefix(rawRazon) || rawRazon;
+        // VM / subcuentas: "PADRE : 1928 VM SUBCUENTA" -> nombre limpio de la
+        // subcuenta + nombre del padre; se fuerza el RFC genérico para VM.
+        const parsedName = parseClientName(rawName);
+        const parsedCompany = parseClientName(rawCompany);
+        const parsedRazon = parseClientName(rawRazon);
+        const wasVm = parsedName.wasVm || parsedCompany.wasVm || parsedRazon.wasVm;
+        const name = parsedName.name || rawName;
+        const company = parsedCompany.name || rawCompany;
+        const razon_social = parsedRazon.name || rawRazon;
+        const parent_name =
+          parsedName.parentName ?? parsedRazon.parentName ?? parsedCompany.parentName ?? null;
         const nickname = pick(ai?.nickname, h.nickname);
         const phone = pick(ai?.phone, h.phone);
         const email = pick(ai?.email, h.email);
