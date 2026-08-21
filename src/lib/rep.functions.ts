@@ -913,7 +913,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
 
     let routesQ = context.supabase
       .from("rep_rutas_guardadas")
-      .select("id, representante_id, nombre, fecha, ordered_stops, total_km, total_min")
+      .select("id, representante_id, nombre, fecha, ordered_stops, total_km, total_minutos")
       .eq("fecha", fecha);
     if (rep) routesQ = routesQ.eq("representante_id", rep.id);
     const { data: routes } = await routesQ;
@@ -975,7 +975,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
           nombre: r.nombre,
           stops: ((r.ordered_stops as any[]) ?? []).length,
           total_km: r.total_km,
-          total_min: r.total_min,
+          total_min: (r as any).total_minutos ?? null,
         })),
         detalle: rv.map((v: any) => ({
           id: v.id,
