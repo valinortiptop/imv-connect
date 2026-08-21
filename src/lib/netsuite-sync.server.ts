@@ -531,10 +531,14 @@ async function syncVentas(
       continue;
     }
     const customerName = str(r["customer_name"]);
+    const parsedCustomer = parseClientName(customerName);
     const clientId =
       cliByNs.get(str(r["customer_id"])) ??
+      cliByName.get(normalizeName(parsedCustomer.name)) ??
       cliByName.get(normalizeName(customerName.replace(/^\d+\s+/, ""))) ??
-      null;
+      (parsedCustomer.parentName
+        ? cliByName.get(normalizeName(parsedCustomer.parentName)) ?? null
+        : null);
     if (!clientId) unmatched.add(`Cliente sin coincidencia: ${customerName}`);
 
     payloads.push({
