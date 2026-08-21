@@ -40,8 +40,10 @@ import {
   GripVertical,
   Trash2,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import CheckInDialog from "./CheckInDialog";
+import NewRouteWizardDialog from "./NewRouteWizardDialog";
 import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
 
 
@@ -121,6 +123,7 @@ export default function RouteMap() {
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
@@ -399,15 +402,16 @@ export default function RouteMap() {
 
 
   const doOptimize = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (vars?: { ids?: string[]; fecha?: string }) => {
       if (!geo) throw new Error("Activa tu ubicación primero");
+      const idSet = vars?.ids ? new Set(vars.ids) : selected;
       const stops = clientsWithCoords
-        .filter((c: any) => selected.has(c.id))
+        .filter((c: any) => idSet.has(c.id))
         .map((c: any) => ({ cliente_id: c.id, lat: Number(c.lat), lng: Number(c.lng) }));
       if (stops.length === 0) throw new Error("Selecciona al menos un cliente");
       return optimize({ data: { startLat: geo.lat, startLng: geo.lng, stops } });
     },
-    onSuccess: (r: any) => {
+    onSuccess: (r: any, vars?: { ids?: string[]; fecha?: string }) => {
       const path = r.polyline ? decodePolyline(r.polyline) : [];
       setRouteInfo({
         km: r.total_km,
@@ -420,7 +424,7 @@ export default function RouteMap() {
       // Persist so it appears on Ruta history and Plan semanal
       saveRoute({
         data: {
-          fecha: routeFecha,
+          fecha: vars?.fecha ?? routeFecha,
           totalKm: r.total_km,
           totalMinutes: r.total_minutes,
           polyline: r.polyline ?? null,
@@ -433,6 +437,7 @@ export default function RouteMap() {
       })
         .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
         .catch(() => {});
+
 
       // Fit map to route
       const maps = (window as any).google?.maps;
@@ -640,6 +645,13 @@ export default function RouteMap() {
           </p>
         </div>
         <div className="flex w-full flex-wrap gap-2 md:w-auto">
+          <Button
+            size="sm"
+            onClick={() => setWizardOpen(true)}
+            className="flex-1 md:flex-none"
+          >
+            <Plus className="mr-1 h-4 w-4" /> Nueva ruta
+          </Button>
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <Button size="sm" variant="outline" className="flex-1 md:flex-none">
@@ -1065,6 +1077,20 @@ export default function RouteMap() {
           clienteNombre={checkInClient.nombre}
         />
       )}
+
+      <NewRouteWizardDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        clients={data?.clients ?? []}
+        initialFecha={routeFecha}
+        onConfirm={({ fecha, clientIds, optimize: doOpt }) => {
+          setRouteFecha(fecha);
+          setSelected(new Set(clientIds));
+          setRouteInfo(null);
+          didFitRef.current = false;
+          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha });
+        }}
+      />
     </div>
   );
 }
