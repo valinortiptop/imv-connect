@@ -7,6 +7,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { suiteqlAll } from "./netsuite.server";
 import { normalizeName } from "./backfill-sales.server";
+import { parseClientName } from "./client-name";
 
 export type NetsuiteEntity = "ventas" | "clientes" | "productos" | "inventario";
 
@@ -200,7 +201,7 @@ async function syncClientes(res: SyncResult) {
         continue;
       }
       parentId = data.id;
-      byName.set(normalizeName(parentName), parentId);
+      byName.set(normalizeName(parentName), data.id);
       res.rows_inserted++;
     }
     if (parentId === childId) continue;
