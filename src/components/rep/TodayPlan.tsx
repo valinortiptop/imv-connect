@@ -155,6 +155,7 @@ export default function TodayPlan() {
             <ol className="space-y-2">
               {today.clientes.map((c: any, i: number) => {
                 const done = visitedToday.has(c.cliente_id);
+                const openAt = openByClient.get(c.cliente_id);
                 return (
                   <li
                     key={c.cliente_id}
