@@ -46,6 +46,8 @@ type ImportRow = {
   email: string;
   rfc: string;
   razon_social: string;
+  /** cliente principal cuando la fila viene como "PADRE : SUBCUENTA" */
+  parent_name?: string | null;
   address: string;
   codigo_postal: string;
   payment_method: string;
