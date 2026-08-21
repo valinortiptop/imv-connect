@@ -327,6 +327,11 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
       list = list.filter(i => i.laboratorio_id === labFilter);
     }
 
+    if (isRep && allowedLabIds && allowedLabIds.length > 0) {
+      const allowed = new Set(allowedLabIds);
+      list = list.filter(i => i.laboratorio_id && allowed.has(i.laboratorio_id));
+    }
+
     if (almacenFilter !== "all" && almacenProductIds) {
       list = list.filter(i => almacenProductIds.has(i.id));
     }
