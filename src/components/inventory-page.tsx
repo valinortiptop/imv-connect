@@ -134,6 +134,23 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
     staleTime: 300_000,
   });
 
+  // Líneas de laboratorio permitidas al representante (vacío = todas)
+  const { data: allowedLabIds } = useQuery({
+    queryKey: ["my-lab-access"],
+    enabled: isRep,
+    staleTime: 300_000,
+    queryFn: async () => {
+      const { data: repId } = await supabase.rpc("current_rep_id");
+      if (!repId) return [] as string[];
+      const { data, error } = await supabase
+        .from("rep_lab_access")
+        .select("laboratorio_id")
+        .eq("representante_id", repId as string);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.laboratorio_id as string);
+    },
+  });
+
   const { data: almacenes = [] } = useQuery({
     queryKey: ["almacenes-min"],
     queryFn: async () => {
