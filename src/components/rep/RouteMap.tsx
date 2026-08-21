@@ -131,13 +131,24 @@ function normalizeAddr(s: string) {
 function extractAlcaldia(direccion: string | null | undefined): string | null {
   if (!direccion) return null;
   const norm = normalizeAddr(direccion);
-  for (const a of CDMX_ALCALDIAS) {
-    if (norm.includes(normalizeAddr(a))) return a;
-  }
+  // Prefer the municipality/alcaldía token that sits right before the 5-digit CP
+  // (standard Mexican address format: ... , COLONIA, ALCALDIA CP, STATE).
   const m = norm.match(/,\s*([^,]+?)\s+\d{5}\b/);
   if (m) {
-    const raw = m[1].trim();
-    if (raw.length > 2 && raw.length < 60) return raw;
+    const raw = normalizeAddr(m[1]);
+    if (raw.length > 2 && raw.length < 60) {
+      // Normalize to a known CDMX alcaldía name when possible.
+      for (const a of CDMX_ALCALDIAS) {
+        const na = normalizeAddr(a);
+        if (raw === na || raw.includes(na)) return a;
+      }
+      // Otherwise return the raw municipality (for non-CDMX addresses).
+      return raw;
+    }
+  }
+  // Fallback: look for known alcaldía names anywhere in the address.
+  for (const a of CDMX_ALCALDIAS) {
+    if (norm.includes(normalizeAddr(a))) return a;
   }
   return null;
 }
