@@ -949,6 +949,60 @@ export const geocodeClientFn = createServerFn({ method: "POST" })
     return { lat: loc.lat, lng: loc.lng };
   });
 
+/* ─── 10b. geocodeClientsBulk — geolocaliza en lotes los clientes sin coords ─── */
+export const geocodeClientsBulkFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ limit: z.number().int().min(1).max(40).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const limit = data.limit ?? 20;
+
+    const { count: remainingBefore } = await context.supabase
+      .from("clientes")
+      .select("id", { count: "exact", head: true })
+      .is("lat", null);
+
+    const { data: pending } = await context.supabase
+      .from("clientes")
+      .select("id, direccion, codigo_postal, razon_social, nombre_comercial")
+      .is("lat", null)
+      .limit(limit);
+
+    let updated = 0;
+    let failed = 0;
+
+    for (const c of pending ?? []) {
+      const parts = [
+        c.direccion || c.razon_social || c.nombre_comercial,
+        c.codigo_potal ? undefined : undefined,
+      ].filter(Boolean);
+      const q = `${parts.join(", ")}${c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}, México`;
+      if (!parts.length) { failed++; continue; }
+      try {
+        const res = await googleGeocode({ address: q });
+        const loc = res.results?.[0]?.geometry?.location;
+        if (!loc) { failed++; continue; }
+        await context.supabase
+          .from("clientes")
+          .update({ lat: loc.lat, lng: loc.lng })
+          .eq("id", c.id);
+        updated++;
+      } catch {
+        failed++;
+      }
+    }
+
+    return {
+      processed: (pending ?? []).length,
+      updated,
+      failed,
+      remaining: Math.max(0, (remainingBefore ?? 0) - updated),
+    };
+  });
+
+
+
 /* ─── 11. quickInventoryLookup ─── */
 export const quickInventoryLookupFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
