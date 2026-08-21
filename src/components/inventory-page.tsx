@@ -361,7 +361,7 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
     });
 
     return list;
-  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir]);
+  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir, isRep, allowedLabIds]);
 
   // Stats — use projected items
   const stats = useMemo(() => {
