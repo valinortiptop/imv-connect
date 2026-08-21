@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 import { logoFullDark } from "@/assets/logos";
+import { fetchIsRepOnly } from "@/hooks/use-rep-only";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Iniciar sesión — IMV" }] }),
@@ -16,8 +17,9 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/admin" });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      navigate({ to: (await fetchIsRepOnly()) ? "/rep" : "/admin" });
     });
   }, [navigate]);
 
@@ -31,7 +33,7 @@ function LoginPage() {
       setError(error.message);
       return;
     }
-    navigate({ to: "/admin" });
+    navigate({ to: (await fetchIsRepOnly()) ? "/rep" : "/admin" });
   };
 
   return (
