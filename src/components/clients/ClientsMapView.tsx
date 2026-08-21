@@ -176,6 +176,19 @@ export function ClientsMapView({
             {missing} sin coordenadas
           </Badge>
         )}
+        {geoRunning ? (
+          <Badge variant="outline" className="gap-1 border-blue-500/40 text-blue-700 dark:text-blue-300">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Geolocalizando… {geoDone} listos
+            {geoRemaining != null ? ` · faltan ${geoRemaining}` : ""}
+          </Badge>
+        ) : (
+          missing > 0 && (
+            <Button size="sm" variant="outline" className="h-6 gap-1 px-2 text-xs" onClick={() => void runGeocoding()}>
+              <Locate className="h-3 w-3" /> Ubicar todos
+            </Button>
+          )
+        )}
         <span className="ml-auto">Click en un marcador para abrir la ficha 360</span>
       </div>
 
