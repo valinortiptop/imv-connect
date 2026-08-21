@@ -137,15 +137,18 @@ export default function NewRouteWizardDialog({
     initialFecha || new Date().toISOString().slice(0, 10),
   );
   const [query, setQuery] = useState("");
+  const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
       setFecha(initialFecha || new Date().toISOString().slice(0, 10));
       setQuery("");
+      setAlcaldiaFilter("all");
       setSel(new Set());
     }
   }, [open, initialFecha]);
+
 
   const dow = weekdayOf(fecha);
   const dowLabel = dow === null ? "" : WEEKDAYS[dow];
