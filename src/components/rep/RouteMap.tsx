@@ -642,6 +642,13 @@ export default function RouteMap() {
           </p>
         </div>
         <div className="flex w-full flex-wrap gap-2 md:w-auto">
+          <Button
+            size="sm"
+            onClick={() => setWizardOpen(true)}
+            className="flex-1 md:flex-none"
+          >
+            <Plus className="mr-1 h-4 w-4" /> Nueva ruta
+          </Button>
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <Button size="sm" variant="outline" className="flex-1 md:flex-none">
