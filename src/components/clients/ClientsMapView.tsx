@@ -1,9 +1,13 @@
 // @ts-nocheck
 // Multi-client map view — plots clients on Google Maps loaded via Valinor.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Loader2, Locate } from "lucide-react";
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
+import { geocodeClientsBulkFn } from "@/lib/rep.functions";
 
 type ClientPoint = {
   id: string;
@@ -34,6 +38,47 @@ export function ClientsMapView({
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  // ── Auto-geocoding of clients without coordinates ──────────────────
+  const bulkGeocode = useServerFn(geocodeClientsBulkFn);
+  const queryClient = useQueryClient();
+  const [geoRunning, setGeoRunning] = useState(false);
+  const [geoDone, setGeoDone] = useState(0);
+  const [geoRemaining, setGeoRemaining] = useState<number | null>(null);
+  const startedRef = useRef(false);
+
+  async function runGeocoding() {
+    if (geoRunning) return;
+    setGeoRunning(true);
+    setGeoDone(0);
+    try {
+      // Chained batches — stops when nothing is left or a batch fails to
+      // resolve any address (avoids looping forever on bad addresses).
+      for (let i = 0; i < 60; i++) {
+        const res: any = await bulkGeocode({ data: { limit: 20 } });
+        setGeoDone((d) => d + (res?.updated ?? 0));
+        setGeoRemaining(res?.remaining ?? 0);
+        if (!res?.processed || !res?.updated) break;
+        if ((res?.remaining ?? 0) <= 0) break;
+      }
+      await queryClient.invalidateQueries();
+    } finally {
+      setGeoRunning(false);
+    }
+  }
+
+  // Kick off automatically the first time the map renders with clients
+  // that have no coordinates.
+  useEffect(() => {
+    if (startedRef.current) return;
+    const pendientes = clients.filter(
+      (c) => typeof c.lat !== "number" || typeof c.lng !== "number",
+    ).length;
+    if (pendientes === 0) return;
+    startedRef.current = true;
+    void runGeocoding();
+  }, [clients]);
+
 
   const points = useMemo<ClientPoint[]>(
     () =>
@@ -130,6 +175,19 @@ export function ClientsMapView({
           <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
             {missing} sin coordenadas
           </Badge>
+        )}
+        {geoRunning ? (
+          <Badge variant="outline" className="gap-1 border-blue-500/40 text-blue-700 dark:text-blue-300">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Geolocalizando… {geoDone} listos
+            {geoRemaining != null ? ` · faltan ${geoRemaining}` : ""}
+          </Badge>
+        ) : (
+          missing > 0 && (
+            <Button size="sm" variant="outline" className="h-6 gap-1 px-2 text-xs" onClick={() => void runGeocoding()}>
+              <Locate className="h-3 w-3" /> Ubicar todos
+            </Button>
+          )
         )}
         <span className="ml-auto">Click en un marcador para abrir la ficha 360</span>
       </div>
