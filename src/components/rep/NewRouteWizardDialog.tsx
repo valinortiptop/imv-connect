@@ -361,6 +361,24 @@ export default function NewRouteWizardDialog({
                 className="h-10 pl-7 text-sm"
               />
             </div>
+            {alcaldias.length > 0 && (
+              <div className="mb-2">
+                <Select value={alcaldiaFilter} onValueChange={setAlcaldiaFilter}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Filtrar por alcaldía / municipio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las alcaldías</SelectItem>
+                    {alcaldias.map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
               <span>{filtered.length} resultados</span>
               <div className="flex gap-2">
