@@ -159,15 +159,17 @@ export default function NewRouteWizardDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Nueva ruta</DialogTitle>
-          <DialogDescription>
+      {/* Layout: encabezado fijo, cuerpo con scroll vertical y footer pegado.
+          `w-[calc(100vw-1.5rem)]` evita el desborde horizontal en móvil. */}
+      <DialogContent className="grid max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:w-full">
+        <DialogHeader className="border-b px-4 py-3 pr-12 text-left sm:px-6 sm:py-4">
+          <DialogTitle className="text-base sm:text-lg">Nueva ruta</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Elige la fecha, aprovecha las sugerencias y selecciona tus clientes.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-6">
           {/* Step 1 — date */}
           <section className="rounded-lg border p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -178,7 +180,7 @@ export default function NewRouteWizardDialog({
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="h-9 w-44"
+                className="h-10 w-full max-w-[11rem]"
               />
               {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
             </div>
@@ -207,7 +209,7 @@ export default function NewRouteWizardDialog({
                         <button
                           key={r.id}
                           onClick={() => applyRoute(r)}
-                          className="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-sm hover:bg-muted"
+                          className="flex w-full min-w-0 items-center gap-2 rounded-md border px-2.5 py-2 text-left text-sm hover:bg-muted active:bg-muted"
                         >
                           <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                           <span className="min-w-0 flex-1">
@@ -235,7 +237,7 @@ export default function NewRouteWizardDialog({
                         <button
                           key={c.id}
                           onClick={() => toggle(c.id)}
-                          className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                          className={`max-w-full truncate rounded-full border px-2.5 py-1.5 text-[11px] ${
                             sel.has(c.id)
                               ? "border-primary bg-primary/10 text-primary"
                               : "hover:bg-muted"
@@ -265,11 +267,14 @@ export default function NewRouteWizardDialog({
 
           {/* Step 3 — clients */}
           <section className="rounded-lg border p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <Users className="h-4 w-4 text-primary" /> 3. Clientes
+            <div className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                <Users className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate">3. Clientes</span>
               </div>
-              <Badge variant="outline">{sel.size} seleccionados</Badge>
+              <Badge variant="outline" className="shrink-0 whitespace-nowrap">
+                {sel.size} sel.
+              </Badge>
             </div>
             <div className="relative mb-2">
               <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -277,7 +282,7 @@ export default function NewRouteWizardDialog({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar por nombre o dirección…"
-                className="h-9 pl-7 text-sm"
+                className="h-10 pl-7 text-sm"
               />
             </div>
             <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
@@ -300,13 +305,13 @@ export default function NewRouteWizardDialog({
                 </button>
               </div>
             </div>
-            <ScrollArea className="h-64 rounded-md border">
+            <ScrollArea className="h-56 rounded-md border sm:h-64">
               {filtered.slice(0, 200).map((c: any) => {
                 const name = c.nombre_comercial ?? c.razon_social ?? "";
                 return (
                   <label
                     key={c.id}
-                    className="flex cursor-pointer items-start gap-2 px-3 py-2 text-sm hover:bg-muted"
+                    className="flex min-w-0 cursor-pointer items-start gap-2 px-3 py-2.5 text-sm hover:bg-muted active:bg-muted"
                   >
                     <Checkbox
                       checked={sel.has(c.id)}
@@ -314,11 +319,11 @@ export default function NewRouteWizardDialog({
                       className="mt-0.5"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">
+                      <span className="block break-words font-medium">
                         <Highlight text={name} query={query} />
                       </span>
                       {c.direccion && (
-                        <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                        <span className="mt-0.5 line-clamp-2 block break-words text-[11px] text-muted-foreground">
                           <Highlight text={c.direccion} query={query} />
                         </span>
                       )}
@@ -335,14 +340,14 @@ export default function NewRouteWizardDialog({
           </section>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2 border-t bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button variant="outline" onClick={() => confirm(false)}>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => confirm(false)}>
             Solo seleccionar
           </Button>
-          <Button onClick={() => confirm(true)}>
+          <Button className="w-full sm:w-auto" onClick={() => confirm(true)}>
             <Sparkles className="mr-1 h-4 w-4" /> Crear y optimizar
           </Button>
         </DialogFooter>
