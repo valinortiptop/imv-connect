@@ -92,6 +92,7 @@ type ClientForm = {
   lat: number | null;
   lng: number | null;
   google_place_id: string | null;
+  representante_id: string | null;
 };
 
 const emptyForm: ClientForm = {
@@ -115,6 +116,7 @@ const emptyForm: ClientForm = {
   lat: null,
   lng: null,
   google_place_id: null,
+  representante_id: null,
 };
 
 const mxnFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
@@ -752,6 +754,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       lat: c.lat ?? null,
       lng: c.lng ?? null,
       google_place_id: c.google_place_id ?? null,
+      representante_id: (c as any).representante_id ?? null,
     });
   };
 
@@ -837,6 +840,14 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       if (isNew) {
         const { data: newClient, error } = await supabase.from("clients").insert(payload as any).select("id").single();
         if (error) throw error;
+        // representante_id no es escribible en la vista `clients`: se guarda
+        // directamente en la tabla base.
+        if (newClient) {
+          await supabase
+            .from("clientes")
+            .update({ representante_id: form.representante_id })
+            .eq("id", newClient.id);
+        }
         // Upload pending CFDI if one was staged
         if (pendingCfdiFile && newClient) {
           await handleCfdiUpload(newClient.id, pendingCfdiFile);
@@ -849,6 +860,10 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           .update(payload as any)
           .eq("id", editClient!.id);
         if (error) throw error;
+        await supabase
+          .from("clientes")
+          .update({ representante_id: form.representante_id })
+          .eq("id", editClient!.id);
         toast({ title: t("updated"), description: t("clientUpdated") });
       }
 
@@ -1759,6 +1774,19 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               <div className="space-y-1">
                 <Label className="text-xs">{t("clientNombreCfdi")}</Label>
                 <Input value={form.nombre_cfdi} onChange={e => updateField("nombre_cfdi", e.target.value)} placeholder="Nombre para CFDI" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Representante de ventas</Label>
+                <select
+                  value={form.representante_id ?? ""}
+                  onChange={e => updateField("representante_id", e.target.value || null)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <option value="">Sin asignar</option>
+                  {(repOptions ?? []).map(r => (
+                    <option key={r.id} value={r.id}>{r.nombre}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Método de pago</Label>
