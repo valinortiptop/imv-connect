@@ -544,10 +544,49 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         dedupedInsert.push(r);
       }
 
+      // Subcuentas: asegurar que exista el cliente principal de cada fila
+      // "PADRE : SUBCUENTA" y quedarnos con su id para ligarlas.
+      const parentIdByKey = new Map<string, string>();
+      const parentNames = Array.from(
+        new Map(
+          [...toInsert, ...toUpdate]
+            .map((r) => r.parent_name)
+            .filter((n): n is string => !!n && clientNameKey(n) !== "")
+            .map((n) => [clientNameKey(n), n] as const),
+        ).values(),
+      );
+      if (parentNames.length > 0) {
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabase
+            .from("clientes")
+            .select("id, razon_social")
+            .range(from, from + 999);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          for (const c of data) {
+            const k = clientNameKey(c.razon_social);
+            if (k && !parentIdByKey.has(k)) parentIdByKey.set(k, c.id);
+          }
+          if (data.length < 1000) break;
+        }
+        const missingParents = parentNames.filter((n) => !parentIdByKey.has(clientNameKey(n)));
+        if (missingParents.length > 0) {
+          const { data: newParents, error: pErr } = await supabase
+            .from("clientes")
+            .insert(missingParents.map((razon_social) => ({ razon_social, active: true })) as any)
+            .select("id, razon_social");
+          if (pErr) throw pErr;
+          for (const p of newParents ?? []) parentIdByKey.set(clientNameKey(p.razon_social), p.id);
+        }
+      }
+      const parentIdFor = (r: ImportRow) =>
+        r.parent_name ? parentIdByKey.get(clientNameKey(r.parent_name)) ?? null : null;
+
       let inserted = 0;
       if (dedupedInsert.length > 0) {
         const payload = dedupedInsert.map((r) => ({
           razon_social: r.razon_social || r.name,
+          parent_cliente_id: parentIdFor(r),
           nombre_comercial: r.company || r.nickname || null,
           nickname: r.nickname || null,
           company: r.company || null,
