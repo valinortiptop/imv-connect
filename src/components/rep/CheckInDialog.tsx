@@ -183,9 +183,22 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{step === "start" ? "Iniciar visita" : "Visita en curso"}</DialogTitle>
-          <DialogDescription>{clienteNombre}</DialogDescription>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            {step === "start" ? "Iniciar visita" : "Visita en curso"}
+            {step === "in-visit" && checkInAt && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                <Clock className="h-3.5 w-3.5" /> {elapsedLabel}
+              </span>
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            {clienteNombre}
+            {step === "in-visit" && checkInAt
+              ? ` · check-in ${new Date(checkInAt).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}`
+              : ""}
+          </DialogDescription>
         </DialogHeader>
+
 
         {step === "start" && (
           <div className="space-y-3">
