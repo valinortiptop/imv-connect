@@ -134,6 +134,23 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
     staleTime: 300_000,
   });
 
+  // Líneas de laboratorio permitidas al representante (vacío = todas)
+  const { data: allowedLabIds } = useQuery({
+    queryKey: ["my-lab-access"],
+    enabled: isRep,
+    staleTime: 300_000,
+    queryFn: async () => {
+      const { data: repId } = await supabase.rpc("current_rep_id");
+      if (!repId) return [] as string[];
+      const { data, error } = await supabase
+        .from("rep_lab_access")
+        .select("laboratorio_id")
+        .eq("representante_id", repId as string);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.laboratorio_id as string);
+    },
+  });
+
   const { data: almacenes = [] } = useQuery({
     queryKey: ["almacenes-min"],
     queryFn: async () => {
@@ -310,6 +327,11 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
       list = list.filter(i => i.laboratorio_id === labFilter);
     }
 
+    if (isRep && allowedLabIds && allowedLabIds.length > 0) {
+      const allowed = new Set(allowedLabIds);
+      list = list.filter(i => i.laboratorio_id && allowed.has(i.laboratorio_id));
+    }
+
     if (almacenFilter !== "all" && almacenProductIds) {
       list = list.filter(i => almacenProductIds.has(i.id));
     }
@@ -339,7 +361,7 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
     });
 
     return list;
-  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir]);
+  }, [projectedItems, search, supplierFilter, claseFilter, labFilter, almacenFilter, almacenProductIds, stockFilter, sortKey, sortDir, isRep, allowedLabIds]);
 
   // Stats — use projected items
   const stats = useMemo(() => {
