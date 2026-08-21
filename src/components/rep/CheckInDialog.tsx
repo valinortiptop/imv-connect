@@ -164,7 +164,8 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
       }
     },
     onSuccess: () => {
-      toast.success("Visita finalizada");
+      const mins = Math.max(1, Math.round(elapsedMs / 60000));
+      toast.success(`Check-out registrado · duración ${mins} min`);
       qc.invalidateQueries({ queryKey: ["client-visits", clienteId] });
       qc.invalidateQueries({ queryKey: ["rep-visits"] });
       onOpenChange(false);
