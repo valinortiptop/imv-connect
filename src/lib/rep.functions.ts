@@ -973,12 +973,9 @@ export const geocodeClientsBulkFn = createServerFn({ method: "POST" })
     let failed = 0;
 
     for (const c of pending ?? []) {
-      const parts = [
-        c.direccion || c.razon_social || c.nombre_comercial,
-        c.codigo_potal ? undefined : undefined,
-      ].filter(Boolean);
-      const q = `${parts.join(", ")}${c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}, México`;
-      if (!parts.length) { failed++; continue; }
+      const base = c.direccion || c.razon_social || c.nombre_comercial;
+      if (!base) { failed++; continue; }
+      const q = `${base}${c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}, México`;
       try {
         const res = await googleGeocode({ address: q });
         const loc = res.results?.[0]?.geometry?.location;
