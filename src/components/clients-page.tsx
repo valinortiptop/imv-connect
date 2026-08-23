@@ -1660,12 +1660,24 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                     />
                   </TableHead>
                   <TableHead className="w-10" />
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientPhone")}</TableHead>
-                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">{t("clientRep")}</TableHead>
-                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">Método de pago</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">{t("thActive")}</TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap">
+                    <SortHeader label={t("clientName")} sortKey="name" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">
+                    <SortHeader label={t("clientCompany")} sortKey="company" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">
+                    <SortHeader label={t("clientPhone")} sortKey="phone" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">
+                    <SortHeader label={t("clientRep")} sortKey="representante" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">
+                    <SortHeader label="Método de pago" sortKey="payment_method" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">
+                    <SortHeader label={t("thActive")} sortKey="active" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} className="justify-center w-full" />
+                  </TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap w-20">{t("thActions")}</TableHead>
                 </TableRow>
               </TableHeader>
