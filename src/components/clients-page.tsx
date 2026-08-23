@@ -463,6 +463,44 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
 }
 
 /* ------------------------------------------------------------------ */
+/*  Sortable table header                                             */
+/* ------------------------------------------------------------------ */
+type SortableKey = "name" | "company" | "phone" | "representante" | "payment_method" | "active";
+
+function SortHeader({
+  label,
+  sortKey,
+  current,
+  dir,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortableKey;
+  current: SortableKey;
+  dir: "asc" | "desc";
+  onSort: (k: SortableKey) => void;
+  className?: string;
+}) {
+  const active = current === sortKey;
+  const Icon = active ? (dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      className={cn(
+        "flex items-center gap-1.5 text-left hover:text-primary transition-colors",
+        active && "text-primary",
+        className,
+      )}
+    >
+      {label}
+      <Icon className="h-3.5 w-3.5 opacity-60" />
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main Clients page                                                 */
 /* ------------------------------------------------------------------ */
 export default function Clients({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
@@ -695,35 +733,62 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         const b = (c as any).delivery_window_until;
         if (a && b) return false; // has complete window — exclude
       }
+      if (repFilter !== "__all__") {
+        if (repFilter === "__none__") {
+          if (c.representante_id) return false;
+        } else if (c.representante_id !== repFilter) {
+          return false;
+        }
+      }
       if (deferredSearch.trim()) {
         const q = deferredSearch.toLowerCase();
         if (
           !c.name?.toLowerCase().includes(q) &&
           !c.company?.toLowerCase().includes(q) &&
           !c.phone?.toLowerCase().includes(q) &&
-          !c.rfc?.toLowerCase().includes(q)
+          !c.rfc?.toLowerCase().includes(q) &&
+          !c.representante_nombre?.toLowerCase().includes(q)
         ) return false;
       }
       return true;
     });
-    // In Todos view, group mayoreo first then menudeo, alphabetical
-    // within each group. In single-type views the existing 'order by
-    // name' from the SQL fetch already gives us alphabetical.
-    if (typeFilter === "todos") {
+    // Sorting
+    out.sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      switch (sortKey) {
+        case "name":
+          return dir * (a.name ?? "").localeCompare(b.name ?? "", "es");
+        case "company":
+          return dir * ((a.company ?? "").localeCompare(b.company ?? "", "es"));
+        case "phone":
+          return dir * ((a.phone ?? "").localeCompare(b.phone ?? ""));
+        case "representante":
+          return dir * ((a.representante_nombre ?? "zzz").localeCompare(b.representante_nombre ?? "zzz", "es"));
+        case "payment_method":
+          return dir * ((a.payment_method ?? "").localeCompare(b.payment_method ?? "", "es"));
+        case "active":
+          return dir * (Number(b.active) - Number(a.active));
+        default:
+          return 0;
+      }
+    });
+    // In Todos view, when no explicit sort is chosen, group mayoreo first then menudeo, alphabetical
+    // within each group. In single-type views the existing 'order by name' from the SQL fetch already gives us alphabetical.
+    if (typeFilter === "todos" && sortKey === "name") {
       out.sort((a, b) => {
         if (a.client_type !== b.client_type) {
           return a.client_type === "mayoreo" ? -1 : 1;
         }
-        return (a.name ?? "").localeCompare(b.name ?? "", "es");
+        return 0;
       });
     }
     return out;
-  }, [clients, deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+  }, [clients, deferredSearch, activeFilter, typeFilter, sinHorarioOnly, repFilter, sortKey, sortDir]);
 
   useEffect(() => {
     setPage(1);
     setExpandedIds(new Set());
-  }, [deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+  }, [deferredSearch, activeFilter, typeFilter, sinHorarioOnly, repFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTS_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -740,6 +805,15 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
   const pageStart = filtered.length === 0 ? 0 : (currentPage - 1) * CLIENTS_PAGE_SIZE + 1;
   const pageEnd = Math.min(filtered.length, currentPage * CLIENTS_PAGE_SIZE);
+
+  const handleSort = (key: SortableKey) => {
+    if (sortKey === key) {
+      setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const updateField = (field: keyof ClientForm, value: string | boolean | null) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -1307,6 +1381,20 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             ))}
           </div>
 
+          {/* Representative filter */}
+          <Select value={repFilter} onValueChange={setRepFilter}>
+            <SelectTrigger className="h-9 w-[200px] text-sm" aria-label="Filtrar por representante">
+              <SelectValue placeholder="Representante…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos los representantes</SelectItem>
+              <SelectItem value="__none__">Sin representante</SelectItem>
+              {repOptions?.map((r) => (
+                <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* "Sin horario" filter chip — shows how many active clients
               still need their delivery window captured. Clicking it
               toggles the filter; the count itself is always visible so
@@ -1326,8 +1414,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             <span className="tabular-nums font-bold">{sinHorarioCount}</span>
           </Button>
 
-          {(search || activeFilter !== "all" || sinHorarioOnly) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setActiveFilter("all"); setSinHorarioOnly(false); }}>
+          {(search || activeFilter !== "all" || sinHorarioOnly || repFilter !== "__all__" || sortKey !== "name" || sortDir !== "asc") && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setActiveFilter("all"); setSinHorarioOnly(false); setRepFilter("__all__"); setSortKey("name"); setSortDir("asc"); }}>
               {t("clean")}
             </Button>
           )}
@@ -1504,10 +1592,16 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                         {c.payment_method ?? "Transferencia"}
                       </Badge>
                     </div>
-                    {c.representante_nombre && (
+                    {c.representante_nombre ? (
                       <div>
                         <span className="text-muted-foreground">Rep: </span>
                         <span className="text-foreground">{c.representante_nombre}</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                          Sin representante
+                        </Badge>
                       </div>
                     )}
                     {c.rfc && (
@@ -1581,12 +1675,24 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                     />
                   </TableHead>
                   <TableHead className="w-10" />
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap">{t("clientName")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientCompany")}</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">{t("clientPhone")}</TableHead>
-                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">{t("clientRep")}</TableHead>
-                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">Método de pago</TableHead>
-                  <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">{t("thActive")}</TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap">
+                    <SortHeader label={t("clientName")} sortKey="name" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">
+                    <SortHeader label={t("clientCompany")} sortKey="company" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap hidden md:table-cell">
+                    <SortHeader label={t("clientPhone")} sortKey="phone" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[10rem]">
+                    <SortHeader label={t("clientRep")} sortKey="representante" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold hidden lg:table-cell align-top leading-tight min-w-[8rem]">
+                    <SortHeader label="Método de pago" sortKey="payment_method" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} />
+                  </TableHead>
+                  <TableHead className="text-foreground font-semibold whitespace-nowrap text-center">
+                    <SortHeader label={t("thActive")} sortKey="active" current={sortKey} dir={sortDir} onSort={(k) => handleSort(k)} className="justify-center w-full" />
+                  </TableHead>
                   <TableHead className="text-foreground font-semibold whitespace-nowrap w-20">{t("thActions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1665,7 +1771,15 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">{c.representante_nombre ?? "---"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">
+                          {c.representante_nombre ? (
+                            <span className="text-foreground">{c.representante_nombre}</span>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                              Sin representante
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm hidden lg:table-cell">
                           <Badge className={cn("text-xs",
                             c.payment_method === "Efectivo" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
