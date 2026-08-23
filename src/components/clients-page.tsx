@@ -806,6 +806,15 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   const pageStart = filtered.length === 0 ? 0 : (currentPage - 1) * CLIENTS_PAGE_SIZE + 1;
   const pageEnd = Math.min(filtered.length, currentPage * CLIENTS_PAGE_SIZE);
 
+  const handleSort = (key: SortableKey) => {
+    if (sortKey === key) {
+      setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
   const updateField = (field: keyof ClientForm, value: string | boolean | null) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
