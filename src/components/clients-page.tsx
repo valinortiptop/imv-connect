@@ -695,35 +695,62 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         const b = (c as any).delivery_window_until;
         if (a && b) return false; // has complete window — exclude
       }
+      if (repFilter !== "__all__") {
+        if (repFilter === "__none__") {
+          if (c.representante_id) return false;
+        } else if (c.representante_id !== repFilter) {
+          return false;
+        }
+      }
       if (deferredSearch.trim()) {
         const q = deferredSearch.toLowerCase();
         if (
           !c.name?.toLowerCase().includes(q) &&
           !c.company?.toLowerCase().includes(q) &&
           !c.phone?.toLowerCase().includes(q) &&
-          !c.rfc?.toLowerCase().includes(q)
+          !c.rfc?.toLowerCase().includes(q) &&
+          !c.representante_nombre?.toLowerCase().includes(q)
         ) return false;
       }
       return true;
     });
-    // In Todos view, group mayoreo first then menudeo, alphabetical
-    // within each group. In single-type views the existing 'order by
-    // name' from the SQL fetch already gives us alphabetical.
-    if (typeFilter === "todos") {
+    // Sorting
+    out.sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      switch (sortKey) {
+        case "name":
+          return dir * (a.name ?? "").localeCompare(b.name ?? "", "es");
+        case "company":
+          return dir * ((a.company ?? "").localeCompare(b.company ?? "", "es"));
+        case "phone":
+          return dir * ((a.phone ?? "").localeCompare(b.phone ?? ""));
+        case "representante":
+          return dir * ((a.representante_nombre ?? "zzz").localeCompare(b.representante_nombre ?? "zzz", "es"));
+        case "payment_method":
+          return dir * ((a.payment_method ?? "").localeCompare(b.payment_method ?? "", "es"));
+        case "active":
+          return dir * (Number(b.active) - Number(a.active));
+        default:
+          return 0;
+      }
+    });
+    // In Todos view, when no explicit sort is chosen, group mayoreo first then menudeo, alphabetical
+    // within each group. In single-type views the existing 'order by name' from the SQL fetch already gives us alphabetical.
+    if (typeFilter === "todos" && sortKey === "name") {
       out.sort((a, b) => {
         if (a.client_type !== b.client_type) {
           return a.client_type === "mayoreo" ? -1 : 1;
         }
-        return (a.name ?? "").localeCompare(b.name ?? "", "es");
+        return 0;
       });
     }
     return out;
-  }, [clients, deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+  }, [clients, deferredSearch, activeFilter, typeFilter, sinHorarioOnly, repFilter, sortKey, sortDir]);
 
   useEffect(() => {
     setPage(1);
     setExpandedIds(new Set());
-  }, [deferredSearch, activeFilter, typeFilter, sinHorarioOnly]);
+  }, [deferredSearch, activeFilter, typeFilter, sinHorarioOnly, repFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTS_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
