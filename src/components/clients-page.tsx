@@ -1592,10 +1592,16 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                         {c.payment_method ?? "Transferencia"}
                       </Badge>
                     </div>
-                    {c.representante_nombre && (
+                    {c.representante_nombre ? (
                       <div>
                         <span className="text-muted-foreground">Rep: </span>
                         <span className="text-foreground">{c.representante_nombre}</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                          Sin representante
+                        </Badge>
                       </div>
                     )}
                     {c.rfc && (
