@@ -463,6 +463,44 @@ function ClientExpandedRow({ client, onViewOrder, onNavigateProduct }: { client:
 }
 
 /* ------------------------------------------------------------------ */
+/*  Sortable table header                                             */
+/* ------------------------------------------------------------------ */
+type SortableKey = "name" | "company" | "phone" | "representante" | "payment_method" | "active";
+
+function SortHeader({
+  label,
+  sortKey,
+  current,
+  dir,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortableKey;
+  current: SortableKey;
+  dir: "asc" | "desc";
+  onSort: (k: SortableKey) => void;
+  className?: string;
+}) {
+  const active = current === sortKey;
+  const Icon = active ? (dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(sortKey)}
+      className={cn(
+        "flex items-center gap-1.5 text-left hover:text-primary transition-colors",
+        active && "text-primary",
+        className,
+      )}
+    >
+      {label}
+      <Icon className="h-3.5 w-3.5 opacity-60" />
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main Clients page                                                 */
 /* ------------------------------------------------------------------ */
 export default function Clients({ restrictClientIds }: { restrictClientIds?: string[] | null } = {}) {
