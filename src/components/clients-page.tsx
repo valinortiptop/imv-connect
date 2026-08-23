@@ -1765,7 +1765,15 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
                         <TableCell className="text-muted-foreground text-sm hidden md:table-cell">{c.company ?? "---"}</TableCell>
                         <TableCell className="text-foreground text-sm hidden md:table-cell">{c.phone ?? "---"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">{c.representante_nombre ?? "---"}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm hidden lg:table-cell align-top whitespace-normal break-words">
+                          {c.representante_nombre ? (
+                            <span className="text-foreground">{c.representante_nombre}</span>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/30">
+                              Sin representante
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm hidden lg:table-cell">
                           <Badge className={cn("text-xs",
                             c.payment_method === "Efectivo" ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
