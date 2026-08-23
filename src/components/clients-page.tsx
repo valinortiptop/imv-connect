@@ -1334,6 +1334,20 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             ))}
           </div>
 
+          {/* Representative filter */}
+          <Select value={repFilter} onValueChange={setRepFilter}>
+            <SelectTrigger className="h-9 w-[200px] text-sm" aria-label="Filtrar por representante">
+              <SelectValue placeholder="Representante…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos los representantes</SelectItem>
+              <SelectItem value="__none__">Sin representante</SelectItem>
+              {repOptions?.map((r) => (
+                <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* "Sin horario" filter chip — shows how many active clients
               still need their delivery window captured. Clicking it
               toggles the filter; the count itself is always visible so
@@ -1353,8 +1367,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             <span className="tabular-nums font-bold">{sinHorarioCount}</span>
           </Button>
 
-          {(search || activeFilter !== "all" || sinHorarioOnly) && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setActiveFilter("all"); setSinHorarioOnly(false); }}>
+          {(search || activeFilter !== "all" || sinHorarioOnly || repFilter !== "__all__" || sortKey !== "name" || sortDir !== "asc") && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setActiveFilter("all"); setSinHorarioOnly(false); setRepFilter("__all__"); setSortKey("name"); setSortDir("asc"); }}>
               {t("clean")}
             </Button>
           )}
