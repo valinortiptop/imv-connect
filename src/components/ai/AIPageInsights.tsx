@@ -104,8 +104,14 @@ export function AIPageInsights({
 }) {
   const { enabled } = useAI();
   const ask = useServerFn(aiRepAskFn);
-  const [open, setOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(() => !isMobile);
   const [text, setText] = useState<string>("");
+
+  // keep default collapsed state aligned on mobile once known
+  useEffect(() => {
+    if (isMobile) setOpen(false);
+  }, [isMobile]);
 
   const m = useMutation({
     mutationFn: () =>
@@ -118,7 +124,7 @@ export function AIPageInsights({
       }),
     onSuccess: (res) => {
       setText(res.text);
-      setOpen(true);
+      if (!isMobile) setOpen(true);
     },
     onError: (e: Error) => {
       setText(`No se pudo generar el análisis: ${e.message}`);
