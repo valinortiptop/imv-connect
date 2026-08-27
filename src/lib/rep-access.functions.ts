@@ -13,7 +13,39 @@ export type RepAccessEvent = {
   accuracy: number | null;
   has_location: boolean;
   user_agent: string | null;
+  device_id: string | null;
+  device_label: string | null;
+  /** How many raw sign-in events (windows/tabs) were folded into this one. */
+  group_count: number;
+  last_seen_at: string;
 };
+
+function deviceLabel(platform: string | null, ua: string | null): string {
+  const u = ua ?? "";
+  const browser = /Edg\//.test(u)
+    ? "Edge"
+    : /OPR\//.test(u)
+      ? "Opera"
+      : /Chrome\//.test(u)
+        ? "Chrome"
+        : /Safari\//.test(u)
+          ? "Safari"
+          : /Firefox\//.test(u)
+            ? "Firefox"
+            : "Navegador";
+  const plat =
+    platform ??
+    (/iPhone|iPad|iPod/.test(u)
+      ? "iOS"
+      : /Android/.test(u)
+        ? "Android"
+        : /Windows/.test(u)
+          ? "Windows"
+          : /Mac OS X/.test(u)
+            ? "macOS"
+            : "Otro");
+  return `${plat} · ${browser}`;
+}
 
 export const listRepAccessEventsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -24,6 +56,8 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         to: z.string(),
         repIds: z.array(z.string()).optional(),
         onlyWithLocation: z.boolean().optional(),
+        /** Fold several windows/tabs of the same device into one pin (default true). */
+        groupByDevice: z.boolean().optional(),
       })
       .parse(i),
   )
@@ -39,7 +73,7 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
     let q = supabase
       .from("rep_access_events")
       .select(
-        "id, representante_id, user_id, signed_in_at, lat, lng, accuracy, has_location, user_agent",
+        "id, representante_id, user_id, signed_in_at, lat, lng, accuracy, has_location, user_agent, device_id, session_id, platform",
       )
       .gte("signed_in_at", data.from)
       .lte("signed_in_at", data.to)
@@ -121,6 +155,10 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         (r.user_id ? emailByUser.get(r.user_id) ?? null : null);
       return {
         id: r.id,
+        device_id: r.device_id ?? null,
+        device_label: deviceLabel(r.platform ?? null, r.user_agent ?? null),
+        group_count: 1,
+        last_seen_at: r.signed_in_at,
         representante_id: r.representante_id,
         representante_nombre: nombre ?? null,
         user_id: r.user_id,
@@ -133,5 +171,30 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
       };
     });
 
-    return { events };
+    if (data.groupByDevice === false) return { events };
+
+    // Group: same user + device (fallback user_agent) + same 30-min bucket +
+    // location rounded to ~11m. Keeps the most recent event of each group.
+    const groups = new Map<string, RepAccessEvent>();
+    for (const e of events) {
+      const bucket = Math.floor(new Date(e.signed_in_at).getTime() / (30 * 60_000));
+      const loc =
+        e.lat != null && e.lng != null
+          ? `${e.lat.toFixed(4)},${e.lng.toFixed(4)}`
+          : "noloc";
+      const key = `${e.user_id}|${e.device_id ?? e.user_agent ?? "?"}|${bucket}|${loc}`;
+      const prev = groups.get(key);
+      if (!prev) {
+        groups.set(key, { ...e });
+      } else {
+        prev.group_count += 1;
+        if (new Date(e.signed_in_at) > new Date(prev.last_seen_at)) prev.last_seen_at = e.signed_in_at;
+        if (new Date(e.signed_in_at) < new Date(prev.signed_in_at)) prev.signed_in_at = e.signed_in_at;
+      }
+    }
+    return {
+      events: [...groups.values()].sort(
+        (a, b) => new Date(b.signed_in_at).getTime() - new Date(a.signed_in_at).getTime(),
+      ),
+    };
   });

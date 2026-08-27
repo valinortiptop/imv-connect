@@ -1006,6 +1006,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
     };
     return {
       fecha,
+      isAdmin: !!isAdmin,
       totals: {
         ...totals,
         efficiency: totals.planned ? Math.round((totals.planned_done / totals.planned) * 100) : null,
@@ -2433,11 +2434,13 @@ export const deleteSavedRouteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("rep_rutas_guardadas")
-      .delete()
-      .eq("id", data.id)
-      .eq("user_id", context.userId);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    let q = context.supabase.from("rep_rutas_guardadas").delete().eq("id", data.id);
+    if (!isAdmin) q = q.eq("user_id", context.userId);
+    const { error } = await q;
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -2451,13 +2454,96 @@ export const renameSavedRouteFn = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    let q = context.supabase
       .from("rep_rutas_guardadas")
       .update({ nombre: data.nombre })
-      .eq("id", data.id)
-      .eq("user_id", context.userId);
+      .eq("id", data.id);
+    if (!isAdmin) q = q.eq("user_id", context.userId);
+    const { error } = await q;
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * Full detail of one saved route (map polyline + hydrated stops).
+ * Admins can open any rep's route; everyone else only their own / assigned.
+ */
+export const getSavedRouteDetailFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const { data: row, error } = await context.supabase
+      .from("rep_rutas_guardadas")
+      .select(
+        "id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, start_lat, start_lng, created_at, origen, representante_id, user_id",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Ruta no encontrada");
+
+    if (!isAdmin) {
+      const { data: myRep } = await context.supabase
+        .from("representantes")
+        .select("id")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      const mine =
+        (row as any).user_id === context.userId ||
+        (myRep?.id && (row as any).representante_id === myRep.id);
+      if (!mine) throw new Error("No tienes acceso a esta ruta");
+    }
+
+    const ids = [
+      ...new Set(
+        (((row as any).ordered_stops as any[]) ?? [])
+          .map((s: any) => s?.cliente_id && String(s.cliente_id))
+          .filter(Boolean),
+      ),
+    ] as string[];
+    const byId = new Map<string, any>();
+    if (ids.length) {
+      const { data: clis } = await context.supabase
+        .from("clientes")
+        .select("id, nombre_comercial, razon_social, nickname, direccion, telefono")
+        .in("id", ids);
+      for (const c of clis ?? []) byId.set(String(c.id), c);
+    }
+
+    let repNombre: string | null = null;
+    if ((row as any).representante_id) {
+      const { data: rp } = await context.supabase
+        .from("representantes")
+        .select("nombre")
+        .eq("id", (row as any).representante_id)
+        .maybeSingle();
+      repNombre = (rp as any)?.nombre ?? null;
+    }
+
+    return {
+      isAdmin: !!isAdmin,
+      route: {
+        ...(row as any),
+        representante_nombre: repNombre,
+        ordered_stops: (((row as any).ordered_stops as any[]) ?? []).map((s: any) => {
+          const c = byId.get(String(s.cliente_id));
+          return {
+            ...s,
+            nombre: s?.nombre || c?.nombre_comercial || c?.razon_social || c?.nickname || null,
+            direccion: s?.direccion || c?.direccion || null,
+            telefono: c?.telefono ?? null,
+          };
+        }),
+      },
+    };
   });
 
 export const duplicateSavedRouteFn = createServerFn({ method: "POST" })

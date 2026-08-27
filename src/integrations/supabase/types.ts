@@ -9391,11 +9391,14 @@ export type Database = {
         Row: {
           accuracy: number | null
           created_at: string
+          device_id: string | null
           has_location: boolean
           id: string
           lat: number | null
           lng: number | null
+          platform: string | null
           representante_id: string | null
+          session_id: string | null
           signed_in_at: string
           user_agent: string | null
           user_id: string
@@ -9403,11 +9406,14 @@ export type Database = {
         Insert: {
           accuracy?: number | null
           created_at?: string
+          device_id?: string | null
           has_location?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
+          platform?: string | null
           representante_id?: string | null
+          session_id?: string | null
           signed_in_at?: string
           user_agent?: string | null
           user_id: string
@@ -9415,11 +9421,14 @@ export type Database = {
         Update: {
           accuracy?: number | null
           created_at?: string
+          device_id?: string | null
           has_location?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
+          platform?: string | null
           representante_id?: string | null
+          session_id?: string | null
           signed_in_at?: string
           user_agent?: string | null
           user_id?: string
@@ -15193,6 +15202,7 @@ export type Database = {
         Returns: number
       }
       current_rep_id: { Args: never; Returns: string }
+      current_rep_ids: { Args: never; Returns: string[] }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]

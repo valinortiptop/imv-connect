@@ -45,6 +45,26 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const [needsOverride, setNeedsOverride] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState<number | null>(null);
   const [unplannedReason, setUnplannedReason] = useState("");
+  const [geoState, setGeoState] = useState<"idle" | "asking" | "ok" | "denied" | "error">("idle");
+
+  const requestGeo = () => {
+    if (!navigator.geolocation) {
+      setGeoState("error");
+      return;
+    }
+    setGeoState("asking");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoState("ok");
+      },
+      (err) => {
+        setGeo(null);
+        setGeoState(err?.code === err?.PERMISSION_DENIED ? "denied" : "error");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -58,13 +78,8 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     setNeedsOverride(false);
     setDistanceInfo(null);
     setUnplannedReason("");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setGeo(null),
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
-    }
+    setGeoState("idle");
+    requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
     getOpenVisit({ data: { clienteId } })
@@ -214,8 +229,25 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                 <MapPin className="h-4 w-4" />
                 {geo
                   ? `Ubicación: ${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)}`
-                  : "Sin acceso a ubicación (requerida para anti-fraude)"}
+                  : geoState === "asking"
+                    ? "Obteniendo ubicación…"
+                    : "Sin acceso a ubicación"}
               </div>
+              {!geo && geoState !== "asking" && (
+                <div className="mt-2 space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+                  <div className="text-[13px] text-amber-700 dark:text-amber-500">
+                    {geoState === "denied"
+                      ? "Bloqueaste la ubicación en este navegador. Ábrela desde el candado 🔒 junto a la dirección web → Permisos → Ubicación → Permitir, y vuelve a intentar."
+                      : "No pudimos obtener tu ubicación. Activa el GPS y permite la ubicación para registrar la visita con evidencia."}
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={requestGeo}>
+                    <MapPin className="mr-1.5 h-3.5 w-3.5" /> Activar ubicación
+                  </Button>
+                  <div className="text-[11px] text-muted-foreground">
+                    Puedes hacer check-in sin ubicación, pero quedará marcado como sin evidencia de GPS.
+                  </div>
+                </div>
+              )}
             </div>
 
             {unplanned && (
