@@ -1,9 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import SupervisorDashboard from "@/components/rep/SupervisorDashboard";
 import SupervisorReport from "@/components/rep/SupervisorReport";
+import DailyRoutesSummary from "@/components/rep/DailyRoutesSummary";
 import RepAccessMap from "@/components/rep/RepAccessMap";
 import RepLabAccessPanel from "@/components/rep/RepLabAccessPanel";
 import AIPageInsights from "@/components/ai/AIPageInsights";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/rep/supervisor")({
@@ -18,13 +20,39 @@ export const Route = createFileRoute("/rep/supervisor")({
     });
     if (!data) throw redirect({ to: "/rep" });
   },
-  component: () => (
+  component: SupervisorPage,
+});
+
+function SupervisorPage() {
+  return (
     <div className="space-y-4">
       <AIPageInsights module="rep-supervisor" />
-      <SupervisorDashboard />
-      <RepLabAccessPanel />
-      <RepAccessMap />
-      <SupervisorReport />
+
+      <Tabs defaultValue="rutas" className="space-y-4">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="rutas">Rutas del día</TabsTrigger>
+          <TabsTrigger value="rendimiento">Rendimiento</TabsTrigger>
+          <TabsTrigger value="actividad">Actividad y dispositivos</TabsTrigger>
+          <TabsTrigger value="reporte">Reporte</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="rutas" className="space-y-4">
+          <DailyRoutesSummary />
+        </TabsContent>
+
+        <TabsContent value="rendimiento" className="space-y-4">
+          <SupervisorDashboard />
+        </TabsContent>
+
+        <TabsContent value="actividad" className="space-y-4">
+          <RepAccessMap />
+          <RepLabAccessPanel />
+        </TabsContent>
+
+        <TabsContent value="reporte" className="space-y-4">
+          <SupervisorReport />
+        </TabsContent>
+      </Tabs>
     </div>
-  ),
-});
+  );
+}
