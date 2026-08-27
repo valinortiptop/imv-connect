@@ -244,7 +244,7 @@ export default function RouteMap() {
             streetViewControl: false,
             fullscreenControl: false,
             clickableIcons: false,
-            gestureHandling: "greedy",
+            gestureHandling: "cooperative",
           });
           mapRef.current.addListener("dragstart", () => { userInteractedRef.current = true; });
           mapRef.current.addListener("zoom_changed", () => {
