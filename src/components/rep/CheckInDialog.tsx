@@ -151,15 +151,20 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     },
     onError: (e: any) => {
       const msg = String(e?.message ?? e ?? "Error desconocido al registrar check-in");
-      if (msg.toLowerCase().includes("override")) {
+      const low = msg.toLowerCase();
+      if (low.includes("override")) {
         setNeedsOverride(true);
         const m = msg.match(/(\d+)m/);
         if (m) setDistanceInfo(parseInt(m[1]));
         toast.error(`Estás lejos del cliente. Ingresa un motivo para continuar.`);
+      } else if (low.includes("row-level security") || low.includes("ligada a una ficha")) {
+        setIdentityError(true);
+        toast.error("Tu cuenta no está ligada a tu ficha de vendedor.");
       } else {
         toast.error(msg);
       }
     },
+
   });
 
 
