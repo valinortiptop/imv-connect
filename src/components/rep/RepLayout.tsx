@@ -176,7 +176,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     .filter(Boolean)
     .filter((i) => !favs.includes((i as RepNavItem).key)) as RepNavItem[];
 
-  const Row = ({ item }: { item: RepNavItem }) => {
+  const Row = ({ item }: { item: Omit<RepNavItem, "group"> }) => {
     const active = isRepItemActive(pathname, item.to, item.exact);
     const isFav = favs.includes(item.key);
     return (
