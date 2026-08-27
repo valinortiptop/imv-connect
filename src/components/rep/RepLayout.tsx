@@ -1,6 +1,6 @@
 import { useEffect, useState, ReactNode, createContext, useContext } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag, Swords, MapPin } from "lucide-react";
+import { LayoutDashboard, Users, Map as MapIcon, ClipboardList, Boxes, LogOut, Sparkles, Trophy, CalendarDays, ArrowLeft, FileText, Banknote, RotateCcw, UserPlus, Target, CalendarCheck2, ShoppingBag, Swords, MapPin, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyRepFn } from "@/lib/rep.functions";
@@ -155,6 +155,11 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             <div className="px-2">
               <AIToggle compact />
             </div>
+            <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+              <Link to="/rep/cuenta">
+                <UserCog className="mr-2 h-4 w-4" /> Mi cuenta
+              </Link>
+            </Button>
             {isAdmin && (
               <Button asChild variant="outline" size="sm" className="w-full justify-start">
                 <Link to="/admin">
