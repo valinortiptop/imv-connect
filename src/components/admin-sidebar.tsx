@@ -207,7 +207,8 @@ const navGroups: NavGroup[] = [
     items: [
       { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: icEmpresas.url , adminOnly: true },
       { key: "navNotificaciones",     label: "Notificaciones",       url: "/admin/notificaciones",                 icon: icAlertas.url },
-      { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url , adminOnly: true },
+      { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url },
+      { key: "navMiCuenta",           label: "Mi cuenta",              url: "/admin/cuenta",                        icon: icAdmin.url },
       { key: "navPlantillas",         label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas",     icon: icDocumentos?.url ?? icAdmin.url , adminOnly: true },
       { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: icEstadoApis.url , adminOnly: true },
       { key: "navNetsuite",    label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url , adminOnly: true },
