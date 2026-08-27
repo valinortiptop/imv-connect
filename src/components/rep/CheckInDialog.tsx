@@ -46,6 +46,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
   const [distanceInfo, setDistanceInfo] = useState<number | null>(null);
   const [unplannedReason, setUnplannedReason] = useState("");
   const [geoState, setGeoState] = useState<"idle" | "asking" | "ok" | "denied" | "error">("idle");
+  const [identityError, setIdentityError] = useState(false);
 
   const requestGeo = () => {
     if (!navigator.geolocation) {
@@ -79,6 +80,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     setDistanceInfo(null);
     setUnplannedReason("");
     setGeoState("idle");
+    setIdentityError(false);
     requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
@@ -151,15 +153,20 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     },
     onError: (e: any) => {
       const msg = String(e?.message ?? e ?? "Error desconocido al registrar check-in");
-      if (msg.toLowerCase().includes("override")) {
+      const low = msg.toLowerCase();
+      if (low.includes("override")) {
         setNeedsOverride(true);
         const m = msg.match(/(\d+)m/);
         if (m) setDistanceInfo(parseInt(m[1]));
         toast.error(`Estás lejos del cliente. Ingresa un motivo para continuar.`);
+      } else if (low.includes("row-level security") || low.includes("ligada a una ficha")) {
+        setIdentityError(true);
+        toast.error("Tu cuenta no está ligada a tu ficha de vendedor.");
       } else {
         toast.error(msg);
       }
     },
+
   });
 
 
@@ -249,6 +256,19 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                 </div>
               )}
             </div>
+
+            {identityError && (
+              <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+                <div className="flex items-center gap-2 font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" /> Cuenta sin ficha de vendedor
+                </div>
+                <div className="text-[13px] text-muted-foreground">
+                  Tu usuario no está ligado a una ficha de representante, por eso el sistema no
+                  puede guardar la visita. Pide a sistemas que ligue tu correo en Administración →
+                  Representantes y vuelve a intentar.
+                </div>
+              </div>
+            )}
 
             {unplanned && (
               <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">

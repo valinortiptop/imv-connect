@@ -52,6 +52,7 @@ import {
   BookOpen, FileText, Link2, Settings, Eye, EyeOff, UserPlus, UserSquare2, Sparkles, Trophy,
 } from "lucide-react";
 import { createUserFn, updateUserFn } from "@/lib/admin-users.functions";
+import RepLinkReport from "@/components/admin/RepLinkReport";
 
 /* ─── types ─── */
 interface UserRow {
@@ -333,7 +334,15 @@ export default function Admin() {
             <Eye className="h-4 w-4" />
             {lang === "es" ? "Visibilidad de pestañas" : "Tab Visibility"}
           </TabsTrigger>
+          <TabsTrigger value="reps" className="gap-2">
+            <Users2 className="h-4 w-4" />
+            {lang === "es" ? "Vendedores" : "Reps"}
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="reps" className="space-y-4">
+          <RepLinkReport />
+        </TabsContent>
 
         {/* ─── Users tab ─── */}
         <TabsContent value="users" className="space-y-4">
