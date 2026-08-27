@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn, getOpenVisitFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
 import ShelfPhotoUploader from "./ShelfPhotoUploader";
@@ -22,13 +23,16 @@ import VisitFormFiller from "./VisitFormFiller";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  clienteId: string;
+  /** Cliente visitado (opcional si se visita un prospecto). */
+  clienteId?: string;
+  /** Prospecto visitado (opcional si se visita un cliente). */
+  prospectId?: string;
   clienteNombre: string;
   /** Visita improvisada: no estaba en la ruta planeada del día. */
   unplanned?: boolean;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNombre, unplanned }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -84,7 +88,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
-    getOpenVisit({ data: { clienteId } })
+    getOpenVisit({ data: { clienteId, prospectId } })
       .then((r: any) => {
         if (cancelled || !r?.visit) return;
         setVisitId(r.visit.id);
@@ -126,6 +130,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
         const r = await doCheckIn({
           data: {
             clienteId,
+            prospectId,
             lat: geo?.lat,
             lng: geo?.lng,
             overrideReason: overrideReason || undefined,
@@ -314,22 +319,25 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
 
         {step === "in-visit" && visitId && (
           <Tabs defaultValue="cierre" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className={cn("grid w-full", clienteId ? "grid-cols-5" : "grid-cols-3")}>
               <TabsTrigger value="cierre">Cierre</TabsTrigger>
-              <TabsTrigger value="pedido">Pedido</TabsTrigger>
-              <TabsTrigger value="anaquel">Anaquel</TabsTrigger>
+              {clienteId && <TabsTrigger value="pedido">Pedido</TabsTrigger>}
+              {clienteId && <TabsTrigger value="anaquel">Anaquel</TabsTrigger>}
               <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="evidencia">Evidencia</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="pedido" className="pt-2">
-              <OrderQuickCreate
-                clienteId={clienteId}
-                visitId={visitId}
-                onCreated={() => setOutcome("pedido")}
-              />
-            </TabsContent>
+            {clienteId && (
+              <TabsContent value="pedido" className="pt-2">
+                <OrderQuickCreate
+                  clienteId={clienteId}
+                  visitId={visitId}
+                  onCreated={() => setOutcome("pedido")}
+                />
+              </TabsContent>
+            )}
 
+            {clienteId && (
             <TabsContent value="anaquel" className="pt-2">
               {userId ? (
                 <ShelfPhotoUploader
@@ -341,6 +349,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
                 <p className="text-sm text-muted-foreground">Cargando sesión…</p>
               )}
             </TabsContent>
+            )}
 
             <TabsContent value="forms" className="pt-2">
               <VisitFormFiller visitId={visitId} />

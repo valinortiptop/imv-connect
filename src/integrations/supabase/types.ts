@@ -9921,7 +9921,7 @@ export type Database = {
           check_out_at: string | null
           check_out_lat: number | null
           check_out_lng: number | null
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
           distance_m: number | null
           id: string
@@ -9930,6 +9930,7 @@ export type Database = {
           override_reason: string | null
           pedido_id: string | null
           photo_paths: string[] | null
+          prospect_id: string | null
           representante_id: string
           signature_path: string | null
           signed_by_name: string | null
@@ -9943,7 +9944,7 @@ export type Database = {
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
           distance_m?: number | null
           id?: string
@@ -9952,6 +9953,7 @@ export type Database = {
           override_reason?: string | null
           pedido_id?: string | null
           photo_paths?: string[] | null
+          prospect_id?: string | null
           representante_id: string
           signature_path?: string | null
           signed_by_name?: string | null
@@ -9965,7 +9967,7 @@ export type Database = {
           check_out_at?: string | null
           check_out_lat?: number | null
           check_out_lng?: number | null
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
           distance_m?: number | null
           id?: string
@@ -9974,6 +9976,7 @@ export type Database = {
           override_reason?: string | null
           pedido_id?: string | null
           photo_paths?: string[] | null
+          prospect_id?: string | null
           representante_id?: string
           signature_path?: string | null
           signed_by_name?: string | null
@@ -10071,6 +10074,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_trazabilidad_venta"
             referencedColumns: ["pedido_id"]
+          },
+          {
+            foreignKeyName: "rep_visits_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "rep_visits_representante_id_fkey"

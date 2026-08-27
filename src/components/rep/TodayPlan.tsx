@@ -7,6 +7,7 @@ import {
   listMyVisitsFn,
   listSavedRoutesFn,
 } from "@/lib/rep.functions";
+import { listMyProspectsFn } from "@/lib/rep-prospects.functions";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import CheckInDialog from "./CheckInDialog";
+import QuickProspectDialog from "./QuickProspectDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const DAY_KEYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -120,15 +123,24 @@ export default function TodayPlan() {
   }, [visitsQ.data]);
 
 
-  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean } | null>(null);
+  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean } | null>(null);
 
-  /* ─── Visita fuera de ruta: cliente ajeno al plan del día ─── */
+  /* ─── Visita fuera de ruta: cliente o prospecto ajeno al plan del día ─── */
   const listClients = useServerFn(getMyClientsFn);
+  const listProspects = useServerFn(listMyProspectsFn);
   const [offRouteOpen, setOffRouteOpen] = useState(false);
   const [offQuery, setOffQuery] = useState("");
+  const [offTab, setOffTab] = useState<"clientes" | "prospectos">("clientes");
+  const [quickProspectOpen, setQuickProspectOpen] = useState(false);
   const clientsQ = useQuery({
     queryKey: ["rep-my-clients-offroute"],
     queryFn: () => listClients({ data: {} } as any),
+    enabled: offRouteOpen,
+    staleTime: 5 * 60_000,
+  });
+  const prospectsQ = useQuery({
+    queryKey: ["rep-my-prospects-offroute"],
+    queryFn: () => listProspects({ data: { limit: 200 } }),
     enabled: offRouteOpen,
     staleTime: 5 * 60_000,
   });
@@ -151,6 +163,21 @@ export default function TodayPlan() {
       )
       .slice(0, 60);
   }, [clientsQ.data, offQuery, plannedIds]);
+
+  const offRouteProspects = useMemo(() => {
+    const q = offQuery.trim().toLowerCase();
+    const all = (prospectsQ.data?.prospects ?? []) as any[];
+    if (!q) return all.slice(0, 60);
+    return all
+      .filter((p) =>
+        [p.name, p.contact_person, p.direccion, p.colonia, p.municipio, p.phone]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+      .slice(0, 60);
+  }, [prospectsQ.data, offQuery]);
 
   const todayLabel = new Date().toLocaleDateString("es-MX", {
     weekday: "long",
@@ -274,7 +301,8 @@ export default function TodayPlan() {
         <CheckInDialog
           open={!!target}
           onOpenChange={(v) => !v && setTarget(null)}
-          clienteId={target.id}
+          clienteId={target.isProspect ? undefined : target.id}
+          prospectId={target.isProspect ? target.id : undefined}
           clienteNombre={target.nombre}
           unplanned={target.unplanned}
         />
@@ -291,49 +319,114 @@ export default function TodayPlan() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 px-4 py-3 sm:px-6">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={offQuery}
-                onChange={(e) => setOffQuery(e.target.value)}
-                placeholder="Buscar cliente…"
-                className="h-10 pl-7"
-              />
-            </div>
-            <div className="max-h-[50dvh] overflow-y-auto overscroll-contain rounded-md border">
-              {clientsQ.isLoading && (
-                <p className="px-3 py-6 text-center text-xs text-muted-foreground">Cargando clientes…</p>
-              )}
-              {!clientsQ.isLoading && offRouteResults.length === 0 && (
-                <p className="px-3 py-6 text-center text-xs text-muted-foreground">Sin coincidencias.</p>
-              )}
-              {offRouteResults.map((c: any) => (
-                <button
-                  key={c.id}
-                  className="flex w-full min-w-0 flex-col items-start gap-0.5 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-muted active:bg-muted"
-                  onClick={() => {
-                    setOffRouteOpen(false);
-                    setTarget({
-                      id: c.id,
-                      nombre: c.nombre_comercial ?? c.razon_social ?? "Cliente",
-                      unplanned: true,
-                    });
-                  }}
-                >
-                  <span className="break-words text-sm font-medium">
-                    {c.nombre_comercial ?? c.razon_social ?? "Cliente"}
-                  </span>
-                  {c.direccion && (
-                    <span className="line-clamp-2 break-words text-[11px] text-muted-foreground">
-                      {c.direccion}
-                    </span>
+            <Tabs value={offTab} onValueChange={(v) => setOffTab(v as "clientes" | "prospectos")}>
+              <div className="flex items-center gap-2">
+                <TabsList className="grid h-9 flex-1 grid-cols-2">
+                  <TabsTrigger value="clientes">Clientes</TabsTrigger>
+                  <TabsTrigger value="prospectos">Prospectos</TabsTrigger>
+                </TabsList>
+                {offTab === "prospectos" && (
+                  <Button size="sm" variant="outline" onClick={() => setQuickProspectOpen(true)}>
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Nuevo
+                  </Button>
+                )}
+              </div>
+              <div className="relative mt-2">
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={offQuery}
+                  onChange={(e) => setOffQuery(e.target.value)}
+                  placeholder={offTab === "clientes" ? "Buscar cliente…" : "Buscar prospecto…"}
+                  className="h-10 pl-7"
+                />
+              </div>
+              <TabsContent value="clientes" className="mt-2">
+                <div className="max-h-[50dvh] overflow-y-auto overscroll-contain rounded-md border">
+                  {clientsQ.isLoading && (
+                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">Cargando clientes…</p>
                   )}
-                </button>
-              ))}
-            </div>
+                  {!clientsQ.isLoading && offRouteResults.length === 0 && (
+                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">Sin coincidencias.</p>
+                  )}
+                  {offRouteResults.map((c: any) => (
+                    <button
+                      key={c.id}
+                      className="flex w-full min-w-0 flex-col items-start gap-0.5 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-muted active:bg-muted"
+                      onClick={() => {
+                        setOffRouteOpen(false);
+                        setTarget({
+                          id: c.id,
+                          nombre: c.nombre_comercial ?? c.razon_social ?? "Cliente",
+                          unplanned: true,
+                        });
+                      }}
+                    >
+                      <span className="break-words text-sm font-medium">
+                        {c.nombre_comercial ?? c.razon_social ?? "Cliente"}
+                      </span>
+                      {c.direccion && (
+                        <span className="line-clamp-2 break-words text-[11px] text-muted-foreground">
+                          {c.direccion}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="prospectos" className="mt-2">
+                <div className="max-h-[50dvh] overflow-y-auto overscroll-contain rounded-md border">
+                  {prospectsQ.isLoading && (
+                    <p className="px-3 py-6 text-center text-xs text-muted-foreground">Cargando prospectos…</p>
+                  )}
+                  {!prospectsQ.isLoading && offRouteProspects.length === 0 && (
+                    <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                      Sin coincidencias.
+                      <div className="mt-2">
+                        <Button size="sm" variant="outline" onClick={() => setQuickProspectOpen(true)}>
+                          <Plus className="mr-1 h-3.5 w-3.5" /> Crear prospecto
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {offRouteProspects.map((p: any) => (
+                    <button
+                      key={p.id}
+                      className="flex w-full min-w-0 flex-col items-start gap-0.5 border-b px-3 py-2.5 text-left last:border-b-0 hover:bg-muted active:bg-muted"
+                      onClick={() => {
+                        setOffRouteOpen(false);
+                        setTarget({
+                          id: p.id,
+                          nombre: p.name ?? "Prospecto",
+                          unplanned: true,
+                          isProspect: true,
+                        });
+                      }}
+                    >
+                      <span className="break-words text-sm font-medium">{p.name ?? "Prospecto"}</span>
+                      {(p.direccion || p.colonia || p.municipio) && (
+                        <span className="line-clamp-2 break-words text-[11px] text-muted-foreground">
+                          {[p.direccion, p.colonia, p.municipio].filter(Boolean).join(", ")}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Alta rápida de prospecto: al guardar, abre el check-in de inmediato */}
+      <QuickProspectDialog
+        open={quickProspectOpen}
+        onOpenChange={setQuickProspectOpen}
+        onCreated={(p) => {
+          prospectsQ.refetch();
+          setOffRouteOpen(false);
+          setTarget({ id: p.id, nombre: p.name, unplanned: true, isProspect: true });
+        }}
+      />
     </>
   );
 }
