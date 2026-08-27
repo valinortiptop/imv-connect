@@ -15235,6 +15235,7 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_current_rep_link: { Args: never; Returns: string }
       facturar_pedido: {
         Args: { _dias_credito?: number; _pedido: string }
         Returns: Json
@@ -15519,6 +15520,18 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      rep_account_link_report: {
+        Args: never
+        Returns: {
+          activo: boolean
+          email: string
+          nombre: string
+          representante_id: string
+          tiene_cuenta: boolean
+          tiene_rol: boolean
+          user_id: string
+        }[]
       }
       resync_price_list: {
         Args: { p_list_id: string }
