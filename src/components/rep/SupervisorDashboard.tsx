@@ -32,9 +32,6 @@ export default function SupervisorDashboard() {
         </div>
       </div>
 
-      {/* Resumen diario de rutas y eficiencia */}
-      <DailyRoutesSummary />
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>
       ) : (
