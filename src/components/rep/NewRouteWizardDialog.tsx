@@ -280,6 +280,33 @@ export default function NewRouteWizardDialog({
             </div>
           </section>
 
+          {/* Admin only — assign the route to a representative */}
+          {isAdmin && (
+            <section className="rounded-lg border p-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                <Users className="h-4 w-4 text-primary" /> Asignar a representante
+              </div>
+              <Select value={assignedRepId} onValueChange={setAssignedRepId}>
+                <SelectTrigger className="h-10 text-sm">
+                  <SelectValue placeholder="Selecciona representante" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__self__">Para mí (sin asignar)</SelectItem>
+                  {reps.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.nombre}
+                      {r.activo === false ? " (inactivo)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                La ruta aparecerá en el panel del representante seleccionado.
+              </p>
+            </section>
+          )}
+
+
           {/* Step 2 — smart suggestions */}
           <section className="rounded-lg border p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
