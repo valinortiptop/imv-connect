@@ -7,6 +7,7 @@ import {
   listMyVisitsFn,
   listSavedRoutesFn,
 } from "@/lib/rep.functions";
+import { listMyProspectsFn } from "@/lib/rep-prospects.functions";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import CheckInDialog from "./CheckInDialog";
+import QuickProspectDialog from "./QuickProspectDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const DAY_KEYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -120,15 +123,24 @@ export default function TodayPlan() {
   }, [visitsQ.data]);
 
 
-  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean } | null>(null);
+  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean } | null>(null);
 
-  /* ─── Visita fuera de ruta: cliente ajeno al plan del día ─── */
+  /* ─── Visita fuera de ruta: cliente o prospecto ajeno al plan del día ─── */
   const listClients = useServerFn(getMyClientsFn);
+  const listProspects = useServerFn(listMyProspectsFn);
   const [offRouteOpen, setOffRouteOpen] = useState(false);
   const [offQuery, setOffQuery] = useState("");
+  const [offTab, setOffTab] = useState<"clientes" | "prospectos">("clientes");
+  const [quickProspectOpen, setQuickProspectOpen] = useState(false);
   const clientsQ = useQuery({
     queryKey: ["rep-my-clients-offroute"],
     queryFn: () => listClients({ data: {} } as any),
+    enabled: offRouteOpen,
+    staleTime: 5 * 60_000,
+  });
+  const prospectsQ = useQuery({
+    queryKey: ["rep-my-prospects-offroute"],
+    queryFn: () => listProspects({ data: { limit: 200 } }),
     enabled: offRouteOpen,
     staleTime: 5 * 60_000,
   });
