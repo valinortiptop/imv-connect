@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getSupervisorDashboardFn } from "@/lib/rep-analytics.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import DailyRoutesSummary from "./DailyRoutesSummary";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const money = (n: number) => "$" + Math.round(n).toLocaleString("es-MX");
