@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Route, Clock, MapPin, Zap } from "lucide-react";
+import { Route, Clock, MapPin, Zap, ChevronRight } from "lucide-react";
+import RouteDetailsDialog from "./RouteDetailsDialog";
 
 function todayISO() {
   const d = new Date();
@@ -26,6 +27,7 @@ function effColor(e: number | null) {
 
 export default function DailyRoutesSummary() {
   const [fecha, setFecha] = useState(todayISO());
+  const [openRouteId, setOpenRouteId] = useState<string | null>(null);
   const fetchSummary = useServerFn(getDailyRoutesSummaryFn);
   const { data, isLoading, error } = useQuery({
     queryKey: ["daily-routes-summary", fecha],
@@ -81,10 +83,29 @@ export default function DailyRoutesSummary() {
 
             <div className="space-y-3">
               {(data?.reps ?? []).map((r: any) => (
-                <div key={r.representante_id} className="rounded-lg border p-3">
+                <div
+                  key={r.representante_id}
+                  role={r.routes.length ? "button" : undefined}
+                  tabIndex={r.routes.length ? 0 : undefined}
+                  onClick={() => r.routes[0] && setOpenRouteId(r.routes[0].id)}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && r.routes[0]) {
+                      e.preventDefault();
+                      setOpenRouteId(r.routes[0].id);
+                    }
+                  }}
+                  className={`rounded-lg border p-3 ${
+                    r.routes.length ? "cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/40" : ""
+                  }`}
+                >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{r.nombre}</p>
+                      <p className="flex items-center gap-1 truncate font-medium">
+                        {r.nombre}
+                        {r.routes.length > 0 && (
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                      </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {r.planned_done}/{r.planned} paradas · {r.visits} visitas · {r.unplanned} fuera de ruta
                         {r.avg_min != null ? ` · ${r.avg_min} min prom.` : ""}
@@ -104,11 +125,25 @@ export default function DailyRoutesSummary() {
                   {r.routes.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {r.routes.map((rt: any) => (
-                        <Badge key={rt.id} variant="secondary" className="max-w-full truncate font-normal">
-                          <MapPin className="mr-1 h-3 w-3" />
-                          {rt.nombre ?? "Ruta"} · {rt.stops} paradas
-                          {rt.total_km ? ` · ${rt.total_km} km` : ""}
-                        </Badge>
+                        <button
+                          key={rt.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenRouteId(rt.id);
+                          }}
+                          className="max-w-full"
+                          title="Ver ruta planeada"
+                        >
+                          <Badge
+                            variant="secondary"
+                            className="max-w-full truncate font-normal hover:bg-primary hover:text-primary-foreground"
+                          >
+                            <MapPin className="mr-1 h-3 w-3" />
+                            {rt.nombre ?? "Ruta"} · {rt.stops} paradas
+                            {rt.total_km ? ` · ${rt.total_km} km` : ""}
+                          </Badge>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -142,6 +177,11 @@ export default function DailyRoutesSummary() {
           </>
         )}
       </CardContent>
+      <RouteDetailsDialog
+        routeId={openRouteId}
+        open={!!openRouteId}
+        onOpenChange={(v) => !v && setOpenRouteId(null)}
+      />
     </Card>
   );
 }
