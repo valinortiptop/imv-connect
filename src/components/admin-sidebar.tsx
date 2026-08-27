@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, UserCog } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useRoles } from "@/lib/use-roles";
 import { logoFullWhite } from "@/assets/logos";
 import {
   Sidebar,
@@ -83,7 +84,7 @@ import icEstadoApis from "@/assets/flow-icons/estado-apis.png.asset.json";
 import icUsoApis from "@/assets/flow-icons/uso-apis.png.asset.json";
 import icAdmin from "@/assets/flow-icons/admin.png.asset.json";
 
-type NavItem = { key: string; label: string; url: string; icon: string; exact?: boolean };
+type NavItem = { key: string; label: string; url: string; icon: string; exact?: boolean; adminOnly?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
 
 const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
@@ -204,15 +205,15 @@ const navGroups: NavGroup[] = [
   {
     label: "Configuración",
     items: [
-      { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: icEmpresas.url },
+      { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: icEmpresas.url , adminOnly: true },
       { key: "navNotificaciones",     label: "Notificaciones",       url: "/admin/notificaciones",                 icon: icAlertas.url },
-      { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url },
-      { key: "navPlantillas",         label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas",     icon: icDocumentos?.url ?? icAdmin.url },
-      { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: icEstadoApis.url },
-      { key: "navNetsuite",    label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url },
+      { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url , adminOnly: true },
+      { key: "navPlantillas",         label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas",     icon: icDocumentos?.url ?? icAdmin.url , adminOnly: true },
+      { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: icEstadoApis.url , adminOnly: true },
+      { key: "navNetsuite",    label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url , adminOnly: true },
 
-      { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: icUsoApis.url },
-      { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: icAdmin.url },
+      { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: icUsoApis.url , adminOnly: true },
+      { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: icAdmin.url , adminOnly: true },
     ],
   },
 ];
@@ -226,6 +227,7 @@ export function AdminSidebar({
 }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { canAccessKey, loading } = usePermissions();
+  const { isAdmin, isLoading: rolesLoading } = useRoles();
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Close the mobile drawer whenever the route changes.
@@ -246,11 +248,14 @@ export function AdminSidebar({
   const toggle = (key: string) =>
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const visibleGroups = loading
+  const visibleGroups = (loading || rolesLoading
     ? navGroups
-    : navGroups
-        .map((g) => ({ ...g, items: g.items.filter((i) => canAccessKey(i.key)) }))
-        .filter((g) => g.items.length > 0);
+    : navGroups.map((g) => ({
+        ...g,
+        items: g.items.filter((i) => canAccessKey(i.key)),
+      })))
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdmin) }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -331,9 +336,13 @@ export function AdminSidebar({
 
       <SidebarFooter>
         <div className="border-t p-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-            <span className="truncate">{email ?? "Cuenta"}</span>
-          </div>
+          <Link
+            to="/admin/cuenta"
+            className="flex items-center gap-2 rounded-md px-1 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <UserCog className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{email ?? "Mi cuenta"}</span>
+          </Link>
           <div className="text-[10px] text-muted-foreground/70" title="Marca visible para confirmar que el navegador cargó la última publicación">
             {ADMIN_BUILD_MARKER}
           </div>
