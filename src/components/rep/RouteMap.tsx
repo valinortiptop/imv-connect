@@ -219,8 +219,10 @@ export default function RouteMap() {
     ? [geo.lat, geo.lng]
     : allPoints[0] ?? [19.4326, -99.1332];
 
-  const toggleSel = (id: string) =>
+  const toggleSel = (id: string) => {
+    setAssignedRepId(null);
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
 
   const togglePickerSel = (id: string) =>
     setPickerSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -273,6 +275,7 @@ export default function RouteMap() {
         return;
       }
       const path = r.polyline ? decodePolyline(r.polyline) : [];
+      setAssignedRepId(null);
       setSelected(new Set(stops.map((s: any) => s.cliente_id)));
       setRouteInfo({
         km: Number(r.total_km ?? 0),
@@ -861,6 +864,7 @@ export default function RouteMap() {
                 <Button
                   size="sm"
                   onClick={() => {
+                    setAssignedRepId(null);
                     setSelected(new Set(pickerSelected));
                     setPickerOpen(false);
                   }}
@@ -902,7 +906,7 @@ export default function RouteMap() {
               <span>Alta oportunidad</span>
             </div>
           )}
-          <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0} className="hidden sm:inline-flex">
+          <Button size="sm" variant="outline" onClick={() => { setAssignedRepId(null); setSelected(new Set()); }} disabled={selected.size === 0} className="hidden sm:inline-flex">
             Limpiar ({selected.size})
           </Button>
           <div className="flex items-center gap-1.5">

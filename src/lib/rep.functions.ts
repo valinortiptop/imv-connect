@@ -2377,10 +2377,6 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
     z.object({ limit: z.number().optional() }).default({}).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
     const { data: myRep } = await context.supabase
       .from("representantes")
       .select("id")
@@ -2390,11 +2386,12 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
     let q = context.supabase
       .from("rep_rutas_guardadas")
       .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, start_lat, start_lng, created_at, origen, representante_id");
-    if (!isAdmin) {
-      q = myRep?.id
-        ? q.or(`user_id.eq.${context.userId},representante_id.eq.${myRep.id}`)
-        : q.eq("user_id", context.userId);
-    }
+    // Always scoped to the current user (own routes + routes assigned to their
+    // rep record). Admins do NOT see other reps' routes here, otherwise their
+    // own "Ruta de hoy" gets polluted with every rep's stops.
+    q = myRep?.id
+      ? q.or(`user_id.eq.${context.userId},representante_id.eq.${myRep.id}`)
+      : q.eq("user_id", context.userId);
     const { data: rows, error } = await q
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false })
