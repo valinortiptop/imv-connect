@@ -164,6 +164,21 @@ export default function TodayPlan() {
       .slice(0, 60);
   }, [clientsQ.data, offQuery, plannedIds]);
 
+  const offRouteProspects = useMemo(() => {
+    const q = offQuery.trim().toLowerCase();
+    const all = (prospectsQ.data?.prospects ?? []) as any[];
+    if (!q) return all.slice(0, 60);
+    return all
+      .filter((p) =>
+        [p.name, p.contact_person, p.direccion, p.colonia, p.municipio, p.phone]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+      .slice(0, 60);
+  }, [prospectsQ.data, offQuery]);
+
   const todayLabel = new Date().toLocaleDateString("es-MX", {
     weekday: "long",
     day: "numeric",
