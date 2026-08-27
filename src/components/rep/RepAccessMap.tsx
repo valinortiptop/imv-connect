@@ -48,6 +48,7 @@ export default function RepAccessMap() {
   const [range, setRange] = useState<RangeKey>("7d");
   const [selectedRepIds, setSelectedRepIds] = useState<string[]>([]);
   const [onlyWithLocation, setOnlyWithLocation] = useState(false);
+  const [groupByDevice, setGroupByDevice] = useState(true);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
   const mapElRef = useRef<HTMLDivElement | null>(null);
@@ -63,7 +64,7 @@ export default function RepAccessMap() {
   });
 
   const eventsQuery = useQuery({
-    queryKey: ["rep-access-events", from, to, selectedRepIds.join(","), onlyWithLocation],
+    queryKey: ["rep-access-events", from, to, selectedRepIds.join(","), onlyWithLocation, groupByDevice],
     queryFn: () =>
       fetchEvents({
         data: {
@@ -71,6 +72,7 @@ export default function RepAccessMap() {
           to,
           repIds: selectedRepIds.length ? selectedRepIds : undefined,
           onlyWithLocation,
+          groupByDevice,
         },
       }),
   });
@@ -193,6 +195,10 @@ export default function RepAccessMap() {
             <Switch checked={onlyWithLocation} onCheckedChange={setOnlyWithLocation} />
             Solo con ubicación
           </label>
+          <label className="flex items-center gap-2 text-xs">
+            <Switch checked={groupByDevice} onCheckedChange={setGroupByDevice} />
+            Agrupar por dispositivo
+          </label>
           <div className="ml-auto text-xs text-muted-foreground">
             {events.length} acceso{events.length === 1 ? "" : "s"} · {withLoc.length} con ubicación
           </div>
@@ -267,7 +273,17 @@ export default function RepAccessMap() {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-muted-foreground mt-0.5">{fmtDT(e.signed_in_at)}</div>
+                    <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span>{fmtDT(e.signed_in_at)}</span>
+                      {e.device_label && (
+                        <span className="rounded bg-muted px-1 py-0.5 text-[10px]">{e.device_label}</span>
+                      )}
+                      {e.group_count > 1 && (
+                        <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">
+                          {e.group_count} ventanas
+                        </span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
