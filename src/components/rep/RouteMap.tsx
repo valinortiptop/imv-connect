@@ -219,8 +219,10 @@ export default function RouteMap() {
     ? [geo.lat, geo.lng]
     : allPoints[0] ?? [19.4326, -99.1332];
 
-  const toggleSel = (id: string) =>
+  const toggleSel = (id: string) => {
+    setAssignedRepId(null);
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
 
   const togglePickerSel = (id: string) =>
     setPickerSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
