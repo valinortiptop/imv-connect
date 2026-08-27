@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, UserCog } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, LogOut, Search, Star, UserCog, Clock } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -11,213 +11,43 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-// Icon asset imports (3D clay style, hosted on CDN)
-import icClientes from "@/assets/flow-icons/clientes.png.asset.json";
-import icAlmacenes from "@/assets/flow-icons/almacenes.png.asset.json";
-import icDashboard from "@/assets/flow-icons/dashboard.png.asset.json";
-import icGandalf from "@/assets/flow-icons/gandalf.png.asset.json";
-import icTareas from "@/assets/flow-icons/tareas.png.asset.json";
-import icCalculadora from "@/assets/flow-icons/calculadora.png.asset.json";
-import icOnboarding from "@/assets/flow-icons/onboarding.png.asset.json";
-import icProspectos from "@/assets/flow-icons/prospectos.png.asset.json";
-import icPedidos from "@/assets/flow-icons/pedidos.png.asset.json";
-import icPortalClientes from "@/assets/flow-icons/portal-clientes.png.asset.json";
-import icVendedores from "@/assets/flow-icons/vendedores.png.asset.json";
-import icFacturas from "@/assets/flow-icons/facturas.png.asset.json";
-import icPromociones from "@/assets/flow-icons/promociones.png.asset.json";
-import icPartners from "@/assets/flow-icons/partners.png.asset.json";
-import icListasPrecios from "@/assets/flow-icons/listas-precios.png.asset.json";
-import icSales from "@/assets/flow-icons/sales.png.asset.json";
-import icPnl from "@/assets/flow-icons/pnl.png.asset.json";
-import icVentas from "@/assets/flow-icons/ventas.png.asset.json";
-import icPanelRep from "@/assets/flow-icons/panel-rep.png.asset.json";
-import icCoachIA from "@/assets/flow-icons/coach-ia.png.asset.json";
-import icSupervisor from "@/assets/flow-icons/supervisor.png.asset.json";
-import icProductos from "@/assets/flow-icons/productos.png.asset.json";
-import icConsultaInv from "@/assets/flow-icons/consulta-inventario.png.asset.json";
-import icKardex from "@/assets/flow-icons/kardex.png.asset.json";
-import icEntradas from "@/assets/flow-icons/entradas.png.asset.json";
-import icCompras from "@/assets/flow-icons/compras.png.asset.json";
-import icPlaneacion from "@/assets/flow-icons/planeacion.png.asset.json";
-import icOrdenesCompra from "@/assets/flow-icons/ordenes-compra.png.asset.json";
-import icProveedores from "@/assets/flow-icons/proveedores.png.asset.json";
-import icCaducidades from "@/assets/flow-icons/caducidades.png.asset.json";
-import icIntegracionCostos from "@/assets/flow-icons/integracion-costos.png.asset.json";
-import icRotacion from "@/assets/flow-icons/rotacion.png.asset.json";
-import icFaltantes from "@/assets/flow-icons/faltantes.png.asset.json";
-import icAlertas from "@/assets/flow-icons/alertas.png.asset.json";
-import icPresupuesto from "@/assets/flow-icons/presupuesto.png.asset.json";
-import icDevoluciones from "@/assets/flow-icons/devoluciones.png.asset.json";
-import icDanados from "@/assets/flow-icons/danados.png.asset.json";
-import icMapasEntrega from "@/assets/flow-icons/mapas-entrega.png.asset.json";
-import icManiobra from "@/assets/flow-icons/maniobra.png.asset.json";
-import icCatalogo from "@/assets/flow-icons/catalogo.png.asset.json";
-import icDocumentos from "@/assets/flow-icons/documentos.png.asset.json";
-import icSeguimientoCxc from "@/assets/flow-icons/seguimiento-cxc.png.asset.json";
-import icGestiones from "@/assets/flow-icons/gestiones.png.asset.json";
-import icPromesasPago from "@/assets/flow-icons/promesas-pago.png.asset.json";
-import icAutorizaciones from "@/assets/flow-icons/autorizaciones.png.asset.json";
-import icDashboardFiscal from "@/assets/flow-icons/dashboard-fiscal.png.asset.json";
-import icCatalogoCuentas from "@/assets/flow-icons/catalogo-cuentas.png.asset.json";
-import icAgrupadores from "@/assets/flow-icons/agrupadores.png.asset.json";
-import icContaElectronica from "@/assets/flow-icons/contabilidad-electronica.png.asset.json";
-import icPolizas from "@/assets/flow-icons/polizas.png.asset.json";
-import icLibroDiario from "@/assets/flow-icons/libro-diario.png.asset.json";
-import icLibroMayor from "@/assets/flow-icons/libro-mayor.png.asset.json";
-import icBalanza from "@/assets/flow-icons/balanza.png.asset.json";
-import icEstadosFinancieros from "@/assets/flow-icons/estados-financieros.png.asset.json";
-import icImpuestos from "@/assets/flow-icons/impuestos.png.asset.json";
-import icSAT from "@/assets/flow-icons/sat.png.asset.json";
-import icBancos from "@/assets/flow-icons/bancos.png.asset.json";
-import icEstadosBancarios from "@/assets/flow-icons/estados-bancarios.png.asset.json";
-import icMovBancarios from "@/assets/flow-icons/mov-bancarios.png.asset.json";
-import icTraspasos from "@/assets/flow-icons/traspasos.png.asset.json";
-import icNomina from "@/assets/flow-icons/nomina.png.asset.json";
-import icEmpresas from "@/assets/flow-icons/empresas.png.asset.json";
-import icEstadoApis from "@/assets/flow-icons/estado-apis.png.asset.json";
-import icUsoApis from "@/assets/flow-icons/uso-apis.png.asset.json";
-import icAdmin from "@/assets/flow-icons/admin.png.asset.json";
-
-type NavItem = { key: string; label: string; url: string; icon: string; exact?: boolean; adminOnly?: boolean };
-type NavGroup = { label: string; items: NavItem[] };
+import { Input } from "@/components/ui/input";
+import {
+  navGroups,
+  ALWAYS_VISIBLE_KEYS,
+  flattenNav,
+  isItemActive,
+  norm,
+  type NavGroup,
+  type NavItem,
+} from "@/components/nav-items";
+import { AdminNavSearch, Highlight, useNavSearchShortcut } from "@/components/admin-nav-search";
 
 const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
 
-const navGroups: NavGroup[] = [
-  {
-    label: "General",
-    items: [
-      { key: "navClientesDashboard", label: "Clientes Dashboard",  url: "/admin/clientes-dashboard", icon: icClientes.url },
-      { key: "navAlmacenDashboard",  label: "Almacén Dashboard",   url: "/admin/almacen-dashboard",  icon: icAlmacenes.url },
-      { key: "navDashboard",    label: "Dashboard",            url: "/admin",                icon: icDashboard.url, exact: true },
-      { key: "navAIChat",       label: "Gandalf",              url: "/admin/gandalf",        icon: icGandalf.url },
-      { key: "navTareas",       label: "Tareas",               url: "/admin/tareas",         icon: icTareas.url },
-      { key: "navCalculator",   label: "Calculadora",          url: "/admin/calculadora",    icon: icCalculadora.url },
-      { key: "navOnboarding",   label: "Onboarding",           url: "/admin/onboarding",     icon: icOnboarding.url },
-    ],
-  },
-  {
-    label: "Ventas",
-    items: [
-      { key: "navProspects",    label: "Prospectos",           url: "/admin/prospectos",     icon: icProspectos.url },
-      { key: "navOrders",       label: "Pedidos",              url: "/admin/pedidos",        icon: icPedidos.url },
-      { key: "navClients",      label: "Clientes",             url: "/admin/clientes",       icon: icClientes.url },
-      { key: "navPortalAdmin",  label: "Portal Clientes",      url: "/admin/portal",         icon: icPortalClientes.url },
-      { key: "navReps",         label: "Vendedores",           url: "/admin/representantes", icon: icVendedores.url },
-      { key: "navDirectory",    label: "Facturación",          url: "/admin/facturas",       icon: icFacturas.url },
-      { key: "navPromos",       label: "Promociones",          url: "/admin/promos",         icon: icPromociones.url },
-      { key: "navPartners",     label: "Partners",             url: "/admin/partners",       icon: icPartners.url },
-      { key: "navPriceLists",   label: "Listas de Precios",    url: "/admin/listas-precios", icon: icListasPrecios.url },
-      { key: "navSales",        label: "Sales",                url: "/admin/sales",          icon: icSales.url },
-      { key: "navPnL",          label: "P&L",                  url: "/admin/pnl",            icon: icPnl.url },
-      { key: "navVentasReport", label: "Ventas",               url: "/admin/ventas",         icon: icVentas.url },
-    ],
-  },
-  {
-    label: "Representantes",
-    items: [
-      { key: "navRepPanel",      label: "Panel Rep",    url: "/rep",            icon: icPanelRep.url, exact: true },
-      { key: "navRepCoach",      label: "Coach IA",     url: "/rep/coach",      icon: icCoachIA.url },
-      { key: "navRepSupervisor", label: "Supervisor",   url: "/rep/supervisor", icon: icSupervisor.url },
-    ],
-  },
-  {
-    label: "Almacén y Compras",
-    items: [
-      { key: "navProducts",      label: "Productos",            url: "/admin/productos",          icon: icProductos.url },
-      { key: "navInventory",     label: "Inventario",           url: "/admin/inventario",         icon: icConsultaInv.url },
-      { key: "navInventario",    label: "Almacén",              url: "/admin/almacen",            icon: icAlmacenes.url },
-      { key: "navAlmacenesCat",  label: "Almacenes / ubicaciones", url: "/admin/almacenes",       icon: icAlmacenes.url },
+const LS_GROUPS = "imv.sidebar.groups";
+const LS_FAVS = "imv.sidebar.favs";
+const LS_RECENT = "imv.sidebar.recent";
 
-      { key: "navKardex",        label: "Kardex",               url: "/admin/kardex",             icon: icKardex.url },
-      { key: "navStock",         label: "Entradas",             url: "/admin/entradas",           icon: icEntradas.url },
-      { key: "navRecepciones",   label: "Recepciones",          url: "/admin/almacen/recepciones", icon: icEntradas.url },
-      { key: "navTraspasos",     label: "Traspasos",            url: "/admin/almacen/traspasos",  icon: icAlmacenes.url },
-      { key: "navRemisiones",    label: "Remisiones",           url: "/admin/almacen/remisiones", icon: icKardex.url },
-      { key: "navCardexMat",     label: "Cardex de material",   url: "/admin/almacen/cardex",     icon: icKardex.url },
-      { key: "navRepAlmacen",    label: "Reportes almacén",     url: "/admin/almacen/reportes",   icon: icRotacion.url },
-
-      { key: "navPurchaseNeeds",       label: "Compras",              url: "/admin/compras",              icon: icCompras.url, exact: true },
-      { key: "navComprasPlaneacion",   label: "Planeación",           url: "/admin/compras/planeacion",   icon: icPlaneacion.url },
-      { key: "navComprasOrdenes",      label: "Órdenes",              url: "/admin/compras/ordenes",      icon: icOrdenesCompra.url },
-      { key: "navComprasProveedores",  label: "Proveedores",          url: "/admin/compras/proveedores",  icon: icProveedores.url },
-      { key: "navComprasCaducidades",  label: "Caducidades",          url: "/admin/compras/caducidades",  icon: icCaducidades.url },
-      { key: "navComprasCostos",       label: "Costos",               url: "/admin/compras/costos",       icon: icIntegracionCostos.url },
-      { key: "navComprasRotacion",     label: "Rotación",             url: "/admin/compras/rotacion",     icon: icRotacion.url },
-      { key: "navComprasFaltantes",    label: "Faltantes",            url: "/admin/compras/faltantes",    icon: icFaltantes.url },
-      { key: "navComprasAlertas",      label: "Alertas",              url: "/admin/compras/alertas",      icon: icAlertas.url },
-      { key: "navComprasPresupuesto",  label: "Presupuesto",          url: "/admin/compras/presupuesto",  icon: icPresupuesto.url },
-      { key: "navDevoluciones",  label: "Devoluciones",         url: "/admin/devoluciones/lista", icon: icDevoluciones.url },
-      { key: "navDamaged",       label: "Dañados",              url: "/admin/danados",            icon: icDanados.url },
-    ],
-  },
-  {
-    label: "Operaciones",
-    items: [
-      { key: "navLogistics",   label: "Logística",  url: "/admin/logistica",  icon: icMapasEntrega.url },
-      { key: "navManiobra",    label: "Maniobra",   url: "/admin/maniobra",   icon: icManiobra.url },
-      { key: "navCatalogo",    label: "Catálogo",   url: "/admin/catalogo",   icon: icCatalogo.url },
-      { key: "navDocuments",   label: "Documentos", url: "/admin/documentos", icon: icDocumentos.url },
-    ],
-  },
-  {
-    label: "Cobranza",
-    items: [
-      { key: "navCreditoCartera",        label: "Cartera",          url: "/admin/credito-cobranza/cartera",        icon: icSeguimientoCxc.url },
-      { key: "navCreditoGestiones",      label: "Gestiones",        url: "/admin/credito-cobranza/gestiones",      icon: icGestiones.url },
-      { key: "navCreditoPromesas",       label: "Promesas de pago", url: "/admin/credito-cobranza/promesas",       icon: icPromesasPago.url },
-      { key: "navCreditoAutorizaciones", label: "Autorizaciones",   url: "/admin/credito-cobranza/autorizaciones", icon: icAutorizaciones.url },
-    ],
-  },
-  {
-    label: "Contabilidad",
-    items: [
-      { key: "navContaDash",    label: "Dashboard fiscal",    url: "/admin/contabilidad",              icon: icDashboardFiscal.url, exact: true },
-      { key: "navContaCuentas", label: "Catálogo de cuentas", url: "/admin/contabilidad/cuentas",      icon: icCatalogoCuentas.url },
-      { key: "navContaAgrup",   label: "Códigos agrupadores", url: "/admin/contabilidad/agrupadores",  icon: icAgrupadores.url },
-      { key: "navContaElec",    label: "Contabilidad electrónica", url: "/admin/contabilidad/electronica", icon: icContaElectronica.url },
-      { key: "navContaPolizas", label: "Pólizas",             url: "/admin/contabilidad/polizas",      icon: icPolizas.url },
-      { key: "navContaDiario",  label: "Libro diario",        url: "/admin/contabilidad/diario",       icon: icLibroDiario.url },
-      { key: "navContaMayor",   label: "Libro mayor",         url: "/admin/contabilidad/mayor",        icon: icLibroMayor.url },
-      { key: "navContaBalanza", label: "Balanza",             url: "/admin/contabilidad/balanza",      icon: icBalanza.url },
-      { key: "navContaEstados", label: "Estados financieros", url: "/admin/contabilidad/estados",      icon: icEstadosFinancieros.url },
-      { key: "navContaIVA",     label: "IVA / IEPS",          url: "/admin/contabilidad/impuestos",    icon: icImpuestos.url },
-      { key: "navContaFact",    label: "Facturas contables",  url: "/admin/contabilidad/facturas",     icon: icFacturas.url },
-      { key: "navContaSAT",     label: "Cumplimiento SAT",    url: "/admin/contabilidad/sat",          icon: icSAT.url },
-    ],
-  },
-  {
-    label: "Bancos",
-    items: [
-      { key: "navBancosCuentas",   label: "Cuentas bancarias",  url: "/admin/bancos",                icon: icBancos.url, exact: true },
-      { key: "navBancosEstados",   label: "Estados bancarios",  url: "/admin/bancos/estados",        icon: icEstadosBancarios.url },
-      { key: "navBancosMov",       label: "Entradas y salidas", url: "/admin/bancos/movimientos",    icon: icMovBancarios.url },
-      { key: "navBancosTraspasos", label: "Traspasos",          url: "/admin/bancos/traspasos",      icon: icTraspasos.url },
-      { key: "navBancosNomina",    label: "Pago de nómina",     url: "/admin/bancos/nomina",         icon: icNomina.url },
-    ],
-  },
-  {
-    label: "Configuración",
-    items: [
-      { key: "navEmpresas",    label: "Empresas",            url: "/admin/empresas",        icon: icEmpresas.url , adminOnly: true },
-      { key: "navNotificaciones",     label: "Notificaciones",       url: "/admin/notificaciones",                 icon: icAlertas.url },
-      { key: "navNotificacionesPrefs", label: "Preferencias de avisos", url: "/admin/configuracion/notificaciones", icon: icAdmin.url },
-      { key: "navMiCuenta",           label: "Mi cuenta",              url: "/admin/cuenta",                        icon: icAdmin.url },
-      { key: "navPlantillas",         label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas",     icon: icDocumentos?.url ?? icAdmin.url , adminOnly: true },
-      { key: "navApiStatus",   label: "Estado de APIs",      url: "/admin/estado-apis",     icon: icEstadoApis.url , adminOnly: true },
-      { key: "navNetsuite",    label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url , adminOnly: true },
-
-      { key: "navApiUsage",    label: "Uso de APIs",         url: "/admin/uso-apis",        icon: icUsoApis.url , adminOnly: true },
-      { key: "navAdmin",       label: "Admin",               url: "/admin/administracion",  icon: icAdmin.url , adminOnly: true },
-    ],
-  },
-];
+function readLS<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeLS(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
 
 export function AdminSidebar({
   email,
@@ -231,35 +61,157 @@ export function AdminSidebar({
   const { isAdmin, isLoading: rolesLoading } = useRoles();
   const { isMobile, setOpenMobile } = useSidebar();
 
+  const [query, setQuery] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+  const [favs, setFavs] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useNavSearchShortcut(useCallback(() => setPaletteOpen(true), []));
+
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
     if (isMobile) setOpenMobile(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const isItemActive = (url: string, exact?: boolean) =>
-    exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
+  // Hydrate persisted state on the client only (avoids SSR mismatch).
+  useEffect(() => {
+    setOpenGroups(readLS<string[]>(LS_GROUPS, []));
+    setFavs(readLS<string[]>(LS_FAVS, []));
+    setRecent(readLS<string[]>(LS_RECENT, []));
+  }, []);
 
-  const [open, setOpen] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    for (const g of navGroups) init[g.label] = true;
-    return init;
-  });
+  // ---- visible tree (permissions + role filtering) -------------------------
+  const visibleGroups: NavGroup[] = useMemo(() => {
+    const permissive = loading || rolesLoading;
+    return navGroups
+      .map((g) => ({
+        label: g.label,
+        subgroups: g.subgroups
+          .map((sg) => ({
+            label: sg.label,
+            items: sg.items.filter(
+              (i) =>
+                (!i.adminOnly || isAdmin) &&
+                (permissive || ALWAYS_VISIBLE_KEYS.has(i.key) || canAccessKey(i.key)),
+            ),
+          }))
+          .filter((sg) => sg.items.length > 0),
+      }))
+      .filter((g) => g.subgroups.length > 0);
+  }, [loading, rolesLoading, isAdmin, canAccessKey]);
 
-  const toggle = (key: string) =>
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  const allItems = useMemo(() => flattenNav(visibleGroups), [visibleGroups]);
 
-  // Personal pages every signed-in user may open, regardless of route permissions.
-  const ALWAYS_VISIBLE = new Set(["navMiCuenta", "navNotificacionesPrefs"]);
+  const activeGroupLabel = useMemo(() => {
+    const match = allItems
+      .filter((i) => isItemActive(pathname, i.url, i.exact))
+      .sort((a, b) => b.url.length - a.url.length)[0];
+    return match?.group ?? null;
+  }, [allItems, pathname]);
 
-  const visibleGroups = (loading || rolesLoading
-    ? navGroups
-    : navGroups.map((g) => ({
-        ...g,
-        items: g.items.filter((i) => ALWAYS_VISIBLE.has(i.key) || canAccessKey(i.key)),
-      })))
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdmin) }))
-    .filter((g) => g.items.length > 0);
+  // Keep the group of the current page open (accordion-friendly default).
+  useEffect(() => {
+    if (!activeGroupLabel) return;
+    setOpenGroups((prev) => (prev.includes(activeGroupLabel) ? prev : [activeGroupLabel]));
+  }, [activeGroupLabel]);
+
+  // Track recents.
+  useEffect(() => {
+    const match = allItems
+      .filter((i) => isItemActive(pathname, i.url, i.exact))
+      .sort((a, b) => b.url.length - a.url.length)[0];
+    if (!match) return;
+    setRecent((prev) => {
+      const next = [match.key, ...prev.filter((k) => k !== match.key)].slice(0, 4);
+      writeLS(LS_RECENT, next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, allItems.length]);
+
+  const toggleGroup = (label: string) =>
+    setOpenGroups((prev) => {
+      const next = prev.includes(label) ? prev.filter((l) => l !== label) : [label];
+      writeLS(LS_GROUPS, next);
+      return next;
+    });
+
+  const toggleFav = (key: string) =>
+    setFavs((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      writeLS(LS_FAVS, next);
+      return next;
+    });
+
+  // ---- search -------------------------------------------------------------
+  const q = norm(query.trim());
+  const searching = q.length > 0;
+  const filteredGroups: NavGroup[] = useMemo(() => {
+    if (!searching) return visibleGroups;
+    return visibleGroups
+      .map((g) => ({
+        label: g.label,
+        subgroups: g.subgroups
+          .map((sg) => ({ label: sg.label, items: sg.items.filter((i) => norm(i.label).includes(q)) }))
+          .filter((sg) => sg.items.length > 0),
+      }))
+      .filter((g) => g.subgroups.length > 0);
+  }, [visibleGroups, searching, q]);
+
+  const byKey = useMemo(() => new Map(allItems.map((i) => [i.key, i])), [allItems]);
+  const favItems = favs.map((k) => byKey.get(k)).filter(Boolean) as NavItem[];
+  const recentItems = recent
+    .map((k) => byKey.get(k))
+    .filter(Boolean)
+    .filter((i) => !favs.includes((i as NavItem).key)) as NavItem[];
+
+  const Row = ({ item }: { item: NavItem }) => {
+    const active = isItemActive(pathname, item.url, item.exact);
+    const isFav = favs.includes(item.key);
+    return (
+      <li className="group/row relative">
+        {active && (
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+        )}
+        <div className="flex items-center">
+          <Link
+            to={item.url}
+            title={item.label}
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors hover:bg-sidebar-accent",
+              active ? "bg-sidebar-accent font-medium text-primary" : "text-sidebar-foreground",
+            )}
+          >
+            <img
+              src={item.icon}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              width={18}
+              height={18}
+              className="h-[18px] w-[18px] shrink-0 object-contain mix-blend-multiply"
+            />
+            <span className="truncate">
+              <Highlight text={item.label} query={query} />
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => toggleFav(item.key)}
+            aria-label={isFav ? `Quitar ${item.label} de favoritos` : `Agregar ${item.label} a favoritos`}
+            className={cn(
+              "mr-1 shrink-0 rounded p-1 text-muted-foreground transition-opacity hover:text-primary",
+              isFav ? "opacity-100 text-primary" : "opacity-0 group-hover/row:opacity-100 focus:opacity-100",
+            )}
+          >
+            <Star className={cn("h-3.5 w-3.5", isFav && "fill-current")} />
+          </button>
+        </div>
+      </li>
+    );
+  };
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -269,77 +221,131 @@ export function AdminSidebar({
         className="block border-b border-sidebar-border bg-[#0b1f5c] px-4 py-2"
         aria-label="IMV — ir al inicio"
       >
-        <div className="overflow-hidden h-8 flex items-center justify-center">
+        <div className="flex h-8 items-center justify-center overflow-hidden">
           <img
             src={logoFullWhite}
             alt="IMV Integradora de Medicamentos Veterinarios"
-            className="block h-12 w-auto -my-2"
+            className="-my-2 block h-12 w-auto"
           />
         </div>
       </Link>
+
+      {/* Search */}
+      <div className="border-b border-sidebar-border px-2 py-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar página…"
+            className="h-8 pl-7 pr-12 text-[13px]"
+          />
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+            aria-label="Abrir buscador de páginas"
+          >
+            ⌘K
+          </button>
+        </div>
+      </div>
+
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="px-2">
           <SidebarGroupContent>
-            <SidebarMenu>
-              {visibleGroups.map((group) => {
-                const isOpen = open[group.label] ?? true;
+            {/* Favoritos */}
+            {!searching && favItems.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Star className="h-3 w-3" /> Favoritos
+                </div>
+                <ul className="space-y-0.5">
+                  {favItems.map((i) => (
+                    <Row key={`fav-${i.key}`} item={i} />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Recientes */}
+            {!searching && recentItems.length > 0 && (
+              <div className="mb-2 border-t border-sidebar-border pt-2">
+                <div className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Recientes
+                </div>
+                <ul className="space-y-0.5">
+                  {recentItems.map((i) => (
+                    <Row key={`recent-${i.key}`} item={i} />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Groups */}
+            <nav className="space-y-0.5 border-t border-sidebar-border pt-2">
+              {filteredGroups.length === 0 && (
+                <p className="px-2 py-4 text-xs text-muted-foreground">Sin resultados.</p>
+              )}
+              {filteredGroups.map((group) => {
+                const count = group.subgroups.reduce((n, sg) => n + sg.items.length, 0);
+                const isOpen = searching || openGroups.includes(group.label);
+                const hasActive = group.label === activeGroupLabel;
                 return (
                   <div key={group.label}>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => toggle(group.label)}
-                        className="font-medium"
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.label)}
+                      aria-expanded={isOpen}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent",
+                        hasActive && "text-primary",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider",
+                          hasActive ? "text-primary" : "text-muted-foreground",
+                        )}
                       >
-                        <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                          {group.label}
-                        </span>
-                        <ChevronDown
-                          className={cn(
-                            "ml-auto h-4 w-4 transition-transform duration-200",
-                            !isOpen && "-rotate-90"
-                          )}
-                        />
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                        {group.label}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/70">{count}</span>
+                      <ChevronDown
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+                          !isOpen && "-rotate-90",
+                        )}
+                      />
+                    </button>
                     {isOpen && (
-                      <ul className="ml-3 border-l border-sidebar-border pl-2 pt-1 pb-2 space-y-0.5">
-                        {group.items.map((item) => {
-                          const active = isItemActive(item.url, item.exact);
-                          return (
-                            <li key={item.url}>
-                              <Link
-                                to={item.url}
-                                className={cn(
-                                  "flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/50",
-                                  active && "bg-muted text-primary font-medium"
-                                )}
-                              >
-                                <img
-                                  src={item.icon}
-                                  alt=""
-                                  aria-hidden="true"
-                                  loading="lazy"
-                                  width={24}
-                                  height={24}
-                                  className="h-6 w-6 shrink-0 object-contain mix-blend-multiply"
-                                />
-                                <span>{item.label}</span>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      <div className="ml-2 space-y-1.5 border-l border-sidebar-border pb-2 pl-1.5 pt-1">
+                        {group.subgroups.map((sg, idx) => (
+                          <div key={sg.label ?? idx}>
+                            {sg.label && (
+                              <div className="px-2 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                                {sg.label}
+                              </div>
+                            )}
+                            <ul className="space-y-0.5">
+                              {sg.items.map((item) => (
+                                <Row key={item.key} item={item} />
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 );
               })}
-            </SidebarMenu>
+            </nav>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="border-t p-3 space-y-2">
+        <div className="space-y-2 border-t p-3">
           <Link
             to="/admin/cuenta"
             className="flex items-center gap-2 rounded-md px-1 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -347,18 +353,23 @@ export function AdminSidebar({
             <UserCog className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{email ?? "Mi cuenta"}</span>
           </Link>
-          <div className="text-[10px] text-muted-foreground/70" title="Marca visible para confirmar que el navegador cargó la última publicación">
+          <div
+            className="text-[10px] text-muted-foreground/70"
+            title="Marca visible para confirmar que el navegador cargó la última publicación"
+          >
             {ADMIN_BUILD_MARKER}
           </div>
           <button
             onClick={onSignOut}
-            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+            className="flex w-full items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             Cerrar sesión
           </button>
         </div>
       </SidebarFooter>
+
+      <AdminNavSearch groups={visibleGroups} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </Sidebar>
   );
 }
