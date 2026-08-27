@@ -249,11 +249,14 @@ export function AdminSidebar({
   const toggle = (key: string) =>
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  // Personal pages every signed-in user may open, regardless of route permissions.
+  const ALWAYS_VISIBLE = new Set(["navMiCuenta", "navNotificacionesPrefs"]);
+
   const visibleGroups = (loading || rolesLoading
     ? navGroups
     : navGroups.map((g) => ({
         ...g,
-        items: g.items.filter((i) => canAccessKey(i.key)),
+        items: g.items.filter((i) => ALWAYS_VISIBLE.has(i.key) || canAccessKey(i.key)),
       })))
     .map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdmin) }))
     .filter((g) => g.items.length > 0);
