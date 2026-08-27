@@ -2282,6 +2282,21 @@ Responde SOLO JSON con este esquema:
   });
 
 /* ─── saveRoute / listSavedRoutes / deleteSavedRoute ─── */
+export const listAssignableRepsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) return { isAdmin: false, reps: [] as any[] };
+    const { data: reps } = await context.supabase
+      .from("representantes")
+      .select("id, nombre, email, activo")
+      .order("nombre");
+    return { isAdmin: true, reps: reps ?? [] };
+  });
+
 export const saveRouteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -2296,6 +2311,7 @@ export const saveRouteFn = createServerFn({ method: "POST" })
       orderedStops: z.array(z.any()).default([]),
       legs: z.array(z.any()).default([]),
       origen: z.string().optional(),
+      assignedRepId: z.string().uuid().nullable().optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -2304,11 +2320,33 @@ export const saveRouteFn = createServerFn({ method: "POST" })
       .select("id")
       .eq("user_id", context.userId)
       .maybeSingle();
+
+    let representanteId: string | null = rep?.id ?? null;
+    let ownerUserId = context.userId;
+
+    // Admins may assign the route to any representative so it shows up
+    // in that rep's own panel.
+    if (data.assignedRepId) {
+      const { data: isAdmin } = await context.supabase.rpc("has_role", {
+        _user_id: context.userId,
+        _role: "admin",
+      });
+      if (!isAdmin) throw new Error("Solo administradores pueden asignar rutas");
+      const { data: target } = await context.supabase
+        .from("representantes")
+        .select("id, user_id")
+        .eq("id", data.assignedRepId)
+        .maybeSingle();
+      if (!target) throw new Error("Representante no encontrado");
+      representanteId = target.id;
+      ownerUserId = (target as any).user_id ?? context.userId;
+    }
+
     const { data: row, error } = await context.supabase
       .from("rep_rutas_guardadas")
       .insert({
-        user_id: context.userId,
-        representante_id: rep?.id ?? null,
+        user_id: ownerUserId,
+        representante_id: representanteId,
         nombre: data.nombre ?? null,
         fecha: data.fecha ?? undefined,
         start_lat: data.startLat ?? null,
@@ -2332,10 +2370,25 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
     z.object({ limit: z.number().optional() }).default({}).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
-      .from("rep_rutas_guardadas")
-      .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, start_lat, start_lng, created_at, origen")
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const { data: myRep } = await context.supabase
+      .from("representantes")
+      .select("id")
       .eq("user_id", context.userId)
+      .maybeSingle();
+
+    let q = context.supabase
+      .from("rep_rutas_guardadas")
+      .select("id, fecha, nombre, total_km, total_minutes, ordered_stops, legs, polyline, start_lat, start_lng, created_at, origen, representante_id");
+    if (!isAdmin) {
+      q = myRep?.id
+        ? q.or(`user_id.eq.${context.userId},representante_id.eq.${myRep.id}`)
+        : q.eq("user_id", context.userId);
+    }
+    const { data: rows, error } = await q
       .order("fecha", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 60);
@@ -2343,6 +2396,7 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
 
     // Hydrate stops with client name + address
     const ids = new Set<string>();
+
     for (const r of rows ?? []) {
       for (const s of ((r as any).ordered_stops as any[]) ?? []) {
         if (s?.cliente_id) ids.add(String(s.cliente_id));

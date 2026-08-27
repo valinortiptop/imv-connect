@@ -13,6 +13,7 @@ import {
   getOpportunityHeatmapFn,
   suggestRouteWithAIFn,
   saveRouteFn,
+  listAssignableRepsFn,
 } from "@/lib/rep.functions";
 
 import { loadGoogleMapsViaValinor } from "@/lib/google-maps-loader";
@@ -161,6 +162,8 @@ export default function RouteMap() {
   const fetchHeat = useServerFn(getOpportunityHeatmapFn);
   const suggestAI = useServerFn(suggestRouteWithAIFn);
   const saveRoute = useServerFn(saveRouteFn);
+  const listReps = useServerFn(listAssignableRepsFn);
+  const repsQ = useQuery({ queryKey: ["rep-assignable-reps"], queryFn: () => listReps() });
   const qc = useQueryClient();
 
   const mapElRef = useRef<HTMLDivElement | null>(null);
@@ -191,6 +194,8 @@ export default function RouteMap() {
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
   const [routeFecha, setRouteFecha] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
+  // Admins can create a route on behalf of a representative.
+  const [assignedRepId, setAssignedRepId] = useState<string | null>(null);
 
 
 
@@ -496,6 +501,7 @@ export default function RouteMap() {
           startLat: geo?.lat ?? null,
           startLng: geo?.lng ?? null,
           origen: "manual",
+          assignedRepId,
         },
       })
         .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
@@ -595,6 +601,7 @@ export default function RouteMap() {
           startLat: geo?.lat ?? null,
           startLng: geo?.lng ?? null,
           origen: "manual",
+          assignedRepId,
         },
       })
         .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
@@ -1174,8 +1181,11 @@ export default function RouteMap() {
         onOpenChange={setWizardOpen}
         clients={data?.clients ?? []}
         initialFecha={routeFecha}
-        onConfirm={({ fecha, clientIds, optimize: doOpt }) => {
+        isAdmin={!!repsQ.data?.isAdmin}
+        reps={repsQ.data?.reps ?? []}
+        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId }) => {
           setRouteFecha(fecha);
+          setAssignedRepId(repId ?? null);
           setSelected(new Set(clientIds));
           setRouteInfo(null);
           didFitRef.current = false;

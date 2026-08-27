@@ -118,13 +118,22 @@ export default function NewRouteWizardDialog({
   onOpenChange,
   clients,
   initialFecha,
+  reps = [],
+  isAdmin = false,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   clients: any[];
   initialFecha?: string;
-  onConfirm: (payload: { fecha: string; clientIds: string[]; optimize: boolean }) => void;
+  reps?: { id: string; nombre: string; activo?: boolean | null }[];
+  isAdmin?: boolean;
+  onConfirm: (payload: {
+    fecha: string;
+    clientIds: string[];
+    optimize: boolean;
+    assignedRepId: string | null;
+  }) => void;
 }) {
   const listSaved = useServerFn(listSavedRoutesFn);
   const savedQ = useQuery({
@@ -139,6 +148,7 @@ export default function NewRouteWizardDialog({
   const [query, setQuery] = useState("");
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
+  const [assignedRepId, setAssignedRepId] = useState<string>("__self__");
 
   useEffect(() => {
     if (open) {
@@ -146,8 +156,10 @@ export default function NewRouteWizardDialog({
       setQuery("");
       setAlcaldiaFilter("all");
       setSel(new Set());
+      setAssignedRepId("__self__");
     }
   }, [open, initialFecha]);
+
 
 
   const dow = weekdayOf(fecha);
@@ -229,9 +241,15 @@ export default function NewRouteWizardDialog({
   const confirm = (optimize: boolean) => {
     if (!fecha) return toast.error("Selecciona la fecha de la ruta");
     if (sel.size < 2) return toast.error("Selecciona al menos 2 clientes");
-    onConfirm({ fecha, clientIds: [...sel], optimize });
+    onConfirm({
+      fecha,
+      clientIds: [...sel],
+      optimize,
+      assignedRepId: isAdmin && assignedRepId !== "__self__" ? assignedRepId : null,
+    });
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -261,6 +279,33 @@ export default function NewRouteWizardDialog({
               {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
             </div>
           </section>
+
+          {/* Admin only — assign the route to a representative */}
+          {isAdmin && (
+            <section className="rounded-lg border p-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                <Users className="h-4 w-4 text-primary" /> Asignar a representante
+              </div>
+              <Select value={assignedRepId} onValueChange={setAssignedRepId}>
+                <SelectTrigger className="h-10 text-sm">
+                  <SelectValue placeholder="Selecciona representante" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__self__">Para mí (sin asignar)</SelectItem>
+                  {reps.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.nombre}
+                      {r.activo === false ? " (inactivo)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                La ruta aparecerá en el panel del representante seleccionado.
+              </p>
+            </section>
+          )}
+
 
           {/* Step 2 — smart suggestions */}
           <section className="rounded-lg border p-3">
