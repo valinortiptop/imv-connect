@@ -241,9 +241,15 @@ export default function NewRouteWizardDialog({
   const confirm = (optimize: boolean) => {
     if (!fecha) return toast.error("Selecciona la fecha de la ruta");
     if (sel.size < 2) return toast.error("Selecciona al menos 2 clientes");
-    onConfirm({ fecha, clientIds: [...sel], optimize });
+    onConfirm({
+      fecha,
+      clientIds: [...sel],
+      optimize,
+      assignedRepId: isAdmin && assignedRepId !== "__self__" ? assignedRepId : null,
+    });
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
