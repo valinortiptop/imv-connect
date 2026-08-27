@@ -118,13 +118,22 @@ export default function NewRouteWizardDialog({
   onOpenChange,
   clients,
   initialFecha,
+  reps = [],
+  isAdmin = false,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   clients: any[];
   initialFecha?: string;
-  onConfirm: (payload: { fecha: string; clientIds: string[]; optimize: boolean }) => void;
+  reps?: { id: string; nombre: string; activo?: boolean | null }[];
+  isAdmin?: boolean;
+  onConfirm: (payload: {
+    fecha: string;
+    clientIds: string[];
+    optimize: boolean;
+    assignedRepId: string | null;
+  }) => void;
 }) {
   const listSaved = useServerFn(listSavedRoutesFn);
   const savedQ = useQuery({
@@ -139,6 +148,7 @@ export default function NewRouteWizardDialog({
   const [query, setQuery] = useState("");
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
+  const [assignedRepId, setAssignedRepId] = useState<string>("__self__");
 
   useEffect(() => {
     if (open) {
@@ -146,8 +156,10 @@ export default function NewRouteWizardDialog({
       setQuery("");
       setAlcaldiaFilter("all");
       setSel(new Set());
+      setAssignedRepId("__self__");
     }
   }, [open, initialFecha]);
+
 
 
   const dow = weekdayOf(fecha);
