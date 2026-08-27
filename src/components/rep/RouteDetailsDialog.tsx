@@ -77,11 +77,20 @@ export default function RouteDetailsDialog({
     onError: (e: any) => toast.error(e?.message ?? "No se pudo eliminar"),
   });
 
-  const exportRows = stops.map((s, i) => ({
-    order: i + 1,
-    nombre: s.nombre ?? "Cliente",
-    direccion: s.direccion ?? "",
-  }));
+  const exportPayload = () => ({
+    title: route?.nombre ?? "Ruta",
+    fecha: route?.fecha ?? null,
+    totalKm: route?.total_km ?? null,
+    totalMin: route?.total_minutes ?? null,
+    stops: stops.map((s: any) => ({
+      cliente_id: String(s.cliente_id),
+      nombre: s.nombre ?? "Cliente",
+      direccion: s.direccion ?? null,
+      lat: s.lat ?? null,
+      lng: s.lng ?? null,
+    })),
+    legs: (route?.legs as any[]) ?? undefined,
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -141,34 +150,14 @@ export default function RouteDetailsDialog({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    downloadRoutePdf({
-                      title: route.nombre ?? "Ruta",
-                      subtitle: `${route.fecha}${
-                        route.representante_nombre ? ` · ${route.representante_nombre}` : ""
-                      }`,
-                      totalKm: route.total_km ?? null,
-                      totalMinutes: route.total_minutes ?? null,
-                      stops: exportRows,
-                    })
-                  }
+                  onClick={() => downloadRoutePdf(exportPayload())}
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    printRoute({
-                      title: route.nombre ?? "Ruta",
-                      subtitle: `${route.fecha}${
-                        route.representante_nombre ? ` · ${route.representante_nombre}` : ""
-                      }`,
-                      totalKm: route.total_km ?? null,
-                      totalMinutes: route.total_minutes ?? null,
-                      stops: exportRows,
-                    })
-                  }
+                  onClick={() => printRoute(exportPayload())}
                 >
                   <Printer className="mr-1.5 h-3.5 w-3.5" /> Imprimir
                 </Button>
