@@ -766,7 +766,8 @@ export const checkInFn = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
-        clienteId: z.string().uuid(),
+        clienteId: z.string().uuid().optional(),
+        prospectId: z.string().uuid().optional(),
         lat: z.number().optional(),
         lng: z.number().optional(),
         overrideReason: z.string().max(500).optional(),
@@ -774,6 +775,9 @@ export const checkInFn = createServerFn({ method: "POST" })
         // Visita improvisada (no estaba en el plan/ruta del día)
         unplanned: z.boolean().optional(),
         unplannedReason: z.string().max(500).optional(),
+      })
+      .refine((v) => v.clienteId || v.prospectId, {
+        message: "Se requiere un cliente o un prospecto",
       })
       .parse(input),
   )
@@ -784,23 +788,34 @@ export const checkInFn = createServerFn({ method: "POST" })
         "Tu cuenta no está ligada a una ficha de vendedor. Pide a sistemas que ligue tu correo en Administración → Representantes para poder registrar visitas.",
       );
 
-    // Compute distance to registered client location for anti-fraude
+    // Compute distance to registered location for anti-fraude (cliente o prospecto)
     let distanceM: number | null = null;
     if (data.lat != null && data.lng != null) {
-      const { data: cliente } = await context.supabase
-        .from("clientes")
-        .select("lat, lng")
-        .eq("id", data.clienteId)
-        .maybeSingle();
-      if (cliente?.lat && cliente?.lng) {
+      let target: { lat: number | null; lng: number | null } | null = null;
+      if (data.clienteId) {
+        const { data: cliente } = await context.supabase
+          .from("clientes")
+          .select("lat, lng")
+          .eq("id", data.clienteId)
+          .maybeSingle();
+        target = cliente ?? null;
+      } else if (data.prospectId) {
+        const { data: prospect } = await context.supabase
+          .from("prospects")
+          .select("lat, lng")
+          .eq("id", data.prospectId)
+          .maybeSingle();
+        target = prospect ?? null;
+      }
+      if (target?.lat && target?.lng) {
         const R = 6371000;
         const toRad = (d: number) => (d * Math.PI) / 180;
-        const dLat = toRad(Number(cliente.lat) - data.lat);
-        const dLng = toRad(Number(cliente.lng) - data.lng);
+        const dLat = toRad(Number(target.lat) - data.lat);
+        const dLng = toRad(Number(target.lng) - data.lng);
         const a =
           Math.sin(dLat / 2) ** 2 +
           Math.cos(toRad(data.lat)) *
-            Math.cos(toRad(Number(cliente.lat))) *
+            Math.cos(toRad(Number(target.lat))) *
             Math.sin(dLng / 2) ** 2;
         distanceM = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
       }
@@ -810,7 +825,7 @@ export const checkInFn = createServerFn({ method: "POST" })
         !data.overrideReason?.trim()
       ) {
         throw new Error(
-          `Estás a ${distanceM}m del cliente registrado. Requiere motivo de override para continuar.`,
+          `Estás a ${distanceM}m del ${data.clienteId ? "cliente" : "prospecto"} registrado. Requiere motivo de override para continuar.`,
         );
       }
     }
@@ -819,7 +834,8 @@ export const checkInFn = createServerFn({ method: "POST" })
       .from("rep_visits")
       .insert({
         representante_id: rep.id,
-        cliente_id: data.clienteId,
+        cliente_id: data.clienteId ?? null,
+        prospect_id: data.prospectId ?? null,
         check_in_at: new Date().toISOString(),
         check_in_lat: data.lat ?? null,
         check_in_lng: data.lng ?? null,
@@ -887,7 +903,10 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
-      .object({ clienteId: z.string().uuid().optional() })
+      .object({
+        clienteId: z.string().uuid().optional(),
+        prospectId: z.string().uuid().optional(),
+      })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -895,12 +914,13 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     if (!rep) return { visit: null };
     let q = context.supabase
       .from("rep_visits")
-      .select("id, cliente_id, check_in_at, distance_m")
+      .select("id, cliente_id, prospect_id, check_in_at, distance_m")
       .eq("representante_id", rep.id)
       .is("check_out_at", null)
       .order("check_in_at", { ascending: false })
       .limit(1);
     if (data.clienteId) q = q.eq("cliente_id", data.clienteId);
+    if (data.prospectId) q = q.eq("prospect_id", data.prospectId);
     const { data: rows } = await q;
     return { visit: rows?.[0] ?? null };
   });
@@ -1584,6 +1604,7 @@ export const detectOverVisitedFn = createServerFn({ method: "POST" })
 
     const byClient = new Map<string, { visits: number; withOrder: number; last: string }>();
     for (const v of visits ?? []) {
+      if (!v.cliente_id) continue; // visitas a prospectos no aplican aquí
       const cur = byClient.get(v.cliente_id) ?? { visits: 0, withOrder: 0, last: "" };
       cur.visits += 1;
       if (v.outcome === "pedido") cur.withOrder += 1;
