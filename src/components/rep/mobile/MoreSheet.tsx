@@ -22,6 +22,7 @@ import {
   Swords,
   FlaskConical,
   MoreHorizontal,
+  UserCog,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,10 @@ const GROUPS: Group[] = [
       { to: "/rep/plan", label: "Plan semanal", icon: ClipboardList },
       { to: "/rep/cierre", label: "Cierre de día", icon: CalendarCheck2 },
     ],
+  },
+  {
+    label: "Mi cuenta",
+    items: [{ to: "/rep/cuenta", label: "Mi cuenta", icon: UserCog }],
   },
   {
     label: "Inteligencia",
