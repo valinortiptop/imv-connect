@@ -318,22 +318,25 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
 
         {step === "in-visit" && visitId && (
           <Tabs defaultValue="cierre" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className={cn("grid w-full", clienteId ? "grid-cols-5" : "grid-cols-3")}>
               <TabsTrigger value="cierre">Cierre</TabsTrigger>
-              <TabsTrigger value="pedido">Pedido</TabsTrigger>
-              <TabsTrigger value="anaquel">Anaquel</TabsTrigger>
+              {clienteId && <TabsTrigger value="pedido">Pedido</TabsTrigger>}
+              {clienteId && <TabsTrigger value="anaquel">Anaquel</TabsTrigger>}
               <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="evidencia">Evidencia</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="pedido" className="pt-2">
-              <OrderQuickCreate
-                clienteId={clienteId}
-                visitId={visitId}
-                onCreated={() => setOutcome("pedido")}
-              />
-            </TabsContent>
+            {clienteId && (
+              <TabsContent value="pedido" className="pt-2">
+                <OrderQuickCreate
+                  clienteId={clienteId}
+                  visitId={visitId}
+                  onCreated={() => setOutcome("pedido")}
+                />
+              </TabsContent>
+            )}
 
+            {clienteId && (
             <TabsContent value="anaquel" className="pt-2">
               {userId ? (
                 <ShelfPhotoUploader
