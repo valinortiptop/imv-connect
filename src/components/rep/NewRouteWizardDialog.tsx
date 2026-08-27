@@ -402,6 +402,7 @@ export default function NewRouteWizardDialog({
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setQuery("")}
                 placeholder="Buscar por nombre o dirección…"
                 className="h-10 pl-7 text-sm"
               />
