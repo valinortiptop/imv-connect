@@ -22,13 +22,16 @@ import VisitFormFiller from "./VisitFormFiller";
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  clienteId: string;
+  /** Cliente visitado (opcional si se visita un prospecto). */
+  clienteId?: string;
+  /** Prospecto visitado (opcional si se visita un cliente). */
+  prospectId?: string;
   clienteNombre: string;
   /** Visita improvisada: no estaba en la ruta planeada del día. */
   unplanned?: boolean;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNombre, unplanned }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -84,7 +87,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
     requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
-    getOpenVisit({ data: { clienteId } })
+    getOpenVisit({ data: { clienteId, prospectId } })
       .then((r: any) => {
         if (cancelled || !r?.visit) return;
         setVisitId(r.visit.id);
@@ -126,6 +129,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, clienteNo
         const r = await doCheckIn({
           data: {
             clienteId,
+            prospectId,
             lat: geo?.lat,
             lng: geo?.lng,
             overrideReason: overrideReason || undefined,
