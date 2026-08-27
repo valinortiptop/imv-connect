@@ -10,8 +10,14 @@ type AIContextValue = {
 
 const AIContext = createContext<AIContextValue | null>(null);
 
-export function AIProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabledState] = useState<boolean>(true);
+export function AIProvider({
+  children,
+  defaultEnabled = true,
+}: {
+  children: ReactNode;
+  defaultEnabled?: boolean;
+}) {
+  const [enabled, setEnabledState] = useState<boolean>(defaultEnabled);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
