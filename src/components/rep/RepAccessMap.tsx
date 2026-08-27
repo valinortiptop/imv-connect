@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Clock, Users } from "lucide-react";
+import { MapPin, Clock, Users, ClipboardCheck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type RangeKey = "today" | "7d" | "30d";
@@ -49,6 +49,7 @@ export default function RepAccessMap() {
   const [selectedRepIds, setSelectedRepIds] = useState<string[]>([]);
   const [onlyWithLocation, setOnlyWithLocation] = useState(false);
   const [groupByDevice, setGroupByDevice] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
   const mapElRef = useRef<HTMLDivElement | null>(null);
@@ -109,6 +110,46 @@ export default function RepAccessMap() {
     };
   }, []);
 
+  const infoHtml = (e: RepAccessEvent) => `
+    <div style="font-family:system-ui;font-size:12px;min-width:200px">
+      <div style="font-weight:600;margin-bottom:2px">${e.representante_nombre ?? "Representante"}</div>
+      <div>${fmtDT(e.signed_in_at)}</div>
+      ${e.device_label ? `<div style="color:#64748b">${e.device_label}</div>` : ""}
+      ${e.accuracy != null ? `<div style="color:#64748b">±${Math.round(e.accuracy)} m</div>` : ""}
+      ${e.group_count > 1 ? `<div style="color:#64748b">${e.group_count} ventanas del mismo dispositivo</div>` : ""}
+      ${
+        e.visit
+          ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0">
+               <div style="font-weight:600;color:#0f766e">Visita registrada</div>
+               <div>${e.visit.cliente}</div>
+               <div style="color:#64748b">${fmtDT(e.visit.check_in_at)}${
+                 e.visit.check_out_at ? ` – ${fmtDT(e.visit.check_out_at)}` : " · en curso"
+               }${e.visit.minutos != null ? ` (${e.visit.minutos} min)` : ""}</div>
+               ${e.visit.unplanned ? `<div style="color:#b45309">Fuera de ruta</div>` : ""}
+               ${e.visit.outcome ? `<div style="color:#64748b">${e.visit.outcome}</div>` : ""}
+               ${
+                 e.visit.distancia_m != null
+                   ? `<div style="color:#64748b">a ${e.visit.distancia_m} m del check-in</div>`
+                   : ""
+               }
+             </div>`
+          : `<div style="margin-top:6px;color:#94a3b8">Sin visita asociada</div>`
+      }
+    </div>`;
+
+  const focusEvent = (e: RepAccessEvent) => {
+    setSelectedId(e.id);
+    const map = mapRef.current;
+    if (!map || e.lat == null || e.lng == null) return;
+    map.panTo({ lat: e.lat, lng: e.lng });
+    map.setZoom(Math.max(map.getZoom() ?? 14, 15));
+    const marker = markersRef.current.find((m: any) => m.__eventId === e.id);
+    if (marker) {
+      infoRef.current?.setContent(infoHtml(e));
+      infoRef.current?.open({ anchor: marker, map });
+    }
+  };
+
   // Render markers
   useEffect(() => {
     const maps = (window as any).google?.maps;
@@ -123,34 +164,27 @@ export default function RepAccessMap() {
     const bounds = new maps.LatLngBounds();
     for (const e of withLoc) {
       const pos = { lat: e.lat!, lng: e.lng! };
-      const color = colorForAge(e.signed_in_at);
+      const color = e.visit ? "#0d9488" : colorForAge(e.signed_in_at);
       const marker = new maps.Marker({
         position: pos,
         map,
-        title: `${e.representante_nombre ?? "Rep"} · ${fmtDT(e.signed_in_at)}`,
+        zIndex: e.visit ? 3 : 1,
+        title: `${e.representante_nombre ?? "Rep"} · ${fmtDT(e.signed_in_at)}${
+          e.visit ? ` · visita: ${e.visit.cliente}` : ""
+        }`,
         icon: {
           path: maps.SymbolPath.CIRCLE,
-          scale: 8,
+          scale: e.visit ? 10 : 8,
           fillColor: color,
           fillOpacity: 0.9,
           strokeColor: "#ffffff",
           strokeWeight: 2,
         },
       });
+      (marker as any).__eventId = e.id;
       marker.addListener("click", () => {
-        infoRef.current?.setContent(
-          `<div style="font-family:system-ui;font-size:12px;min-width:180px">
-            <div style="font-weight:600;margin-bottom:2px">${
-              e.representante_nombre ?? "Representante"
-            }</div>
-            <div>${fmtDT(e.signed_in_at)}</div>
-            ${
-              e.accuracy != null
-                ? `<div style="color:#64748b">±${Math.round(e.accuracy)} m</div>`
-                : ""
-            }
-          </div>`,
-        );
+        setSelectedId(e.id);
+        infoRef.current?.setContent(infoHtml(e));
         infoRef.current?.open({ anchor: marker, map });
       });
       markersRef.current.push(marker);
@@ -254,7 +288,23 @@ export default function RepAccessMap() {
             ) : (
               <ul className="divide-y">
                 {events.slice(0, 100).map((e) => (
-                  <li key={e.id} className="px-3 py-2 text-xs">
+                  <li
+                    key={e.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => focusEvent(e)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter" || ev.key === " ") {
+                        ev.preventDefault();
+                        focusEvent(e);
+                      }
+                    }}
+                    className={cn(
+                      "cursor-pointer px-3 py-2 text-xs transition-colors hover:bg-muted/60",
+                      selectedId === e.id && "bg-primary/10",
+                    )}
+                    title={e.has_location ? "Ver en el mapa" : "Este acceso no tiene ubicación"}
+                  >
                     <div className="flex justify-between items-center">
                       <span className="font-medium truncate">
                         {e.representante_nombre ?? "—"}
@@ -284,6 +334,30 @@ export default function RepAccessMap() {
                         </span>
                       )}
                     </div>
+                    {e.visit && (
+                      <div className="mt-1 rounded-md border border-teal-500/40 bg-teal-500/5 px-1.5 py-1">
+                        <div className="flex items-center gap-1 font-medium text-teal-700 dark:text-teal-400">
+                          <ClipboardCheck className="h-3 w-3" /> Visita
+                          {e.visit.unplanned && (
+                            <Zap className="h-3 w-3 text-amber-500" aria-label="fuera de ruta" />
+                          )}
+                        </div>
+                        <div className="truncate">{e.visit.cliente}</div>
+                        <div className="text-muted-foreground">
+                          {new Date(e.visit.check_in_at).toLocaleTimeString("es-MX", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {e.visit.check_out_at
+                            ? `–${new Date(e.visit.check_out_at).toLocaleTimeString("es-MX", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}`
+                            : " · en curso"}
+                          {e.visit.minutos != null ? ` (${e.visit.minutos}m)` : ""}
+                        </div>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -303,6 +377,7 @@ export default function RepAccessMap() {
           <LegendDot color="#0ea5e9" label="< 24h" />
           <LegendDot color="#f59e0b" label="< 7d" />
           <LegendDot color="#94a3b8" label="más antiguo" />
+          <LegendDot color="#0d9488" label="con visita registrada" />
         </div>
       </CardContent>
     </Card>
