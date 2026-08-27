@@ -18,7 +18,29 @@ export type RepAccessEvent = {
   /** How many raw sign-in events (windows/tabs) were folded into this one. */
   group_count: number;
   last_seen_at: string;
+  /** Visit that happened at this location/time, when the ping matches one. */
+  visit: {
+    id: string;
+    cliente: string;
+    check_in_at: string;
+    check_out_at: string | null;
+    minutos: number | null;
+    unplanned: boolean;
+    outcome: string | null;
+    distancia_m: number | null;
+  } | null;
 };
+
+function haversineM(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const la1 = (a.lat * Math.PI) / 180;
+  const la2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+}
 
 function deviceLabel(platform: string | null, ua: string | null): string {
   const u = ua ?? "";
@@ -159,6 +181,7 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         device_label: deviceLabel(r.platform ?? null, r.user_agent ?? null),
         group_count: 1,
         last_seen_at: r.signed_in_at,
+        visit: null,
         representante_id: r.representante_id,
         representante_nombre: nombre ?? null,
         user_id: r.user_id,
@@ -170,6 +193,79 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         user_agent: r.user_agent ?? null,
       };
     });
+
+    // ── Match each sign-in with the visit registered around the same moment ──
+    try {
+      const { data: visits } = await supabase
+        .from("rep_visits")
+        .select(
+          "id, representante_id, cliente_id, check_in_at, check_out_at, outcome, unplanned, check_in_lat, check_in_lng",
+        )
+        .gte("check_in_at", new Date(new Date(data.from).getTime() - 2 * 3600_000).toISOString())
+        .lte("check_in_at", new Date(new Date(data.to).getTime() + 2 * 3600_000).toISOString())
+        .limit(2000);
+
+      const cliIds = [
+        ...new Set((visits ?? []).map((v: any) => v.cliente_id).filter(Boolean)),
+      ];
+      const cliName = new Map<string, string>();
+      if (cliIds.length) {
+        const { data: clis } = await supabase
+          .from("clientes")
+          .select("id, nombre_comercial, razon_social")
+          .in("id", cliIds);
+        (clis ?? []).forEach((c: any) =>
+          cliName.set(String(c.id), c.nombre_comercial ?? c.razon_social ?? "Cliente"),
+        );
+      }
+
+      for (const e of events) {
+        const t = new Date(e.signed_in_at).getTime();
+        let best: any = null;
+        let bestScore = Infinity;
+        for (const v of visits ?? []) {
+          if (e.representante_id && v.representante_id && v.representante_id !== e.representante_id)
+            continue;
+          const dtMin = Math.abs(new Date(v.check_in_at).getTime() - t) / 60000;
+          if (dtMin > 45) continue;
+          let dist: number | null = null;
+          if (e.lat != null && e.lng != null && v.check_in_lat != null && v.check_in_lng != null) {
+            dist = haversineM(
+              { lat: e.lat, lng: e.lng },
+              { lat: Number(v.check_in_lat), lng: Number(v.check_in_lng) },
+            );
+            if (dist > 500) continue;
+          }
+          const score = dtMin + (dist ?? 0) / 100;
+          if (score < bestScore) {
+            bestScore = score;
+            best = { v, dist };
+          }
+        }
+        if (best) {
+          const v = best.v;
+          e.visit = {
+            id: v.id,
+            cliente: cliName.get(String(v.cliente_id)) ?? "Cliente",
+            check_in_at: v.check_in_at,
+            check_out_at: v.check_out_at ?? null,
+            minutos: v.check_out_at
+              ? Math.max(
+                  0,
+                  Math.round(
+                    (new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000,
+                  ),
+                )
+              : null,
+            unplanned: !!v.unplanned,
+            outcome: v.outcome ?? null,
+            distancia_m: best.dist ?? null,
+          };
+        }
+      }
+    } catch {
+      // visit enrichment is best-effort
+    }
 
     if (data.groupByDevice === false) return { events };
 
@@ -190,6 +286,7 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         prev.group_count += 1;
         if (new Date(e.signed_in_at) > new Date(prev.last_seen_at)) prev.last_seen_at = e.signed_in_at;
         if (new Date(e.signed_in_at) < new Date(prev.signed_in_at)) prev.signed_in_at = e.signed_in_at;
+        if (!prev.visit && e.visit) prev.visit = e.visit;
       }
     }
     return {
