@@ -73,6 +73,13 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
 
+    // Los admins (incluso si también son representantes) ven todos los clientes,
+    // para poder armar rutas con cualquier cliente.
+    const { data: isAdminData } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    const isAdmin = !!isAdminData;
 
     const clientes = await fetchAllPaged<any>(() => {
       let q = context.supabase
@@ -81,7 +88,7 @@ export const getMyClientsFn = createServerFn({ method: "POST" })
           "id, razon_social, nombre_comercial, nickname, rfc, telefono, phone, direccion, codigo_postal, lat, lng, active, representante_id, credit_limit, payment_terms",
         )
         .eq("active", true);
-      if (rep) q = q.eq("representante_id", rep.id);
+      if (rep && !isAdmin) q = q.eq("representante_id", rep.id);
       return q;
     });
     const clientIds = (clientes ?? []).map((c: any) => c.id);
