@@ -26,7 +26,11 @@ async function getCurrentRep(supabase: any, userId: string, email?: string | nul
   // El UPDATE directo está bloqueado por RLS (solo admins escriben en
   // representantes), así que usamos la función security definer que hace
   // el enlace validando el correo del JWT.
-  await supabase.rpc("ensure_current_rep_link").catch?.(() => {});
+  try {
+    await supabase.rpc("ensure_current_rep_link");
+  } catch {
+    /* ignore */
+  }
   const { data: linked } = await supabase
     .from("representantes")
     .select(cols)
@@ -775,7 +779,10 @@ export const checkInFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
-    if (!rep) throw new Error("Solo representantes pueden hacer check-in");
+    if (!rep)
+      throw new Error(
+        "Tu cuenta no está ligada a una ficha de vendedor. Pide a sistemas que ligue tu correo en Administración → Representantes para poder registrar visitas.",
+      );
 
     // Compute distance to registered client location for anti-fraude
     let distanceM: number | null = null;
