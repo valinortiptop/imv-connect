@@ -21,23 +21,32 @@ async function getCurrentRep(supabase: any, userId: string, email?: string | nul
     .eq("user_id", userId)
     .maybeSingle();
   if (data) return data as any;
-  // Fallback: liga por correo cuando el vendedor aún no tiene user_id
-  // (p. ej. la cuenta se creó después del registro del vendedor).
+
+  // Fallback: liga por correo cuando el vendedor aún no tiene user_id.
+  // El UPDATE directo está bloqueado por RLS (solo admins escriben en
+  // representantes), así que usamos la función security definer que hace
+  // el enlace validando el correo del JWT.
+  await supabase.rpc("ensure_current_rep_link").catch?.(() => {});
+  const { data: linked } = await supabase
+    .from("representantes")
+    .select(cols)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (linked) return linked as any;
+
   if (email) {
     const { data: byEmail } = await supabase
       .from("representantes")
       .select(cols)
       .ilike("email", email)
       .maybeSingle();
-    if (byEmail) {
-      await supabase.from("representantes").update({ user_id: userId }).eq("id", byEmail.id);
-      return byEmail as any;
-    }
+    if (byEmail) return byEmail as any;
   }
-  return data as
+  return null as
     | { id: string; nombre: string; email: string | null; telefono: string | null; activo: boolean }
     | null;
 }
+
 
 /* ─── helper: paginate a supabase query builder past the 1000-row PostgREST cap ─── */
 async function fetchAllPaged<T = any>(makeQuery: () => any, pageSize = 1000): Promise<T[]> {
