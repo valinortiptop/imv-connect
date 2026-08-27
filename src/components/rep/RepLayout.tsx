@@ -217,7 +217,7 @@ export default function RepLayout({ children }: { children: ReactNode }) {
   const mobilePrimary = allItems.filter((n) => n.mobilePrimary);
 
   return (
-    <AIProvider>
+    <AIProvider defaultEnabled={false}>
     <Ctx.Provider value={{ rep: data?.rep ?? null, isAdmin, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
