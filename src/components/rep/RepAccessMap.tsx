@@ -96,7 +96,7 @@ export default function RepAccessMap() {
             streetViewControl: false,
             fullscreenControl: false,
             clickableIcons: false,
-            gestureHandling: "greedy",
+            gestureHandling: "cooperative",
           });
           infoRef.current = new maps.InfoWindow();
         }
