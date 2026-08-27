@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn, getOpenVisitFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
 import ShelfPhotoUploader from "./ShelfPhotoUploader";
@@ -348,6 +349,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
                 <p className="text-sm text-muted-foreground">Cargando sesión…</p>
               )}
             </TabsContent>
+            )}
 
             <TabsContent value="forms" className="pt-2">
               <VisitFormFiller visitId={visitId} />
