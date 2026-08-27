@@ -30,13 +30,13 @@ export default function QuickProspectDialog({ open, onOpenChange, onCreated }: P
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [addr, setAddr] = useState<ResolvedAddress | null>(null);
-  const [addrKey, setAddrKey] = useState(0);
+  const [addrText, setAddrText] = useState("");
 
   const reset = () => {
     setName("");
     setPhone("");
     setAddr(null);
-    setAddrKey((k) => k + 1); // remount autocomplete
+    setAddrText("");
   };
 
   const save = useMutation({
@@ -94,8 +94,15 @@ export default function QuickProspectDialog({ open, onOpenChange, onCreated }: P
           <div className="space-y-1.5">
             <Label>Dirección (Google)</Label>
             <AddressAutocomplete
-              key={addrKey}
-              onResolved={(r) => setAddr(r)}
+              value={addrText}
+              onChange={(v) => {
+                setAddrText(v);
+                setAddr(null);
+              }}
+              onSelect={(r) => {
+                setAddr(r);
+                setAddrText(r.address);
+              }}
               placeholder="Buscar dirección o negocio…"
             />
             {addr && (
