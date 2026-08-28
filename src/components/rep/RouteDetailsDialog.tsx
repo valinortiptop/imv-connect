@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import SavedRoutePreview from "./SavedRoutePreview";
 import { downloadRoutePdf, printRoute } from "@/lib/route-export";
 import { toast } from "sonner";
-import { MapPin, Pencil, Trash2, Download, Printer, Clock, Route as RouteIcon } from "lucide-react";
+import { MapPin, Pencil, Trash2, Download, Printer, Clock, Route as RouteIcon, CheckCircle2, CircleDashed, Camera, ShoppingCart } from "lucide-react";
 
 export default function RouteDetailsDialog({
   routeId,
@@ -198,25 +198,96 @@ export default function RouteDetailsDialog({
                   <MapPin className="mr-1 h-3 w-3" /> {route.total_km} km
                 </Badge>
               )}
+              <Badge
+                variant="outline"
+                className="border-green-500/40 bg-green-500/10 font-normal text-green-700 dark:text-green-400"
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" /> {route.visited_count ?? 0}/{stops.length} visitados
+              </Badge>
+              {!!route.visited_minutes && (
+                <Badge variant="outline" className="font-normal">
+                  <Clock className="mr-1 h-3 w-3" /> {route.visited_minutes} min con clientes
+                </Badge>
+              )}
             </div>
 
             <ol className="space-y-1.5">
-              {stops.map((s, i) => (
-                <li
-                  key={`${s.cliente_id}-${i}`}
-                  className="flex items-start gap-2 rounded-md border p-2 text-sm"
-                >
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{s.nombre ?? "Cliente"}</p>
-                    {s.direccion && (
-                      <p className="truncate text-xs text-muted-foreground">{s.direccion}</p>
-                    )}
-                  </div>
-                </li>
-              ))}
+              {stops.map((s, i) => {
+                const v = s.visit;
+                const visited = !!s.visited;
+                return (
+                  <li
+                    key={`${s.cliente_id}-${i}`}
+                    className={`flex items-start gap-2 rounded-md border p-2 text-sm ${
+                      visited ? "border-green-500/40 bg-green-500/5" : ""
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
+                        visited ? "bg-green-600" : "bg-destructive"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium">{s.nombre ?? "Cliente"}</p>
+                        {visited ? (
+                          <Badge className="border-green-500/40 bg-green-500/15 text-green-700 dark:text-green-400" variant="outline">
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                            {v?.in_progress ? "En visita" : "Visitado"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <CircleDashed className="mr-1 h-3 w-3" /> No visitado
+                          </Badge>
+                        )}
+                      </div>
+                      {s.direccion && (
+                        <p className="truncate text-xs text-muted-foreground">{s.direccion}</p>
+                      )}
+                      {v && (
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(v.check_in_at).toLocaleTimeString("es-MX", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            {v.check_out_at
+                              ? ` – ${new Date(v.check_out_at).toLocaleTimeString("es-MX", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}`
+                              : " – en curso"}
+                          </span>
+                          <span className="font-medium text-foreground">
+                            {v.minutos != null ? `${v.minutos} min` : "duración pendiente"}
+                          </span>
+                          {v.outcome && <span>Resultado: {v.outcome}</span>}
+                          {v.pedido_id && (
+                            <span className="inline-flex items-center gap-1">
+                              <ShoppingCart className="h-3 w-3" /> pedido
+                            </span>
+                          )}
+                          {!!v.photos && (
+                            <span className="inline-flex items-center gap-1">
+                              <Camera className="h-3 w-3" /> {v.photos}
+                            </span>
+                          )}
+                          {v.distance_m != null && <span>{Math.round(v.distance_m)} m del punto</span>}
+                          {v.unplanned && <span>fuera de ruta</span>}
+                        </div>
+                      )}
+                      {v?.notes && (
+                        <p className="mt-1 line-clamp-2 text-[11px] italic text-muted-foreground">
+                          “{v.notes}”
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
               {stops.length === 0 && (
                 <li className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
                   Esta ruta no tiene paradas.
