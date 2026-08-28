@@ -2197,6 +2197,15 @@ function NuevoContactoDialog({
     }
     setSaving(true);
     try {
+      // Auto-assign to whoever is creating it. Reps in the /rep portal must
+      // end up owning their own prospects, so if the auth context hasn't
+      // hydrated we resolve the user id straight from the session.
+      let assignee = defaultAssignee;
+      if (!assignee) {
+        const { data: au } = await supabase.auth.getUser();
+        assignee = au?.user?.id ?? null;
+      }
+
       const e = enrichment ?? {};
       const { error } = await (supabase as any).from("prospects").insert({
         phone: phoneValue,
@@ -2206,7 +2215,7 @@ function NuevoContactoDialog({
         colonia: colonia.trim() || null,
         direccion: direccion.trim() || null,
         source: defaultSource,
-        assigned_to: defaultAssignee,
+        assigned_to: assignee,
         status: "nuevo",
         lat: e.lat ?? null,
         lng: e.lng ?? null,
