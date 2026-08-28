@@ -281,7 +281,7 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
         for (const k of keys) {
           for (const real of Object.keys(r)) {
             if (real.toLowerCase().trim() === k.toLowerCase())
-              return String(r[real] ?? "").trim();
+              return cleanNs(String(r[real] ?? ""));
           }
         }
         return "";
