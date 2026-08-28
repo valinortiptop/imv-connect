@@ -129,7 +129,7 @@ export const getRep360Fn = createServerFn({ method: "POST" })
     const [clientsRes, routesRes, visitsRes, pedidosRes] = await Promise.all([
       sb
         .from("clientes")
-        .select("id, nombre_comercial, razon_social, nickname, direccion, municipio, telefono, lat, lng, activo")
+        .select("id, nombre_comercial, razon_social, nickname, direccion, municipio, telefono, lat, lng, active")
         .eq("representante_id", rep.id)
         .limit(1000),
       sb
@@ -221,7 +221,7 @@ export const getRep360Fn = createServerFn({ method: "POST" })
       today,
       kpis: {
         clientes: clients.length,
-        clientes_activos: clients.filter((c: any) => c.activo !== false).length,
+        clientes_activos: clients.filter((c: any) => c.active !== false).length,
         prospectos: (prospectsRes.data ?? []).length,
         visitas: visits.length,
         pedidos: pedidos.length,
@@ -359,7 +359,7 @@ export const listClientsForAssignmentFn = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     let q = context.supabase
       .from("clientes")
-      .select("id, razon_social, nombre_comercial, nickname, direccion, telefono, representante_id, activo")
+      .select("id, razon_social, nombre_comercial, nickname, direccion, telefono, representante_id, active")
       .order("razon_social")
       .limit(data.limit ?? 200);
     if (data.scope === "sin_asignar") q = q.is("representante_id", null);
