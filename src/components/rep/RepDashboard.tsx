@@ -142,17 +142,18 @@ export default function RepDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">Recompras próximas</CardTitle>
+            <div className="flex min-w-0 items-center gap-2">
+              <TrendingUp className="h-5 w-5 shrink-0 text-primary" />
+              <CardTitle className="truncate text-base">Recompras próximas</CardTitle>
             </div>
             <Link
               to="/rep/laboratorios"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
             >
               Ver todo <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
+
           <CardContent>
             <ReorderPredictions withinDays={7} limit={5} />
           </CardContent>
