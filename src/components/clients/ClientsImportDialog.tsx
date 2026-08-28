@@ -617,6 +617,10 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lng: r.lng,
           google_place_id: r.google_place_id,
           representante_id: r.representante_id ?? null,
+          netsuite_id: r.netsuite_id || null,
+          delivery_window_from: r.horario_from || null,
+          delivery_window_until: r.horario_until || null,
+          notas: r.notas || null,
           active: true,
         }));
         for (let i = 0; i < payload.length; i += 100) {
