@@ -919,7 +919,9 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     if (!rep) return { visit: null };
     let q = context.supabase
       .from("rep_visits")
-      .select("id, cliente_id, prospect_id, check_in_at, distance_m")
+      .select(
+        "id, cliente_id, prospect_id, check_in_at, distance_m, check_in_lat, check_in_lng, unplanned",
+      )
       .eq("representante_id", rep.id)
       .is("check_out_at", null)
       .order("check_in_at", { ascending: false })
@@ -927,7 +929,27 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     if (data.clienteId) q = q.eq("cliente_id", data.clienteId);
     if (data.prospectId) q = q.eq("prospect_id", data.prospectId);
     const { data: rows } = await q;
-    return { visit: rows?.[0] ?? null };
+    const visit: any = rows?.[0] ?? null;
+    if (!visit) return { visit: null };
+
+    // Nombre del cliente/prospecto para poder retomarla desde cualquier página
+    let nombre: string | null = null;
+    if (visit.cliente_id) {
+      const { data: c } = await context.supabase
+        .from("clientes")
+        .select("nombre_comercial, razon_social")
+        .eq("id", visit.cliente_id)
+        .maybeSingle();
+      nombre = (c as any)?.nombre_comercial ?? (c as any)?.razon_social ?? null;
+    } else if (visit.prospect_id) {
+      const { data: p } = await context.supabase
+        .from("prospects")
+        .select("name")
+        .eq("id", visit.prospect_id)
+        .maybeSingle();
+      nombre = (p as any)?.name ?? null;
+    }
+    return { visit: { ...visit, nombre: nombre ?? "Visita en curso" } };
   });
 
 
