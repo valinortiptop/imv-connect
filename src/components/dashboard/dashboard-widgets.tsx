@@ -7,7 +7,7 @@ import { ArrowRight, type LucideIcon } from "lucide-react";
 export function Sparkline({
   data,
   className,
-  stroke = "hsl(var(--primary))",
+  stroke = "var(--primary)",
   height = 48,
 }: {
   data: number[];
@@ -80,7 +80,7 @@ export function Donut({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" role="img" aria-label={label}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={thickness} opacity={0.5} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--muted)" strokeWidth={thickness} opacity={0.5} />
         {total > 0 &&
           segments.map((s) => {
             const len = (s.value / total) * c;
