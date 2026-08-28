@@ -3,6 +3,7 @@ import SupervisorDashboard from "@/components/rep/SupervisorDashboard";
 import SupervisorReport from "@/components/rep/SupervisorReport";
 import DailyRoutesSummary from "@/components/rep/DailyRoutesSummary";
 import SupervisorRoutesHistory from "@/components/rep/SupervisorRoutesHistory";
+import SupervisorAssignments from "@/components/rep/SupervisorAssignments";
 import RepAccessMap from "@/components/rep/RepAccessMap";
 import RepLabAccessPanel from "@/components/rep/RepLabAccessPanel";
 import AIPageInsights from "@/components/ai/AIPageInsights";
@@ -34,6 +35,7 @@ function SupervisorPage() {
           <TabsTrigger value="rutas">Rutas del día</TabsTrigger>
           <TabsTrigger value="rendimiento">Rendimiento</TabsTrigger>
           <TabsTrigger value="historial">Rutas históricas</TabsTrigger>
+          <TabsTrigger value="asignaciones">Asignaciones</TabsTrigger>
           <TabsTrigger value="actividad">Actividad y dispositivos</TabsTrigger>
           <TabsTrigger value="reporte">Reporte</TabsTrigger>
         </TabsList>
@@ -48,6 +50,10 @@ function SupervisorPage() {
 
         <TabsContent value="historial" className="space-y-4">
           <SupervisorRoutesHistory />
+        </TabsContent>
+
+        <TabsContent value="asignaciones" className="space-y-4">
+          <SupervisorAssignments />
         </TabsContent>
 
         <TabsContent value="actividad" className="space-y-4">
