@@ -1220,22 +1220,20 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
       <div className="relative z-10 p-4 md:p-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            {/* Locked-width title block so the toggle never shifts when
-                the subtitle text changes width. */}
-            <div className="w-[300px] shrink-0">
-              <h1 className="text-2xl font-bold text-foreground">{t("clientsTitle")}</h1>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:gap-4">
+            <div className="min-w-0 sm:w-[300px] sm:shrink-0">
+              <h1 className="text-xl font-bold text-foreground sm:text-2xl">{t("clientsTitle")}</h1>
               <p className="text-sm text-muted-foreground truncate">{t("clientsSubtitle")}</p>
             </div>
             {/* Mayoreo / Menudeo / Todos */}
-            <div className="inline-flex rounded-lg border bg-muted p-0.5">
+            <div className="grid w-full grid-cols-3 gap-0.5 rounded-lg border bg-muted p-0.5 sm:inline-flex sm:w-auto">
               {(["todos", "mayoreo", "menudeo"] as const).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => setTypeFilter(opt)}
                   className={cn(
-                    "px-3 py-1.5 text-sm font-semibold rounded-md transition capitalize",
+                    "px-2 py-1.5 text-xs font-semibold rounded-md transition capitalize sm:px-3 sm:text-sm",
                     typeFilter === opt
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -1246,17 +1244,18 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:self-auto">
             <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
               <Upload className="h-4 w-4" />
-              Importar Excel
+              <span className="truncate">Importar Excel</span>
             </Button>
             <Button size="sm" onClick={openNew} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              {t("newClient")}
+              <span className="truncate">{t("newClient")}</span>
             </Button>
           </div>
         </div>
+
 
         {/* Date filter */}
         <ChronoBar
@@ -1269,17 +1268,17 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         {dashboardStats && !isLoading && (
           <>
             {/* Stat cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {/* Ticket promedio */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-green-500/10">
                     <DollarSign className="h-4 w-4 text-green-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ticket promedio</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Ticket promedio</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {mxnFmt.format(dashboardStats.ticketPromedio)}
                   </p>
                 </div>
@@ -1287,14 +1286,14 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Pedidos por cliente */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-blue-500/10">
                     <ShoppingCart className="h-4 w-4 text-blue-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedidos por cliente</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Pedidos por cliente</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {dashboardStats.pedidosPorCliente.toFixed(1)}
                   </p>
                 </div>
@@ -1302,16 +1301,16 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Cliente más frecuente */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-amber-500/10">
                     <Crown className="h-4 w-4 text-amber-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente más frecuente</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Cliente más frecuente</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
                   {dashboardStats.topClient ? (
                     <>
-                      <p className="text-lg font-bold text-foreground">{dashboardStats.topClient.name}</p>
+                      <p className="text-sm font-bold leading-tight text-foreground line-clamp-2 sm:text-lg">{dashboardStats.topClient.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{dashboardStats.topClient.count} pedidos</p>
                     </>
                   ) : (
@@ -1322,14 +1321,14 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Total clientes */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-purple-500/10">
                     <Users className="h-4 w-4 text-purple-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total clientes</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Total clientes</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground">{dashboardStats.totalClientes}</p>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl">{dashboardStats.totalClientes}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">activos</p>
                 </div>
               </div>
@@ -1341,11 +1340,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               const totalSales = topClientsBySales.reduce((s, c) => s + c.total, 0);
               return (
                 <div className="border border-border rounded-lg bg-card/50 overflow-hidden">
-                  <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+                  <div className="px-3 pt-3 pb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 sm:px-5 sm:pt-4">
                     <h3 className="text-sm font-medium text-muted-foreground">Top 5 clientes por ventas</h3>
                     <span className="text-xs text-muted-foreground">{mxnFmt.format(totalSales)} total</span>
                   </div>
-                  <div className="px-5 pb-4 pt-1 space-y-3">
+                  <div className="px-3 pb-4 pt-1 space-y-3 sm:px-5">
                     {topClientsBySales.map((c, i) => {
                       const pct = maxValue > 0 ? (c.total / maxValue) * 100 : 0;
                       return (
@@ -1357,9 +1356,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                               </div>
                               <span className="text-sm truncate text-foreground">{c.name}</span>
                             </div>
-                            <div className="flex items-center gap-3 ml-3 shrink-0">
-                              <span className="text-xs text-muted-foreground">{c.orders} pedidos</span>
-                              <span className="text-sm font-bold text-foreground tabular-nums">{mxnFmt.format(c.total)}</span>
+                            <div className="flex items-center gap-2 ml-2 shrink-0 sm:gap-3 sm:ml-3">
+                              <span className="hidden text-xs text-muted-foreground sm:inline">{c.orders} pedidos</span>
+                              <span className="text-xs font-bold text-foreground tabular-nums sm:text-sm">{mxnFmt.format(c.total)}</span>
                             </div>
                           </div>
                           <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(59,130,246,0.1)" }}>
@@ -1384,8 +1383,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         )}
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
-          <div className="relative flex-1 w-full sm:w-auto max-w-sm">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2 sm:gap-3">
+          <div className="relative w-full min-w-0 sm:flex-1 sm:w-auto sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("searchClientsPlaceholder")}
@@ -1395,7 +1394,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             />
           </div>
 
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {(["all", "active", "inactive"] as const).map(s => (
               <Button
                 key={s}
@@ -1410,7 +1409,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
           {/* Representative filter */}
           <Select value={repFilter} onValueChange={setRepFilter}>
-            <SelectTrigger className="h-9 w-[200px] text-sm" aria-label="Filtrar por representante">
+            <SelectTrigger className="h-9 w-full min-w-0 text-sm sm:w-[200px]" aria-label="Filtrar por representante">
               <SelectValue placeholder="Representante…" />
             </SelectTrigger>
             <SelectContent>
@@ -1448,7 +1447,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           )}
 
           {/* View mode toggle — Lista vs Mapa */}
-          <div className="ml-auto flex items-center rounded-md border border-border bg-card p-0.5">
+          <div className="flex items-center rounded-md border border-border bg-card p-0.5 sm:ml-auto">
             <Button
               variant={viewMode === "list" ? "default" : "ghost"}
               size="sm"
@@ -1470,7 +1469,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         </div>
 
         {/* Count */}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground break-words">
           {viewMode === "list" && filtered.length > 0
             ? `${pageStart}-${pageEnd} de ${filtered.length}`
             : filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
@@ -1479,7 +1478,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         <PaginationControls />
 
         {/* Bulk action bar */}
-        <div className="flex flex-wrap items-center gap-3 px-3 rounded-lg border border-border min-h-[48px]">
+        {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 p-2 sm:gap-3 sm:px-3 rounded-lg border border-border min-h-[48px]">
           <span className="text-sm font-medium text-foreground">{selectedIds.size} seleccionados</span>
           <Button size="sm" variant="outline" onClick={() => handleBulkPaymentChange("Transferencia")} disabled={bulkProcessing || selectedIds.size === 0}>
             Transferencia
@@ -1510,6 +1510,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Deseleccionar</Button>
         </div>
+        )}
 
         {viewMode === "map" ? (
           <ClientsMapView
@@ -1555,8 +1556,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   onClick={() => setClient360Id(c.id)}
                 >
                   {/* Row 1: Name + Active badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("[data-client-row]") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}
@@ -1571,11 +1572,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                         type={c.client_type}
                         invisible={typeFilter !== "todos"}
                       />
-                      <span className="font-semibold text-foreground truncate">
+                      <span className="min-w-0 flex-1 basis-full font-semibold text-foreground break-words sm:basis-auto sm:truncate">
                         {stripVmPrefix(c.name) || c.name}
                       </span>
                       {(c as any).parent_name && (
-                        <Badge variant="outline" className="text-[10px] font-medium shrink-0 max-w-[220px] truncate" title={`Subcuenta de ${(c as any).parent_name}`}>
+                        <Badge variant="outline" className="text-[10px] font-medium shrink-0 max-w-[180px] truncate sm:max-w-[220px]" title={`Subcuenta de ${(c as any).parent_name}`}>
                           Subcuenta de {(c as any).parent_name}
                         </Badge>
                       )}
@@ -1601,9 +1602,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   )}
 
                   {/* Row 3: Grid with details */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 ml-6 text-xs">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 ml-6 text-xs">
                     {c.phone && (
-                      <div>
+                      <div className="min-w-0 truncate">
                         <span className="text-muted-foreground">Tel: </span>
                         <span className="text-foreground">{c.phone}</span>
                       </div>
@@ -1620,7 +1621,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                       </Badge>
                     </div>
                     {c.representante_nombre ? (
-                      <div>
+                      <div className="min-w-0 truncate">
                         <span className="text-muted-foreground">Rep: </span>
                         <span className="text-foreground">{c.representante_nombre}</span>
                       </div>
@@ -1641,12 +1642,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
                   {/* Row 4: Address */}
                   {c.address && (
-                    <p className="text-xs text-muted-foreground mt-1.5 ml-6 truncate">{c.address}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 ml-6 line-clamp-2">{c.address}</p>
                   )}
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-1 px-4 pb-2" onClick={e => e.stopPropagation()}>
+                <div className="flex flex-wrap items-center gap-1 px-4 pb-2" onClick={e => e.stopPropagation()}>
                   <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(c)}>
                     <Pencil className="h-3 w-3" /> Editar
                   </Button>
