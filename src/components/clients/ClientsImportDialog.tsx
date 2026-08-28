@@ -39,6 +39,8 @@ import { parseClientName, clientNameKey } from "@/lib/client-name";
 type Status = "new" | "update" | "unchanged" | "error";
 
 type ImportRow = {
+  /** ID interno de NetSuite (llave de match más confiable) */
+  netsuite_id: string;
   name: string;
   company: string;
   nickname: string;
@@ -58,10 +60,54 @@ type ImportRow = {
   google_place_id: string | null;
   representante_nombre: string;
   representante_id?: string | null;
+  categoria?: string;
+  zona?: string;
+  horario_from?: string | null;
+  horario_until?: string | null;
+  notas?: string;
   status: Status;
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
+};
+
+/** NetSuite exporta celdas multilínea con "_x000D_" y saltos de línea. */
+const cleanNs = (v: unknown) =>
+  String(v ?? "")
+    .replace(/_x000D_/gi, " ")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Dirección de NetSuite:
+ * "1560 PEDRO MORENO 1305 BUENAVISTA CUAUHTEMOC 06350 , CDMX México"
+ * Quita el ID inicial y el "México" final, y extrae el CP de 5 dígitos.
+ */
+const parseNetsuiteAddress = (raw: string, netsuiteId?: string) => {
+  let out = cleanNs(raw);
+  if (netsuiteId) {
+    out = out.replace(new RegExp(`^${netsuiteId}\\b[\\s,:-]*`), "").trim();
+  }
+  out = out.replace(/^\d{3,7}\b[\s,:-]*/, "").trim();
+  out = out.replace(/\s*,?\s*(m[eé]xico)\s*$/i, "").trim();
+  const cp = out.match(/\b(\d{5})\b/)?.[1] ?? "";
+  out = out.replace(/\s*,\s*,/g, ",").replace(/\s*,\s*$/, "").trim();
+  return { address: out, cp };
+};
+
+/** "09:00 - 14:00" / "9 a 14 hrs" -> { from: "09:00", until: "14:00" } */
+const parseHorario = (raw: string) => {
+  const s = cleanNs(raw);
+  if (!s) return { from: null as string | null, until: null as string | null };
+  const times = s.match(/\d{1,2}(?::\d{2})?/g);
+  const pad = (t?: string) => {
+    if (!t) return null;
+    const [h, m = "00"] = t.split(":");
+    const hh = String(Math.min(23, Number(h))).padStart(2, "0");
+    return `${hh}:${m.padStart(2, "0")}`;
+  };
+  return { from: pad(times?.[0]), until: pad(times?.[1]) };
 };
 
 // "Amaya, Marisol" -> "Marisol Amaya"; "Marisol Amaya" stays as is.
@@ -176,7 +222,7 @@ export function ClientsImportDialog({
         const { data, error } = await supabase
           .from("clientes")
           .select(
-            "id, razon_social, nombre_comercial, company, phone, telefono, rfc, direccion, codigo_postal, payment_method, client_type",
+            "id, netsuite_id, razon_social, nombre_comercial, company, phone, telefono, rfc, direccion, codigo_postal, payment_method, client_type, representante_id, payment_terms, delivery_window_from, delivery_window_until, notas",
           )
           .range(from, from + 999);
         if (error) throw error;
@@ -187,7 +233,9 @@ export function ClientsImportDialog({
       const byRfc = new Map<string, any>();
       const byName = new Map<string, any>();
       const byPhone = new Map<string, any>();
+      const byNetsuite = new Map<string, any>();
       for (const c of existingList) {
+        if (c.netsuite_id) byNetsuite.set(String(c.netsuite_id).trim(), c);
         if (c.rfc && !GENERIC_RFCS.has(String(c.rfc).toUpperCase()))
           byRfc.set(String(c.rfc).toUpperCase().trim(), c);
         const nk = normKey(c.razon_social) || normKey(c.nombre_comercial) || normKey(c.company);
@@ -204,6 +252,7 @@ export function ClientsImportDialog({
         const nk = normKey(r.name) || normKey(r.company) || normKey(r.razon_social);
         const pk = normPhone(r.phone);
         const match =
+          (r.netsuite_id && byNetsuite.get(String(r.netsuite_id).trim())) ||
           (useRfc && byRfc.get(rfcUp)) ||
           (nk && byName.get(nk)) ||
           (pk.length === 10 && byPhone.get(pk)) ||
@@ -226,44 +275,38 @@ export function ClientsImportDialog({
           diff.push("método pago");
         if (r.client_type && norm(r.client_type) !== norm(match.client_type))
           diff.push("tipo");
+        // Campos que el catálogo de NetSuite completa en clientes existentes.
+        if (r.netsuite_id && norm(r.netsuite_id) !== norm(match.netsuite_id))
+          diff.push("NetSuite ID");
+        if (r.representante_nombre && !match.representante_id) diff.push("representante");
+        if (r.payment_terms != null && Number(match.payment_terms ?? -1) !== r.payment_terms)
+          diff.push("plazo");
+        if (r.horario_from && !match.delivery_window_from) diff.push("horario");
+        if (r.notas && !match.notas) diff.push("notas");
         return diff.length > 0
           ? { status: "update", existing_id: match.id, diff_fields: diff }
           : { status: "unchanged", existing_id: match.id };
       };
 
 
-      // Ask the AI to normalize each row.
+      // La IA solo mapea COLUMNAS (no filas): es determinista, rápido y
+      // funciona igual con 10 o 10,000 filas. Las heurísticas mandan y la IA
+      // rellena las columnas que no se reconocieron.
       setAnalyzing(true);
       const headers = Object.keys(json[0] ?? {});
-      const sampleRows = json.slice(0, 1500);
-      const system = `Eres un asistente que normaliza un catálogo de clientes (distribuidor farmacéutico veterinario en México) desde un Excel.
+      const sampleRows = json.slice(0, 8);
+      const system = `Eres un asistente que mapea las columnas de un Excel de clientes (distribuidor farmacéutico veterinario en México) a campos canónicos.
 Devuelves SOLO JSON válido, sin markdown.
-Para cada fila identifica los campos canónicos:
-- name (nombre del cliente o razón social abreviada — obligatorio)
-- company (nombre comercial / empresa, puede ser igual a name)
-- nickname (apodo / nombre corto si existe)
-- phone (string)
-- email (string)
-- rfc (string en mayúsculas, sin espacios)
-- razon_social (razón social completa)
-- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado).
-  IMPORTANTE: en este Excel la columna "Dirección de envío" suele venir como
-  "<NOMBRE_CLIENTE> <NOMBRE_CLIENTE_REPETIDO> <DIRECCIÓN_REAL>". Debes
-  ELIMINAR cualquier prefijo que sea el nombre del cliente, la razón social,
-  el nombre comercial o palabras tipo "VETERINARIA X", "HOSPITAL Y",
-  "FARMACIA Z", "PET'S HOME", etc., y devolver SOLO la dirección real
-  (calle, número, colonia, municipio, estado). Prefiere "Dirección de envío"
-  sobre "Dirección de facturación" si ambas existen.
-- codigo_postal (5 dígitos)
-- payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
-- payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
-- client_type ("mayoreo" si tiene crédito o RFC empresarial, "menudeo" si es contado/persona física)
-- representante_nombre (vendedor / representante de ventas asignado al cliente; si viene como "Apellido, Nombre" devuelve "Nombre Apellido"; si no aparece devuelve "")
-Si un campo no aparece, devuelve "" o null.
-Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
-      const userMsg = JSON.stringify({ headers, rows: sampleRows });
+Campos canónicos posibles: netsuite_id, name, company, nickname, phone, email, rfc, razon_social, address, codigo_postal, payment_method, payment_terms, client_type, representante_nombre, categoria, zona, horario, comentarios.
+Notas:
+- netsuite_id: la columna "ID" / "ID interno" de NetSuite.
+- payment_terms: días de crédito ("Términos", "Crédito", "Plazo").
+- representante_nombre: vendedor/representante de ventas (puede venir "Apellido, Nombre").
+- address: prefiere "Dirección de envío" sobre facturación.
+Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los campos que no existan.`;
+      const userMsg = JSON.stringify({ headers, sample: sampleRows });
 
-      let aiRows: any[] | null = null;
+      let aiMap: Record<string, string> | null = null;
       try {
         const resp = await aiChatFn({
           data: {
@@ -285,22 +328,35 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           .replace(/```$/i, "")
           .trim();
         const parsedJson = JSON.parse(cleaned);
-        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+        aiMap =
+          parsedJson?.map && typeof parsedJson.map === "object" ? parsedJson.map : null;
       } catch (e) {
-        console.warn("AI mapping failed, falling back to heuristics", e);
+        console.warn("AI column mapping failed, falling back to heuristics", e);
       }
 
       const get = (r: Record<string, unknown>, ...keys: string[]) => {
         for (const k of keys) {
           for (const real of Object.keys(r)) {
             if (real.toLowerCase().trim() === k.toLowerCase())
-              return String(r[real] ?? "").trim();
+              return cleanNs(String(r[real] ?? ""));
           }
         }
         return "";
       };
 
+      // Column mapping produced by the AI (header -> canonical field), used to
+      // read values the heuristics didn't recognize.
+      const mapped = (r: Record<string, unknown>, field: string) => {
+        const header = aiMap?.[field];
+        if (!header) return "";
+        const real = Object.keys(r).find(
+          (k) => k.toLowerCase().trim() === String(header).toLowerCase().trim(),
+        );
+        return real ? cleanNs(String(r[real] ?? "")) : "";
+      };
+
       const heuristicRow = (r: Record<string, unknown>) => ({
+        netsuite_id: get(r, "id", "id interno", "internal id", "netsuite id", "no. cliente", "numero de cliente"),
         name: get(r, "nombre", "name", "cliente", "razon social", "razón social"),
         company: get(r, "empresa", "company", "nombre comercial"),
         nickname: get(r, "apodo", "alias", "nickname"),
@@ -311,19 +367,23 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         address: get(r, "direccion de envio", "dirección de envío", "direccion envio", "dirección envío", "direccion", "dirección", "address", "domicilio", "direccion de facturacion", "dirección de facturación"),
         codigo_postal: get(r, "cp", "codigo postal", "código postal", "codigo_postal", "zip"),
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
-        payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
+        payment_terms_str: get(r, "terminos", "términos", "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
         client_type: get(r, "tipo", "client_type", "tipo cliente").toLowerCase(),
         representante_nombre: get(r, "representante de ventas", "representante", "vendedor", "asesor", "ejecutivo"),
+        categoria: get(r, "categoria", "categoría", "category"),
+        zona: get(r, "zona", "zone", "alcaldia", "alcaldía", "municipio"),
+        horario: get(r, "horario recepcion", "horario recepción", "horario de recepcion", "horario de recepción", "horario"),
+        comentarios: get(r, "comentarios", "notas", "observaciones"),
       });
 
       const built: ImportRow[] = json.map((raw, i) => {
-        const ai = aiRows?.[i] ?? null;
         const h = heuristicRow(raw);
         const pick = (a: any, b: any) =>
           a != null && String(a).trim() !== "" ? String(a).trim() : String(b ?? "").trim();
-        const rawName = pick(ai?.name, h.name);
-        const rawCompany = pick(ai?.company, h.company);
-        const rawRazon = pick(ai?.razon_social, h.razon_social);
+        const netsuite_id = pick(h.netsuite_id, mapped(raw, "netsuite_id")).replace(/\.0$/, "");
+        const rawName = pick(h.name, mapped(raw, "name"));
+        const rawCompany = pick(h.company, mapped(raw, "company"));
+        const rawRazon = pick(h.razon_social, mapped(raw, "razon_social"));
         // VM / subcuentas: "PADRE : 1928 VM SUBCUENTA" -> nombre limpio de la
         // subcuenta + nombre del padre; se fuerza el RFC genérico para VM.
         const parsedName = parseClientName(rawName);
@@ -335,31 +395,47 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const razon_social = parsedRazon.name || rawRazon;
         const parent_name =
           parsedName.parentName ?? parsedRazon.parentName ?? parsedCompany.parentName ?? null;
-        const nickname = pick(ai?.nickname, h.nickname);
-        const phone = pick(ai?.phone, h.phone);
-        const email = pick(ai?.email, h.email);
-        const rfcInput = pick(ai?.rfc, h.rfc).toUpperCase();
+        const nickname = pick(h.nickname, mapped(raw, "nickname"));
+        const phone = pick(h.phone, mapped(raw, "phone"));
+        const email = pick(h.email, mapped(raw, "email"));
+        const rfcInput = pick(h.rfc, mapped(raw, "rfc")).toUpperCase();
         const rfc = rfcInput || (wasVm ? GENERIC_RFC : "");
-        const rawAddress = pick(ai?.address, h.address);
-        const address = stripNamePrefix(rawAddress, name, company, razon_social, nickname);
-        const codigo_postal = pick(ai?.codigo_postal, h.codigo_postal);
-        const pm = pick(ai?.payment_method, h.payment_method);
-        const termsRaw = ai?.payment_terms ?? Number(h.payment_terms_str) ?? null;
+        const rawAddress = pick(h.address, mapped(raw, "address"));
+        const ns = parseNetsuiteAddress(rawAddress, netsuite_id);
+        const address = stripNamePrefix(ns.address, name, company, razon_social, nickname);
+        const codigo_postal =
+          pick(h.codigo_postal, mapped(raw, "codigo_postal")) || ns.cp || "";
+        const pm = pick(h.payment_method, mapped(raw, "payment_method"));
+        const termsRaw = pick(h.payment_terms_str, mapped(raw, "payment_terms"));
         const payment_terms =
-          termsRaw == null || termsRaw === "" || Number.isNaN(Number(termsRaw))
+          termsRaw === "" || Number.isNaN(Number(termsRaw))
             ? null
             : Math.max(0, Math.round(Number(termsRaw)));
-        const ctRaw = String(ai?.client_type ?? h.client_type ?? "").toLowerCase();
+        const ctRaw = String(pick(h.client_type, mapped(raw, "client_type"))).toLowerCase();
+        const categoria = pick(h.categoria, mapped(raw, "categoria"));
+        const zona = pick(h.zona, mapped(raw, "zona"));
+        const comentarios = pick(h.comentarios, mapped(raw, "comentarios"));
         const client_type: "mayoreo" | "menudeo" =
           ctRaw === "mayoreo" || ctRaw === "menudeo"
             ? (ctRaw as any)
-            : pm.toLowerCase().includes("credito") || (payment_terms ?? 0) > 0
+            : /comercializadora|hospital|distribuidor/i.test(categoria)
               ? "mayoreo"
-              : "menudeo";
+              : pm.toLowerCase().includes("credito") || (payment_terms ?? 0) > 0
+                ? "mayoreo"
+                : "menudeo";
 
-        const representante_nombre = normalizeRepName(pick(ai?.representante_nombre, h.representante_nombre));
+        const representante_nombre = normalizeRepName(
+          pick(h.representante_nombre, mapped(raw, "representante_nombre")),
+        );
+        const horario = parseHorario(pick(h.horario, mapped(raw, "horario")));
+        const notasParts = [
+          categoria ? `Categoría: ${categoria}` : "",
+          zona ? `Zona: ${zona}` : "",
+          comentarios ? `NetSuite: ${comentarios}` : "",
+        ].filter(Boolean);
 
         const baseRow = {
+          netsuite_id,
           name,
           company,
           nickname,
@@ -378,6 +454,11 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           google_place_id: null as string | null,
           representante_nombre,
           representante_id: null as string | null,
+          categoria,
+          zona,
+          horario_from: horario.from,
+          horario_until: horario.until,
+          notas: notasParts.join(" · "),
         };
         if (!name) {
           return {
@@ -617,6 +698,10 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           lng: r.lng,
           google_place_id: r.google_place_id,
           representante_id: r.representante_id ?? null,
+          netsuite_id: r.netsuite_id || null,
+          delivery_window_from: r.horario_from || null,
+          delivery_window_until: r.horario_until || null,
+          notas: r.notas || null,
           active: true,
         }));
         for (let i = 0; i < payload.length; i += 100) {
@@ -653,13 +738,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         if (fields.has("CP")) patch.codigo_postal = r.codigo_postal || null;
         if (fields.has("método pago")) patch.payment_method = r.payment_method || null;
         if (fields.has("tipo")) patch.client_type = r.client_type;
+        if (fields.has("NetSuite ID") && r.netsuite_id) patch.netsuite_id = r.netsuite_id;
+        if (fields.has("horario")) {
+          patch.delivery_window_from = r.horario_from || null;
+          patch.delivery_window_until = r.horario_until || null;
+        }
+        if (fields.has("notas") && r.notas) patch.notas = r.notas;
         if (r.lat != null && r.lng != null) {
           patch.lat = r.lat;
           patch.lng = r.lng;
           patch.google_place_id = r.google_place_id;
         }
-        if (r.payment_terms != null) patch.payment_terms = r.payment_terms;
-        if (r.representante_id) patch.representante_id = r.representante_id;
+        if (fields.has("plazo") && r.payment_terms != null)
+          patch.payment_terms = r.payment_terms;
+        if (fields.has("representante") && r.representante_id)
+          patch.representante_id = r.representante_id;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
           .from("clientes")
@@ -687,6 +780,10 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
       unchanged: rows.filter((r) => r.status === "unchanged").length,
       err: rows.filter((r) => r.status === "error").length,
       geo: rows.filter((r) => r.lat != null && r.lng != null).length,
+      reps: rows.filter((r) => r.diff_fields?.includes("representante")).length,
+      subs: rows.filter((r) => !!r.parent_name).length,
+      terms: rows.filter((r) => r.diff_fields?.includes("plazo")).length,
+      ns: rows.filter((r) => r.diff_fields?.includes("NetSuite ID")).length,
     }),
     [rows],
   );
@@ -773,6 +870,22 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                     {counts.err} con error
                   </Badge>
                 )}
+                {counts.reps > 0 && (
+                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 border-amber-500/30">
+                    {counts.reps} representante por asignar
+                  </Badge>
+                )}
+                {counts.subs > 0 && (
+                  <Badge variant="secondary" className="bg-violet-500/10 text-violet-700 border-violet-500/30">
+                    {counts.subs} subcuentas
+                  </Badge>
+                )}
+                {counts.terms > 0 && (
+                  <Badge variant="outline">{counts.terms} plazos de crédito</Badge>
+                )}
+                {counts.ns > 0 && (
+                  <Badge variant="outline">{counts.ns} IDs NetSuite</Badge>
+                )}
                 <Badge variant="outline" className="ml-auto">
                   <MapPin className="mr-1 h-3 w-3" /> {counts.geo}/{rows.length} geocodificados
                 </Badge>
@@ -807,6 +920,7 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                       <TableHead>Tipo</TableHead>
                       <TableHead>Pago</TableHead>
                       <TableHead>Representante</TableHead>
+                      <TableHead>Cambios</TableHead>
                       <TableHead>Geo</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -851,6 +965,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
                               {!r.representante_id && " (nuevo)"}
                             </span>
                           ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[220px]">
+                          {r.parent_name && (
+                            <Badge variant="outline" className="mr-1 mb-1 text-[10px]">
+                              subcuenta de {r.parent_name}
+                            </Badge>
+                          )}
+                          {(r.diff_fields ?? []).map((f) => (
+                            <Badge key={f} variant="secondary" className="mr-1 mb-1 text-[10px]">
+                              {f}
+                            </Badge>
+                          ))}
+                          {!r.parent_name && (r.diff_fields ?? []).length === 0 && (
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
