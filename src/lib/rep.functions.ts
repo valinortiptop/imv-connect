@@ -2645,31 +2645,96 @@ export const getSavedRouteDetailFn = createServerFn({ method: "POST" })
       repNombre = (rp as any)?.nombre ?? null;
     }
 
+    // Visitas del día de la ruta (para marcar cumplimiento por cliente)
+    const visitsByClient = new Map<string, any>();
+    const fecha = (row as any).fecha as string | null;
+    if (fecha) {
+      let vq = context.supabase
+        .from("rep_visits")
+        .select(
+          "id, cliente_id, check_in_at, check_out_at, outcome, notes, unplanned, pedido_id, distance_m, photo_paths",
+        )
+        .gte("check_in_at", `${fecha}T00:00:00`)
+        .lt("check_in_at", `${fecha}T23:59:59.999`);
+      if ((row as any).representante_id) {
+        vq = vq.eq("representante_id", (row as any).representante_id);
+      }
+      const { data: visits } = await vq;
+      for (const v of (visits ?? []) as any[]) {
+        if (!v.cliente_id) continue;
+        const key = String(v.cliente_id);
+        const prev = visitsByClient.get(key);
+        // conservar la visita con check-in más temprano
+        if (!prev || new Date(v.check_in_at) < new Date(prev.check_in_at)) visitsByClient.set(key, v);
+      }
+    }
+
+    const withVisit = (s: any) => {
+      const v = visitsByClient.get(String(s.cliente_id));
+      if (!v) return { ...s, visited: false, visit: null };
+      const minutos = v.check_out_at
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000,
+            ),
+          )
+        : null;
+      return {
+        ...s,
+        visited: true,
+        visit: {
+          id: v.id,
+          check_in_at: v.check_in_at,
+          check_out_at: v.check_out_at,
+          minutos,
+          in_progress: !v.check_out_at,
+          outcome: v.outcome ?? null,
+          notes: v.notes ?? null,
+          unplanned: !!v.unplanned,
+          pedido_id: v.pedido_id ?? null,
+          distance_m: v.distance_m ?? null,
+          photos: Array.isArray(v.photo_paths) ? v.photo_paths.length : 0,
+        },
+      };
+    };
+
+    const stopsOut = (((row as any).ordered_stops as any[]) ?? []).map((s: any) => {
+      if (String(s?.cliente_id) === OFFICE_STOP_ID) {
+        return withVisit({
+          ...s,
+          nombre: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
+          direccion: OFFICE_LOCATION.direccion,
+          telefono: null,
+        });
+      }
+      const c = byId.get(String(s.cliente_id));
+      return withVisit({
+        ...s,
+        nombre: s?.nombre || c?.nombre_comercial || c?.razon_social || c?.nickname || null,
+        direccion: s?.direccion || c?.direccion || null,
+        telefono: c?.telefono ?? null,
+      });
+    });
+
+    const visitedCount = stopsOut.filter((s: any) => s.visited).length;
+    const totalVisitMin = stopsOut.reduce(
+      (acc: number, s: any) => acc + (s.visit?.minutos ?? 0),
+      0,
+    );
+
     return {
       isAdmin: !!isAdmin,
       route: {
         ...(row as any),
         representante_nombre: repNombre,
-        ordered_stops: (((row as any).ordered_stops as any[]) ?? []).map((s: any) => {
-          if (String(s?.cliente_id) === OFFICE_STOP_ID) {
-            return {
-              ...s,
-              nombre: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
-              direccion: OFFICE_LOCATION.direccion,
-              telefono: null,
-            };
-          }
-          const c = byId.get(String(s.cliente_id));
-          return {
-            ...s,
-            nombre: s?.nombre || c?.nombre_comercial || c?.razon_social || c?.nickname || null,
-            direccion: s?.direccion || c?.direccion || null,
-            telefono: c?.telefono ?? null,
-          };
-        }),
+        ordered_stops: stopsOut,
+        visited_count: visitedCount,
+        visited_minutes: totalVisitMin,
       },
     };
   });
+
 
 export const duplicateSavedRouteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
