@@ -94,13 +94,13 @@ export default function RouteDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <RouteIcon className="h-4 w-4 text-primary" />
-            {route?.nombre ?? "Ruta planeada"}
+      <DialogContent className="max-w-2xl">
+        <DialogHeader className="pr-8 text-left sm:text-left">
+          <DialogTitle className="flex min-w-0 items-center gap-2 text-base">
+            <RouteIcon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">{route?.nombre ?? "Ruta planeada"}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             {route
               ? `${route.fecha} · ${stops.length} paradas${
                   route.total_km ? ` · ${route.total_km} km` : ""
@@ -108,6 +108,7 @@ export default function RouteDetailsDialog({
               : "Cargando detalle de la ruta…"}
           </DialogDescription>
         </DialogHeader>
+
 
         {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
         {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
