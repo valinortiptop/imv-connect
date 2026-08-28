@@ -63,18 +63,22 @@ export const getSupervisorDashboardFn = createServerFn({ method: "POST" })
     const repIds = (reps ?? []).map((r: any) => r.id);
     if (repIds.length === 0) return { rows: [], since: sinceIso, totals: { visits: 0, pedidos: 0, ventas: 0 } };
 
-    const [{ data: visits }, { data: pedidos }] = await Promise.all([
-      context.supabase
-        .from("rep_visits")
-        .select("representante_id, cliente_id, outcome, check_in_at, check_out_at, pedido_id")
-        .in("representante_id", repIds)
-        .gte("check_in_at", sinceIso),
-      context.supabase
-        .from("pedidos")
-        .select("id, representante_id, total, created_at, cliente_id")
-        .in("representante_id", repIds)
-        .gte("created_at", sinceIso),
-    ]);
+    let vq = context.supabase
+      .from("rep_visits")
+      .select("representante_id, cliente_id, outcome, check_in_at, check_out_at, pedido_id")
+      .in("representante_id", repIds)
+      .gte("check_in_at", sinceIso);
+    let pq = context.supabase
+      .from("pedidos")
+      .select("id, representante_id, total, created_at, cliente_id")
+      .in("representante_id", repIds)
+      .gte("created_at", sinceIso);
+    if (untilIso) {
+      vq = vq.lte("check_in_at", untilIso);
+      pq = pq.lte("created_at", untilIso);
+    }
+    const [{ data: visits }, { data: pedidos }] = await Promise.all([vq, pq]);
+
 
     type Row = {
       rep_id: string;
