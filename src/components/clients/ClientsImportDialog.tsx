@@ -870,6 +870,22 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
                     {counts.err} con error
                   </Badge>
                 )}
+                {counts.reps > 0 && (
+                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 border-amber-500/30">
+                    {counts.reps} representante por asignar
+                  </Badge>
+                )}
+                {counts.subs > 0 && (
+                  <Badge variant="secondary" className="bg-violet-500/10 text-violet-700 border-violet-500/30">
+                    {counts.subs} subcuentas
+                  </Badge>
+                )}
+                {counts.terms > 0 && (
+                  <Badge variant="outline">{counts.terms} plazos de crédito</Badge>
+                )}
+                {counts.ns > 0 && (
+                  <Badge variant="outline">{counts.ns} IDs NetSuite</Badge>
+                )}
                 <Badge variant="outline" className="ml-auto">
                   <MapPin className="mr-1 h-3 w-3" /> {counts.geo}/{rows.length} geocodificados
                 </Badge>
