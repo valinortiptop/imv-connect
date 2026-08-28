@@ -284,6 +284,40 @@ export default function NewRouteWizardDialog({
             </div>
           </section>
 
+          {/* Parada en la oficina IMV */}
+          <section className="rounded-lg border p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <MapPin className="h-4 w-4 text-purple-600" /> Parada en Oficina IMV
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={officeMotivo ? "default" : "outline"}
+                onClick={() => setOfficeMotivo(officeMotivo ? null : OFFICE_PURPOSES[0])}
+              >
+                {officeMotivo ? "Incluida" : "Incluir oficina"}
+              </Button>
+              {officeMotivo && (
+                <Select value={officeMotivo} onValueChange={setOfficeMotivo}>
+                  <SelectTrigger className="h-9 w-48 text-sm">
+                    <SelectValue placeholder="Motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OFFICE_PURPOSES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {OFFICE_LOCATION.direccion}
+            </p>
+          </section>
+
           {/* Admin only — assign the route to a representative */}
           {isAdmin && (
             <section className="rounded-lg border p-3">
