@@ -221,99 +221,93 @@ export default function SavedRoutesList({ limit = 60 }: { limit?: number }) {
                               </div>
                             </div>
                           </button>
-                          {!isEditing && (
+                          <div className="flex shrink-0 items-center gap-1">
                             <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 shrink-0"
-                              title="Renombrar"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingId(r.id);
-                                setEditingName(r.nombre || "");
-                              }}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 shrink-0 gap-1 px-2 text-xs"
+                              onClick={() => loadRouteIntoMap(r)}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              Ver / Editar
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 shrink-0 gap-1 px-2 text-xs"
-                            onClick={() => loadRouteIntoMap(r)}
-                          >
-                            Ver / Editar
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            title="Imprimir ruta"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              printRouteHtml({
-                                title: displayName,
-                                fecha: r.fecha,
-                                totalKm: r.total_km,
-                                totalMin: r.total_minutes,
-                                stops: (r.ordered_stops ?? []) as any,
-                                legs: (r.legs ?? []) as any,
-                              });
-                            }}
-                          >
-                            <Printer className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            title="Descargar PDF"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              downloadRoutePdf({
-                                title: displayName,
-                                fecha: r.fecha,
-                                totalKm: r.total_km,
-                                totalMin: r.total_minutes,
-                                stops: (r.ordered_stops ?? []) as any,
-                                legs: (r.legs ?? []) as any,
-                              });
-                            }}
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            title="Duplicar ruta"
-                            disabled={duplicateMut.isPending}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const today = new Date().toISOString().slice(0, 10);
-                              const suggested = prompt(
-                                "Fecha para la ruta duplicada (YYYY-MM-DD):",
-                                r.fecha || today,
-                              );
-                              if (suggested === null) return;
-                              const fecha = suggested.trim() || r.fecha || today;
-                              duplicateMut.mutate({ id: r.id, fecha });
-                            }}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("¿Eliminar esta ruta guardada?")) removeMut.mutate(r.id);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 shrink-0"
+                                  title="Más acciones"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingId(r.id);
+                                    setEditingName(r.nombre || "");
+                                  }}
+                                >
+                                  <Pencil className="mr-2 h-3.5 w-3.5" /> Renombrar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    printRouteHtml({
+                                      title: displayName,
+                                      fecha: r.fecha,
+                                      totalKm: r.total_km,
+                                      totalMin: r.total_minutes,
+                                      stops: (r.ordered_stops ?? []) as any,
+                                      legs: (r.legs ?? []) as any,
+                                    })
+                                  }
+                                >
+                                  <Printer className="mr-2 h-3.5 w-3.5" /> Imprimir
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    downloadRoutePdf({
+                                      title: displayName,
+                                      fecha: r.fecha,
+                                      totalKm: r.total_km,
+                                      totalMin: r.total_minutes,
+                                      stops: (r.ordered_stops ?? []) as any,
+                                      legs: (r.legs ?? []) as any,
+                                    })
+                                  }
+                                >
+                                  <Download className="mr-2 h-3.5 w-3.5" /> Descargar PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={duplicateMut.isPending}
+                                  onClick={() => {
+                                    const today = new Date().toISOString().slice(0, 10);
+                                    const suggested = prompt(
+                                      "Fecha para la ruta duplicada (YYYY-MM-DD):",
+                                      r.fecha || today,
+                                    );
+                                    if (suggested === null) return;
+                                    const fecha = suggested.trim() || r.fecha || today;
+                                    duplicateMut.mutate({ id: r.id, fecha });
+                                  }}
+                                >
+                                  <Copy className="mr-2 h-3.5 w-3.5" /> Duplicar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => {
+                                    if (confirm("¿Eliminar esta ruta guardada?")) removeMut.mutate(r.id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
+
                         {open && (
                           <div className="border-t border-border bg-muted/20 p-2 space-y-2">
                             <SavedRoutePreview
