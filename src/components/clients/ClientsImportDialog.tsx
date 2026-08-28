@@ -968,6 +968,21 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
                             <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-xs max-w-[220px]">
+                          {r.parent_name && (
+                            <Badge variant="outline" className="mr-1 mb-1 text-[10px]">
+                              subcuenta de {r.parent_name}
+                            </Badge>
+                          )}
+                          {(r.diff_fields ?? []).map((f) => (
+                            <Badge key={f} variant="secondary" className="mr-1 mb-1 text-[10px]">
+                              {f}
+                            </Badge>
+                          ))}
+                          {!r.parent_name && (r.diff_fields ?? []).length === 0 && (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {r.lat != null && r.lng != null ? (
                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
