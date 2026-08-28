@@ -114,7 +114,7 @@ export default function RouteDetailsDialog({
         {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
 
         {route && (
-          <div className="space-y-4">
+          <div className="w-full min-w-0 space-y-4">
             {editing ? (
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input

@@ -135,7 +135,13 @@ export default function DailyRoutesSummary() {
                   {r.efficiency != null && <Progress value={r.efficiency} className="mt-2 h-1.5" />}
 
                   {expanded && (
-                    <>
+                    <div
+                      onClick={() => {
+                        if (r.routes[0]) setOpenRouteId(r.routes[0].id);
+                      }}
+                      className={r.routes[0] ? "cursor-pointer" : undefined}
+                      role={r.routes[0] ? "button" : undefined}
+                    >
                       {r.routes.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {r.routes.map((rt: any) => (
@@ -185,8 +191,9 @@ export default function DailyRoutesSummary() {
                           ))}
                         </ul>
                       )}
-                    </>
+                    </div>
                   )}
+
 
                   {isMobile && !expanded && r.routes.length > 0 && (
                     <p className="mt-2 text-[11px] text-muted-foreground">
