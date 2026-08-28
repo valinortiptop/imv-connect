@@ -116,13 +116,14 @@ export default function RouteDetailsDialog({
         {route && (
           <div className="space-y-4">
             {editing ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nombre de la ruta"
                   className="h-9"
                 />
+
                 <Button
                   size="sm"
                   onClick={() => renameMut.mutate()}
