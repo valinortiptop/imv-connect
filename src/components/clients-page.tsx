@@ -1268,17 +1268,17 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         {dashboardStats && !isLoading && (
           <>
             {/* Stat cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {/* Ticket promedio */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-green-500/10">
                     <DollarSign className="h-4 w-4 text-green-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ticket promedio</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Ticket promedio</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {mxnFmt.format(dashboardStats.ticketPromedio)}
                   </p>
                 </div>
@@ -1286,14 +1286,14 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Pedidos por cliente */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-blue-500/10">
                     <ShoppingCart className="h-4 w-4 text-blue-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pedidos por cliente</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Pedidos por cliente</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {dashboardStats.pedidosPorCliente.toFixed(1)}
                   </p>
                 </div>
@@ -1301,16 +1301,16 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Cliente más frecuente */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-amber-500/10">
                     <Crown className="h-4 w-4 text-amber-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente más frecuente</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Cliente más frecuente</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
                   {dashboardStats.topClient ? (
                     <>
-                      <p className="text-lg font-bold text-foreground">{dashboardStats.topClient.name}</p>
+                      <p className="text-sm font-bold leading-tight text-foreground line-clamp-2 sm:text-lg">{dashboardStats.topClient.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{dashboardStats.topClient.count} pedidos</p>
                     </>
                   ) : (
@@ -1321,14 +1321,14 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
               {/* Total clientes */}
               <div className="border border-border rounded-lg bg-card/50 flex flex-col text-center overflow-hidden">
-                <div className="px-5 pt-4 pb-2 flex items-center justify-center gap-2">
+                <div className="px-2.5 pt-3 pb-1.5 flex items-center justify-center gap-1.5 sm:px-5 sm:pt-4 sm:pb-2 sm:gap-2">
                   <div className="p-1.5 rounded-md bg-purple-500/10">
                     <Users className="h-4 w-4 text-purple-400" />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total clientes</p>
+                  <p className="text-[10px] leading-tight font-medium text-muted-foreground uppercase tracking-wide sm:text-xs sm:tracking-wider">Total clientes</p>
                 </div>
-                <div className="pb-4 pt-1 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-foreground">{dashboardStats.totalClientes}</p>
+                <div className="px-2 pb-3 pt-1 flex flex-col items-center justify-center sm:pb-4">
+                  <p className="text-xl font-bold text-foreground sm:text-2xl">{dashboardStats.totalClientes}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">activos</p>
                 </div>
               </div>
@@ -1340,11 +1340,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               const totalSales = topClientsBySales.reduce((s, c) => s + c.total, 0);
               return (
                 <div className="border border-border rounded-lg bg-card/50 overflow-hidden">
-                  <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+                  <div className="px-3 pt-3 pb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 sm:px-5 sm:pt-4">
                     <h3 className="text-sm font-medium text-muted-foreground">Top 5 clientes por ventas</h3>
                     <span className="text-xs text-muted-foreground">{mxnFmt.format(totalSales)} total</span>
                   </div>
-                  <div className="px-5 pb-4 pt-1 space-y-3">
+                  <div className="px-3 pb-4 pt-1 space-y-3 sm:px-5">
                     {topClientsBySales.map((c, i) => {
                       const pct = maxValue > 0 ? (c.total / maxValue) * 100 : 0;
                       return (
@@ -1356,9 +1356,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                               </div>
                               <span className="text-sm truncate text-foreground">{c.name}</span>
                             </div>
-                            <div className="flex items-center gap-3 ml-3 shrink-0">
-                              <span className="text-xs text-muted-foreground">{c.orders} pedidos</span>
-                              <span className="text-sm font-bold text-foreground tabular-nums">{mxnFmt.format(c.total)}</span>
+                            <div className="flex items-center gap-2 ml-2 shrink-0 sm:gap-3 sm:ml-3">
+                              <span className="hidden text-xs text-muted-foreground sm:inline">{c.orders} pedidos</span>
+                              <span className="text-xs font-bold text-foreground tabular-nums sm:text-sm">{mxnFmt.format(c.total)}</span>
                             </div>
                           </div>
                           <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(59,130,246,0.1)" }}>
