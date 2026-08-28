@@ -1030,9 +1030,9 @@ export default function RouteMap() {
 
       {routeInfo && (
         <Card className="border-primary/30">
-          <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+          <CardHeader className="flex flex-col items-stretch gap-2 pb-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <CardTitle className="text-base">Ruta optimizada</CardTitle>
+              <CardTitle className="truncate text-base">Ruta optimizada</CardTitle>
               <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                 {routeInfo.ordered.length} paradas · {routeInfo.km} km · {routeInfo.min} min
               </p>
@@ -1040,7 +1040,8 @@ export default function RouteMap() {
                 Programada para {new Date(routeFecha + "T00:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "short" })}
               </p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 sm:shrink-0 sm:justify-end">
+
               {routeDirty && (
                 <Button
                   size="sm"

@@ -41,16 +41,17 @@ export default function LabRiskPanel({ maxLabs, compact }: { maxLabs?: number; c
           <Card key={l.laboratorio_id}>
             <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
               <div className="min-w-0">
-                <CardTitle className="text-base">{l.nombre}</CardTitle>
+                <CardTitle className="truncate text-base">{l.nombre}</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {l.clientes_recent} clientes activos (60d) · antes {l.clientes_previous}
                 </p>
               </div>
-              <Badge variant="outline" className={riskColor[l.risk_level] ?? ""}>
+              <Badge variant="outline" className={`shrink-0 ${riskColor[l.risk_level] ?? ""}`}>
                 {l.risk_level === "alto" && <AlertTriangle className="mr-1 h-3 w-3" />}
                 {l.risk_level}
               </Badge>
             </CardHeader>
+
             <CardContent className="pt-0">
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
