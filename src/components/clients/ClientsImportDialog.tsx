@@ -176,7 +176,7 @@ export function ClientsImportDialog({
         const { data, error } = await supabase
           .from("clientes")
           .select(
-            "id, razon_social, nombre_comercial, company, phone, telefono, rfc, direccion, codigo_postal, payment_method, client_type",
+            "id, netsuite_id, razon_social, nombre_comercial, company, phone, telefono, rfc, direccion, codigo_postal, payment_method, client_type, representante_id, payment_terms, delivery_window_from, delivery_window_until, notas",
           )
           .range(from, from + 999);
         if (error) throw error;
@@ -187,7 +187,9 @@ export function ClientsImportDialog({
       const byRfc = new Map<string, any>();
       const byName = new Map<string, any>();
       const byPhone = new Map<string, any>();
+      const byNetsuite = new Map<string, any>();
       for (const c of existingList) {
+        if (c.netsuite_id) byNetsuite.set(String(c.netsuite_id).trim(), c);
         if (c.rfc && !GENERIC_RFCS.has(String(c.rfc).toUpperCase()))
           byRfc.set(String(c.rfc).toUpperCase().trim(), c);
         const nk = normKey(c.razon_social) || normKey(c.nombre_comercial) || normKey(c.company);
@@ -204,6 +206,7 @@ export function ClientsImportDialog({
         const nk = normKey(r.name) || normKey(r.company) || normKey(r.razon_social);
         const pk = normPhone(r.phone);
         const match =
+          (r.netsuite_id && byNetsuite.get(String(r.netsuite_id).trim())) ||
           (useRfc && byRfc.get(rfcUp)) ||
           (nk && byName.get(nk)) ||
           (pk.length === 10 && byPhone.get(pk)) ||
@@ -226,6 +229,14 @@ export function ClientsImportDialog({
           diff.push("método pago");
         if (r.client_type && norm(r.client_type) !== norm(match.client_type))
           diff.push("tipo");
+        // Campos que el catálogo de NetSuite completa en clientes existentes.
+        if (r.netsuite_id && norm(r.netsuite_id) !== norm(match.netsuite_id))
+          diff.push("NetSuite ID");
+        if (r.representante_nombre && !match.representante_id) diff.push("representante");
+        if (r.payment_terms != null && Number(match.payment_terms ?? -1) !== r.payment_terms)
+          diff.push("plazo");
+        if (r.horario_from && !match.delivery_window_from) diff.push("horario");
+        if (r.notas && !match.notas) diff.push("notas");
         return diff.length > 0
           ? { status: "update", existing_id: match.id, diff_fields: diff }
           : { status: "unchanged", existing_id: match.id };
