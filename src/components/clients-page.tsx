@@ -1383,8 +1383,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         )}
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-3">
-          <div className="relative flex-1 w-full sm:w-auto max-w-sm">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2 sm:gap-3">
+          <div className="relative w-full min-w-0 sm:flex-1 sm:w-auto sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("searchClientsPlaceholder")}
@@ -1394,7 +1394,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             />
           </div>
 
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {(["all", "active", "inactive"] as const).map(s => (
               <Button
                 key={s}
@@ -1409,7 +1409,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
           {/* Representative filter */}
           <Select value={repFilter} onValueChange={setRepFilter}>
-            <SelectTrigger className="h-9 w-[200px] text-sm" aria-label="Filtrar por representante">
+            <SelectTrigger className="h-9 w-full min-w-0 text-sm sm:w-[200px]" aria-label="Filtrar por representante">
               <SelectValue placeholder="Representante…" />
             </SelectTrigger>
             <SelectContent>
@@ -1447,7 +1447,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           )}
 
           {/* View mode toggle — Lista vs Mapa */}
-          <div className="ml-auto flex items-center rounded-md border border-border bg-card p-0.5">
+          <div className="flex items-center rounded-md border border-border bg-card p-0.5 sm:ml-auto">
             <Button
               variant={viewMode === "list" ? "default" : "ghost"}
               size="sm"
@@ -1469,7 +1469,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         </div>
 
         {/* Count */}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground break-words">
           {viewMode === "list" && filtered.length > 0
             ? `${pageStart}-${pageEnd} de ${filtered.length}`
             : filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
@@ -1478,7 +1478,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         <PaginationControls />
 
         {/* Bulk action bar */}
-        <div className="flex flex-wrap items-center gap-3 px-3 rounded-lg border border-border min-h-[48px]">
+        {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 p-2 sm:gap-3 sm:px-3 rounded-lg border border-border min-h-[48px]">
           <span className="text-sm font-medium text-foreground">{selectedIds.size} seleccionados</span>
           <Button size="sm" variant="outline" onClick={() => handleBulkPaymentChange("Transferencia")} disabled={bulkProcessing || selectedIds.size === 0}>
             Transferencia
@@ -1509,6 +1510,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Deseleccionar</Button>
         </div>
+        )}
 
         {viewMode === "map" ? (
           <ClientsMapView
@@ -1554,8 +1556,8 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   onClick={() => setClient360Id(c.id)}
                 >
                   {/* Row 1: Name + Active badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); toggleExpand(c.id, (e.currentTarget as HTMLElement).closest("[data-client-row]") as HTMLElement | null ?? (e.currentTarget as HTMLElement)); }}
@@ -1570,11 +1572,11 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                         type={c.client_type}
                         invisible={typeFilter !== "todos"}
                       />
-                      <span className="font-semibold text-foreground truncate">
+                      <span className="min-w-0 flex-1 basis-full font-semibold text-foreground break-words sm:basis-auto sm:truncate">
                         {stripVmPrefix(c.name) || c.name}
                       </span>
                       {(c as any).parent_name && (
-                        <Badge variant="outline" className="text-[10px] font-medium shrink-0 max-w-[220px] truncate" title={`Subcuenta de ${(c as any).parent_name}`}>
+                        <Badge variant="outline" className="text-[10px] font-medium shrink-0 max-w-[180px] truncate sm:max-w-[220px]" title={`Subcuenta de ${(c as any).parent_name}`}>
                           Subcuenta de {(c as any).parent_name}
                         </Badge>
                       )}
@@ -1600,9 +1602,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   )}
 
                   {/* Row 3: Grid with details */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 ml-6 text-xs">
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-1 mt-2 ml-6 text-xs xs:grid-cols-2 sm:grid-cols-2">
                     {c.phone && (
-                      <div>
+                      <div className="min-w-0 truncate">
                         <span className="text-muted-foreground">Tel: </span>
                         <span className="text-foreground">{c.phone}</span>
                       </div>
@@ -1619,7 +1621,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                       </Badge>
                     </div>
                     {c.representante_nombre ? (
-                      <div>
+                      <div className="min-w-0 truncate">
                         <span className="text-muted-foreground">Rep: </span>
                         <span className="text-foreground">{c.representante_nombre}</span>
                       </div>
@@ -1640,12 +1642,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
                   {/* Row 4: Address */}
                   {c.address && (
-                    <p className="text-xs text-muted-foreground mt-1.5 ml-6 truncate">{c.address}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 ml-6 line-clamp-2">{c.address}</p>
                   )}
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex items-center gap-1 px-4 pb-2" onClick={e => e.stopPropagation()}>
+                <div className="flex flex-wrap items-center gap-1 px-4 pb-2" onClick={e => e.stopPropagation()}>
                   <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(c)}>
                     <Pencil className="h-3 w-3" /> Editar
                   </Button>
