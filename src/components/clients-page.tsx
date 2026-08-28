@@ -558,6 +558,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   });
   const [saving, setSaving] = useState(false);
   const [deactivateClient, setDeactivateClient] = useState<Client | null>(null);
+  const [confirmHardDelete, setConfirmHardDelete] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // B2: filter to clients missing their delivery window (either side
@@ -983,6 +984,32 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       setDeactivateClient(null);
     } catch (err: any) {
       toast({ title: t("error"), description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Eliminación permanente (solo admin). Si el cliente tiene historial
+  // relacionado la BD lo rechaza; en ese caso sugerimos desactivar.
+  const handleDeleteClientPermanently = async () => {
+    if (!deactivateClient) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("clients").delete().eq("id", deactivateClient.id);
+      if (error) throw error;
+      toast({ title: t("deleted") ?? "Eliminado", description: "Cliente eliminado permanentemente" });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      setDeactivateClient(null);
+      setConfirmHardDelete(false);
+    } catch (err: any) {
+      toast({
+        title: t("error"),
+        description:
+          err?.message?.includes("foreign key") || err?.code === "23503"
+            ? "Este cliente tiene pedidos o historial relacionado, no se puede eliminar. Desactívalo en su lugar."
+            : err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -1623,11 +1650,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(c)}>
                     <Pencil className="h-3 w-3" /> Editar
                   </Button>
-                  {c.active && (
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-red-400 hover:text-red-300 gap-1" onClick={() => setDeactivateClient(c)}>
-                      <Trash2 className="h-3 w-3" /> Desactivar
-                    </Button>
-                  )}
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-red-400 hover:text-red-300 gap-1" onClick={() => { setConfirmHardDelete(false); setDeactivateClient(c); }}>
+                    <Trash2 className="h-3 w-3" /> {c.active ? "Desactivar / Eliminar" : "Eliminar"}
+                  </Button>
                 </div>
 
                 {/* Expanded content */}
@@ -1800,11 +1825,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            {c.active && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300" onClick={() => setDeactivateClient(c)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300" title="Desactivar o eliminar" onClick={() => { setConfirmHardDelete(false); setDeactivateClient(c); }}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -2299,12 +2322,23 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
       )}
 
 
-      {/* Deactivate Confirmation Dialog */}
-      <Dialog open={!!deactivateClient} onOpenChange={open => !open && setDeactivateClient(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
+      {/* Deactivate / Delete Dialog */}
+      <Dialog
+        open={!!deactivateClient}
+        onOpenChange={open => {
+          if (!open) {
+            setDeactivateClient(null);
+            setConfirmHardDelete(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("confirmDeactivate")}</DialogTitle>
-            <DialogDescription>{t("confirmDeactivateDesc")}</DialogDescription>
+            <DialogTitle>¿Qué deseas hacer con este cliente?</DialogTitle>
+            <DialogDescription>
+              Puedes desactivarlo (se conserva su historial y puede reactivarse) o eliminarlo
+              permanentemente.
+            </DialogDescription>
           </DialogHeader>
           {deactivateClient && (
             <div className="space-y-4">
@@ -2312,12 +2346,58 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                 <strong>{deactivateClient.name}</strong>
                 {deactivateClient.company ? ` - ${deactivateClient.company}` : ""}
               </p>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDeactivateClient(null)}>{t("cancel")}</Button>
-                <Button variant="destructive" onClick={handleDeactivate} disabled={saving}>
-                  {saving ? t("saving") : t("deactivate")}
-                </Button>
-              </div>
+
+              {!confirmHardDelete ? (
+                <div className="space-y-2">
+                  {deactivateClient.active !== false && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={handleDeactivate}
+                      disabled={saving}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      {saving ? t("saving") : "Desactivar (recomendado)"}
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="destructive"
+                      className="w-full justify-start"
+                      onClick={() => setConfirmHardDelete(true)}
+                      disabled={saving}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar permanentemente
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setDeactivateClient(null)}
+                  >
+                    {t("cancel")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    Esta acción es irreversible y borra el cliente de la base de datos. Si tiene
+                    pedidos o facturas asociadas, no podrá eliminarse: desactívalo en su lugar.
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setConfirmHardDelete(false)}>
+                      Volver
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteClientPermanently}
+                      disabled={saving}
+                    >
+                      {saving ? "Eliminando..." : "Sí, eliminar definitivamente"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
