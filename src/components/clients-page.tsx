@@ -1602,7 +1602,7 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
                   )}
 
                   {/* Row 3: Grid with details */}
-                  <div className="grid grid-cols-1 gap-x-4 gap-y-1 mt-2 ml-6 text-xs xs:grid-cols-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 ml-6 text-xs">
                     {c.phone && (
                       <div className="min-w-0 truncate">
                         <span className="text-muted-foreground">Tel: </span>
