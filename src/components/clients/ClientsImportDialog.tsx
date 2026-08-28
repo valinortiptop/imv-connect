@@ -780,6 +780,10 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
       unchanged: rows.filter((r) => r.status === "unchanged").length,
       err: rows.filter((r) => r.status === "error").length,
       geo: rows.filter((r) => r.lat != null && r.lng != null).length,
+      reps: rows.filter((r) => r.diff_fields?.includes("representante")).length,
+      subs: rows.filter((r) => !!r.parent_name).length,
+      terms: rows.filter((r) => r.diff_fields?.includes("plazo")).length,
+      ns: rows.filter((r) => r.diff_fields?.includes("NetSuite ID")).length,
     }),
     [rows],
   );
