@@ -129,7 +129,7 @@ export const getRep360Fn = createServerFn({ method: "POST" })
     const [clientsRes, routesRes, visitsRes, pedidosRes] = await Promise.all([
       sb
         .from("clientes")
-        .select("id, nombre_comercial, razon_social, nickname, direccion, municipio, telefono, lat, lng, activo")
+        .select("id, nombre_comercial, razon_social, nickname, direccion, municipio, telefono, lat, lng, active")
         .eq("representante_id", rep.id)
         .limit(1000),
       sb
@@ -221,7 +221,7 @@ export const getRep360Fn = createServerFn({ method: "POST" })
       today,
       kpis: {
         clientes: clients.length,
-        clientes_activos: clients.filter((c: any) => c.activo !== false).length,
+        clientes_activos: clients.filter((c: any) => c.active !== false).length,
         prospectos: (prospectsRes.data ?? []).length,
         visitas: visits.length,
         pedidos: pedidos.length,
