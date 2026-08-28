@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Route, Clock, MapPin, Zap, ChevronRight } from "lucide-react";
+import { Route, Clock, MapPin, Zap, ChevronRight, ChevronDown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import RouteDetailsDialog from "./RouteDetailsDialog";
+
 
 function todayISO() {
   const d = new Date();
