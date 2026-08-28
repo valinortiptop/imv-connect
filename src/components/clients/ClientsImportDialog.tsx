@@ -232,38 +232,24 @@ export function ClientsImportDialog({
       };
 
 
-      // Ask the AI to normalize each row.
+      // La IA solo mapea COLUMNAS (no filas): es determinista, rápido y
+      // funciona igual con 10 o 10,000 filas. Las heurísticas mandan y la IA
+      // rellena las columnas que no se reconocieron.
       setAnalyzing(true);
       const headers = Object.keys(json[0] ?? {});
-      const sampleRows = json.slice(0, 1500);
-      const system = `Eres un asistente que normaliza un catálogo de clientes (distribuidor farmacéutico veterinario en México) desde un Excel.
+      const sampleRows = json.slice(0, 8);
+      const system = `Eres un asistente que mapea las columnas de un Excel de clientes (distribuidor farmacéutico veterinario en México) a campos canónicos.
 Devuelves SOLO JSON válido, sin markdown.
-Para cada fila identifica los campos canónicos:
-- name (nombre del cliente o razón social abreviada — obligatorio)
-- company (nombre comercial / empresa, puede ser igual a name)
-- nickname (apodo / nombre corto si existe)
-- phone (string)
-- email (string)
-- rfc (string en mayúsculas, sin espacios)
-- razon_social (razón social completa)
-- address (dirección de UNA sola línea: calle, número, colonia, ciudad, estado).
-  IMPORTANTE: en este Excel la columna "Dirección de envío" suele venir como
-  "<NOMBRE_CLIENTE> <NOMBRE_CLIENTE_REPETIDO> <DIRECCIÓN_REAL>". Debes
-  ELIMINAR cualquier prefijo que sea el nombre del cliente, la razón social,
-  el nombre comercial o palabras tipo "VETERINARIA X", "HOSPITAL Y",
-  "FARMACIA Z", "PET'S HOME", etc., y devolver SOLO la dirección real
-  (calle, número, colonia, municipio, estado). Prefiere "Dirección de envío"
-  sobre "Dirección de facturación" si ambas existen.
-- codigo_postal (5 dígitos)
-- payment_method (uno de: "credito", "contado", "Transferencia", "Depósito", "Efectivo")
-- payment_terms (días de crédito como número entero, ej. 30; 0 si es contado)
-- client_type ("mayoreo" si tiene crédito o RFC empresarial, "menudeo" si es contado/persona física)
-- representante_nombre (vendedor / representante de ventas asignado al cliente; si viene como "Apellido, Nombre" devuelve "Nombre Apellido"; si no aparece devuelve "")
-Si un campo no aparece, devuelve "" o null.
-Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la entrada.`;
-      const userMsg = JSON.stringify({ headers, rows: sampleRows });
+Campos canónicos posibles: netsuite_id, name, company, nickname, phone, email, rfc, razon_social, address, codigo_postal, payment_method, payment_terms, client_type, representante_nombre, categoria, zona, horario, comentarios.
+Notas:
+- netsuite_id: la columna "ID" / "ID interno" de NetSuite.
+- payment_terms: días de crédito ("Términos", "Crédito", "Plazo").
+- representante_nombre: vendedor/representante de ventas (puede venir "Apellido, Nombre").
+- address: prefiere "Dirección de envío" sobre facturación.
+Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los campos que no existan.`;
+      const userMsg = JSON.stringify({ headers, sample: sampleRows });
 
-      let aiRows: any[] | null = null;
+      let aiMap: Record<string, string> | null = null;
       try {
         const resp = await aiChatFn({
           data: {
@@ -285,9 +271,10 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           .replace(/```$/i, "")
           .trim();
         const parsedJson = JSON.parse(cleaned);
-        aiRows = Array.isArray(parsedJson?.rows) ? parsedJson.rows : null;
+        aiMap =
+          parsedJson?.map && typeof parsedJson.map === "object" ? parsedJson.map : null;
       } catch (e) {
-        console.warn("AI mapping failed, falling back to heuristics", e);
+        console.warn("AI column mapping failed, falling back to heuristics", e);
       }
 
       const get = (r: Record<string, unknown>, ...keys: string[]) => {
