@@ -32,13 +32,28 @@ function startOfWeek(d = new Date()) {
 export const getSupervisorDashboardFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ days: z.number().int().min(1).max(180).default(30) }).parse(input),
+    z
+      .object({
+        days: z.number().int().min(1).max(730).default(30),
+        /** Rango explícito (YYYY-MM-DD). Si viene, gana sobre `days`. */
+        from: z.string().optional(),
+        to: z.string().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const since = new Date();
-    since.setDate(since.getDate() - data.days);
-    const sinceIso = since.toISOString();
+    let sinceIso: string;
+    let untilIso: string | null = null;
+    if (data.from) {
+      sinceIso = new Date(`${data.from}T00:00:00`).toISOString();
+      untilIso = new Date(`${data.to ?? data.from}T23:59:59.999`).toISOString();
+    } else {
+      const since = new Date();
+      since.setDate(since.getDate() - data.days);
+      sinceIso = since.toISOString();
+    }
+
 
     const { data: reps } = await context.supabase
       .from("representantes")
