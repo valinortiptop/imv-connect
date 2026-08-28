@@ -127,14 +127,19 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         .in("id", repIds);
       (reps ?? []).forEach((r: any) => repById.set(r.id, r.nombre));
     }
+    const repIdByUser = new Map<string, string>();
     if (userIds.length) {
       const { data: reps } = await supabase
         .from("representantes")
         .select("id, user_id, nombre")
         .in("user_id", userIds);
       (reps ?? []).forEach((r: any) => {
-        if (r.user_id) repByUser.set(r.user_id, r.nombre);
+        if (r.user_id) {
+          repByUser.set(r.user_id, r.nombre);
+          repIdByUser.set(r.user_id, r.id);
+        }
       });
+
 
       // Fallback: representantes.user_id is often null → resolve via email in auth.users
       try {
@@ -220,14 +225,19 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
       }
 
       for (const e of events) {
+        // Only enrich when we can positively tie the visit to THIS user's
+        // representante record. Without it we'd attach someone else's visit.
+        const eRepId =
+          e.representante_id ?? (e.user_id ? repIdByUser.get(e.user_id) ?? null : null);
+        if (!eRepId) continue;
         const t = new Date(e.signed_in_at).getTime();
         let best: any = null;
         let bestScore = Infinity;
         for (const v of visits ?? []) {
-          if (e.representante_id && v.representante_id && v.representante_id !== e.representante_id)
-            continue;
+          if (!v.representante_id || v.representante_id !== eRepId) continue;
           const dtMin = Math.abs(new Date(v.check_in_at).getTime() - t) / 60000;
           if (dtMin > 45) continue;
+
           let dist: number | null = null;
           if (e.lat != null && e.lng != null && v.check_in_lat != null && v.check_in_lng != null) {
             dist = haversineM(
