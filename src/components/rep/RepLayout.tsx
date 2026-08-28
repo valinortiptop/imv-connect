@@ -364,6 +364,13 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start">
               <LogOut className="mr-2 h-4 w-4" /> Salir
             </Button>
+            {/* Marca de build: confirma que el navegador cargó la última publicación */}
+            <div
+              className="px-2 text-[10px] text-muted-foreground/70"
+              title="Marca visible para confirmar que el navegador cargó la última publicación"
+            >
+              Build {__BUILD_ID__}
+            </div>
           </div>
         </aside>
 
