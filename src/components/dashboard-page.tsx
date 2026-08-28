@@ -324,18 +324,18 @@ export default function Dashboard() {
         className="inset-x-0 inset-y-[-40%] h-[220%] [mask-image:radial-gradient(900px_circle_at_center,white,transparent_85%)]"
       />
 
-      <div className="relative z-10 p-4 md:p-8 space-y-6">
+      <div className="relative z-10 p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* ── Header ── */}
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
               {getGreeting()}
             </h1>
-            <p className="text-sm text-muted-foreground capitalize">
+            <p className="text-[11px] sm:text-sm text-muted-foreground capitalize truncate">
               {format(new Date(), "EEEE d 'de' MMMM, yyyy", { locale: dateLocale })}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {lastUpdated && (
               <span className="text-xs text-muted-foreground hidden sm:inline">
                 {format(lastUpdated, "HH:mm:ss")}
@@ -345,8 +345,8 @@ export default function Dashboard() {
               variant="outline" size="sm" onClick={refetchAll} disabled={kpis.isFetching}
               className="border-border text-foreground hover:bg-muted transition-all"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${kpis.isFetching ? "animate-spin" : ""}`} />
-              {t("refresh")}
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${kpis.isFetching ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">{t("refresh")}</span>
             </Button>
           </div>
         </div>
@@ -362,7 +362,8 @@ export default function Dashboard() {
 
         {/* Business-unit filter — labels are driven by the default empresa's almacenes.
             Configure in Configuración → Empresas → Almacenes. */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]{display:none}">
+
           {(() => {
             const alms = almacenesEmpresa.data ?? [];
             const n = (i: number, fallback: string) => alms[i]?.nombre?.trim() || fallback;
