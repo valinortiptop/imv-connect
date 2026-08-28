@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { OFFICE_LOCATION, OFFICE_STOP_ID } from "./office";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -11,6 +15,13 @@ function hydrateStops(rows: any[], byId: Map<string, any>) {
   return (rows ?? []).map((r: any) => ({
     ...r,
     ordered_stops: ((r.ordered_stops as any[]) ?? []).map((s: any) => {
+      if (String(s?.cliente_id) === OFFICE_STOP_ID) {
+        return {
+          ...s,
+          nombre: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
+          direccion: OFFICE_LOCATION.direccion,
+        };
+      }
       const c = byId.get(String(s?.cliente_id));
       return {
         ...s,
@@ -25,7 +36,7 @@ async function clientsByIds(supabase: any, rows: any[]) {
   const ids = new Set<string>();
   for (const r of rows ?? []) {
     for (const s of ((r as any).ordered_stops as any[]) ?? []) {
-      if (s?.cliente_id) ids.add(String(s.cliente_id));
+      if (s?.cliente_id && UUID_RE.test(String(s.cliente_id))) ids.add(String(s.cliente_id));
     }
   }
   const byId = new Map<string, any>();

@@ -133,6 +133,7 @@ export default function NewRouteWizardDialog({
     clientIds: string[];
     optimize: boolean;
     assignedRepId: string | null;
+    officeMotivo?: string | null;
   }) => void;
 }) {
   const listSaved = useServerFn(listSavedRoutesFn);
@@ -149,6 +150,7 @@ export default function NewRouteWizardDialog({
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [assignedRepId, setAssignedRepId] = useState<string>("__self__");
+  const [officeMotivo, setOfficeMotivo] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -157,6 +159,7 @@ export default function NewRouteWizardDialog({
       setAlcaldiaFilter("all");
       setSel(new Set());
       setAssignedRepId("__self__");
+      setOfficeMotivo(null);
     }
   }, [open, initialFecha]);
 

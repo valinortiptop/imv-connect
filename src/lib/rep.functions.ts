@@ -11,6 +11,11 @@ import {
   CLIENT_INSIGHTS_SYSTEM,
   DAILY_PLAN_SYSTEM,
 } from "./rep-prompts";
+import { mergePolylines } from "./polyline";
+import { OFFICE_LOCATION, OFFICE_STOP_ID } from "./office";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /* ─── helper: obtiene el representante actual (o null si es admin sin registro) ─── */
 async function getCurrentRep(supabase: any, userId: string, email?: string | null) {
@@ -1070,6 +1075,9 @@ export const listMyVisitsFn = createServerFn({ method: "POST" })
   });
 
 /* ─── 9. optimizeRoute ─── */
+/** Máximo de waypoints intermedios que acepta Directions por petición. */
+const DIRECTIONS_CHUNK = 23;
+
 export const optimizeRouteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -1080,56 +1088,121 @@ export const optimizeRouteFn = createServerFn({ method: "POST" })
         stops: z
           .array(
             z.object({
-              cliente_id: z.string().uuid(),
+              // Puede ser un uuid de cliente o "oficina" (parada especial).
+              cliente_id: z.string().min(1),
               lat: z.number(),
               lng: z.number(),
+              kind: z.string().optional(),
+              nombre: z.string().optional(),
+              direccion: z.string().optional(),
+              motivo: z.string().optional(),
             }),
           )
           .min(1)
-          .max(20),
+          .max(150),
         optimize: z.boolean().optional().default(true),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const origin = `${data.startLat},${data.startLng}`;
-    const dest = data.stops[data.stops.length - 1];
-    const destination = `${dest.lat},${dest.lng}`;
-    const mid = data.stops.slice(0, -1).map((s) => `${s.lat},${s.lng}`);
-    const resp = await googleDirections({
-      origin,
-      destination,
-      waypoints: mid,
-      optimize: data.optimize,
-      mode: "driving",
-    });
-    if (resp.status !== "OK") {
-      throw new Error(`Directions API: ${resp.status} ${resp.error_message ?? ""}`);
+    type Stop = (typeof data.stops)[number];
+
+    /** Una sola petición a Directions con <= DIRECTIONS_CHUNK waypoints intermedios. */
+    const legOfChunk = async (
+      startLat: number,
+      startLng: number,
+      chunk: Stop[],
+      optimizeChunk: boolean,
+    ) => {
+      const dest = chunk[chunk.length - 1];
+      const resp = await googleDirections({
+        origin: `${startLat},${startLng}`,
+        destination: `${dest.lat},${dest.lng}`,
+        waypoints: chunk.slice(0, -1).map((s) => `${s.lat},${s.lng}`),
+        optimize: optimizeChunk,
+        mode: "driving",
+      });
+      if (resp.status !== "OK") {
+        throw new Error(`Directions API: ${resp.status} ${resp.error_message ?? ""}`);
+      }
+      const route = resp.routes?.[0];
+      const order = route?.waypoint_order ?? [];
+      const legs = route?.legs ?? [];
+      const ordered: Stop[] = [
+        ...order.map((i) => chunk[i]).filter(Boolean),
+        dest,
+      ];
+      // Si Google no devolvió waypoint_order (optimize=false), respeta el orden dado.
+      const finalOrdered = ordered.length === chunk.length ? ordered : chunk;
+      return {
+        ordered: finalOrdered,
+        polyline: route?.overview_polyline?.points ?? null,
+        legs: legs.map((l: any) => ({
+          distance_km: Math.round((l.distance?.value ?? 0) / 100) / 10,
+          duration_min: Math.round((l.duration?.value ?? 0) / 60),
+          distance_text: l.distance?.text ?? "",
+          duration_text: l.duration?.text ?? "",
+          meters: l.distance?.value ?? 0,
+          seconds: l.duration?.value ?? 0,
+        })),
+      };
+    };
+
+    // Para rutas grandes: pre-ordena por vecino más cercano y luego optimiza
+    // por tramos de 23 paradas (límite de la API de Directions).
+    let queue = data.stops;
+    if (queue.length > DIRECTIONS_CHUNK) {
+      const remaining = [...queue];
+      const ordered: Stop[] = [];
+      let curLat = data.startLat;
+      let curLng = data.startLng;
+      while (remaining.length > 0) {
+        let best = 0;
+        let bestD = Infinity;
+        remaining.forEach((s, i) => {
+          const d = (s.lat - curLat) ** 2 + (s.lng - curLng) ** 2;
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        const [next] = remaining.splice(best, 1);
+        ordered.push(next);
+        curLat = next.lat;
+        curLng = next.lng;
+      }
+      queue = ordered;
     }
-    const route = resp.routes?.[0];
-    const order = route?.waypoint_order ?? [];
-    const legs = route?.legs ?? [];
-    const totalMeters = legs.reduce(
-      (a, l) => a + (l.distance?.value ?? 0),
-      0,
-    );
-    const totalSecs = legs.reduce(
-      (a, l) => a + (l.duration?.value ?? 0),
-      0,
-    );
-    const orderedStops = [
-      ...order.map((i) => data.stops[i]),
-      data.stops[data.stops.length - 1],
-    ];
-    const legsBreakdown = legs.map((l: any) => ({
-      distance_km: Math.round((l.distance?.value ?? 0) / 100) / 10,
-      duration_min: Math.round((l.duration?.value ?? 0) / 60),
-      distance_text: l.distance?.text ?? "",
-      duration_text: l.duration?.text ?? "",
-    }));
+
+    const orderedStops: Stop[] = [];
+    const legsBreakdown: any[] = [];
+    const polylines: (string | null)[] = [];
+    let totalMeters = 0;
+    let totalSecs = 0;
+    let curLat = data.startLat;
+    let curLng = data.startLng;
+
+    for (let i = 0; i < queue.length; i += DIRECTIONS_CHUNK) {
+      const chunk = queue.slice(i, i + DIRECTIONS_CHUNK);
+      const res = await legOfChunk(curLat, curLng, chunk, data.optimize);
+      orderedStops.push(...res.ordered);
+      for (const l of res.legs) {
+        totalMeters += l.meters;
+        totalSecs += l.seconds;
+        legsBreakdown.push({
+          distance_km: l.distance_km,
+          duration_min: l.duration_min,
+          distance_text: l.distance_text,
+          duration_text: l.duration_text,
+        });
+      }
+      polylines.push(res.polyline);
+      const last = res.ordered[res.ordered.length - 1];
+      curLat = last.lat;
+      curLng = last.lng;
+    }
+
     return {
       orderedStops,
-      polyline: route?.overview_polyline?.points ?? null,
+      polyline:
+        polylines.length === 1 ? polylines[0] ?? null : mergePolylines(polylines),
       total_km: Math.round(totalMeters / 100) / 10,
       total_minutes: Math.round(totalSecs / 60),
       legs: legsBreakdown,
@@ -2441,7 +2514,7 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
 
     for (const r of rows ?? []) {
       for (const s of ((r as any).ordered_stops as any[]) ?? []) {
-        if (s?.cliente_id) ids.add(String(s.cliente_id));
+        if (s?.cliente_id && UUID_RE.test(String(s.cliente_id))) ids.add(String(s.cliente_id));
       }
     }
     const byId = new Map<string, any>();
@@ -2455,6 +2528,13 @@ export const listSavedRoutesFn = createServerFn({ method: "POST" })
     const hydrated = (rows ?? []).map((r: any) => ({
       ...r,
       ordered_stops: ((r.ordered_stops as any[]) ?? []).map((s: any) => {
+        if (String(s?.cliente_id) === OFFICE_STOP_ID) {
+          return {
+            ...s,
+            nombre: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
+            direccion: OFFICE_LOCATION.direccion,
+          };
+        }
         const c = byId.get(String(s.cliente_id));
         return {
           ...s,
@@ -2543,7 +2623,7 @@ export const getSavedRouteDetailFn = createServerFn({ method: "POST" })
       ...new Set(
         (((row as any).ordered_stops as any[]) ?? [])
           .map((s: any) => s?.cliente_id && String(s.cliente_id))
-          .filter(Boolean),
+          .filter((v: any) => v && UUID_RE.test(v)),
       ),
     ] as string[];
     const byId = new Map<string, any>();
@@ -2571,6 +2651,14 @@ export const getSavedRouteDetailFn = createServerFn({ method: "POST" })
         ...(row as any),
         representante_nombre: repNombre,
         ordered_stops: (((row as any).ordered_stops as any[]) ?? []).map((s: any) => {
+          if (String(s?.cliente_id) === OFFICE_STOP_ID) {
+            return {
+              ...s,
+              nombre: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
+              direccion: OFFICE_LOCATION.direccion,
+              telefono: null,
+            };
+          }
           const c = byId.get(String(s.cliente_id));
           return {
             ...s,
