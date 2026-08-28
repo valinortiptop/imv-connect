@@ -4,10 +4,12 @@ import RepLayout from "@/components/rep/RepLayout";
 
 export const Route = createFileRoute("/rep")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/login" });
+    if (!data.user) {
+      throw redirect({ to: "/login", search: { redirect: location.pathname } });
+    }
   },
   component: () => (
     <RepLayout>
