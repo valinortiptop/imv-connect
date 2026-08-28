@@ -1220,22 +1220,20 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
 
       <div className="relative z-10 p-4 md:p-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            {/* Locked-width title block so the toggle never shifts when
-                the subtitle text changes width. */}
-            <div className="w-[300px] shrink-0">
-              <h1 className="text-2xl font-bold text-foreground">{t("clientsTitle")}</h1>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-center sm:gap-4">
+            <div className="min-w-0 sm:w-[300px] sm:shrink-0">
+              <h1 className="text-xl font-bold text-foreground sm:text-2xl">{t("clientsTitle")}</h1>
               <p className="text-sm text-muted-foreground truncate">{t("clientsSubtitle")}</p>
             </div>
             {/* Mayoreo / Menudeo / Todos */}
-            <div className="inline-flex rounded-lg border bg-muted p-0.5">
+            <div className="grid w-full grid-cols-3 gap-0.5 rounded-lg border bg-muted p-0.5 sm:inline-flex sm:w-auto">
               {(["todos", "mayoreo", "menudeo"] as const).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => setTypeFilter(opt)}
                   className={cn(
-                    "px-3 py-1.5 text-sm font-semibold rounded-md transition capitalize",
+                    "px-2 py-1.5 text-xs font-semibold rounded-md transition capitalize sm:px-3 sm:text-sm",
                     typeFilter === opt
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -1246,17 +1244,18 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:self-auto">
             <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
               <Upload className="h-4 w-4" />
-              Importar Excel
+              <span className="truncate">Importar Excel</span>
             </Button>
             <Button size="sm" onClick={openNew} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              {t("newClient")}
+              <span className="truncate">{t("newClient")}</span>
             </Button>
           </div>
         </div>
+
 
         {/* Date filter */}
         <ChronoBar
