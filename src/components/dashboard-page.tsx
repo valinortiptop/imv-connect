@@ -362,7 +362,7 @@ export default function Dashboard() {
 
         {/* Business-unit filter — labels are driven by the default empresa's almacenes.
             Configure in Configuración → Empresas → Almacenes. */}
-        <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]{display:none}">
+        <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {(() => {
             const alms = almacenesEmpresa.data ?? [];
@@ -424,19 +424,19 @@ export default function Dashboard() {
         <>
 
         {/* ── Row 1: Hero KPIs (4 large cards) ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Ventas del mes */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ventas del mes</span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Ventas del mes</span>
               </div>
               {kpis.isLoading ? <Skeleton className="h-10 w-32 bg-muted" /> : (
-                <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{fmtMXNFull(d?.ventas_mes_iva ?? 0)}</p>
+                <p className="text-xl sm:text-3xl font-bold text-foreground tracking-tight break-words">{fmtMXNFull(d?.ventas_mes_iva ?? 0)}</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">Total con IVA · pedidos del mes</p>
             </div>
@@ -445,21 +445,21 @@ export default function Dashboard() {
           {/* Utilidad del mes */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Utilidad del mes</span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Utilidad del mes</span>
               </div>
               {kpis.isLoading ? <Skeleton className="h-10 w-32 bg-muted" /> : (
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-foreground tracking-tight">{fmtMXNFull(d?.realized_profit ?? 0)}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground tracking-tight break-words">{fmtMXNFull(d?.realized_profit ?? 0)}</p>
                     <span className="text-xs text-muted-foreground">realizada</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-lg font-semibold text-muted-foreground">{fmtMXNFull(d?.implied_profit ?? 0)}</p>
+                    <p className="text-base sm:text-lg font-semibold text-muted-foreground break-words">{fmtMXNFull(d?.implied_profit ?? 0)}</p>
                     <span className="text-xs text-muted-foreground">implicada</span>
                   </div>
                 </div>
@@ -470,21 +470,21 @@ export default function Dashboard() {
           {/* Utilidad con bonificación */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-cyan-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Utilidad c/ bonificación</span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Utilidad c/ bonificación</span>
               </div>
               {kpis.isLoading ? <Skeleton className="h-10 w-32 bg-muted" /> : (
                 <div className="space-y-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-foreground tracking-tight">{fmtMXNFull(d?.realized_profit_bonif ?? 0)}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground tracking-tight break-words">{fmtMXNFull(d?.realized_profit_bonif ?? 0)}</p>
                     <span className="text-xs text-muted-foreground">realizada</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-lg font-semibold text-muted-foreground">{fmtMXNFull(d?.implied_profit_bonif ?? 0)}</p>
+                    <p className="text-base sm:text-lg font-semibold text-muted-foreground break-words">{fmtMXNFull(d?.implied_profit_bonif ?? 0)}</p>
                     <span className="text-xs text-muted-foreground">implicada</span>
                   </div>
                 </div>
@@ -495,15 +495,15 @@ export default function Dashboard() {
           {/* Valor en bodega */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center gap-2 mb-3">
                 <Warehouse className="h-4 w-4 text-violet-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Valor en bodega</span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Valor en bodega</span>
               </div>
               {warehouseValue.isLoading ? <Skeleton className="h-10 w-32 bg-muted" /> : (
-                <p className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{fmtMXN(warehouseValue.data ?? 0)}</p>
+                <p className="text-xl sm:text-3xl font-bold text-foreground tracking-tight break-words">{fmtMXN(warehouseValue.data ?? 0)}</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">Inventario valorizado a costo</p>
             </div>
@@ -511,7 +511,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Row 2: Operational pulse (5 compact cards) ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
           {[
             { key: "open_orders", label: "Pedidos abiertos", icon: Package, color: "text-blue-500", border: "border-blue-500", to: "/admin/pedidos" },
             { key: "due_today", label: "Entrega hoy", icon: Truck, color: "text-amber-500", border: "border-amber-500", to: "/admin/pedidos" },
@@ -521,7 +521,7 @@ export default function Dashboard() {
           ].map((kpi) => (
             <GlowCard key={kpi.key}>
               <div
-                className={`p-4 flex flex-col justify-between min-h-[100px] border-l-4 ${kpi.border} rounded-l cursor-pointer hover:bg-muted/30 transition-all`}
+                className={`p-3 sm:p-4 flex flex-col justify-between gap-1.5 min-h-[86px] sm:min-h-[100px] border-l-4 ${kpi.border} rounded-l cursor-pointer hover:bg-muted/30 transition-all`}
                 onClick={() => navigate(kpi.to)}
               >
                 <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
@@ -537,17 +537,17 @@ export default function Dashboard() {
         </div>
 
         {/* ── Row 3: Top clients + Top products ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* Top 5 clients */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/clientes")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-emerald-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top 5 clientes por ventas</span>
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Top 5 clientes por ventas</span>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -581,13 +581,13 @@ export default function Dashboard() {
           {/* Top 5 products by bultos */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/productos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-violet-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top 5 productos por bultos</span>
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Top 5 productos por bultos</span>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -623,22 +623,22 @@ export default function Dashboard() {
         </div>
 
         {/* ── Row 4: Pie chart + Necesidades de compra ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* Order status pie */}
           <GlowCard>
             <div
-              className="p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
+              className="p-3.5 sm:p-5 cursor-pointer hover:bg-muted/30 transition-all rounded-lg"
               onClick={() => navigate("/admin/pedidos")}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-blue-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pedidos del mes por estado</span>
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Pedidos del mes por estado</span>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </div>
               {kpis.isLoading ? (
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                   <Skeleton className="w-28 h-28 rounded-full bg-muted" />
                   <div className="space-y-2 flex-1">
                     {[1,2,3].map(i => <Skeleton key={i} className="h-4 w-full bg-muted" />)}
@@ -647,7 +647,7 @@ export default function Dashboard() {
               ) : pieData.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-8">Sin pedidos este mes</p>
               ) : (
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                   <div className="relative">
                     <div
                       className="w-28 h-28 rounded-full"
@@ -687,7 +687,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Necesidades de compra</span>
+                  <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground leading-tight">Necesidades de compra</span>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -766,7 +766,7 @@ export default function Dashboard() {
               ) : (openOrders.data?.length ?? 0) === 0 ? (
                 <p className="text-muted-foreground text-sm py-8 text-center">{t("noOpenOrders")}</p>
               ) : (
-                <Table>
+                <div className="w-full overflow-x-auto"><Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
                       <TableHead className="text-foreground font-semibold">{t("thOrder")}</TableHead>
@@ -799,7 +799,7 @@ export default function Dashboard() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </Table></div>
               )}
             </div>
           </GlowCard>
@@ -825,7 +825,7 @@ export default function Dashboard() {
               ) : (purchaseNeeds.data?.length ?? 0) === 0 ? (
                 <p className="text-muted-foreground text-sm py-8 text-center">{t("noPurchaseNeeds")}</p>
               ) : (
-                <Table>
+                <div className="w-full overflow-x-auto"><Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
                       <TableHead className="text-foreground font-semibold">{t("thClave")}</TableHead>
@@ -860,7 +860,7 @@ export default function Dashboard() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </Table></div>
               )}
             </div>
           </GlowCard>
