@@ -1282,13 +1282,14 @@ export default function RouteMap() {
         initialFecha={routeFecha}
         isAdmin={!!repsQ.data?.isAdmin}
         reps={repsQ.data?.reps ?? []}
-        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId }) => {
+        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId, officeMotivo: om }) => {
           setRouteFecha(fecha);
           setAssignedRepId(repId ?? null);
+          setOfficeMotivo(om ?? null);
           setSelected(new Set(clientIds));
           setRouteInfo(null);
           didFitRef.current = false;
-          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha });
+          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha, officeMotivo: om ?? null });
         }}
       />
     </div>
