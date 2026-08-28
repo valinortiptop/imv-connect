@@ -249,6 +249,7 @@ export default function NewRouteWizardDialog({
       clientIds: [...sel],
       optimize,
       assignedRepId: isAdmin && assignedRepId !== "__self__" ? assignedRepId : null,
+      officeMotivo,
     });
     onOpenChange(false);
   };
