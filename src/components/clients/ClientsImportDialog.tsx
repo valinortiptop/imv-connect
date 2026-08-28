@@ -920,6 +920,7 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
                       <TableHead>Tipo</TableHead>
                       <TableHead>Pago</TableHead>
                       <TableHead>Representante</TableHead>
+                      <TableHead>Cambios</TableHead>
                       <TableHead>Geo</TableHead>
                     </TableRow>
                   </TableHeader>
