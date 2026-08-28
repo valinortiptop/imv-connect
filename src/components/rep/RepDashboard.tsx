@@ -122,17 +122,18 @@ export default function RepDashboard() {
     };
   }, [clientsQ.data]);
 
-  // Progreso del día: visitas hechas vs paradas planeadas (mis rutas o del equipo)
+  // Progreso del día: visitas planeadas completadas (mías o del equipo)
   const today = useMemo(() => {
-    const rows = (dailyQ.data?.byRep ?? []) as any[];
-    const mine = rep && !isAdmin ? rows.filter((r) => r.representante_id === rep.id) : rows;
-    const planned = mine.reduce(
-      (a, r) => a + (r.planned_count ?? r.planned ?? (r.stops?.length ?? 0)),
-      0,
-    );
-    const done = mine.reduce((a, r) => a + (r.visits?.length ?? r.visitas ?? 0), 0);
-    return { planned, done, ratio: planned ? Math.min(1, done / planned) : 0, reps: rows.length };
-  }, [dailyQ.data, rep, isAdmin]);
+    const t = dailyQ.data?.totals;
+    const planned = t?.planned ?? 0;
+    const done = t?.planned_done ?? 0;
+    return {
+      planned,
+      done,
+      ratio: planned ? Math.min(1, done / planned) : 0,
+      reps: t?.reps ?? 0,
+    };
+  }, [dailyQ.data]);
 
   const k7 = kpi7Q.data;
   const k30 = kpi30Q.data;
