@@ -9,11 +9,11 @@ import { useRepOnly } from "@/hooks/use-rep-only";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/login", search: { redirect: location.pathname } });
     }
   },
   component: AdminLayout,

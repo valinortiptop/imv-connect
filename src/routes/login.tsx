@@ -5,22 +5,39 @@ import { logoFullDark } from "@/assets/logos";
 import { fetchIsRepOnly } from "@/hooks/use-rep-only";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   head: () => ({ meta: [{ title: "Iniciar sesión — IMV" }] }),
   component: LoginPage,
 });
 
+/** Only allow same-origin paths; blocks external URLs and /login loops. */
+function sanitizeRedirect(path: string | undefined): string | null {
+  if (!path) return null;
+  if (!path.startsWith("/") || path.startsWith("//")) return null;
+  if (path === "/login" || path.startsWith("/login?")) return null;
+  return path;
+}
+
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const resolveDestination = async () =>
+    sanitizeRedirect(redirectTo) ??
+    ((await fetchIsRepOnly()) ? "/rep" : "/admin");
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      navigate({ to: (await fetchIsRepOnly()) ? "/rep" : "/admin" });
+      navigate({ to: await resolveDestination() });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -33,7 +50,7 @@ function LoginPage() {
       setError(error.message);
       return;
     }
-    navigate({ to: (await fetchIsRepOnly()) ? "/rep" : "/admin" });
+    navigate({ to: await resolveDestination() });
   };
 
   return (
