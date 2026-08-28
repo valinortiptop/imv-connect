@@ -39,6 +39,8 @@ import { parseClientName, clientNameKey } from "@/lib/client-name";
 type Status = "new" | "update" | "unchanged" | "error";
 
 type ImportRow = {
+  /** ID interno de NetSuite (llave de match más confiable) */
+  netsuite_id: string;
   name: string;
   company: string;
   nickname: string;
@@ -58,10 +60,54 @@ type ImportRow = {
   google_place_id: string | null;
   representante_nombre: string;
   representante_id?: string | null;
+  categoria?: string;
+  zona?: string;
+  horario_from?: string | null;
+  horario_until?: string | null;
+  notas?: string;
   status: Status;
   existing_id?: string | null;
   diff_fields?: string[];
   errorMsg?: string;
+};
+
+/** NetSuite exporta celdas multilínea con "_x000D_" y saltos de línea. */
+const cleanNs = (v: unknown) =>
+  String(v ?? "")
+    .replace(/_x000D_/gi, " ")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Dirección de NetSuite:
+ * "1560 PEDRO MORENO 1305 BUENAVISTA CUAUHTEMOC 06350 , CDMX México"
+ * Quita el ID inicial y el "México" final, y extrae el CP de 5 dígitos.
+ */
+const parseNetsuiteAddress = (raw: string, netsuiteId?: string) => {
+  let out = cleanNs(raw);
+  if (netsuiteId) {
+    out = out.replace(new RegExp(`^${netsuiteId}\\b[\\s,:-]*`), "").trim();
+  }
+  out = out.replace(/^\d{3,7}\b[\s,:-]*/, "").trim();
+  out = out.replace(/\s*,?\s*(m[eé]xico)\s*$/i, "").trim();
+  const cp = out.match(/\b(\d{5})\b/)?.[1] ?? "";
+  out = out.replace(/\s*,\s*,/g, ",").replace(/\s*,\s*$/, "").trim();
+  return { address: out, cp };
+};
+
+/** "09:00 - 14:00" / "9 a 14 hrs" -> { from: "09:00", until: "14:00" } */
+const parseHorario = (raw: string) => {
+  const s = cleanNs(raw);
+  if (!s) return { from: null as string | null, until: null as string | null };
+  const times = s.match(/\d{1,2}(?::\d{2})?/g);
+  const pad = (t?: string) => {
+    if (!t) return null;
+    const [h, m = "00"] = t.split(":");
+    const hh = String(Math.min(23, Number(h))).padStart(2, "0");
+    return `${hh}:${m.padStart(2, "0")}`;
+  };
+  return { from: pad(times?.[0]), until: pad(times?.[1]) };
 };
 
 // "Amaya, Marisol" -> "Marisol Amaya"; "Marisol Amaya" stays as is.
