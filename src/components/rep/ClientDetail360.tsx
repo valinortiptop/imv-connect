@@ -170,11 +170,12 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
         {/* IA */}
         <TabsContent value="ia" className="space-y-3">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Resumen IA
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate">Resumen IA</span>
               </CardTitle>
+
               <Button
                 size="sm"
                 variant="ghost"
