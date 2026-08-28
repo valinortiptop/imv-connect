@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import SupervisorDashboard from "@/components/rep/SupervisorDashboard";
 import SupervisorReport from "@/components/rep/SupervisorReport";
 import DailyRoutesSummary from "@/components/rep/DailyRoutesSummary";
+import SupervisorRoutesHistory from "@/components/rep/SupervisorRoutesHistory";
 import RepAccessMap from "@/components/rep/RepAccessMap";
 import RepLabAccessPanel from "@/components/rep/RepLabAccessPanel";
 import AIPageInsights from "@/components/ai/AIPageInsights";
@@ -32,6 +33,7 @@ function SupervisorPage() {
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="rutas">Rutas del día</TabsTrigger>
           <TabsTrigger value="rendimiento">Rendimiento</TabsTrigger>
+          <TabsTrigger value="historial">Rutas históricas</TabsTrigger>
           <TabsTrigger value="actividad">Actividad y dispositivos</TabsTrigger>
           <TabsTrigger value="reporte">Reporte</TabsTrigger>
         </TabsList>
@@ -42,6 +44,10 @@ function SupervisorPage() {
 
         <TabsContent value="rendimiento" className="space-y-4">
           <SupervisorDashboard />
+        </TabsContent>
+
+        <TabsContent value="historial" className="space-y-4">
+          <SupervisorRoutesHistory />
         </TabsContent>
 
         <TabsContent value="actividad" className="space-y-4">
