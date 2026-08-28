@@ -25,8 +25,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight } from "lucide-react";
+import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { OFFICE_LOCATION, OFFICE_PURPOSES } from "@/lib/office";
 
 
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
