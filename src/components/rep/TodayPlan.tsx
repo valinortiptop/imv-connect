@@ -188,28 +188,31 @@ export default function TodayPlan() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
+        <CardHeader className="flex flex-col items-stretch gap-2 pb-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="h-4 w-4 text-primary" />
-              Ruta de hoy
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate">Ruta de hoy</span>
             </CardTitle>
             <p className="mt-0.5 text-xs capitalize text-muted-foreground">
               {todayLabel}
               {today?.zona_principal ? ` · ${today.zona_principal}` : ""}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setOffRouteOpen(true)}>
-              <Plus className="mr-1 h-3.5 w-3.5" /> Visita fuera de ruta
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:justify-end">
+            <Button variant="outline" size="sm" className="min-w-0" onClick={() => setOffRouteOpen(true)}>
+              <Plus className="mr-1 h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Visita fuera de ruta</span>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="min-w-0">
               <Link to="/rep/ruta">
-                <Navigation className="mr-1 h-3.5 w-3.5" /> Ver mapa
+                <Navigation className="mr-1 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Ver mapa</span>
               </Link>
             </Button>
           </div>
         </CardHeader>
+
         <CardContent className="pt-0">
           {weekQ.isLoading && <Skeleton className="h-32 w-full" />}
           {!weekQ.isLoading && (!today || today.clientes.length === 0) && (
