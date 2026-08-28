@@ -435,10 +435,11 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
         {/* Competencia */}
         <TabsContent value="competencia" className="space-y-3">
           <Card>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Migraciones a competencia</CardTitle>
+            <CardHeader className="flex flex-col items-stretch gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="truncate text-base">Migraciones a competencia</CardTitle>
               <CompetitorCaptureDialog clienteId={clienteId} />
             </CardHeader>
+
             <CardContent className="space-y-2 text-sm">
               {(ins?.lost_labs ?? []).length > 0 && (
                 <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">
