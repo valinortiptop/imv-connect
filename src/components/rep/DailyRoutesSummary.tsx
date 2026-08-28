@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Route, Clock, MapPin, Zap, ChevronRight } from "lucide-react";
+import { Route, Clock, MapPin, Zap, ChevronRight, ChevronDown } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import RouteDetailsDialog from "./RouteDetailsDialog";
+
 
 function todayISO() {
   const d = new Date();
@@ -28,7 +30,10 @@ function effColor(e: number | null) {
 export default function DailyRoutesSummary() {
   const [fecha, setFecha] = useState(todayISO());
   const [openRouteId, setOpenRouteId] = useState<string | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const isMobile = useIsMobile();
   const fetchSummary = useServerFn(getDailyRoutesSummaryFn);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["daily-routes-summary", fecha],
     queryFn: () => fetchSummary({ data: { fecha } }),
@@ -82,28 +87,35 @@ export default function DailyRoutesSummary() {
             )}
 
             <div className="space-y-3">
-              {(data?.reps ?? []).map((r: any) => (
+              {(data?.reps ?? []).map((r: any) => {
+                const expanded = !!open[r.representante_id] || !isMobile;
+                return (
                 <div
                   key={r.representante_id}
-                  role={r.routes.length ? "button" : undefined}
-                  tabIndex={r.routes.length ? 0 : undefined}
-                  onClick={() => r.routes[0] && setOpenRouteId(r.routes[0].id)}
-                  onKeyDown={(e) => {
-                    if ((e.key === "Enter" || e.key === " ") && r.routes[0]) {
-                      e.preventDefault();
-                      setOpenRouteId(r.routes[0].id);
-                    }
-                  }}
-                  className={`rounded-lg border p-3 ${
-                    r.routes.length ? "cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/40" : ""
-                  }`}
+                  className="rounded-lg border p-3"
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        isMobile
+                          ? setOpen((p) => ({ ...p, [r.representante_id]: !p[r.representante_id] }))
+                          : r.routes[0] && setOpenRouteId(r.routes[0].id)
+                      }
+                      className="min-w-0 cursor-pointer text-left"
+                    >
                       <p className="flex items-center gap-1 truncate font-medium">
-                        {r.nombre}
-                        {r.routes.length > 0 && (
-                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="truncate">{r.nombre}</span>
+                        {isMobile ? (
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
+                              expanded ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          r.routes.length > 0 && (
+                            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          )
                         )}
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -111,7 +123,7 @@ export default function DailyRoutesSummary() {
                         {r.avg_min != null ? ` · ${r.avg_min} min prom.` : ""}
                         {r.open > 0 ? ` · ${r.open} sin cerrar` : ""}
                       </p>
-                    </div>
+                    </button>
                     <div className="shrink-0 text-right">
                       <p className={`text-lg font-bold tabular-nums ${effColor(r.efficiency)}`}>
                         {r.efficiency == null ? "—" : `${r.efficiency}%`}
@@ -122,58 +134,71 @@ export default function DailyRoutesSummary() {
 
                   {r.efficiency != null && <Progress value={r.efficiency} className="mt-2 h-1.5" />}
 
-                  {r.routes.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {r.routes.map((rt: any) => (
-                        <button
-                          key={rt.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenRouteId(rt.id);
-                          }}
-                          className="max-w-full"
-                          title="Ver ruta planeada"
-                        >
-                          <Badge
-                            variant="secondary"
-                            className="max-w-full truncate font-normal hover:bg-primary hover:text-primary-foreground"
-                          >
-                            <MapPin className="mr-1 h-3 w-3" />
-                            {rt.nombre ?? "Ruta"} · {rt.stops} paradas
-                            {rt.total_km ? ` · ${rt.total_km} km` : ""}
-                          </Badge>
-                        </button>
-                      ))}
-                    </div>
+                  {expanded && (
+                    <>
+                      {r.routes.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {r.routes.map((rt: any) => (
+                            <button
+                              key={rt.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenRouteId(rt.id);
+                              }}
+                              className="max-w-full"
+                              title="Ver ruta planeada"
+                            >
+                              <Badge
+                                variant="secondary"
+                                className="max-w-full truncate font-normal hover:bg-primary hover:text-primary-foreground"
+                              >
+                                <MapPin className="mr-1 h-3 w-3" />
+                                {rt.nombre ?? "Ruta"} · {rt.stops} paradas
+                                {rt.total_km ? ` · ${rt.total_km} km` : ""}
+                              </Badge>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {r.detalle.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {r.detalle.map((v: any) => (
+                            <li
+                              key={v.id}
+                              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs"
+                            >
+                              <span className="min-w-0 truncate">
+                                {v.cliente}
+                                {v.unplanned && (
+                                  <Zap className="ml-1 inline h-3 w-3 text-amber-500" aria-label="fuera de ruta" />
+                                )}
+                              </span>
+                              <span className="shrink-0 whitespace-nowrap text-muted-foreground tabular-nums">
+                                <Clock className="mr-1 inline h-3 w-3" />
+                                {hhmm(v.check_in_at)}
+                                {v.check_out_at ? `–${hhmm(v.check_out_at)}` : " · en curso"}
+                                {v.minutos != null ? ` (${v.minutos}m)` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   )}
 
-                  {r.detalle.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {r.detalle.map((v: any) => (
-                        <li
-                          key={v.id}
-                          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs"
-                        >
-                          <span className="min-w-0 truncate">
-                            {v.cliente}
-                            {v.unplanned && (
-                              <Zap className="ml-1 inline h-3 w-3 text-amber-500" aria-label="fuera de ruta" />
-                            )}
-                          </span>
-                          <span className="shrink-0 whitespace-nowrap text-muted-foreground tabular-nums">
-                            <Clock className="mr-1 inline h-3 w-3" />
-                            {hhmm(v.check_in_at)}
-                            {v.check_out_at ? `–${hhmm(v.check_out_at)}` : " · en curso"}
-                            {v.minutos != null ? ` (${v.minutos}m)` : ""}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                  {isMobile && !expanded && r.routes.length > 0 && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {r.routes.length} ruta{r.routes.length > 1 ? "s" : ""} · {r.detalle.length} visita
+                      {r.detalle.length === 1 ? "" : "s"} — toca para ver
+                    </p>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
+
           </>
         )}
       </CardContent>
