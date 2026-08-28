@@ -653,13 +653,21 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         if (fields.has("CP")) patch.codigo_postal = r.codigo_postal || null;
         if (fields.has("método pago")) patch.payment_method = r.payment_method || null;
         if (fields.has("tipo")) patch.client_type = r.client_type;
+        if (fields.has("NetSuite ID") && r.netsuite_id) patch.netsuite_id = r.netsuite_id;
+        if (fields.has("horario")) {
+          patch.delivery_window_from = r.horario_from || null;
+          patch.delivery_window_until = r.horario_until || null;
+        }
+        if (fields.has("notas") && r.notas) patch.notas = r.notas;
         if (r.lat != null && r.lng != null) {
           patch.lat = r.lat;
           patch.lng = r.lng;
           patch.google_place_id = r.google_place_id;
         }
-        if (r.payment_terms != null) patch.payment_terms = r.payment_terms;
-        if (r.representante_id) patch.representante_id = r.representante_id;
+        if (fields.has("plazo") && r.payment_terms != null)
+          patch.payment_terms = r.payment_terms;
+        if (fields.has("representante") && r.representante_id)
+          patch.representante_id = r.representante_id;
         if (Object.keys(patch).length === 0) continue;
         const { error } = await supabase
           .from("clientes")
