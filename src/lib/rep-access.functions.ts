@@ -127,14 +127,19 @@ export const listRepAccessEventsFn = createServerFn({ method: "POST" })
         .in("id", repIds);
       (reps ?? []).forEach((r: any) => repById.set(r.id, r.nombre));
     }
+    const repIdByUser = new Map<string, string>();
     if (userIds.length) {
       const { data: reps } = await supabase
         .from("representantes")
         .select("id, user_id, nombre")
         .in("user_id", userIds);
       (reps ?? []).forEach((r: any) => {
-        if (r.user_id) repByUser.set(r.user_id, r.nombre);
+        if (r.user_id) {
+          repByUser.set(r.user_id, r.nombre);
+          repIdByUser.set(r.user_id, r.id);
+        }
       });
+
 
       // Fallback: representantes.user_id is often null → resolve via email in auth.users
       try {
