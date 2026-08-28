@@ -300,7 +300,19 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         return "";
       };
 
+      // Column mapping produced by the AI (header -> canonical field), used to
+      // read values the heuristics didn't recognize.
+      const mapped = (r: Record<string, unknown>, field: string) => {
+        const header = aiMap?.[field];
+        if (!header) return "";
+        const real = Object.keys(r).find(
+          (k) => k.toLowerCase().trim() === String(header).toLowerCase().trim(),
+        );
+        return real ? cleanNs(String(r[real] ?? "")) : "";
+      };
+
       const heuristicRow = (r: Record<string, unknown>) => ({
+        netsuite_id: get(r, "id", "id interno", "internal id", "netsuite id", "no. cliente", "numero de cliente"),
         name: get(r, "nombre", "name", "cliente", "razon social", "razón social"),
         company: get(r, "empresa", "company", "nombre comercial"),
         nickname: get(r, "apodo", "alias", "nickname"),
@@ -311,19 +323,23 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         address: get(r, "direccion de envio", "dirección de envío", "direccion envio", "dirección envío", "direccion", "dirección", "address", "domicilio", "direccion de facturacion", "dirección de facturación"),
         codigo_postal: get(r, "cp", "codigo postal", "código postal", "codigo_postal", "zip"),
         payment_method: get(r, "metodo de pago", "método de pago", "payment_method", "forma de pago"),
-        payment_terms_str: get(r, "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
+        payment_terms_str: get(r, "terminos", "términos", "credito", "crédito", "dias credito", "días crédito", "payment_terms", "plazo"),
         client_type: get(r, "tipo", "client_type", "tipo cliente").toLowerCase(),
         representante_nombre: get(r, "representante de ventas", "representante", "vendedor", "asesor", "ejecutivo"),
+        categoria: get(r, "categoria", "categoría", "category"),
+        zona: get(r, "zona", "zone", "alcaldia", "alcaldía", "municipio"),
+        horario: get(r, "horario recepcion", "horario recepción", "horario de recepcion", "horario de recepción", "horario"),
+        comentarios: get(r, "comentarios", "notas", "observaciones"),
       });
 
       const built: ImportRow[] = json.map((raw, i) => {
-        const ai = aiRows?.[i] ?? null;
         const h = heuristicRow(raw);
         const pick = (a: any, b: any) =>
           a != null && String(a).trim() !== "" ? String(a).trim() : String(b ?? "").trim();
-        const rawName = pick(ai?.name, h.name);
-        const rawCompany = pick(ai?.company, h.company);
-        const rawRazon = pick(ai?.razon_social, h.razon_social);
+        const netsuite_id = pick(h.netsuite_id, mapped(raw, "netsuite_id")).replace(/\.0$/, "");
+        const rawName = pick(h.name, mapped(raw, "name"));
+        const rawCompany = pick(h.company, mapped(raw, "company"));
+        const rawRazon = pick(h.razon_social, mapped(raw, "razon_social"));
         // VM / subcuentas: "PADRE : 1928 VM SUBCUENTA" -> nombre limpio de la
         // subcuenta + nombre del padre; se fuerza el RFC genérico para VM.
         const parsedName = parseClientName(rawName);
@@ -335,31 +351,47 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
         const razon_social = parsedRazon.name || rawRazon;
         const parent_name =
           parsedName.parentName ?? parsedRazon.parentName ?? parsedCompany.parentName ?? null;
-        const nickname = pick(ai?.nickname, h.nickname);
-        const phone = pick(ai?.phone, h.phone);
-        const email = pick(ai?.email, h.email);
-        const rfcInput = pick(ai?.rfc, h.rfc).toUpperCase();
+        const nickname = pick(h.nickname, mapped(raw, "nickname"));
+        const phone = pick(h.phone, mapped(raw, "phone"));
+        const email = pick(h.email, mapped(raw, "email"));
+        const rfcInput = pick(h.rfc, mapped(raw, "rfc")).toUpperCase();
         const rfc = rfcInput || (wasVm ? GENERIC_RFC : "");
-        const rawAddress = pick(ai?.address, h.address);
-        const address = stripNamePrefix(rawAddress, name, company, razon_social, nickname);
-        const codigo_postal = pick(ai?.codigo_postal, h.codigo_postal);
-        const pm = pick(ai?.payment_method, h.payment_method);
-        const termsRaw = ai?.payment_terms ?? Number(h.payment_terms_str) ?? null;
+        const rawAddress = pick(h.address, mapped(raw, "address"));
+        const ns = parseNetsuiteAddress(rawAddress, netsuite_id);
+        const address = stripNamePrefix(ns.address, name, company, razon_social, nickname);
+        const codigo_postal =
+          pick(h.codigo_postal, mapped(raw, "codigo_postal")) || ns.cp || "";
+        const pm = pick(h.payment_method, mapped(raw, "payment_method"));
+        const termsRaw = pick(h.payment_terms_str, mapped(raw, "payment_terms"));
         const payment_terms =
-          termsRaw == null || termsRaw === "" || Number.isNaN(Number(termsRaw))
+          termsRaw === "" || Number.isNaN(Number(termsRaw))
             ? null
             : Math.max(0, Math.round(Number(termsRaw)));
-        const ctRaw = String(ai?.client_type ?? h.client_type ?? "").toLowerCase();
+        const ctRaw = String(pick(h.client_type, mapped(raw, "client_type"))).toLowerCase();
+        const categoria = pick(h.categoria, mapped(raw, "categoria"));
+        const zona = pick(h.zona, mapped(raw, "zona"));
+        const comentarios = pick(h.comentarios, mapped(raw, "comentarios"));
         const client_type: "mayoreo" | "menudeo" =
           ctRaw === "mayoreo" || ctRaw === "menudeo"
             ? (ctRaw as any)
-            : pm.toLowerCase().includes("credito") || (payment_terms ?? 0) > 0
+            : /comercializadora|hospital|distribuidor/i.test(categoria)
               ? "mayoreo"
-              : "menudeo";
+              : pm.toLowerCase().includes("credito") || (payment_terms ?? 0) > 0
+                ? "mayoreo"
+                : "menudeo";
 
-        const representante_nombre = normalizeRepName(pick(ai?.representante_nombre, h.representante_nombre));
+        const representante_nombre = normalizeRepName(
+          pick(h.representante_nombre, mapped(raw, "representante_nombre")),
+        );
+        const horario = parseHorario(pick(h.horario, mapped(raw, "horario")));
+        const notasParts = [
+          categoria ? `Categoría: ${categoria}` : "",
+          zona ? `Zona: ${zona}` : "",
+          comentarios ? `NetSuite: ${comentarios}` : "",
+        ].filter(Boolean);
 
         const baseRow = {
+          netsuite_id,
           name,
           company,
           nickname,
@@ -378,6 +410,11 @@ Responde con: {"rows":[{...}, ...]} en el MISMO ORDEN y MISMA CANTIDAD que la en
           google_place_id: null as string | null,
           representante_nombre,
           representante_id: null as string | null,
+          categoria,
+          zona,
+          horario_from: horario.from,
+          horario_until: horario.until,
+          notas: notasParts.join(" · "),
         };
         if (!name) {
           return {
