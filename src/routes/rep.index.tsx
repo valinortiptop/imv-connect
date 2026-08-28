@@ -4,9 +4,9 @@ import AIPageInsights from "@/components/ai/AIPageInsights";
 
 export const Route = createFileRoute("/rep/")({
   component: () => (
-    <>
-      <AIPageInsights module="rep-home" />
+    <div className="space-y-5">
       <RepDashboard />
-    </>
+      <AIPageInsights module="rep-home" />
+    </div>
   ),
 });
