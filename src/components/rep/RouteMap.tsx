@@ -53,6 +53,11 @@ import {
 import CheckInDialog from "./CheckInDialog";
 import NewRouteWizardDialog from "./NewRouteWizardDialog";
 import { downloadRoutePdf, printRoute as printRouteHtml } from "@/lib/route-export";
+import {
+  OFFICE_LOCATION,
+  OFFICE_STOP_ID,
+  OFFICE_PURPOSES,
+} from "@/lib/office";
 
 
 function decodePolyline(str: string): [number, number][] {
@@ -196,6 +201,35 @@ export default function RouteMap() {
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   // Admins can create a route on behalf of a representative.
   const [assignedRepId, setAssignedRepId] = useState<string | null>(null);
+  /** Motivo de la parada en oficina (null = la oficina no está en la ruta). */
+  const [officeMotivo, setOfficeMotivo] = useState<string | null>(null);
+
+  /** Nombre + dirección de una parada (cliente u oficina). */
+  const stopLabel = (s: any, i: number) => {
+    if (String(s?.cliente_id) === OFFICE_STOP_ID) {
+      return {
+        isOffice: true,
+        name: s?.motivo ? `Oficina IMV · ${s.motivo}` : OFFICE_LOCATION.nombre,
+        direccion: OFFICE_LOCATION.direccion,
+      };
+    }
+    const c = clientsById.get(s?.cliente_id);
+    return {
+      isOffice: false,
+      name: c ? (c.nombre_comercial ?? c.razon_social) : s?.nombre ?? `Parada ${i + 1}`,
+      direccion: c?.direccion ?? s?.direccion ?? "",
+    };
+  };
+
+  const officeStop = (motivo: string) => ({
+    cliente_id: OFFICE_STOP_ID,
+    kind: "office",
+    nombre: OFFICE_LOCATION.nombre,
+    direccion: OFFICE_LOCATION.direccion,
+    motivo,
+    lat: OFFICE_LOCATION.lat,
+    lng: OFFICE_LOCATION.lng,
+  });
 
 
 
@@ -269,6 +303,9 @@ export default function RouteMap() {
           cliente_id: String(s.cliente_id),
           lat: Number(s.lat),
           lng: Number(s.lng),
+          ...(String(s.cliente_id) === OFFICE_STOP_ID
+            ? { kind: "office", motivo: s.motivo ?? null }
+            : {}),
         }));
       if (stops.length === 0) {
         toast.error("Esta ruta no tiene coordenadas");
@@ -276,7 +313,15 @@ export default function RouteMap() {
       }
       const path = r.polyline ? decodePolyline(r.polyline) : [];
       setAssignedRepId(null);
-      setSelected(new Set(stops.map((s: any) => s.cliente_id)));
+      const officeIn = stops.find((s: any) => s.cliente_id === OFFICE_STOP_ID);
+      setOfficeMotivo(officeIn ? (officeIn.motivo ?? OFFICE_PURPOSES[0]) : null);
+      setSelected(
+        new Set(
+          stops
+            .filter((s: any) => s.cliente_id !== OFFICE_STOP_ID)
+            .map((s: any) => s.cliente_id),
+        ),
+      );
       setRouteInfo({
         km: Number(r.total_km ?? 0),
         min: Number(r.total_minutes ?? 0),
@@ -379,11 +424,18 @@ export default function RouteMap() {
     // In route mode, only render ordered stops with numbered markers.
     if (routeMode && routeInfo) {
       routeInfo.ordered.forEach((s, idx) => {
+        const isOffice = String(s.cliente_id) === OFFICE_STOP_ID;
         const c = clientsById.get(s.cliente_id);
         const marker = new maps.Marker({
           map,
           position: { lat: Number(s.lat), lng: Number(s.lng) },
-          title: c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${idx + 1}`,
+          title: isOffice
+            ? (s as any).motivo
+              ? `Oficina IMV · ${(s as any).motivo}`
+              : OFFICE_LOCATION.nombre
+            : c
+              ? (c.nombre_comercial ?? c.razon_social)
+              : `Parada ${idx + 1}`,
           label: {
             text: String(idx + 1),
             color: "#ffffff",
@@ -391,9 +443,9 @@ export default function RouteMap() {
             fontWeight: "700",
           },
           icon: {
-            path: maps.SymbolPath.CIRCLE,
-            scale: 13,
-            fillColor: "#2563eb",
+            path: isOffice ? maps.SymbolPath.BACKWARD_CLOSED_ARROW : maps.SymbolPath.CIRCLE,
+            scale: isOffice ? 11 : 13,
+            fillColor: isOffice ? "#9333ea" : "#2563eb",
             fillOpacity: 1,
             strokeColor: "#ffffff",
             strokeWeight: 2,
@@ -479,6 +531,8 @@ export default function RouteMap() {
       const stops = clientsWithCoords
         .filter((c: any) => idSet.has(c.id))
         .map((c: any) => ({ cliente_id: c.id, lat: Number(c.lat), lng: Number(c.lng) }));
+      const motivo = vars?.officeMotivo !== undefined ? vars.officeMotivo : officeMotivo;
+      if (motivo) stops.push(officeStop(motivo));
       if (stops.length === 0) throw new Error("Selecciona al menos un cliente");
       return optimize({ data: { startLat: geo.lat, startLng: geo.lng, stops } });
     },
@@ -574,10 +628,13 @@ export default function RouteMap() {
         data: {
           startLat: geo.lat,
           startLng: geo.lng,
-          stops: routeInfo.ordered.map((s) => ({
+          stops: routeInfo.ordered.map((s: any) => ({
             cliente_id: s.cliente_id,
             lat: Number(s.lat),
             lng: Number(s.lng),
+            ...(String(s.cliente_id) === OFFICE_STOP_ID
+              ? { kind: "office", motivo: s.motivo ?? null }
+              : {}),
           })),
           optimize: false,
         },
@@ -693,12 +750,12 @@ export default function RouteMap() {
       fecha: new Date().toISOString().slice(0, 10),
       totalKm: routeInfo.km,
       totalMin: routeInfo.min,
-      stops: routeInfo.ordered.map((s, i) => {
-        const c = clientsById.get(s.cliente_id);
+      stops: routeInfo.ordered.map((s: any, i: number) => {
+        const l = stopLabel(s, i);
         return {
           cliente_id: s.cliente_id,
-          nombre: c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`,
-          direccion: c?.direccion ?? "",
+          nombre: l.name,
+          direccion: l.direccion ?? "",
         };
       }),
       legs: routeInfo.legs,
@@ -910,6 +967,31 @@ export default function RouteMap() {
             Limpiar ({selected.size})
           </Button>
           <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant={officeMotivo ? "default" : "outline"}
+              onClick={() => setOfficeMotivo(officeMotivo ? null : OFFICE_PURPOSES[0])}
+              title="Incluir una parada en la Oficina IMV (Necaxa 125)"
+            >
+              <MapPin className="mr-1 h-4 w-4" />
+              Oficina
+            </Button>
+            {officeMotivo && (
+              <Select value={officeMotivo} onValueChange={setOfficeMotivo}>
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue placeholder="Motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OFFICE_PURPOSES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
             <label className="hidden text-[11px] text-muted-foreground sm:inline">Fecha:</label>
             <Input
               type="date"
@@ -996,9 +1078,11 @@ export default function RouteMap() {
                   <div className="text-xs text-muted-foreground">Tu ubicación actual</div>
                 </div>
               </li>
-              {routeInfo.ordered.map((s, i) => {
-                const c = clientsById.get(s.cliente_id);
-                const name = c ? (c.nombre_comercial ?? c.razon_social) : `Parada ${i + 1}`;
+              {routeInfo.ordered.map((s: any, i: number) => {
+                const label = stopLabel(s, i);
+                const isOffice = label.isOffice;
+                const c = isOffice ? { direccion: label.direccion } : clientsById.get(s.cliente_id);
+                const name = label.name;
                 const leg = routeInfo.legs[i];
                 const isDragging = dragIdx === i;
                 const isOver = dragOverIdx === i && dragIdx !== null && dragIdx !== i;
@@ -1043,10 +1127,19 @@ export default function RouteMap() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setCheckInClient({ id: s.cliente_id, nombre: name })}
+                      onClick={() => {
+                        if (isOffice) return;
+                        setCheckInClient({ id: s.cliente_id, nombre: name });
+                      }}
                       className="flex min-w-0 flex-1 items-start gap-2 rounded-md p-2 text-left transition hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                      <span
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                          isOffice
+                            ? "bg-purple-600 text-white"
+                            : "bg-primary text-primary-foreground"
+                        }`}
+                      >
                         {i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -1054,7 +1147,9 @@ export default function RouteMap() {
                         {c?.direccion && (
                           <div className="truncate text-xs text-muted-foreground">{c.direccion}</div>
                         )}
-                        <div className="mt-0.5 text-[11px] text-primary">Toca para registrar visita</div>
+                        <div className="mt-0.5 text-[11px] text-primary">
+                          {isOffice ? "Parada en oficina" : "Toca para registrar visita"}
+                        </div>
                       </div>
                       {leg && !routeDirty && (
                         <div className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
@@ -1187,13 +1282,14 @@ export default function RouteMap() {
         initialFecha={routeFecha}
         isAdmin={!!repsQ.data?.isAdmin}
         reps={repsQ.data?.reps ?? []}
-        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId }) => {
+        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId, officeMotivo: om }) => {
           setRouteFecha(fecha);
           setAssignedRepId(repId ?? null);
+          setOfficeMotivo(om ?? null);
           setSelected(new Set(clientIds));
           setRouteInfo(null);
           didFitRef.current = false;
-          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha });
+          if (doOpt) doOptimize.mutate({ ids: clientIds, fecha, officeMotivo: om ?? null });
         }}
       />
     </div>

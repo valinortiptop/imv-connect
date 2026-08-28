@@ -25,8 +25,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight } from "lucide-react";
+import { Search, Sparkles, Copy, CalendarDays, Users, ChevronRight, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { OFFICE_LOCATION, OFFICE_PURPOSES } from "@/lib/office";
 
 
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -133,6 +134,7 @@ export default function NewRouteWizardDialog({
     clientIds: string[];
     optimize: boolean;
     assignedRepId: string | null;
+    officeMotivo?: string | null;
   }) => void;
 }) {
   const listSaved = useServerFn(listSavedRoutesFn);
@@ -149,6 +151,7 @@ export default function NewRouteWizardDialog({
   const [alcaldiaFilter, setAlcaldiaFilter] = useState<string>("all");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [assignedRepId, setAssignedRepId] = useState<string>("__self__");
+  const [officeMotivo, setOfficeMotivo] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -157,6 +160,7 @@ export default function NewRouteWizardDialog({
       setAlcaldiaFilter("all");
       setSel(new Set());
       setAssignedRepId("__self__");
+      setOfficeMotivo(null);
     }
   }, [open, initialFecha]);
 
@@ -246,6 +250,7 @@ export default function NewRouteWizardDialog({
       clientIds: [...sel],
       optimize,
       assignedRepId: isAdmin && assignedRepId !== "__self__" ? assignedRepId : null,
+      officeMotivo,
     });
     onOpenChange(false);
   };
@@ -278,6 +283,40 @@ export default function NewRouteWizardDialog({
               />
               {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
             </div>
+          </section>
+
+          {/* Parada en la oficina IMV */}
+          <section className="rounded-lg border p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <MapPin className="h-4 w-4 text-purple-600" /> Parada en Oficina IMV
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={officeMotivo ? "default" : "outline"}
+                onClick={() => setOfficeMotivo(officeMotivo ? null : OFFICE_PURPOSES[0])}
+              >
+                {officeMotivo ? "Incluida" : "Incluir oficina"}
+              </Button>
+              {officeMotivo && (
+                <Select value={officeMotivo} onValueChange={setOfficeMotivo}>
+                  <SelectTrigger className="h-9 w-48 text-sm">
+                    <SelectValue placeholder="Motivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OFFICE_PURPOSES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {OFFICE_LOCATION.direccion}
+            </p>
           </section>
 
           {/* Admin only — assign the route to a representative */}

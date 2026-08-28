@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, Clock, Users, ClipboardCheck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isAtOffice } from "@/lib/office";
 
 type RangeKey = "today" | "7d" | "30d";
 
@@ -164,14 +165,15 @@ export default function RepAccessMap() {
     const bounds = new maps.LatLngBounds();
     for (const e of withLoc) {
       const pos = { lat: e.lat!, lng: e.lng! };
-      const color = e.visit ? "#0d9488" : colorForAge(e.signed_in_at);
+      const atOffice = isAtOffice(e.lat, e.lng);
+      const color = atOffice ? "#9333ea" : e.visit ? "#0d9488" : colorForAge(e.signed_in_at);
       const marker = new maps.Marker({
         position: pos,
         map,
         zIndex: e.visit ? 3 : 1,
         title: `${e.representante_nombre ?? "Rep"} · ${fmtDT(e.signed_in_at)}${
-          e.visit ? ` · visita: ${e.visit.cliente}` : ""
-        }`,
+          atOffice ? " · en Oficina IMV" : ""
+        }${e.visit ? ` · visita: ${e.visit.cliente}` : ""}`,
         icon: {
           path: maps.SymbolPath.CIRCLE,
           scale: e.visit ? 10 : 8,
@@ -305,10 +307,15 @@ export default function RepAccessMap() {
                     )}
                     title={e.has_location ? "Ver en el mapa" : "Este acceso no tiene ubicación"}
                   >
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center gap-1">
                       <span className="font-medium truncate">
                         {e.representante_nombre ?? "—"}
                       </span>
+                      {isAtOffice(e.lat, e.lng) && (
+                        <Badge className="bg-purple-600 text-white text-[10px] px-1.5">
+                          en oficina
+                        </Badge>
+                      )}
                       {e.has_location ? (
                         <Badge
                           variant="outline"
