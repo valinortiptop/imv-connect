@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
 import MoreSheet from "./mobile/MoreSheet";
+import ActiveVisitBar from "./ActiveVisitBar";
 import { AIProvider } from "@/components/ai/AIProvider";
 import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
@@ -402,7 +403,10 @@ export default function RepLayout({ children }: { children: ReactNode }) {
               <NotificationBell />
             </div>
           </header>
-          <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
+          <>
+            <ActiveVisitBar />
+            <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
+          </>
         </main>
 
         {/* Bottom nav mobile */}
