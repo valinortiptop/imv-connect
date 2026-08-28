@@ -359,7 +359,7 @@ export const listClientsForAssignmentFn = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     let q = context.supabase
       .from("clientes")
-      .select("id, razon_social, nombre_comercial, nickname, direccion, telefono, representante_id, activo")
+      .select("id, razon_social, nombre_comercial, nickname, direccion, telefono, representante_id, active")
       .order("razon_social")
       .limit(data.limit ?? 200);
     if (data.scope === "sin_asignar") q = q.is("representante_id", null);
