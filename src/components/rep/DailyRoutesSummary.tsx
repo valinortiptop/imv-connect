@@ -30,7 +30,10 @@ function effColor(e: number | null) {
 export default function DailyRoutesSummary() {
   const [fecha, setFecha] = useState(todayISO());
   const [openRouteId, setOpenRouteId] = useState<string | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const isMobile = useIsMobile();
   const fetchSummary = useServerFn(getDailyRoutesSummaryFn);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["daily-routes-summary", fecha],
     queryFn: () => fetchSummary({ data: { fecha } }),
