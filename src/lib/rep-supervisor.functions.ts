@@ -241,3 +241,168 @@ export const getRep360Fn = createServerFn({ method: "POST" })
       pedidos,
     };
   });
+
+// ============================================================
+// Asignaciones: prospectos y clientes → representantes
+// ============================================================
+
+/** Representantes con su user_id (para asignar prospectos/clientes). */
+export const listRepsForAssignmentFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data, error } = await context.supabase
+      .from("representantes")
+      .select("id, nombre, email, activo, user_id")
+      .order("nombre");
+    if (error) throw new Error(error.message);
+    return { reps: data ?? [] };
+  });
+
+/** Prospectos para autorizar / reasignar. */
+export const listProspectsForAssignmentFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        search: z.string().optional(),
+        scope: z.enum(["todos", "sin_asignar", "asignados"]).optional(),
+        limit: z.number().min(10).max(500).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    let q = context.supabase
+      .from("prospects")
+      .select(
+        "id, name, contact_person, phone, direccion, colonia, municipio, status, source, assigned_to, created_at, converted_client_id",
+      )
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 200);
+    if (data.scope === "sin_asignar") q = q.is("assigned_to", null);
+    if (data.scope === "asignados") q = q.not("assigned_to", "is", null);
+    if (data.search?.trim()) {
+      const t = data.search.trim();
+      q = q.or(`name.ilike.%${t}%,contact_person.ilike.%${t}%,phone.ilike.%${t}%,direccion.ilike.%${t}%`);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const { data: reps } = await context.supabase
+      .from("representantes")
+      .select("id, nombre, user_id");
+    const byUser = new Map<string, any>();
+    for (const r of reps ?? []) if ((r as any).user_id) byUser.set(String((r as any).user_id), r);
+
+    return {
+      prospects: (rows ?? []).map((p: any) => {
+        const rep = p.assigned_to ? byUser.get(String(p.assigned_to)) : null;
+        return {
+          ...p,
+          rep_id: rep?.id ?? null,
+          rep_nombre: rep?.nombre ?? (p.assigned_to ? "Usuario sin representante" : null),
+        };
+      }),
+    };
+  });
+
+/** Asigna (o libera) un prospecto a un representante. */
+export const assignProspectToRepFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        prospectId: z.string().uuid(),
+        repId: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    let assignedTo: string | null = null;
+    if (data.repId) {
+      const { data: rep } = await context.supabase
+        .from("representantes")
+        .select("id, nombre, user_id")
+        .eq("id", data.repId)
+        .maybeSingle();
+      if (!rep) throw new Error("Representante no encontrado");
+      if (!(rep as any).user_id)
+        throw new Error(
+          `${(rep as any).nombre} aún no tiene cuenta vinculada; vincúlala antes de asignar prospectos.`,
+        );
+      assignedTo = String((rep as any).user_id);
+    }
+    const { error } = await context.supabase
+      .from("prospects")
+      .update({ assigned_to: assignedTo })
+      .eq("id", data.prospectId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Clientes para asignar representante. */
+export const listClientsForAssignmentFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        search: z.string().optional(),
+        scope: z.enum(["todos", "sin_asignar", "asignados"]).optional(),
+        repId: z.string().uuid().optional(),
+        limit: z.number().min(10).max(500).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    let q = context.supabase
+      .from("clientes")
+      .select("id, razon_social, nombre_comercial, nickname, direccion, telefono, representante_id, activo")
+      .order("razon_social")
+      .limit(data.limit ?? 200);
+    if (data.scope === "sin_asignar") q = q.is("representante_id", null);
+    if (data.scope === "asignados") q = q.not("representante_id", "is", null);
+    if (data.repId) q = q.eq("representante_id", data.repId);
+    if (data.search?.trim()) {
+      const t = data.search.trim();
+      q = q.or(
+        `razon_social.ilike.%${t}%,nombre_comercial.ilike.%${t}%,nickname.ilike.%${t}%,direccion.ilike.%${t}%`,
+      );
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const { data: reps } = await context.supabase.from("representantes").select("id, nombre");
+    const byId = new Map<string, string>();
+    for (const r of reps ?? []) byId.set(String((r as any).id), (r as any).nombre);
+
+    return {
+      clients: (rows ?? []).map((c: any) => ({
+        ...c,
+        rep_nombre: c.representante_id ? byId.get(String(c.representante_id)) ?? "—" : null,
+      })),
+    };
+  });
+
+/** Asigna (o libera) el representante de un cliente. */
+export const assignClientToRepFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        clienteId: z.string().uuid(),
+        repId: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { error } = await context.supabase
+      .from("clientes")
+      .update({ representante_id: data.repId })
+      .eq("id", data.clienteId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
