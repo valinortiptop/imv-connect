@@ -2215,7 +2215,7 @@ function NuevoContactoDialog({
         colonia: colonia.trim() || null,
         direccion: direccion.trim() || null,
         source: defaultSource,
-        assigned_to: defaultAssignee,
+        assigned_to: assignee,
         status: "nuevo",
         lat: e.lat ?? null,
         lng: e.lng ?? null,
