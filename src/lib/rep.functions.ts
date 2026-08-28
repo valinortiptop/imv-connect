@@ -944,10 +944,10 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     } else if (visit.prospect_id) {
       const { data: p } = await context.supabase
         .from("prospects")
-        .select("nombre_comercial, razon_social")
+        .select("name")
         .eq("id", visit.prospect_id)
         .maybeSingle();
-      nombre = (p as any)?.nombre_comercial ?? (p as any)?.razon_social ?? null;
+      nombre = (p as any)?.name ?? null;
     }
     return { visit: { ...visit, nombre: nombre ?? "Visita en curso" } };
   });
