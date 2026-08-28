@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import SavedRoutePreview from "@/components/rep/SavedRoutePreview";
+import RouteDetailsDialog from "@/components/rep/RouteDetailsDialog";
 import { Loader2, MapPin } from "lucide-react";
 
 const fdate = (s?: string | null) =>
@@ -144,7 +144,7 @@ export default function SupervisorRoutesHistory() {
               <div key={r.id} className="rounded-lg border">
                 <button
                   type="button"
-                  onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                  onClick={() => setOpenId(r.id)}
                   className="flex w-full items-center gap-2 p-3 text-left hover:bg-accent/50"
                 >
                   <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -164,38 +164,17 @@ export default function SupervisorRoutesHistory() {
                     {String(r.fecha) >= (data?.today ?? "") ? "Programada" : "Pasada"}
                   </Badge>
                 </button>
-                {openId === r.id && (
-                  <div className="space-y-2 border-t p-3">
-                    <SavedRoutePreview
-                      polyline={r.polyline}
-                      stops={r.ordered_stops ?? []}
-                      startLat={r.start_lat}
-                      startLng={r.start_lng}
-                      height={240}
-                    />
-                    <ol className="space-y-1">
-                      {(r.ordered_stops ?? []).map((s: any, i: number) => (
-                        <li key={`${r.id}-${i}`} className="flex gap-2 text-xs">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold">
-                            {i + 1}
-                          </span>
-                          <span className="min-w-0">
-                            <b className="block truncate">{s.nombre || "Cliente"}</b>
-                            {s.direccion && <span className="text-muted-foreground">{s.direccion}</span>}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                    <p className="text-[11px] text-muted-foreground">
-                      {Math.round(Number(r.total_minutes ?? 0))} min estimados · creada{" "}
-                      {r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "—"}
-                    </p>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         )}
+
+        {/* Detalle completo con estado de visita por cliente (verde = visitado) */}
+        <RouteDetailsDialog
+          routeId={openId}
+          open={!!openId}
+          onOpenChange={(v) => !v && setOpenId(null)}
+        />
       </CardContent>
     </Card>
   );
