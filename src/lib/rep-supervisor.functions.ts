@@ -131,7 +131,7 @@ export const getRep360Fn = createServerFn({ method: "POST" })
         .limit(120),
       sb
         .from("rep_visits")
-        .select("id, cliente_id, prospect_id, outcome, notas, check_in_at, check_out_at, pedido_id")
+        .select("id, cliente_id, prospect_id, outcome, notes, check_in_at, check_out_at, pedido_id")
         .eq("representante_id", rep.id)
         .gte("check_in_at", sinceIso)
         .order("check_in_at", { ascending: false })
