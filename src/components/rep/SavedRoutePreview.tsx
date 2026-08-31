@@ -59,10 +59,23 @@ export default function SavedRoutePreview({
         const markerPts = (stops ?? [])
           .map((s) =>
             s.lat != null && s.lng != null
-              ? { lat: Number(s.lat), lng: Number(s.lng), name: s.nombre, visited: !!s.visited }
+              ? {
+                  lat: Number(s.lat),
+                  lng: Number(s.lng),
+                  name: s.nombre,
+                  visited: !!s.visited,
+                  ongoing: !!s.visit?.in_progress,
+                }
               : null,
           )
-          .filter(Boolean) as { lat: number; lng: number; name?: string | null; visited?: boolean }[];
+          .filter(Boolean) as {
+          lat: number;
+          lng: number;
+          name?: string | null;
+          visited?: boolean;
+          ongoing?: boolean;
+        }[];
+
 
         const bounds = new gm.LatLngBounds();
         for (const p of path) bounds.extend(p);
