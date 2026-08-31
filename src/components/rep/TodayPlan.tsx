@@ -310,8 +310,28 @@ export default function TodayPlan() {
               fotos, documentos y notas.
             </p>
           )}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2.5">
+            <div className="min-w-0">
+              <Label htmlFor="office-auto" className="flex items-center gap-1.5 text-xs font-medium">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                Auto check-in en oficina
+              </Label>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Registra tu entrada y salida automáticamente cuando estés en {OFFICE_LOCATION.nombre}.
+              </p>
+            </div>
+            <Switch id="office-auto" checked={officeAuto} onCheckedChange={setOfficeAuto} />
+          </div>
         </CardContent>
       </Card>
+
+      <CheckInDialog
+        open={officeOpen}
+        onOpenChange={setOfficeOpen}
+        office
+        clienteNombre={OFFICE_LOCATION.nombre}
+      />
 
       {target && (
         <CheckInDialog
@@ -323,6 +343,7 @@ export default function TodayPlan() {
           unplanned={target.unplanned}
         />
       )}
+
 
       {/* Selector de cliente para visitas improvisadas */}
       <Dialog open={offRouteOpen} onOpenChange={setOffRouteOpen}>
