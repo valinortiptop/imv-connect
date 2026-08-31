@@ -407,6 +407,8 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           </header>
           <>
             <ActiveVisitBar />
+            <OfficeAutoVisit />
+
             <div className="px-4 py-4 md:px-6 md:py-6">{children}</div>
           </>
         </main>
