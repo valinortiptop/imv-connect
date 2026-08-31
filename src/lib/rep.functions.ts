@@ -12,7 +12,7 @@ import {
   DAILY_PLAN_SYSTEM,
 } from "./rep-prompts";
 import { mergePolylines } from "./polyline";
-import { OFFICE_LOCATION, OFFICE_STOP_ID } from "./office";
+import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "./office";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
