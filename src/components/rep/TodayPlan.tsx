@@ -159,7 +159,13 @@ export default function TodayPlan() {
   const offRouteResults = useMemo(() => {
     const q = offQuery.trim().toLowerCase();
     const all = (clientsQ.data?.clients ?? []) as any[];
-    const base = all.filter((c) => !plannedIds.has(String(c.id)));
+    // No se ocultan los clientes que ya están en el plan de hoy: se muestran
+    // marcados como "ya en el plan" para que el vendedor los encuentre igual.
+    const base = [...all].sort((a, b) => {
+      const ap = plannedIds.has(String(a.id)) ? 1 : 0;
+      const bp = plannedIds.has(String(b.id)) ? 1 : 0;
+      return ap - bp;
+    });
     if (!q) return base.slice(0, 60);
     return base
       .filter((c) =>
@@ -171,6 +177,7 @@ export default function TodayPlan() {
       )
       .slice(0, 60);
   }, [clientsQ.data, offQuery, plannedIds]);
+
 
   const offRouteProspects = useMemo(() => {
     const q = offQuery.trim().toLowerCase();
@@ -398,9 +405,15 @@ export default function TodayPlan() {
                         });
                       }}
                     >
-                      <span className="break-words text-sm font-medium">
+                      <span className="flex flex-wrap items-center gap-1.5 break-words text-sm font-medium">
                         {c.nombre_comercial ?? c.razon_social ?? "Cliente"}
+                        {plannedIds.has(String(c.id)) && (
+                          <Badge variant="secondary" className="shrink-0 font-normal">
+                            Ya en el plan de hoy
+                          </Badge>
+                        )}
                       </span>
+
                       {c.direccion && (
                         <span className="line-clamp-2 break-words text-[11px] text-muted-foreground">
                           {c.direccion}
