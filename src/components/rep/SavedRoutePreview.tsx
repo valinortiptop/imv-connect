@@ -122,12 +122,15 @@ export default function SavedRoutePreview({
               icon: {
                 path: gm.SymbolPath.CIRCLE,
                 scale: 11,
-                fillColor: m.visited ? "#16a34a" : "#dc2626",
+                fillColor: m.ongoing ? "#f59e0b" : m.visited ? "#16a34a" : "#dc2626",
                 fillOpacity: 1,
                 strokeColor: "#ffffff",
                 strokeWeight: 2,
               },
-              title: `${m.name || `Parada ${i + 1}`}${m.visited ? " · visitado" : " · no visitado"}`,
+              title: `${m.name || `Parada ${i + 1}`}${
+                m.ongoing ? " · visita en curso" : m.visited ? " · visitado" : " · no visitado"
+              }`,
+
             }),
           );
         });
