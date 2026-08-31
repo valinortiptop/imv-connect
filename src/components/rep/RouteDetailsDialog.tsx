@@ -206,6 +206,16 @@ export default function RouteDetailsDialog({
               >
                 <CheckCircle2 className="mr-1 h-3 w-3" /> {route.visited_count ?? 0}/{stops.length} visitados
               </Badge>
+              {stops.some((s: any) => s.visit?.in_progress) && (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/50 bg-amber-500/10 font-normal text-amber-700 dark:text-amber-400"
+                >
+                  <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                  {stops.filter((s: any) => s.visit?.in_progress).length} en curso
+                </Badge>
+              )}
+
               {!!route.visited_minutes && (
                 <Badge variant="outline" className="font-normal">
                   <Clock className="mr-1 h-3 w-3" /> {route.visited_minutes} min con clientes
