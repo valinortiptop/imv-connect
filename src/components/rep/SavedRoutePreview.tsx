@@ -25,7 +25,10 @@ type Stop = {
   lng?: number | null;
   nombre?: string | null;
   visited?: boolean;
+  /** visita abierta (check-in sin check-out) → pin amarillo */
+  visit?: { in_progress?: boolean } | null;
 };
+
 
 export default function SavedRoutePreview({
   polyline,
