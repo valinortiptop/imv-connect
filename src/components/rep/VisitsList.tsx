@@ -77,6 +77,39 @@ export default function VisitsList() {
                       60000,
                   )
                 : null;
+              const isOffice = v.visit_kind === "oficina";
+              const title = isOffice
+                ? `Oficina IMV${v.office_purpose ? ` · ${v.office_purpose}` : ""}`
+                : (v.clientes?.nombre_comercial ?? v.clientes?.razon_social ?? "Cliente");
+              const body = (
+                <Card className="relative overflow-hidden hover:bg-muted/40 active:bg-muted">
+                  <span className={cn("absolute inset-y-0 left-0 w-1", bar)} />
+                  <CardContent className="p-3 pl-4 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
+                      {isOffice && (
+                        <Badge variant="outline" className="shrink-0">
+                          {v.auto_registered ? "auto" : "oficina"}
+                        </Badge>
+                      )}
+                      {v.outcome && (
+                        <Badge variant="outline" className="shrink-0">
+                          {v.outcome}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                      {new Date(v.check_in_at).toLocaleTimeString("es-MX", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {durMin != null && ` · ${durMin} min`}
+                    </div>
+                    {v.notes && <p className="mt-1 line-clamp-2 text-xs">{v.notes}</p>}
+                  </CardContent>
+                </Card>
+              );
+              if (isOffice || !v.cliente_id) return <div key={v.id}>{body}</div>;
               return (
                 <Link
                   key={v.id}
@@ -84,37 +117,10 @@ export default function VisitsList() {
                   params={{ id: v.cliente_id }}
                   className="block"
                 >
-                  <Card className="relative overflow-hidden hover:bg-muted/40 active:bg-muted">
-                    <span
-                      className={cn("absolute inset-y-0 left-0 w-1", bar)}
-                    />
-                    <CardContent className="p-3 pl-4 text-sm">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="min-w-0 flex-1 truncate font-medium">
-                          {v.clientes?.nombre_comercial ??
-                            v.clientes?.razon_social ??
-                            "Cliente"}
-                        </span>
-                        {v.outcome && (
-                          <Badge variant="outline" className="shrink-0">
-                            {v.outcome}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="mt-0.5 text-xs tabular-nums text-muted-foreground">
-                        {new Date(v.check_in_at).toLocaleTimeString("es-MX", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {durMin != null && ` · ${durMin} min`}
-                      </div>
-                      {v.notes && (
-                        <p className="mt-1 line-clamp-2 text-xs">{v.notes}</p>
-                      )}
-                    </CardContent>
-                  </Card>
+                  {body}
                 </Link>
               );
+
             })}
           </div>
         ))}
