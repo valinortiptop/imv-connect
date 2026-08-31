@@ -204,6 +204,10 @@ export default function TodayPlan() {
               <Plus className="mr-1 h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Visita fuera de ruta</span>
             </Button>
+            <Button variant="outline" size="sm" className="min-w-0" onClick={() => setOfficeOpen(true)}>
+              <Building2 className="mr-1 h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Visita a oficina</span>
+            </Button>
             <Button asChild variant="outline" size="sm" className="min-w-0">
               <Link to="/rep/ruta">
                 <Navigation className="mr-1 h-3.5 w-3.5 shrink-0" />
@@ -211,6 +215,7 @@ export default function TodayPlan() {
               </Link>
             </Button>
           </div>
+
         </CardHeader>
 
         <CardContent className="pt-0">
