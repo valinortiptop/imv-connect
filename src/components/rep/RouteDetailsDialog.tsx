@@ -206,6 +206,16 @@ export default function RouteDetailsDialog({
               >
                 <CheckCircle2 className="mr-1 h-3 w-3" /> {route.visited_count ?? 0}/{stops.length} visitados
               </Badge>
+              {stops.some((s: any) => s.visit?.in_progress) && (
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/50 bg-amber-500/10 font-normal text-amber-700 dark:text-amber-400"
+                >
+                  <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                  {stops.filter((s: any) => s.visit?.in_progress).length} en curso
+                </Badge>
+              )}
+
               {!!route.visited_minutes && (
                 <Badge variant="outline" className="font-normal">
                   <Clock className="mr-1 h-3 w-3" /> {route.visited_minutes} min con clientes
@@ -216,17 +226,22 @@ export default function RouteDetailsDialog({
             <ol className="space-y-1.5">
               {stops.map((s, i) => {
                 const v = s.visit;
-                const visited = !!s.visited;
+                const ongoing = !!v?.in_progress;
+                const done = !!s.visited && !ongoing;
                 return (
                   <li
                     key={`${s.cliente_id}-${i}`}
                     className={`flex items-start gap-2 rounded-md border p-2 text-sm ${
-                      visited ? "border-green-500/40 bg-green-500/5" : ""
+                      ongoing
+                        ? "border-amber-500/50 bg-amber-500/10"
+                        : done
+                          ? "border-green-500/40 bg-green-500/5"
+                          : "border-destructive/30 bg-destructive/5"
                     }`}
                   >
                     <span
                       className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${
-                        visited ? "bg-green-600" : "bg-destructive"
+                        ongoing ? "bg-amber-500" : done ? "bg-green-600" : "bg-destructive"
                       }`}
                     >
                       {i + 1}
@@ -234,17 +249,29 @@ export default function RouteDetailsDialog({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="truncate font-medium">{s.nombre ?? "Cliente"}</p>
-                        {visited ? (
+                        {ongoing ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/50 bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                          >
+                            <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                            En visita
+                          </Badge>
+                        ) : done ? (
                           <Badge className="border-green-500/40 bg-green-500/15 text-green-700 dark:text-green-400" variant="outline">
                             <CheckCircle2 className="mr-1 h-3 w-3" />
-                            {v?.in_progress ? "En visita" : "Visitado"}
+                            Visitado
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
+                          <Badge
+                            variant="outline"
+                            className="border-destructive/40 bg-destructive/10 text-destructive"
+                          >
                             <CircleDashed className="mr-1 h-3 w-3" /> No visitado
                           </Badge>
                         )}
                       </div>
+
                       {s.direccion && (
                         <p className="truncate text-xs text-muted-foreground">{s.direccion}</p>
                       )}

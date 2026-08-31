@@ -170,25 +170,44 @@ export default function DailyRoutesSummary() {
 
                       {r.detalle.length > 0 && (
                         <ul className="mt-2 space-y-1">
-                          {r.detalle.map((v: any) => (
+                          {r.detalle.map((v: any) => {
+                            const ongoing = !v.check_out_at;
+                            return (
                             <li
                               key={v.id}
-                              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs"
+                              className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${
+                                ongoing
+                                  ? "border-amber-500/50 bg-amber-500/10"
+                                  : "border-green-500/40 bg-green-500/5"
+                              }`}
                             >
                               <span className="min-w-0 truncate">
+                                <span
+                                  className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+                                    ongoing ? "animate-pulse bg-amber-500" : "bg-green-600"
+                                  }`}
+                                />
                                 {v.cliente}
                                 {v.unplanned && (
                                   <Zap className="ml-1 inline h-3 w-3 text-amber-500" aria-label="fuera de ruta" />
                                 )}
                               </span>
-                              <span className="shrink-0 whitespace-nowrap text-muted-foreground tabular-nums">
+                              <span
+                                className={`shrink-0 whitespace-nowrap tabular-nums ${
+                                  ongoing
+                                    ? "font-medium text-amber-700 dark:text-amber-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
                                 <Clock className="mr-1 inline h-3 w-3" />
                                 {hhmm(v.check_in_at)}
                                 {v.check_out_at ? `–${hhmm(v.check_out_at)}` : " · en curso"}
                                 {v.minutos != null ? ` (${v.minutos}m)` : ""}
                               </span>
                             </li>
-                          ))}
+                            );
+                          })}
+
                         </ul>
                       )}
                     </div>

@@ -25,7 +25,10 @@ type Stop = {
   lng?: number | null;
   nombre?: string | null;
   visited?: boolean;
+  /** visita abierta (check-in sin check-out) → pin amarillo */
+  visit?: { in_progress?: boolean } | null;
 };
+
 
 export default function SavedRoutePreview({
   polyline,
@@ -56,10 +59,23 @@ export default function SavedRoutePreview({
         const markerPts = (stops ?? [])
           .map((s) =>
             s.lat != null && s.lng != null
-              ? { lat: Number(s.lat), lng: Number(s.lng), name: s.nombre, visited: !!s.visited }
+              ? {
+                  lat: Number(s.lat),
+                  lng: Number(s.lng),
+                  name: s.nombre,
+                  visited: !!s.visited,
+                  ongoing: !!s.visit?.in_progress,
+                }
               : null,
           )
-          .filter(Boolean) as { lat: number; lng: number; name?: string | null; visited?: boolean }[];
+          .filter(Boolean) as {
+          lat: number;
+          lng: number;
+          name?: string | null;
+          visited?: boolean;
+          ongoing?: boolean;
+        }[];
+
 
         const bounds = new gm.LatLngBounds();
         for (const p of path) bounds.extend(p);
@@ -106,12 +122,15 @@ export default function SavedRoutePreview({
               icon: {
                 path: gm.SymbolPath.CIRCLE,
                 scale: 11,
-                fillColor: m.visited ? "#16a34a" : "#dc2626",
+                fillColor: m.ongoing ? "#f59e0b" : m.visited ? "#16a34a" : "#dc2626",
                 fillOpacity: 1,
                 strokeColor: "#ffffff",
                 strokeWeight: 2,
               },
-              title: `${m.name || `Parada ${i + 1}`}${m.visited ? " · visitado" : " · no visitado"}`,
+              title: `${m.name || `Parada ${i + 1}`}${
+                m.ongoing ? " · visita en curso" : m.visited ? " · visitado" : " · no visitado"
+              }`,
+
             }),
           );
         });
