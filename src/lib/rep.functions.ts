@@ -802,7 +802,9 @@ export const checkInFn = createServerFn({ method: "POST" })
     let distanceM: number | null = null;
     if (data.lat != null && data.lng != null) {
       let target: { lat: number | null; lng: number | null } | null = null;
-      if (data.clienteId) {
+      if (data.kind === "oficina") {
+        target = { lat: OFFICE_LOCATION.lat, lng: OFFICE_LOCATION.lng };
+      } else if (data.clienteId) {
         const { data: cliente } = await context.supabase
           .from("clientes")
           .select("lat, lng")
@@ -835,7 +837,7 @@ export const checkInFn = createServerFn({ method: "POST" })
         !data.overrideReason?.trim()
       ) {
         throw new Error(
-          `Estás a ${distanceM}m del ${data.clienteId ? "cliente" : "prospecto"} registrado. Requiere motivo de override para continuar.`,
+          `Estás a ${distanceM}m de ${data.kind === "oficina" ? "la oficina" : `${data.clienteId ? "el cliente" : "el prospecto"} registrado`}. Requiere motivo de override para continuar.`,
         );
       }
     }
@@ -844,8 +846,11 @@ export const checkInFn = createServerFn({ method: "POST" })
       .from("rep_visits")
       .insert({
         representante_id: rep.id,
-        cliente_id: data.clienteId ?? null,
-        prospect_id: data.prospectId ?? null,
+        cliente_id: data.kind === "oficina" ? null : (data.clienteId ?? null),
+        prospect_id: data.kind === "oficina" ? null : (data.prospectId ?? null),
+        visit_kind: data.kind,
+        office_purpose: data.kind === "oficina" ? (data.officePurpose ?? OFFICE_PURPOSES[0]) : null,
+        auto_registered: data.autoRegistered ?? false,
         check_in_at: new Date().toISOString(),
         check_in_lat: data.lat ?? null,
         check_in_lng: data.lng ?? null,
@@ -854,6 +859,7 @@ export const checkInFn = createServerFn({ method: "POST" })
         unplanned: data.unplanned ?? false,
         unplanned_reason: data.unplannedReason?.trim() || null,
       })
+
       .select()
       .single();
     if (error) throw error;
