@@ -12,7 +12,7 @@ import {
   DAILY_PLAN_SYSTEM,
 } from "./rep-prompts";
 import { mergePolylines } from "./polyline";
-import { OFFICE_LOCATION, OFFICE_STOP_ID } from "./office";
+import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "./office";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -773,6 +773,10 @@ export const checkInFn = createServerFn({ method: "POST" })
       .object({
         clienteId: z.string().uuid().optional(),
         prospectId: z.string().uuid().optional(),
+        /** 'oficina' registra una visita a la matriz IMV (sin cliente). */
+        kind: z.enum(["cliente", "oficina"]).default("cliente"),
+        officePurpose: z.string().max(120).optional(),
+        autoRegistered: z.boolean().optional(),
         lat: z.number().optional(),
         lng: z.number().optional(),
         overrideReason: z.string().max(500).optional(),
@@ -781,11 +785,12 @@ export const checkInFn = createServerFn({ method: "POST" })
         unplanned: z.boolean().optional(),
         unplannedReason: z.string().max(500).optional(),
       })
-      .refine((v) => v.clienteId || v.prospectId, {
+      .refine((v) => v.kind === "oficina" || v.clienteId || v.prospectId, {
         message: "Se requiere un cliente o un prospecto",
       })
       .parse(input),
   )
+
   .handler(async ({ data, context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     if (!rep)
@@ -797,7 +802,9 @@ export const checkInFn = createServerFn({ method: "POST" })
     let distanceM: number | null = null;
     if (data.lat != null && data.lng != null) {
       let target: { lat: number | null; lng: number | null } | null = null;
-      if (data.clienteId) {
+      if (data.kind === "oficina") {
+        target = { lat: OFFICE_LOCATION.lat, lng: OFFICE_LOCATION.lng };
+      } else if (data.clienteId) {
         const { data: cliente } = await context.supabase
           .from("clientes")
           .select("lat, lng")
@@ -830,7 +837,7 @@ export const checkInFn = createServerFn({ method: "POST" })
         !data.overrideReason?.trim()
       ) {
         throw new Error(
-          `Estás a ${distanceM}m del ${data.clienteId ? "cliente" : "prospecto"} registrado. Requiere motivo de override para continuar.`,
+          `Estás a ${distanceM}m de ${data.kind === "oficina" ? "la oficina" : `${data.clienteId ? "el cliente" : "el prospecto"} registrado`}. Requiere motivo de override para continuar.`,
         );
       }
     }
@@ -839,8 +846,11 @@ export const checkInFn = createServerFn({ method: "POST" })
       .from("rep_visits")
       .insert({
         representante_id: rep.id,
-        cliente_id: data.clienteId ?? null,
-        prospect_id: data.prospectId ?? null,
+        cliente_id: data.kind === "oficina" ? null : (data.clienteId ?? null),
+        prospect_id: data.kind === "oficina" ? null : (data.prospectId ?? null),
+        visit_kind: data.kind,
+        office_purpose: data.kind === "oficina" ? (data.officePurpose ?? OFFICE_PURPOSES[0]) : null,
+        auto_registered: data.autoRegistered ?? false,
         check_in_at: new Date().toISOString(),
         check_in_lat: data.lat ?? null,
         check_in_lng: data.lng ?? null,
@@ -849,6 +859,7 @@ export const checkInFn = createServerFn({ method: "POST" })
         unplanned: data.unplanned ?? false,
         unplanned_reason: data.unplannedReason?.trim() || null,
       })
+
       .select()
       .single();
     if (error) throw error;
@@ -911,6 +922,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       .object({
         clienteId: z.string().uuid().optional(),
         prospectId: z.string().uuid().optional(),
+        kind: z.enum(["cliente", "oficina"]).optional(),
       })
       .parse(input ?? {}),
   )
@@ -920,7 +932,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     let q = context.supabase
       .from("rep_visits")
       .select(
-        "id, cliente_id, prospect_id, check_in_at, distance_m, check_in_lat, check_in_lng, unplanned",
+        "id, cliente_id, prospect_id, check_in_at, distance_m, check_in_lat, check_in_lng, unplanned, visit_kind, office_purpose, auto_registered",
       )
       .eq("representante_id", rep.id)
       .is("check_out_at", null)
@@ -928,13 +940,18 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       .limit(1);
     if (data.clienteId) q = q.eq("cliente_id", data.clienteId);
     if (data.prospectId) q = q.eq("prospect_id", data.prospectId);
+    if (data.kind) q = q.eq("visit_kind", data.kind);
     const { data: rows } = await q;
     const visit: any = rows?.[0] ?? null;
     if (!visit) return { visit: null };
 
     // Nombre del cliente/prospecto para poder retomarla desde cualquier página
     let nombre: string | null = null;
-    if (visit.cliente_id) {
+    if (visit.visit_kind === "oficina") {
+      nombre = visit.office_purpose
+        ? `${OFFICE_LOCATION.nombre} · ${visit.office_purpose}`
+        : OFFICE_LOCATION.nombre;
+    } else if (visit.cliente_id) {
       const { data: c } = await context.supabase
         .from("clientes")
         .select("nombre_comercial, razon_social")
@@ -950,6 +967,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       nombre = (p as any)?.name ?? null;
     }
     return { visit: { ...visit, nombre: nombre ?? "Visita en curso" } };
+
   });
 
 
@@ -1089,7 +1107,7 @@ export const listMyVisitsFn = createServerFn({ method: "POST" })
     const { data: rows } = await context.supabase
       .from("rep_visits")
       .select(
-        "id, cliente_id, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion)",
+        "id, cliente_id, visit_kind, office_purpose, auto_registered, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion)",
       )
       .order("check_in_at", { ascending: false })
       .limit(data.limit ?? 50);

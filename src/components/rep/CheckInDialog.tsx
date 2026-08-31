@@ -13,7 +13,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn, getOpenVisitFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
-import { MapPin, Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { MapPin, Plus, Trash2, AlertTriangle, Clock, Building2 } from "lucide-react";
+import { OFFICE_LOCATION, OFFICE_PURPOSES } from "@/lib/office";
+
 import { cn } from "@/lib/utils";
 import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
@@ -30,9 +32,13 @@ type Props = {
   clienteNombre: string;
   /** Visita improvisada: no estaba en la ruta planeada del día. */
   unplanned?: boolean;
+  /** Visita a la oficina/matriz IMV (sin cliente ni prospecto). */
+  office?: boolean;
+  /** Motivo inicial de la visita a oficina. */
+  officePurpose?: string;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned, office, officePurpose: officePurposeProp }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -51,6 +57,8 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
   const [unplannedReason, setUnplannedReason] = useState("");
   const [geoState, setGeoState] = useState<"idle" | "asking" | "ok" | "denied" | "error">("idle");
   const [identityError, setIdentityError] = useState(false);
+  const [officePurpose, setOfficePurpose] = useState<string>(officePurposeProp ?? OFFICE_PURPOSES[0]);
+
 
   const requestGeo = () => {
     if (!navigator.geolocation) {
@@ -88,20 +96,25 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
     requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
-    getOpenVisit({ data: { clienteId, prospectId } })
+    getOpenVisit({ data: office ? { kind: "oficina" as const } : { clienteId, prospectId } })
       .then((r: any) => {
         if (cancelled || !r?.visit) return;
         setVisitId(r.visit.id);
         setCheckInAt(r.visit.check_in_at);
         setDistanceInfo(r.visit.distance_m ?? null);
+        if (r.visit.office_purpose) setOfficePurpose(r.visit.office_purpose);
         setStep("in-visit");
-        toast.info("Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.");
+        toast.info(
+          office
+            ? "Tienes una visita a oficina abierta. Registra el check-out para cerrarla."
+            : "Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.",
+        );
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [open, clienteId, getOpenVisit]);
+  }, [open, clienteId, prospectId, office, getOpenVisit]);
 
   // Cronómetro de la visita en curso
   useEffect(() => {
@@ -129,8 +142,10 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
       try {
         const r = await doCheckIn({
           data: {
-            clienteId,
-            prospectId,
+            clienteId: office ? undefined : clienteId,
+            prospectId: office ? undefined : prospectId,
+            kind: office ? ("oficina" as const) : ("cliente" as const),
+            officePurpose: office ? officePurpose : undefined,
             lat: geo?.lat,
             lng: geo?.lng,
             overrideReason: overrideReason || undefined,
@@ -138,6 +153,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
             unplannedReason: unplanned ? unplannedReason || undefined : undefined,
           },
         });
+
         toast.dismiss(tid);
         return r;
       } catch (e) {
@@ -276,7 +292,26 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
               </div>
             )}
 
+            {office && (
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Building2 className="h-4 w-4 text-primary" /> {OFFICE_LOCATION.nombre}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{OFFICE_LOCATION.direccion}</p>
+                <Label className="text-xs">Motivo de la visita a oficina</Label>
+                <Select value={officePurpose} onValueChange={setOfficePurpose}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                  <SelectContent>
+                    {OFFICE_PURPOSES.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {unplanned && (
+
               <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
                 <div className="text-sm font-medium text-amber-600">Visita fuera de ruta</div>
                 <Label className="text-xs">Motivo (opcional)</Label>

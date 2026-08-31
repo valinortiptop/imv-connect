@@ -20,7 +20,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search } from "lucide-react";
+import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search, Building2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { OFFICE_LOCATION } from "@/lib/office";
+import { useOfficeAutoVisit } from "@/hooks/use-office-auto-visit";
+
 import { Link } from "@tanstack/react-router";
 import CheckInDialog from "./CheckInDialog";
 import QuickProspectDialog from "./QuickProspectDialog";
@@ -124,6 +129,9 @@ export default function TodayPlan() {
 
 
   const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean } | null>(null);
+  const [officeOpen, setOfficeOpen] = useState(false);
+  const { enabled: officeAuto, setEnabled: setOfficeAuto } = useOfficeAutoVisit();
+
 
   /* ─── Visita fuera de ruta: cliente o prospecto ajeno al plan del día ─── */
   const listClients = useServerFn(getMyClientsFn);
@@ -204,6 +212,10 @@ export default function TodayPlan() {
               <Plus className="mr-1 h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Visita fuera de ruta</span>
             </Button>
+            <Button variant="outline" size="sm" className="min-w-0" onClick={() => setOfficeOpen(true)}>
+              <Building2 className="mr-1 h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Visita a oficina</span>
+            </Button>
             <Button asChild variant="outline" size="sm" className="min-w-0">
               <Link to="/rep/ruta">
                 <Navigation className="mr-1 h-3.5 w-3.5 shrink-0" />
@@ -211,6 +223,7 @@ export default function TodayPlan() {
               </Link>
             </Button>
           </div>
+
         </CardHeader>
 
         <CardContent className="pt-0">
@@ -297,8 +310,28 @@ export default function TodayPlan() {
               fotos, documentos y notas.
             </p>
           )}
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 p-2.5">
+            <div className="min-w-0">
+              <Label htmlFor="office-auto" className="flex items-center gap-1.5 text-xs font-medium">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
+                Auto check-in en oficina
+              </Label>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Registra tu entrada y salida automáticamente cuando estés en {OFFICE_LOCATION.nombre}.
+              </p>
+            </div>
+            <Switch id="office-auto" checked={officeAuto} onCheckedChange={setOfficeAuto} />
+          </div>
         </CardContent>
       </Card>
+
+      <CheckInDialog
+        open={officeOpen}
+        onOpenChange={setOfficeOpen}
+        office
+        clienteNombre={OFFICE_LOCATION.nombre}
+      />
 
       {target && (
         <CheckInDialog
@@ -310,6 +343,7 @@ export default function TodayPlan() {
           unplanned={target.unplanned}
         />
       )}
+
 
       {/* Selector de cliente para visitas improvisadas */}
       <Dialog open={offRouteOpen} onOpenChange={setOffRouteOpen}>

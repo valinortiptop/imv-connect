@@ -9915,6 +9915,7 @@ export type Database = {
       }
       rep_visits: {
         Row: {
+          auto_registered: boolean
           check_in_at: string
           check_in_lat: number | null
           check_in_lng: number | null
@@ -9926,6 +9927,7 @@ export type Database = {
           distance_m: number | null
           id: string
           notes: string | null
+          office_purpose: string | null
           outcome: string | null
           override_reason: string | null
           pedido_id: string | null
@@ -9936,8 +9938,10 @@ export type Database = {
           signed_by_name: string | null
           unplanned: boolean
           unplanned_reason: string | null
+          visit_kind: string
         }
         Insert: {
+          auto_registered?: boolean
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
@@ -9949,6 +9953,7 @@ export type Database = {
           distance_m?: number | null
           id?: string
           notes?: string | null
+          office_purpose?: string | null
           outcome?: string | null
           override_reason?: string | null
           pedido_id?: string | null
@@ -9959,8 +9964,10 @@ export type Database = {
           signed_by_name?: string | null
           unplanned?: boolean
           unplanned_reason?: string | null
+          visit_kind?: string
         }
         Update: {
+          auto_registered?: boolean
           check_in_at?: string
           check_in_lat?: number | null
           check_in_lng?: number | null
@@ -9972,6 +9979,7 @@ export type Database = {
           distance_m?: number | null
           id?: string
           notes?: string | null
+          office_purpose?: string | null
           outcome?: string | null
           override_reason?: string | null
           pedido_id?: string | null
@@ -9982,6 +9990,7 @@ export type Database = {
           signed_by_name?: string | null
           unplanned?: boolean
           unplanned_reason?: string | null
+          visit_kind?: string
         }
         Relationships: [
           {
