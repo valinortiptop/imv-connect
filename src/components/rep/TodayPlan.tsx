@@ -129,6 +129,9 @@ export default function TodayPlan() {
 
 
   const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean } | null>(null);
+  const [officeOpen, setOfficeOpen] = useState(false);
+  const { enabled: officeAuto, setEnabled: setOfficeAuto } = useOfficeAutoVisit();
+
 
   /* ─── Visita fuera de ruta: cliente o prospecto ajeno al plan del día ─── */
   const listClients = useServerFn(getMyClientsFn);
