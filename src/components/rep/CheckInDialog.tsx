@@ -96,20 +96,25 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
     requestGeo();
     // Reanudar visita abierta (check-in sin check-out) de este cliente
     let cancelled = false;
-    getOpenVisit({ data: { clienteId, prospectId } })
+    getOpenVisit({ data: office ? { kind: "oficina" as const } : { clienteId, prospectId } })
       .then((r: any) => {
         if (cancelled || !r?.visit) return;
         setVisitId(r.visit.id);
         setCheckInAt(r.visit.check_in_at);
         setDistanceInfo(r.visit.distance_m ?? null);
+        if (r.visit.office_purpose) setOfficePurpose(r.visit.office_purpose);
         setStep("in-visit");
-        toast.info("Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.");
+        toast.info(
+          office
+            ? "Tienes una visita a oficina abierta. Registra el check-out para cerrarla."
+            : "Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.",
+        );
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [open, clienteId, getOpenVisit]);
+  }, [open, clienteId, prospectId, office, getOpenVisit]);
 
   // Cronómetro de la visita en curso
   useEffect(() => {
@@ -137,8 +142,10 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
       try {
         const r = await doCheckIn({
           data: {
-            clienteId,
-            prospectId,
+            clienteId: office ? undefined : clienteId,
+            prospectId: office ? undefined : prospectId,
+            kind: office ? ("oficina" as const) : ("cliente" as const),
+            officePurpose: office ? officePurpose : undefined,
             lat: geo?.lat,
             lng: geo?.lng,
             overrideReason: overrideReason || undefined,
@@ -146,6 +153,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
             unplannedReason: unplanned ? unplannedReason || undefined : undefined,
           },
         });
+
         toast.dismiss(tid);
         return r;
       } catch (e) {
