@@ -20,7 +20,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search } from "lucide-react";
+import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search, Building2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { OFFICE_LOCATION } from "@/lib/office";
+import { useOfficeAutoVisit } from "@/hooks/use-office-auto-visit";
+
 import { Link } from "@tanstack/react-router";
 import CheckInDialog from "./CheckInDialog";
 import QuickProspectDialog from "./QuickProspectDialog";
