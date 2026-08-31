@@ -1107,7 +1107,7 @@ export const listMyVisitsFn = createServerFn({ method: "POST" })
     const { data: rows } = await context.supabase
       .from("rep_visits")
       .select(
-        "id, cliente_id, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion)",
+        "id, cliente_id, visit_kind, office_purpose, auto_registered, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion)",
       )
       .order("check_in_at", { ascending: false })
       .limit(data.limit ?? 50);
