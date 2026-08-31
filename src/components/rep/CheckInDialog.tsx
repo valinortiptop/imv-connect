@@ -292,7 +292,26 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
               </div>
             )}
 
+            {office && (
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Building2 className="h-4 w-4 text-primary" /> {OFFICE_LOCATION.nombre}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{OFFICE_LOCATION.direccion}</p>
+                <Label className="text-xs">Motivo de la visita a oficina</Label>
+                <Select value={officePurpose} onValueChange={setOfficePurpose}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                  <SelectContent>
+                    {OFFICE_PURPOSES.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {unplanned && (
+
               <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
                 <div className="text-sm font-medium text-amber-600">Visita fuera de ruta</div>
                 <Label className="text-xs">Motivo (opcional)</Label>
