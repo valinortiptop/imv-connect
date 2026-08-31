@@ -922,6 +922,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       .object({
         clienteId: z.string().uuid().optional(),
         prospectId: z.string().uuid().optional(),
+        kind: z.enum(["cliente", "oficina"]).optional(),
       })
       .parse(input ?? {}),
   )
@@ -931,7 +932,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
     let q = context.supabase
       .from("rep_visits")
       .select(
-        "id, cliente_id, prospect_id, check_in_at, distance_m, check_in_lat, check_in_lng, unplanned",
+        "id, cliente_id, prospect_id, check_in_at, distance_m, check_in_lat, check_in_lng, unplanned, visit_kind, office_purpose, auto_registered",
       )
       .eq("representante_id", rep.id)
       .is("check_out_at", null)
@@ -939,13 +940,18 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       .limit(1);
     if (data.clienteId) q = q.eq("cliente_id", data.clienteId);
     if (data.prospectId) q = q.eq("prospect_id", data.prospectId);
+    if (data.kind) q = q.eq("visit_kind", data.kind);
     const { data: rows } = await q;
     const visit: any = rows?.[0] ?? null;
     if (!visit) return { visit: null };
 
     // Nombre del cliente/prospecto para poder retomarla desde cualquier página
     let nombre: string | null = null;
-    if (visit.cliente_id) {
+    if (visit.visit_kind === "oficina") {
+      nombre = visit.office_purpose
+        ? `${OFFICE_LOCATION.nombre} · ${visit.office_purpose}`
+        : OFFICE_LOCATION.nombre;
+    } else if (visit.cliente_id) {
       const { data: c } = await context.supabase
         .from("clientes")
         .select("nombre_comercial, razon_social")
@@ -961,6 +967,7 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
       nombre = (p as any)?.name ?? null;
     }
     return { visit: { ...visit, nombre: nombre ?? "Visita en curso" } };
+
   });
 
 
