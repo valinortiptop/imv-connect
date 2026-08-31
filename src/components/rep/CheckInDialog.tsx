@@ -13,7 +13,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn, getOpenVisitFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
-import { MapPin, Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { MapPin, Plus, Trash2, AlertTriangle, Clock, Building2 } from "lucide-react";
+import { OFFICE_LOCATION, OFFICE_PURPOSES } from "@/lib/office";
+
 import { cn } from "@/lib/utils";
 import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
