@@ -30,9 +30,13 @@ type Props = {
   clienteNombre: string;
   /** Visita improvisada: no estaba en la ruta planeada del día. */
   unplanned?: boolean;
+  /** Visita a la oficina/matriz IMV (sin cliente ni prospecto). */
+  office?: boolean;
+  /** Motivo inicial de la visita a oficina. */
+  officePurpose?: string;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned, office, officePurpose: officePurposeProp }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -51,6 +55,8 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
   const [unplannedReason, setUnplannedReason] = useState("");
   const [geoState, setGeoState] = useState<"idle" | "asking" | "ok" | "denied" | "error">("idle");
   const [identityError, setIdentityError] = useState(false);
+  const [officePurpose, setOfficePurpose] = useState<string>(officePurposeProp ?? OFFICE_PURPOSES[0]);
+
 
   const requestGeo = () => {
     if (!navigator.geolocation) {
