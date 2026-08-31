@@ -773,6 +773,10 @@ export const checkInFn = createServerFn({ method: "POST" })
       .object({
         clienteId: z.string().uuid().optional(),
         prospectId: z.string().uuid().optional(),
+        /** 'oficina' registra una visita a la matriz IMV (sin cliente). */
+        kind: z.enum(["cliente", "oficina"]).default("cliente"),
+        officePurpose: z.string().max(120).optional(),
+        autoRegistered: z.boolean().optional(),
         lat: z.number().optional(),
         lng: z.number().optional(),
         overrideReason: z.string().max(500).optional(),
@@ -781,11 +785,12 @@ export const checkInFn = createServerFn({ method: "POST" })
         unplanned: z.boolean().optional(),
         unplannedReason: z.string().max(500).optional(),
       })
-      .refine((v) => v.clienteId || v.prospectId, {
+      .refine((v) => v.kind === "oficina" || v.clienteId || v.prospectId, {
         message: "Se requiere un cliente o un prospecto",
       })
       .parse(input),
   )
+
   .handler(async ({ data, context }) => {
     const rep = await getCurrentRep(context.supabase, context.userId, (context.claims as any)?.email ?? null);
     if (!rep)
