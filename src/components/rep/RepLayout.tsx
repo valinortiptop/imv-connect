@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import NotificationBell from "./NotificationBell";
 import MoreSheet from "./mobile/MoreSheet";
 import ActiveVisitBar from "./ActiveVisitBar";
+import OfficeAutoVisit from "./OfficeAutoVisit";
+
 import { AIProvider } from "@/components/ai/AIProvider";
 import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
