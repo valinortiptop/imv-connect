@@ -8,12 +8,34 @@ import { toast } from "sonner";
 
 /** Lecturas consecutivas dentro de la oficina antes de registrar el check-in. */
 const INSIDE_HITS = 2;
+/** Bandera local: hay que salir del radio de la oficina antes de re-armar el auto check-in. */
+const REARM_KEY = "rep-office-auto-rearm-pending";
+
+function setRearmPending(v: boolean) {
+  try {
+    if (v) window.localStorage.setItem(REARM_KEY, "1");
+    else window.localStorage.removeItem(REARM_KEY);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+function isRearmPending(): boolean {
+  try {
+    return window.localStorage.getItem(REARM_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Registro automático de visitas a la oficina IMV.
  * Cuando el representante activa la preferencia, esta pieza vigila su ubicación
  * y hace el check-in en cuanto entra al radio de la matriz. El check-out
  * automático lo dispara la barra de visita en curso al alejarse de la zona.
+ *
+ * Tras cerrar una visita estando aún en la oficina NO se vuelve a registrar
+ * automáticamente: primero hay que salir del radio de la matriz.
  */
 export default function OfficeAutoVisit() {
   const { enabled } = useOfficeAutoVisit();
@@ -22,6 +44,7 @@ export default function OfficeAutoVisit() {
   const getOpenVisit = useServerFn(getOpenVisitFn);
   const insideHits = useRef(0);
   const starting = useRef(false);
+  const hadOpenVisit = useRef(false);
 
   const { data } = useQuery({
     queryKey: ["open-visit"],
@@ -30,6 +53,18 @@ export default function OfficeAutoVisit() {
     enabled,
   });
   const hasOpenVisit = !!data?.visit;
+
+  // Al terminar una visita, exigimos salir del radio antes de re-armar.
+  useEffect(() => {
+    if (hasOpenVisit) {
+      hadOpenVisit.current = true;
+      return;
+    }
+    if (hadOpenVisit.current) {
+      hadOpenVisit.current = false;
+      setRearmPending(true);
+    }
+  }, [hasOpenVisit]);
 
   useEffect(() => {
     if (!enabled || hasOpenVisit) {
@@ -42,6 +77,12 @@ export default function OfficeAutoVisit() {
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         if (!isAtOffice(lat, lng)) {
+          insideHits.current = 0;
+          // salió del radio: ya se puede volver a registrar automáticamente
+          if (isRearmPending()) setRearmPending(false);
+          return;
+        }
+        if (isRearmPending()) {
           insideHits.current = 0;
           return;
         }
@@ -72,6 +113,7 @@ export default function OfficeAutoVisit() {
     );
     return () => navigator.geolocation.clearWatch(watch);
   }, [enabled, hasOpenVisit, doCheckIn, qc]);
+
 
   return null;
 }
