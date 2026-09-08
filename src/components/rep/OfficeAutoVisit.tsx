@@ -10,10 +10,12 @@ import { toast } from "sonner";
 const INSIDE_HITS = 2;
 /** Bandera local: hay que salir del radio de la oficina antes de re-armar el auto check-in. */
 const REARM_KEY = "rep-office-auto-rearm-pending";
+/** La bandera caduca sola para no dejar el auto check-in apagado para siempre. */
+const REARM_TTL_MS = 60 * 60 * 1000;
 
 function setRearmPending(v: boolean) {
   try {
-    if (v) window.localStorage.setItem(REARM_KEY, "1");
+    if (v) window.localStorage.setItem(REARM_KEY, String(Date.now()));
     else window.localStorage.removeItem(REARM_KEY);
   } catch {
     /* almacenamiento no disponible */
@@ -22,7 +24,15 @@ function setRearmPending(v: boolean) {
 
 function isRearmPending(): boolean {
   try {
-    return window.localStorage.getItem(REARM_KEY) === "1";
+    const raw = window.localStorage.getItem(REARM_KEY);
+    if (!raw) return false;
+    // formato antiguo ("1") o marca caducada: se descarta
+    const ts = Number(raw);
+    if (!Number.isFinite(ts) || ts <= 0 || Date.now() - ts > REARM_TTL_MS) {
+      window.localStorage.removeItem(REARM_KEY);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
