@@ -63,11 +63,12 @@ export default function OfficeAutoVisit() {
     enabled,
   });
   const hasOpenVisit = !!data?.visit;
+  const openVisitIsOffice = data?.visit?.visit_kind === "oficina";
 
-  // Al terminar una visita, exigimos salir del radio antes de re-armar.
+  // Al cerrar una visita de oficina, exigimos salir del radio antes de re-armar.
   useEffect(() => {
     if (hasOpenVisit) {
-      hadOpenVisit.current = true;
+      hadOpenVisit.current = openVisitIsOffice;
       return;
     }
     if (hadOpenVisit.current) {
