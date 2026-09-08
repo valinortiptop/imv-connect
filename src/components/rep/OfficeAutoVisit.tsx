@@ -75,7 +75,7 @@ export default function OfficeAutoVisit() {
       hadOpenVisit.current = false;
       setRearmPending(true);
     }
-  }, [hasOpenVisit]);
+  }, [hasOpenVisit, openVisitIsOffice]);
 
   useEffect(() => {
     if (!enabled || hasOpenVisit) {
