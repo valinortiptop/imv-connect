@@ -223,6 +223,9 @@ export default function DailyRoutesSummary() {
                                 }`}
                               >
                                 <Clock className="mr-1 inline h-3 w-3" />
+                                {dateTo && dateTo !== dateFrom && v.dia
+                                  ? `${v.dia.slice(8, 10)}/${v.dia.slice(5, 7)} `
+                                  : ""}
                                 {hhmm(v.check_in_at)}
                                 {v.check_out_at ? `–${hhmm(v.check_out_at)}` : " · en curso"}
                                 {v.minutos != null ? ` (${v.minutos}m)` : ""}
