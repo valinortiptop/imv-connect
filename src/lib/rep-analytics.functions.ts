@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { geminiGenerate } from "./valinor-proxy.server";
-import { REP_COACHING_SYSTEM } from "./rep-prompts";
+import { REP_COACHING_SYSTEM, ADMIN_COACHING_SYSTEM } from "./rep-prompts";
 
 async function getCurrentRep(supabase: any, userId: string) {
   const { data } = await supabase
@@ -371,4 +371,145 @@ export const getGamificationFn = createServerFn({ method: "POST" })
       });
     }
     return { me, ranking: isAdmin.data ? ranking : ranking.slice(0, 10), badges };
+  });
+
+/* ─── generateTeamCoachingFn: coach IA a nivel equipo (admins/supervisores) ─── */
+export const generateTeamCoachingFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ force: z.boolean().optional() }).parse(input ?? {}))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    void data.force;
+
+    const now = new Date();
+    const w1 = new Date(now); w1.setDate(w1.getDate() - 7);
+    const w2 = new Date(now); w2.setDate(w2.getDate() - 14);
+
+    const { data: reps } = await context.supabase
+      .from("representantes")
+      .select("id, nombre, activo")
+      .eq("activo", true);
+    const repIds = (reps ?? []).map((r: any) => r.id);
+
+    const empty = {
+      visitas: 0, pedidos: 0, ratio: 0, ventas: 0, clientes_unicos: 0,
+      duracion_prom_min: 0, ticket_prom: 0, reps_activos: 0,
+    };
+    if (repIds.length === 0) {
+      return { team: { current: empty, previous: empty }, reps: [], coaching: null };
+    }
+
+    const sel = "representante_id, cliente_id, check_in_at, check_out_at";
+    const [{ data: v1 }, { data: v2 }, { data: p1 }, { data: p2 }] = await Promise.all([
+      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w1.toISOString()),
+      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
+      context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w1.toISOString()),
+      context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w2.toISOString()).lt("created_at", w1.toISOString()),
+    ]);
+
+    const agg = (visits: any[], pedidos: any[]) => {
+      const durs: number[] = [];
+      for (const v of visits) {
+        if (v.check_in_at && v.check_out_at) {
+          const d = (new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000;
+          if (d > 0 && d < 480) durs.push(d);
+        }
+      }
+      const ventas = pedidos.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
+      const activos = new Set([
+        ...visits.map((v: any) => v.representante_id),
+        ...pedidos.map((p: any) => p.representante_id),
+      ].filter(Boolean));
+      return {
+        visitas: visits.length,
+        pedidos: pedidos.length,
+        ratio: visits.length ? pedidos.length / visits.length : 0,
+        ventas: Math.round(ventas),
+        clientes_unicos: new Set(visits.map((v: any) => v.cliente_id).filter(Boolean)).size,
+        duracion_prom_min: durs.length ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) : 0,
+        ticket_prom: pedidos.length ? Math.round(ventas / pedidos.length) : 0,
+        reps_activos: activos.size,
+      };
+    };
+    const current = agg(v1 ?? [], p1 ?? []);
+    const previous = agg(v2 ?? [], p2 ?? []);
+
+    const perRep = (reps ?? []).map((r: any) => {
+      const vs = (v1 ?? []).filter((v: any) => v.representante_id === r.id);
+      const vsPrev = (v2 ?? []).filter((v: any) => v.representante_id === r.id);
+      const ps = (p1 ?? []).filter((p: any) => p.representante_id === r.id);
+      const psPrev = (p2 ?? []).filter((p: any) => p.representante_id === r.id);
+      const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
+      const ventasPrev = psPrev.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
+      return {
+        rep_id: r.id as string,
+        nombre: r.nombre as string,
+        visitas: vs.length,
+        visitas_prev: vsPrev.length,
+        pedidos: ps.length,
+        ratio: vs.length ? ps.length / vs.length : 0,
+        ventas: Math.round(ventas),
+        ventas_prev: Math.round(ventasPrev),
+        ticket_prom: ps.length ? Math.round(ventas / ps.length) : 0,
+        sin_actividad: vs.length === 0 && ps.length === 0,
+      };
+    });
+    perRep.sort((a, b) => b.ventas - a.ventas);
+
+    let coaching: any = null;
+    try {
+      const resp = await geminiGenerate({
+        model: "gemini-flash-latest",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text:
+                  ADMIN_COACHING_SYSTEM +
+                  "\n\nKPIs equipo semana actual: " + JSON.stringify(current) +
+                  "\nKPIs equipo semana anterior: " + JSON.stringify(previous) +
+                  "\nDesempeño por representante (semana actual vs anterior): " +
+                  JSON.stringify(perRep.slice(0, 25)),
+              },
+            ],
+          },
+        ],
+      });
+      const text: string = (resp as any)?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      coaching = JSON.parse(text.replace(/```json\s*|```/g, "").trim());
+    } catch {
+      const inactivos = perRep.filter((r) => r.sin_actividad);
+      const caidas = perRep.filter((r) => !r.sin_actividad && r.ventas < r.ventas_prev);
+      coaching = {
+        summary: `Equipo: ${current.visitas} visitas y ${current.pedidos} pedidos esta semana (ratio ${(current.ratio * 100).toFixed(0)}%), ventas $${current.ventas.toLocaleString("es-MX")}. ${current.reps_activos} de ${perRep.length} representantes con actividad.`,
+        strengths: [
+          current.ventas >= previous.ventas ? "Ventas del equipo se mantienen o crecen vs semana anterior" : "Cobertura de clientes sostenida",
+          current.ratio >= 0.4 ? "Buen ratio visita→pedido del equipo" : `${current.clientes_unicos} clientes distintos visitados`,
+        ],
+        improvements: [
+          inactivos.length ? `${inactivos.length} representantes sin actividad registrada esta semana` : "Sube el ticket promedio del equipo con cross-sell",
+          caidas.length ? `${caidas.length} representantes con ventas por debajo de la semana anterior` : "Revisa visitas sin cierre para detectar objeciones comunes",
+        ],
+        goals: [
+          { titulo: "Cobertura del equipo", meta: `${perRep.length} representantes con actividad`, kpi: "cobertura" },
+          { titulo: "Ventas del equipo", meta: `+10% vs $${current.ventas.toLocaleString("es-MX")}`, kpi: "ventas" },
+          { titulo: "Ratio visita→pedido", meta: "≥ 45%", kpi: "ratio" },
+        ],
+        focos: [
+          ...inactivos.slice(0, 3).map((r) => ({
+            representante: r.nombre,
+            accion: "Confirmar ruta y check-ins de la semana",
+            motivo: "Sin visitas ni pedidos registrados",
+          })),
+          ...caidas.slice(0, 2).map((r) => ({
+            representante: r.nombre,
+            accion: "Revisar cartera y clientes sin recompra",
+            motivo: `Ventas $${r.ventas.toLocaleString("es-MX")} vs $${r.ventas_prev.toLocaleString("es-MX")} la semana previa`,
+          })),
+        ],
+      };
+    }
+
+    return { team: { current, previous }, reps: perRep, coaching };
   });

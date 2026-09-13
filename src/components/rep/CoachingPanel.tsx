@@ -102,6 +102,11 @@ export default function CoachingPanel() {
                 </div>
               </div>
             </>
+          ) : coachQ.error || regen.error ? (
+            <p className="text-sm text-muted-foreground">
+              Tu usuario no está ligado a un representante, así que no hay coaching individual. Revisa
+              la pestaña "Equipo".
+            </p>
           ) : (
             <p className="text-sm text-muted-foreground">Aún no hay coaching. Haz clic en "Regenerar".</p>
           )}
