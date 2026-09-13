@@ -1,13 +1,13 @@
-// Resumen de las rutas realizadas en un día y la eficiencia de cada representante.
+// Resumen de las rutas realizadas en un día o rango de días y la eficiencia de cada representante.
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getDailyRoutesSummaryFn } from "@/lib/rep.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Route, Clock, MapPin, Zap, ChevronRight, ChevronDown } from "lucide-react";
+import { ChronoBar } from "@/components/ChronoBar";
+import { Route, Clock, MapPin, Zap, ChevronRight, ChevronDown, LogIn, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import RouteDetailsDialog from "./RouteDetailsDialog";
 
@@ -28,31 +28,40 @@ function effColor(e: number | null) {
 }
 
 export default function DailyRoutesSummary() {
-  const [fecha, setFecha] = useState(todayISO());
+  const [dateFrom, setDateFrom] = useState(todayISO());
+  const [dateTo, setDateTo] = useState("");
   const [openRouteId, setOpenRouteId] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
   const fetchSummary = useServerFn(getDailyRoutesSummaryFn);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["daily-routes-summary", fecha],
-    queryFn: () => fetchSummary({ data: { fecha } }),
+    queryKey: ["daily-routes-summary", dateFrom, dateTo],
+    queryFn: () =>
+      fetchSummary({
+        data: { fecha_desde: dateFrom, fecha_hasta: dateTo || dateFrom },
+      }),
   });
 
   const totals = data?.totals;
 
   return (
     <Card>
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 pb-3">
+      <CardHeader className="space-y-2 pb-3">
         <CardTitle className="flex min-w-0 items-center gap-2 text-base">
           <Route className="h-4 w-4 shrink-0 text-primary" />
-          <span className="truncate">Rutas del día</span>
+          <span className="truncate">
+            {dateTo && dateTo !== dateFrom ? "Rutas por rango de fechas" : "Rutas del día"}
+          </span>
         </CardTitle>
-        <Input
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-          className="h-9 w-[9.5rem] shrink-0"
+        <ChronoBar
+          compact
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onChange={(from, to) => {
+            setDateFrom(from || todayISO());
+            setDateTo(to);
+          }}
         />
       </CardHeader>
       <CardContent className="space-y-4 pt-0">

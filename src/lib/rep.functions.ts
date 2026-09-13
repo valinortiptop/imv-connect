@@ -976,11 +976,21 @@ export const getOpenVisitFn = createServerFn({ method: "POST" })
 /* ─── Resumen de rutas del día por representante (supervisor) ─── */
 export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ fecha: z.string().optional() }).parse(input ?? {}))
+  .inputValidator((input) =>
+    z
+      .object({
+        fecha: z.string().optional(),
+        fecha_desde: z.string().optional(),
+        fecha_hasta: z.string().optional(),
+      })
+      .parse(input ?? {}),
+  )
   .handler(async ({ data, context }) => {
-    const fecha = data.fecha || new Date().toISOString().slice(0, 10);
-    const dayStart = new Date(`${fecha}T00:00:00`).toISOString();
-    const dayEnd = new Date(`${fecha}T23:59:59.999`).toISOString();
+    const fechaDesde =
+      data.fecha_desde || data.fecha || new Date().toISOString().slice(0, 10);
+    const fechaHasta = data.fecha_hasta || data.fecha || fechaDesde;
+    const dayStart = new Date(`${fechaDesde}T00:00:00`).toISOString();
+    const dayEnd = new Date(`${fechaHasta}T23:59:59.999`).toISOString();
 
     const isAdmin = (await context.supabase.rpc("has_any_role", {
       _user_id: context.userId,
@@ -1002,7 +1012,8 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
     let routesQ = context.supabase
       .from("rep_rutas_guardadas")
       .select("id, representante_id, nombre, fecha, ordered_stops, total_km, total_minutes")
-      .eq("fecha", fecha);
+      .gte("fecha", fechaDesde)
+      .lte("fecha", fechaHasta);
     if (rep) routesQ = routesQ.eq("representante_id", rep.id);
     const { data: routes } = await routesQ;
 
@@ -1045,6 +1056,14 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
       const unplanned = rv.filter((v: any) => v.unplanned || !plannedIds.has(String(v.cliente_id))).length;
       const durations = rv.map(durationMin).filter((n): n is number => n != null);
       const closed = rv.filter((v: any) => v.check_out_at).length;
+      const inTimes = rv
+        .map((v: any) => v.check_in_at)
+        .filter(Boolean)
+        .sort();
+      const outTimes = rv
+        .map((v: any) => v.check_out_at)
+        .filter(Boolean)
+        .sort();
       return {
         representante_id: id,
         nombre: repName.get(id) ?? "Representante",
@@ -1054,6 +1073,10 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
         unplanned,
         closed,
         open: rv.length - closed,
+        /** Hora de la primera visita registrada en el rango. */
+        first_in_at: inTimes[0] ?? null,
+        /** Hora del check-out más tardío en el rango. */
+        last_out_at: outTimes.length ? outTimes[outTimes.length - 1] : null,
         pedidos: rv.filter((v: any) => v.pedido_id).length,
         avg_min: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null,
         total_min: durations.reduce((a, b) => a + b, 0),
@@ -1067,6 +1090,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
         })),
         detalle: rv.map((v: any) => ({
           id: v.id,
+          dia: typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : null,
           cliente: clientName.get(v.cliente_id) ?? "Cliente",
           check_in_at: v.check_in_at,
           check_out_at: v.check_out_at,
@@ -1086,7 +1110,9 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
       reps: byRep.length,
     };
     return {
-      fecha,
+      fecha: fechaDesde,
+      fecha_desde: fechaDesde,
+      fecha_hasta: fechaHasta,
       isAdmin: !!isAdmin,
       totals: {
         ...totals,
