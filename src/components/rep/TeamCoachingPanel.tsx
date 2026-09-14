@@ -117,15 +117,37 @@ export default function TeamCoachingPanel() {
         </Button>
       </div>
 
-      <ChronoBar
-        compact
-        dateFrom={desde}
-        dateTo={hasta}
-        onChange={(f, t) => {
-          setDesde(f || defaultFrom());
-          setHasta(t || ymd(new Date()));
-        }}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <ChronoBar
+          compact
+          dateFrom={desde}
+          dateTo={hasta}
+          onChange={(f, t) => {
+            setDesde(f || defaultFrom());
+            setHasta(t || ymd(new Date()));
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          {businessWeekPresets().map((p) => {
+            const active = p.desde === desde && p.hasta === hasta;
+            return (
+              <Button
+                key={p.label}
+                size="sm"
+                variant={active ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => {
+                  setDesde(p.desde);
+                  setHasta(p.hasta);
+                }}
+              >
+                {p.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* KPIs del equipo (últimos 7 días vs 7 previos) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
