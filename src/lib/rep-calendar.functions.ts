@@ -211,6 +211,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         cliente_id: p.cliente_id,
         cliente_nombre: cli?.name ?? null,
         status: p.estado,
+        amount: p.total != null ? Number(p.total) : null,
       });
     }
 
