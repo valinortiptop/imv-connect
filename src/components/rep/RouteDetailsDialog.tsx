@@ -338,6 +338,13 @@ export default function RouteDetailsDialog({
           </div>
         )}
       </DialogContent>
+
+      <VisitEvidenceViewer
+        visitId={evidence?.visitId ?? null}
+        clienteNombre={evidence?.nombre ?? null}
+        open={!!evidence}
+        onOpenChange={(v) => !v && setEvidence(null)}
+      />
     </Dialog>
   );
 }
