@@ -394,9 +394,16 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                     </HoverCardTrigger>
                     <HoverCardContent
                       align="start"
-                      className="hidden w-72 max-w-[90vw] md:block"
+                      className="hidden w-72 max-w-[90vw] cursor-pointer transition hover:ring-2 hover:ring-primary/40 md:block"
+                      onClick={() => {
+                        setSelectedDay(d);
+                        setDayDetail(d);
+                      }}
                     >
                       <DaySummaryCard day={d} events={evts} />
+                      <p className="mt-1.5 border-t pt-1 text-center text-[10px] text-muted-foreground">
+                        Clic para ver el detalle del día
+                      </p>
                     </HoverCardContent>
                   </HoverCard>
                 );
