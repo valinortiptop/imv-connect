@@ -41,7 +41,30 @@ const hhmm = (iso: string | null | undefined) =>
     ? new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
     : "—";
 
+/** Presets de semana hábil (lunes a viernes). */
+function businessWeekPresets(): { label: string; desde: string; hasta: string }[] {
+  const today = new Date();
+  const dow = today.getDay(); // 0 dom .. 6 sab
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dow + 6) % 7));
+  const mk = (mon: Date, label: string) => {
+    const fri = new Date(mon);
+    fri.setDate(mon.getDate() + 4);
+    return { label, desde: ymd(mon), hasta: ymd(fri) };
+  };
+  const lastMon = new Date(monday);
+  lastMon.setDate(monday.getDate() - 7);
+  const prevMon = new Date(monday);
+  prevMon.setDate(monday.getDate() - 14);
+  return [
+    mk(monday, "Semana hábil actual"),
+    mk(lastMon, "Semana hábil pasada"),
+    mk(prevMon, "Hace 2 semanas"),
+  ];
+}
+
 function Delta({ now, prev }: { now: number; prev: number }) {
+
   if (!prev) return null;
   const pct = Math.round(((now - prev) / prev) * 100);
   const up = pct >= 0;
@@ -117,15 +140,37 @@ export default function TeamCoachingPanel() {
         </Button>
       </div>
 
-      <ChronoBar
-        compact
-        dateFrom={desde}
-        dateTo={hasta}
-        onChange={(f, t) => {
-          setDesde(f || defaultFrom());
-          setHasta(t || ymd(new Date()));
-        }}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <ChronoBar
+          compact
+          dateFrom={desde}
+          dateTo={hasta}
+          onChange={(f, t) => {
+            setDesde(f || defaultFrom());
+            setHasta(t || ymd(new Date()));
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          {businessWeekPresets().map((p) => {
+            const active = p.desde === desde && p.hasta === hasta;
+            return (
+              <Button
+                key={p.label}
+                size="sm"
+                variant={active ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => {
+                  setDesde(p.desde);
+                  setHasta(p.hasta);
+                }}
+              >
+                {p.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* KPIs del equipo (últimos 7 días vs 7 previos) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
