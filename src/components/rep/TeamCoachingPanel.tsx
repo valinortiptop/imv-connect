@@ -41,7 +41,30 @@ const hhmm = (iso: string | null | undefined) =>
     ? new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
     : "—";
 
+/** Presets de semana hábil (lunes a viernes). */
+function businessWeekPresets(): { label: string; desde: string; hasta: string }[] {
+  const today = new Date();
+  const dow = today.getDay(); // 0 dom .. 6 sab
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dow + 6) % 7));
+  const mk = (mon: Date, label: string) => {
+    const fri = new Date(mon);
+    fri.setDate(mon.getDate() + 4);
+    return { label, desde: ymd(mon), hasta: ymd(fri) };
+  };
+  const lastMon = new Date(monday);
+  lastMon.setDate(monday.getDate() - 7);
+  const prevMon = new Date(monday);
+  prevMon.setDate(monday.getDate() - 14);
+  return [
+    mk(monday, "Semana hábil actual"),
+    mk(lastMon, "Semana hábil pasada"),
+    mk(prevMon, "Hace 2 semanas"),
+  ];
+}
+
 function Delta({ now, prev }: { now: number; prev: number }) {
+
   if (!prev) return null;
   const pct = Math.round(((now - prev) / prev) * 100);
   const up = pct >= 0;
