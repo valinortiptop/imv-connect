@@ -15,6 +15,10 @@ export type CalendarEvent = {
   cliente_nombre?: string | null;
   status?: string | null;
   outcome?: string | null;
+  /** Paradas planeadas (solo eventos de tipo ruta). */
+  stops?: number | null;
+  /** Monto asociado (solo pedidos). */
+  amount?: number | null;
 };
 
 export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
