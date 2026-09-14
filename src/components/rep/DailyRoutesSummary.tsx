@@ -132,20 +132,28 @@ export default function DailyRoutesSummary() {
                         {r.avg_min != null ? ` · ${r.avg_min} min prom.` : ""}
                         {r.open > 0 ? ` · ${r.open} sin cerrar` : ""}
                       </p>
-                      {(r.first_in_at || r.last_out_at) && (
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                      {(r.jornadas ?? []).map((j: any) => (
+                        <p
+                          key={j.dia}
+                          className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground"
+                        >
+                          {dateTo && dateTo !== dateFrom && (
+                            <span className="font-medium text-foreground">
+                              {j.dia.slice(8, 10)}/{j.dia.slice(5, 7)}
+                            </span>
+                          )}
                           <span className="inline-flex items-center gap-0.5">
                             <LogIn className="h-3 w-3 text-emerald-600" />
-                            Primera visita: <span className="font-medium text-foreground">{hhmm(r.first_in_at)}</span>
+                            Primera visita: <span className="font-medium text-foreground">{hhmm(j.first_in_at)}</span>
                           </span>
-                          {r.last_out_at && (
+                          {j.last_out_at && (
                             <span className="inline-flex items-center gap-0.5">
                               <LogOut className="h-3 w-3 text-red-500" />
-                              Último check-out: <span className="font-medium text-foreground">{hhmm(r.last_out_at)}</span>
+                              Último check-out: <span className="font-medium text-foreground">{hhmm(j.last_out_at)}</span>
                             </span>
                           )}
                         </p>
-                      )}
+                      ))}
                     </button>
                     <div className="shrink-0 text-right">
                       <p className={`text-lg font-bold tabular-nums ${effColor(r.efficiency)}`}>
