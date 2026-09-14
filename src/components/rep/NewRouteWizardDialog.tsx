@@ -171,6 +171,13 @@ export default function NewRouteWizardDialog({
 
   const routes = savedQ.data?.routes ?? [];
 
+  // Solo se permite una ruta por día: si ya existe una para la fecha elegida,
+  // guardar actualizará esa misma ruta en lugar de crear otra.
+  const existingForDate = useMemo(
+    () => routes.find((r: any) => r.fecha && String(r.fecha).slice(0, 10) === fecha) ?? null,
+    [routes, fecha],
+  );
+
   // Smart suggestions: past routes saved for the same weekday, most recent first.
   const suggestions = useMemo(() => {
     if (dow === null) return [];
