@@ -210,9 +210,43 @@ export default function TeamCoachingPanel() {
       {/* Desempeño por representante */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" /> Desempeño por representante
-          </CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4 text-primary" /> Desempeño por representante
+            </CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="ml-auto">
+                  <Eye className="mr-2 h-4 w-4" />
+                  {ocultos.length === 0
+                    ? "Todos visibles"
+                    : `${visibleReps.length} de ${reps.length}`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="max-h-80 w-60 overflow-y-auto">
+                <DropdownMenuLabel>Mostrar representantes</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {reps.map((r) => (
+                  <DropdownMenuCheckboxItem
+                    key={r.rep_id}
+                    checked={!ocultos.includes(r.rep_id)}
+                    onCheckedChange={() => toggleRep(r.rep_id)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {r.nombre}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                {ocultos.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => setOcultos([])}>
+                      Mostrar todos
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="-mx-2 overflow-x-auto px-2">
@@ -229,7 +263,7 @@ export default function TeamCoachingPanel() {
                 </tr>
               </thead>
               <tbody>
-                {reps.map((r) => (
+                {visibleReps.map((r) => (
                   <tr key={r.rep_id} className="border-t border-border/60">
                     <td className="py-1.5">
                       <span className="mr-1.5">{r.nombre}</span>
