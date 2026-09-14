@@ -344,51 +344,60 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                 const key = d.toISOString().slice(0, 10);
                 const evts = eventsByDay.get(key) ?? [];
                 return (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedDay(d)}
-                    className={cn(
-                      "min-h-[56px] rounded-md border p-1 text-left text-xs transition md:min-h-[76px]",
-                      isCurMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
-                      isSelected && "ring-2 ring-primary",
-                      isToday && "border-primary",
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={cn("font-medium", isToday && "text-primary")}>
-                        {d.getDate()}
-                      </span>
-                      {evts.length > 0 && (
-                        <span className="text-[10px] text-muted-foreground">{evts.length}</span>
-                      )}
-                    </div>
-                    <div className="mt-1 space-y-0.5">
-                      {evts.slice(0, 3).map((e) => (
-                        <div
-                          key={e.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            setSelectedEvent(e);
-                          }}
-                          className={cn(
-                            "truncate rounded px-1 py-0.5 text-[10px] border cursor-pointer hover:opacity-80",
-                            TYPE_META[e.type].color,
+                  <HoverCard key={key} openDelay={120} closeDelay={60}>
+                    <HoverCardTrigger asChild>
+                      <button
+                        onClick={() => setSelectedDay(d)}
+                        className={cn(
+                          "min-h-[56px] rounded-md border p-1 text-left text-xs transition md:min-h-[76px]",
+                          isCurMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
+                          isSelected && "ring-2 ring-primary",
+                          isToday && "border-primary",
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={cn("font-medium", isToday && "text-primary")}>
+                            {d.getDate()}
+                          </span>
+                          {evts.length > 0 && (
+                            <span className="text-[10px] text-muted-foreground">{evts.length}</span>
                           )}
-                        >
-                          {new Date(e.start).toLocaleTimeString("es-MX", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          {e.title}
                         </div>
-                      ))}
-                      {evts.length > 3 && (
-                        <div className="text-[10px] text-muted-foreground">+{evts.length - 3} más</div>
-                      )}
-                    </div>
-                  </button>
+                        <div className="mt-1 space-y-0.5">
+                          {evts.slice(0, 3).map((e) => (
+                            <div
+                              key={e.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                setSelectedEvent(e);
+                              }}
+                              className={cn(
+                                "truncate rounded px-1 py-0.5 text-[10px] border cursor-pointer hover:opacity-80",
+                                TYPE_META[e.type].color,
+                              )}
+                            >
+                              {new Date(e.start).toLocaleTimeString("es-MX", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}{" "}
+                              {e.title}
+                            </div>
+                          ))}
+                          {evts.length > 3 && (
+                            <div className="text-[10px] text-muted-foreground">+{evts.length - 3} más</div>
+                          )}
+                        </div>
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent
+                      align="start"
+                      className="hidden w-72 max-w-[90vw] md:block"
+                    >
+                      <DaySummaryCard day={d} events={evts} />
+                    </HoverCardContent>
+                  </HoverCard>
                 );
               })}
             </div>
