@@ -265,26 +265,28 @@ export const generateRepCoachingFn = createServerFn({ method: "POST" })
       const clean = text.replace(/```json\s*|```/g, "").trim();
       coachingJson = JSON.parse(clean);
     } catch {
-      // Fallback determinístico
+      // Fallback determinístico (centrado en visitas)
+      const visitasTrend = kpisNow.visitas - kpisPrev.visitas;
       const ratioTrend = kpisNow.ratio - kpisPrev.ratio;
-      const ventasTrend = kpisNow.ventas - kpisPrev.ventas;
+      const coberturaTrend = kpisNow.clientes_unicos - kpisPrev.clientes_unicos;
       coachingJson = {
-        summary: `Semana con ${kpisNow.visitas} visitas y ${kpisNow.pedidos} pedidos (ratio ${(kpisNow.ratio * 100).toFixed(0)}%). Ventas $${kpisNow.ventas.toLocaleString("es-MX")}.`,
+        summary: `Semana con ${kpisNow.visitas} visitas a ${kpisNow.clientes_unicos} clientes (${visitasTrend >= 0 ? "+" : ""}${visitasTrend} vs semana anterior), duración promedio ${kpisNow.duracion_prom_min} min y ratio visita→pedido ${(kpisNow.ratio * 100).toFixed(0)}%.`,
         strengths: [
-          kpisNow.visitas >= kpisPrev.visitas ? "Mantuviste ritmo de visitas" : "Actividad de campo constante",
-          kpisNow.ratio >= 0.4 ? "Buen ratio de cierre" : "Cobertura amplia de clientes",
+          visitasTrend >= 0 ? `Subiste tu ritmo: ${kpisNow.visitas} visitas esta semana` : "Actividad de campo constante",
+          coberturaTrend >= 0 ? `Ampliaste cobertura: ${kpisNow.clientes_unicos} clientes únicos visitados` : "Mantuviste tu base de clientes visitados",
+          kpisNow.duracion_prom_min >= 20 ? "Buena duración promedio por visita" : null,
         ].filter(Boolean),
         improvements: [
-          ratioTrend < 0 ? "Ratio visita→pedido cayó; enfoca a clientes con recompra probable" : "Sube el ticket promedio con cross-sell sugerido por IA",
-          kpisNow.duracion_prom_min < 15 ? "Visitas muy cortas; profundiza en necesidades" : "Optimiza tiempo por cliente",
+          visitasTrend < 0 ? "Bajó tu número de visitas; planea tu ruta desde el lunes para no perder días" : "Busca sumar 1-2 visitas extra por día en zonas cercanas",
+          kpisNow.duracion_prom_min < 15 ? "Visitas muy cortas; dedica más tiempo a cada cliente para generar resultados" : "Aprovecha cada visita para revisar recompra y pendientes del cliente",
+          ratioTrend < 0 ? "Tu ratio visita→pedido cayó; prioriza clientes con recompra probable" : "Convierte más visitas en pedidos siguiendo las sugerencias del plan IA",
         ],
         goals: [
-          { titulo: "Aumentar cierres", meta: `+${Math.max(1, Math.ceil(kpisNow.pedidos * 0.1))} pedidos`, kpi: "pedidos" },
-          { titulo: "Ventas", meta: `+10% vs $${kpisNow.ventas.toLocaleString("es-MX")}`, kpi: "ventas" },
-          { titulo: "Ratio", meta: "≥ 45%", kpi: "ratio" },
+          { titulo: "Más visitas", meta: `${Math.max(kpisNow.visitas + 3, 25)} visitas en la semana`, kpi: "visitas" },
+          { titulo: "Cobertura", meta: `Visitar ${Math.max(kpisNow.clientes_unicos + 2, 15)} clientes distintos`, kpi: "clientes_unicos" },
+          { titulo: "Ratio visita→pedido", meta: "≥ 40%", kpi: "ratio" },
         ],
       };
-      void ventasTrend;
     }
 
     const row = {
@@ -329,12 +331,12 @@ export const getGamificationFn = createServerFn({ method: "POST" })
       context.supabase.from("pedidos").select("representante_id, total").in("representante_id", repIds).gte("created_at", sinceIso),
     ]);
 
-    // 10 pts / visita, 50 pts / pedido, 1 pt / $1000 vendidos
+    // Enfoque en visitas: 10 pts / visita, 20 pts / pedido (ventas no suman puntos)
     const ranking = (reps ?? []).map((r: any) => {
       const v = (visits ?? []).filter((x: any) => x.representante_id === r.id).length;
       const ps = (pedidos ?? []).filter((x: any) => x.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
-      const puntos = v * 10 + ps.length * 50 + Math.floor(ventas / 1000);
+      const puntos = v * 10 + ps.length * 20;
       return { rep_id: r.id as string, nombre: r.nombre as string, visitas: v, pedidos: ps.length, ventas: Math.round(ventas), puntos, rank: 0 };
     });
     ranking.sort((a, b) => b.puntos - a.puntos);
