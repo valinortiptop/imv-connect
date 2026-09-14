@@ -465,6 +465,8 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       const psPrev = (p2 ?? []).filter((p: any) => p.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
       const ventasPrev = psPrev.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
+      const inTimes = vs.map((v: any) => v.check_in_at).filter(Boolean).sort();
+      const outTimes = vs.map((v: any) => v.check_out_at).filter(Boolean).sort();
       return {
         rep_id: r.id as string,
         nombre: r.nombre as string,
@@ -475,6 +477,10 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
         ventas: Math.round(ventas),
         ventas_prev: Math.round(ventasPrev),
         ticket_prom: ps.length ? Math.round(ventas / ps.length) : 0,
+        /** Primer check-in registrado dentro del rango. */
+        first_in_at: (inTimes[0] as string | undefined) ?? null,
+        /** Último check-out registrado dentro del rango. */
+        last_out_at: outTimes.length ? (outTimes[outTimes.length - 1] as string) : null,
         sin_actividad: vs.length === 0 && ps.length === 0,
       };
     });
