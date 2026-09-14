@@ -678,9 +678,6 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
         m.get(id).cartera += 1;
         m.get(id)._ids.add(c.id);
       }
-      for (const v of visits) {
-        for (const r of m.values()) if (v.cliente_id && r._ids.has(v.cliente_id)) r._visited ??= new Set<string>();
-      }
       const visitedByRep = new Map<string, Set<string>>();
       for (const v of visits) {
         if (!v.cliente_id) continue;
