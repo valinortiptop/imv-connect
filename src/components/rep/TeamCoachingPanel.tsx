@@ -99,15 +99,15 @@ export default function TeamCoachingPanel() {
       {/* KPIs del equipo (últimos 7 días vs 7 previos) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: "Visitas 7d", value: String(cur?.visitas ?? 0), now: cur?.visitas ?? 0, prev: prev?.visitas ?? 0 },
-          { label: "Pedidos 7d", value: String(cur?.pedidos ?? 0), now: cur?.pedidos ?? 0, prev: prev?.pedidos ?? 0 },
+          { label: "Visitas", value: String(cur?.visitas ?? 0), now: cur?.visitas ?? 0, prev: prev?.visitas ?? 0 },
+          { label: "Pedidos", value: String(cur?.pedidos ?? 0), now: cur?.pedidos ?? 0, prev: prev?.pedidos ?? 0 },
           {
             label: "Ratio V→P",
             value: `${((cur?.ratio ?? 0) * 100).toFixed(0)}%`,
             now: cur?.ratio ?? 0,
             prev: prev?.ratio ?? 0,
           },
-          { label: "Ventas 7d", value: money(cur?.ventas ?? 0), now: cur?.ventas ?? 0, prev: prev?.ventas ?? 0 },
+          { label: "Ventas", value: money(cur?.ventas ?? 0), now: cur?.ventas ?? 0, prev: prev?.ventas ?? 0 },
           {
             label: "Reps activos",
             value: `${cur?.reps_activos ?? 0}/${reps.length}`,
