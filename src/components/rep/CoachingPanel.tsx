@@ -46,12 +46,12 @@ export default function CoachingPanel() {
       <div className="grid gap-3 sm:grid-cols-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Visitas 7d</CardTitle></CardHeader>
           <CardContent className="text-xl font-semibold">{kpiQ.data?.visitas ?? 0}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Pedidos 7d</CardTitle></CardHeader>
-          <CardContent className="text-xl font-semibold">{kpiQ.data?.pedidos ?? 0}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Ratio V→P</CardTitle></CardHeader>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Clientes visitados 7d</CardTitle></CardHeader>
+          <CardContent className="text-xl font-semibold">{kpiQ.data?.clientes_unicos ?? 0}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Duración prom. por visita</CardTitle></CardHeader>
+          <CardContent className="text-xl font-semibold">{kpiQ.data?.duracion_prom_min ?? 0} min</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Ratio visita→pedido</CardTitle></CardHeader>
           <CardContent className="text-xl font-semibold">{((kpiQ.data?.ratio ?? 0) * 100).toFixed(0)}%</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">Ventas 7d</CardTitle></CardHeader>
-          <CardContent className="text-xl font-semibold">{money(kpiQ.data?.ventas ?? 0)}</CardContent></Card>
       </div>
 
       {/* Coaching */}
