@@ -236,7 +236,9 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         representante_id: repId,
         representante_nombre: repId ? reps.get(repId) ?? null : null,
         stops,
+      });
     }
+
 
     events.sort((a, b) => a.start.localeCompare(b.start));
     return { events };
