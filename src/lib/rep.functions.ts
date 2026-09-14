@@ -2526,26 +2526,61 @@ export const saveRouteFn = createServerFn({ method: "POST" })
       ownerUserId = (target as any).user_id ?? context.userId;
     }
 
+    // Una sola ruta por día: si ya existe una para esa fecha (del mismo
+    // representante / usuario) se actualiza en lugar de crear otra.
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const today = new Date();
+    const fecha =
+      data.fecha ??
+      `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+
+    let existingQ = context.supabase
+      .from("rep_rutas_guardadas")
+      .select("id")
+      .eq("fecha", fecha);
+    existingQ = representanteId
+      ? existingQ.eq("representante_id", representanteId)
+      : existingQ.eq("user_id", ownerUserId).is("representante_id", null);
+    const { data: existing } = await existingQ
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const payload = {
+      user_id: ownerUserId,
+      representante_id: representanteId,
+      nombre: data.nombre ?? null,
+      fecha,
+      start_lat: data.startLat ?? null,
+      start_lng: data.startLng ?? null,
+      total_km: data.totalKm ?? null,
+      total_minutes: data.totalMinutes ?? null,
+      polyline: data.polyline ?? null,
+      ordered_stops: data.orderedStops ?? [],
+      legs: data.legs ?? [],
+      origen: data.origen ?? "manual",
+    };
+
+    if (existing?.id) {
+      const { nombre, ...rest } = payload;
+      const update = data.nombre ? { ...rest, nombre } : rest;
+      const { data: row, error } = await context.supabase
+        .from("rep_rutas_guardadas")
+        .update(update)
+        .eq("id", existing.id)
+        .select("id, fecha, created_at")
+        .single();
+      if (error) throw new Error(error.message);
+      return { ...row, updated: true };
+    }
+
     const { data: row, error } = await context.supabase
       .from("rep_rutas_guardadas")
-      .insert({
-        user_id: ownerUserId,
-        representante_id: representanteId,
-        nombre: data.nombre ?? null,
-        fecha: data.fecha ?? undefined,
-        start_lat: data.startLat ?? null,
-        start_lng: data.startLng ?? null,
-        total_km: data.totalKm ?? null,
-        total_minutes: data.totalMinutes ?? null,
-        polyline: data.polyline ?? null,
-        ordered_stops: data.orderedStops ?? [],
-        legs: data.legs ?? [],
-        origen: data.origen ?? "manual",
-      })
+      .insert(payload)
       .select("id, fecha, created_at")
       .single();
     if (error) throw new Error(error.message);
-    return row;
+    return { ...row, updated: false };
   });
 
 export const listSavedRoutesFn = createServerFn({ method: "POST" })
@@ -2819,6 +2854,24 @@ export const duplicateSavedRouteFn = createServerFn({ method: "POST" })
       .single();
     if (readErr) throw new Error(readErr.message);
     if (!src) throw new Error("Ruta no encontrada");
+
+    // Una sola ruta por día: no se permite duplicar sobre una fecha ocupada.
+    const targetFecha = data.fecha ?? (src as any).fecha;
+    if (targetFecha) {
+      let dupQ = context.supabase
+        .from("rep_rutas_guardadas")
+        .select("id")
+        .eq("fecha", targetFecha);
+      dupQ = (src as any).representante_id
+        ? dupQ.eq("representante_id", (src as any).representante_id)
+        : dupQ.eq("user_id", context.userId);
+      const { data: clash } = await dupQ.limit(1).maybeSingle();
+      if (clash?.id)
+        throw new Error(
+          "Ya existe una ruta para esa fecha. Edita la ruta existente o elige otro día.",
+        );
+    }
+
 
     const baseName = (src as any).nombre || "Ruta";
     const copyName = /\(copia\)/i.test(baseName) ? baseName : `${baseName} (copia)`;

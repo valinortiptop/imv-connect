@@ -171,6 +171,13 @@ export default function NewRouteWizardDialog({
 
   const routes = savedQ.data?.routes ?? [];
 
+  // Solo se permite una ruta por día: si ya existe una para la fecha elegida,
+  // guardar actualizará esa misma ruta en lugar de crear otra.
+  const existingForDate = useMemo(
+    () => routes.find((r: any) => r.fecha && String(r.fecha).slice(0, 10) === fecha) ?? null,
+    [routes, fecha],
+  );
+
   // Smart suggestions: past routes saved for the same weekday, most recent first.
   const suggestions = useMemo(() => {
     if (dow === null) return [];
@@ -283,6 +290,25 @@ export default function NewRouteWizardDialog({
               />
               {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
             </div>
+            {existingForDate && (
+              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400">
+                <p>
+                  Ya tienes una ruta para este día
+                  {existingForDate.nombre ? ` ("${existingForDate.nombre}")` : ""} con{" "}
+                  {(existingForDate.ordered_stops ?? []).length} paradas. Solo se permite una
+                  ruta por día: al guardar se actualizará esa misma ruta.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 h-7 text-xs"
+                  onClick={() => applyRoute(existingForDate)}
+                >
+                  Cargar sus clientes para editarla
+                </Button>
+              </div>
+            )}
           </section>
 
           {/* Parada en la oficina IMV */}
