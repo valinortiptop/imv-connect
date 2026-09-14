@@ -2855,6 +2855,24 @@ export const duplicateSavedRouteFn = createServerFn({ method: "POST" })
     if (readErr) throw new Error(readErr.message);
     if (!src) throw new Error("Ruta no encontrada");
 
+    // Una sola ruta por día: no se permite duplicar sobre una fecha ocupada.
+    const targetFecha = data.fecha ?? (src as any).fecha;
+    if (targetFecha) {
+      let dupQ = context.supabase
+        .from("rep_rutas_guardadas")
+        .select("id")
+        .eq("fecha", targetFecha);
+      dupQ = (src as any).representante_id
+        ? dupQ.eq("representante_id", (src as any).representante_id)
+        : dupQ.eq("user_id", context.userId);
+      const { data: clash } = await dupQ.limit(1).maybeSingle();
+      if (clash?.id)
+        throw new Error(
+          "Ya existe una ruta para esa fecha. Edita la ruta existente o elige otro día.",
+        );
+    }
+
+
     const baseName = (src as any).nombre || "Ruta";
     const copyName = /\(copia\)/i.test(baseName) ? baseName : `${baseName} (copia)`;
 
