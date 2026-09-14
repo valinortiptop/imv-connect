@@ -308,6 +308,16 @@ export default function RouteDetailsDialog({
                           )}
                           {v.distance_m != null && <span>{Math.round(v.distance_m)} m del punto</span>}
                           {v.unplanned && <span>fuera de ruta</span>}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              setEvidence({ visitId: v.id, nombre: s.nombre ?? null })
+                            }
+                          >
+                            <Camera className="mr-1 h-3 w-3" /> Ver evidencia
+                          </Button>
                         </div>
                       )}
                       {v?.notes && (
