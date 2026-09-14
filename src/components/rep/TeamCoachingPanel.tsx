@@ -80,6 +80,27 @@ export default function TeamCoachingPanel() {
   const c = teamQ.data?.coaching as any;
   const loading = teamQ.isLoading || regen.isPending;
 
+  // Representantes ocultos en la tabla de desempeño (persistido localmente).
+  const [ocultos, setOcultos] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem("coach-team-hidden-reps") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const toggleRep = (id: string) =>
+    setOcultos((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem("coach-team-hidden-reps", JSON.stringify(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  const visibleReps = reps.filter((r) => !ocultos.includes(r.rep_id));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
