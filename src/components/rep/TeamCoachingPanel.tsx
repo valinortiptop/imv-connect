@@ -224,8 +224,7 @@ export default function TeamCoachingPanel() {
                   <th className="py-1 text-right">Pedidos</th>
                   <th className="py-1 text-right">Ratio</th>
                   <th className="py-1 text-right">Ventas</th>
-                  <th className="py-1 text-right">1ª visita</th>
-                  <th className="py-1 text-right">Últ. check-out</th>
+                  <th className="py-1 text-right">1ª visita / últ. check-out por día</th>
                   <th className="py-1 text-right">vs periodo ant.</th>
                 </tr>
               </thead>
