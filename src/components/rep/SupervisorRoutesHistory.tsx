@@ -34,7 +34,7 @@ const fdate = (s?: string | null) =>
 
 export default function SupervisorRoutesHistory() {
   const [scope, setScope] = useState<"all" | "past" | "future">("past");
-  const [repId, setRepId] = useState<string>("all");
+  const [repIds, setRepIds] = useState<string[]>([]); // vacío = todos
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [q, setQ] = useState("");
