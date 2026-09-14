@@ -62,10 +62,15 @@ export default function SupervisorRoutesHistory() {
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [data]);
 
+  const toggleRep = (id: string) =>
+    setRepIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return (data?.routes ?? []).filter((r: any) => {
-      if (repId !== "all" && String(r.representante_id) !== repId) return false;
+      if (repIds.length > 0 && !repIds.includes(String(r.representante_id))) return false;
       if (!needle) return true;
       const hay = [
         r.nombre,
@@ -78,7 +83,7 @@ export default function SupervisorRoutesHistory() {
         .toLowerCase();
       return hay.includes(needle);
     });
-  }, [data, repId, q]);
+  }, [data, repIds, q]);
 
   return (
     <Card>
@@ -99,16 +104,47 @@ export default function SupervisorRoutesHistory() {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-[11px]">Representante</Label>
-            <Select value={repId} onValueChange={setRepId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {reps.map(([id, nombre]) => (
-                  <SelectItem key={id} value={id}>{nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-[11px]">Representantes</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between font-normal">
+                  <span className="truncate">
+                    {repIds.length === 0
+                      ? "Todos"
+                      : repIds.length === 1
+                        ? reps.find(([id]) => id === repIds[0])?.[1] ?? "1 seleccionado"
+                        : `${repIds.length} seleccionados`}
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2" align="start">
+                <div className="max-h-64 space-y-1 overflow-y-auto">
+                  {reps.map(([id, nombre]) => (
+                    <label
+                      key={id}
+                      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                    >
+                      <Checkbox
+                        checked={repIds.includes(id)}
+                        onCheckedChange={() => toggleRep(id)}
+                      />
+                      <span className="truncate">{nombre}</span>
+                    </label>
+                  ))}
+                </div>
+                {repIds.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="mt-1 w-full"
+                    onClick={() => setRepIds([])}
+                  >
+                    <X className="mr-1 h-3 w-3" /> Quitar selección
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-1">
             <Label className="text-[11px]">Desde</Label>
@@ -124,11 +160,11 @@ export default function SupervisorRoutesHistory() {
           </div>
         </div>
 
-        {(from || to || repId !== "all" || q) && (
+        {(from || to || repIds.length > 0 || q) && (
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => { setFrom(""); setTo(""); setRepId("all"); setQ(""); }}
+            onClick={() => { setFrom(""); setTo(""); setRepIds([]); setQ(""); }}
           >
             Limpiar filtros
           </Button>
