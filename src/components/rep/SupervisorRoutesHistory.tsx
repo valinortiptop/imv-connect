@@ -14,8 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import RouteDetailsDialog from "@/components/rep/RouteDetailsDialog";
-import { Loader2, MapPin } from "lucide-react";
+import { ChevronDown, Loader2, MapPin, X } from "lucide-react";
 
 const fdate = (s?: string | null) =>
   s ? new Date(`${String(s).slice(0, 10)}T12:00:00`).toLocaleDateString("es-MX", {
