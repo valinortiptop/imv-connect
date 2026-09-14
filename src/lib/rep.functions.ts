@@ -1003,6 +1003,8 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
     let visitsQ = context.supabase
       .from("rep_visits")
       .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, unplanned, distance_m, pedido_id")
+      // Las paradas en oficina no cuentan como visita comercial
+      .neq("visit_kind", "oficina")
       .gte("check_in_at", dayStart)
       .lte("check_in_at", dayEnd)
       .order("check_in_at");
