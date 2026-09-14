@@ -2563,8 +2563,7 @@ export const saveRouteFn = createServerFn({ method: "POST" })
 
     if (existing?.id) {
       const { nombre, ...rest } = payload;
-      const update: Record<string, unknown> = { ...rest };
-      if (data.nombre) update.nombre = nombre;
+      const update = data.nombre ? { ...rest, nombre } : rest;
       const { data: row, error } = await context.supabase
         .from("rep_rutas_guardadas")
         .update(update)
