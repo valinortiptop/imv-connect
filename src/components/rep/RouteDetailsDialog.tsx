@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import SavedRoutePreview from "./SavedRoutePreview";
+import VisitEvidenceViewer from "./VisitEvidenceViewer";
 import { downloadRoutePdf, printRoute } from "@/lib/route-export";
 import { toast } from "sonner";
 import { MapPin, Pencil, Trash2, Download, Printer, Clock, Route as RouteIcon, CheckCircle2, CircleDashed, Camera, ShoppingCart } from "lucide-react";
@@ -40,6 +41,7 @@ export default function RouteDetailsDialog({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
+  const [evidence, setEvidence] = useState<{ visitId: string; nombre: string | null } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["saved-route-detail", routeId],
@@ -93,6 +95,7 @@ export default function RouteDetailsDialog({
   });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="pr-8 text-left sm:text-left">
@@ -306,6 +309,16 @@ export default function RouteDetailsDialog({
                           )}
                           {v.distance_m != null && <span>{Math.round(v.distance_m)} m del punto</span>}
                           {v.unplanned && <span>fuera de ruta</span>}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2 text-[11px]"
+                            onClick={() =>
+                              setEvidence({ visitId: v.id, nombre: s.nombre ?? null })
+                            }
+                          >
+                            <Camera className="mr-1 h-3 w-3" /> Ver evidencia
+                          </Button>
                         </div>
                       )}
                       {v?.notes && (
@@ -327,5 +340,13 @@ export default function RouteDetailsDialog({
         )}
       </DialogContent>
     </Dialog>
+
+    <VisitEvidenceViewer
+      visitId={evidence?.visitId ?? null}
+      clienteNombre={evidence?.nombre ?? null}
+      open={!!evidence}
+      onOpenChange={(v) => !v && setEvidence(null)}
+    />
+    </>
   );
 }
