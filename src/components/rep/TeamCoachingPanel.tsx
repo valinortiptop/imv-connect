@@ -270,7 +270,16 @@ export default function TeamCoachingPanel() {
                 {ocultos.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setOcultos([])}>
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setOcultos([]);
+                        try {
+                          localStorage.setItem("coach-team-hidden-reps", "[]");
+                        } catch {
+                          /* noop */
+                        }
+                      }}
+                    >
                       Mostrar todos
                     </DropdownMenuItem>
                   </>
