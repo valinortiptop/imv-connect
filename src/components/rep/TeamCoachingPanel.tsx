@@ -243,8 +243,22 @@ export default function TeamCoachingPanel() {
                     <td className="py-1.5 text-right">{r.pedidos}</td>
                     <td className="py-1.5 text-right">{(r.ratio * 100).toFixed(0)}%</td>
                     <td className="py-1.5 text-right font-medium">{money(r.ventas)}</td>
-                    <td className="py-1.5 text-right whitespace-nowrap">{hhmm((r as any).first_in_at)}</td>
-                    <td className="py-1.5 text-right whitespace-nowrap">{hhmm((r as any).last_out_at)}</td>
+                    <td className="py-1.5 text-right whitespace-nowrap">
+                      {((r as any).jornadas ?? []).length === 0 ? (
+                        "—"
+                      ) : (
+                        <div className="space-y-0.5">
+                          {((r as any).jornadas as any[]).map((j) => (
+                            <div key={j.dia} className="text-xs">
+                              <span className="text-muted-foreground">
+                                {j.dia.slice(8, 10)}/{j.dia.slice(5, 7)}:{" "}
+                              </span>
+                              {hhmm(j.first_in_at)} → {hhmm(j.last_out_at)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-1.5 text-right">
                       <Delta now={r.ventas} prev={r.ventas_prev} />
                     </td>
