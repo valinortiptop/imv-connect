@@ -1047,40 +1047,80 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
     const byRep = repIds.map((id) => {
       const rv = (visits ?? []).filter((v: any) => v.representante_id === id);
       const rr = (routes ?? []).filter((r: any) => r.representante_id === id);
-      const plannedIds = new Set<string>();
-      for (const r of rr) for (const s of (r.ordered_stops as any[]) ?? []) {
-        if (s?.cliente_id) plannedIds.add(String(s.cliente_id));
+      // Paradas planeadas contadas por día + cliente: si un cliente está en el
+      // plan de varios días, cada día cuenta como una parada distinta.
+      const plannedByDay = new Map<string, Set<string>>();
+      for (const r of rr) {
+        const dia = String(r.fecha ?? "").slice(0, 10);
+        const set = plannedByDay.get(dia) ?? new Set<string>();
+        for (const s of (r.ordered_stops as any[]) ?? []) {
+          if (s?.cliente_id) set.add(String(s.cliente_id));
+        }
+        plannedByDay.set(dia, set);
       }
-      const visitedIds = new Set(rv.map((v: any) => String(v.cliente_id)));
-      const plannedDone = [...plannedIds].filter((c) => visitedIds.has(c)).length;
-      const unplanned = rv.filter((v: any) => v.unplanned || !plannedIds.has(String(v.cliente_id))).length;
+      const dayOf = (v: any) =>
+        typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : "";
+      const visitedByDay = new Map<string, Set<string>>();
+      for (const v of rv) {
+        const d = dayOf(v);
+        const set = visitedByDay.get(d) ?? new Set<string>();
+        set.add(String(v.cliente_id));
+        visitedByDay.set(d, set);
+      }
+      let planned = 0;
+      let plannedDone = 0;
+      for (const [dia, set] of plannedByDay) {
+        planned += set.size;
+        const visited = visitedByDay.get(dia);
+        if (visited) plannedDone += [...set].filter((c) => visited.has(c)).length;
+      }
+      const isPlanned = (v: any) =>
+        plannedByDay.get(dayOf(v))?.has(String(v.cliente_id)) ?? false;
+      const unplanned = rv.filter((v: any) => v.unplanned || !isPlanned(v)).length;
       const durations = rv.map(durationMin).filter((n): n is number => n != null);
       const closed = rv.filter((v: any) => v.check_out_at).length;
-      const inTimes = rv
-        .map((v: any) => v.check_in_at)
-        .filter(Boolean)
-        .sort();
-      const outTimes = rv
-        .map((v: any) => v.check_out_at)
-        .filter(Boolean)
-        .sort();
+
+      // Horarios por jornada: primera entrada y último check-out de cada día.
+      const jornadaMap = new Map<string, { in: string[]; out: string[] }>();
+      for (const v of rv) {
+        const d = dayOf(v);
+        if (!d) continue;
+        const j = jornadaMap.get(d) ?? { in: [], out: [] };
+        if (v.check_in_at) j.in.push(v.check_in_at);
+        if (v.check_out_at) j.out.push(v.check_out_at);
+        jornadaMap.set(d, j);
+      }
+      const jornadas = [...jornadaMap.entries()]
+        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+        .map(([dia, j]) => {
+          const ins = [...j.in].sort();
+          const outs = [...j.out].sort();
+          return {
+            dia,
+            first_in_at: ins[0] ?? null,
+            last_out_at: outs.length ? outs[outs.length - 1] : null,
+          };
+        });
+      const lastJornada = jornadas[jornadas.length - 1];
       return {
         representante_id: id,
         nombre: repName.get(id) ?? "Representante",
-        planned: plannedIds.size,
+        planned,
         planned_done: plannedDone,
         visits: rv.length,
         unplanned,
         closed,
         open: rv.length - closed,
-        /** Hora de la primera visita registrada en el rango. */
-        first_in_at: inTimes[0] ?? null,
-        /** Hora del check-out más tardío en el rango. */
-        last_out_at: outTimes.length ? outTimes[outTimes.length - 1] : null,
+        /** Horarios de entrada/salida de cada día del rango. */
+        jornadas,
+        /** Primera visita del último día con actividad. */
+        first_in_at: lastJornada?.first_in_at ?? null,
+        /** Último check-out del último día con actividad. */
+        last_out_at: lastJornada?.last_out_at ?? null,
         pedidos: rv.filter((v: any) => v.pedido_id).length,
         avg_min: durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null,
         total_min: durations.reduce((a, b) => a + b, 0),
-        efficiency: plannedIds.size ? Math.round((plannedDone / plannedIds.size) * 100) : null,
+        efficiency: planned ? Math.round((plannedDone / planned) * 100) : null,
         routes: rr.map((r: any) => ({
           id: r.id,
           nombre: r.nombre,
@@ -1095,7 +1135,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
           check_in_at: v.check_in_at,
           check_out_at: v.check_out_at,
           minutos: durationMin(v),
-          unplanned: !!v.unplanned || !plannedIds.has(String(v.cliente_id)),
+          unplanned: !!v.unplanned || !isPlanned(v),
           outcome: v.outcome,
         })),
       };

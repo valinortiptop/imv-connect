@@ -465,8 +465,29 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       const psPrev = (p2 ?? []).filter((p: any) => p.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
       const ventasPrev = psPrev.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
-      const inTimes = vs.map((v: any) => v.check_in_at).filter(Boolean).sort();
-      const outTimes = vs.map((v: any) => v.check_out_at).filter(Boolean).sort();
+      // Horarios agrupados por día: cada jornada tiene su primera entrada y su
+      // último check-out (un rango de varios días ya no se mezcla en un solo par).
+      const jornadaMap = new Map<string, { in: string[]; out: string[] }>();
+      for (const v of vs) {
+        const dia = typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : "";
+        if (!dia) continue;
+        const j = jornadaMap.get(dia) ?? { in: [], out: [] };
+        if (v.check_in_at) j.in.push(v.check_in_at as string);
+        if (v.check_out_at) j.out.push(v.check_out_at as string);
+        jornadaMap.set(dia, j);
+      }
+      const jornadas = [...jornadaMap.entries()]
+        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+        .map(([dia, j]) => {
+          const ins = [...j.in].sort();
+          const outs = [...j.out].sort();
+          return {
+            dia,
+            first_in_at: ins[0] ?? null,
+            last_out_at: outs.length ? outs[outs.length - 1] : null,
+          };
+        });
+      const lastJornada = jornadas[jornadas.length - 1];
       return {
         rep_id: r.id as string,
         nombre: r.nombre as string,
@@ -477,10 +498,12 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
         ventas: Math.round(ventas),
         ventas_prev: Math.round(ventasPrev),
         ticket_prom: ps.length ? Math.round(ventas / ps.length) : 0,
-        /** Primer check-in registrado dentro del rango. */
-        first_in_at: (inTimes[0] as string | undefined) ?? null,
-        /** Último check-out registrado dentro del rango. */
-        last_out_at: outTimes.length ? (outTimes[outTimes.length - 1] as string) : null,
+        /** Horarios de entrada/salida por cada día del rango. */
+        jornadas,
+        /** Primera visita del último día con actividad. */
+        first_in_at: lastJornada?.first_in_at ?? null,
+        /** Último check-out del último día con actividad. */
+        last_out_at: lastJornada?.last_out_at ?? null,
         sin_actividad: vs.length === 0 && ps.length === 0,
       };
     });
