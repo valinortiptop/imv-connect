@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import SavedRoutePreview from "./SavedRoutePreview";
+import VisitEvidenceViewer from "./VisitEvidenceViewer";
 import { downloadRoutePdf, printRoute } from "@/lib/route-export";
 import { toast } from "sonner";
 import { MapPin, Pencil, Trash2, Download, Printer, Clock, Route as RouteIcon, CheckCircle2, CircleDashed, Camera, ShoppingCart } from "lucide-react";
@@ -40,6 +41,7 @@ export default function RouteDetailsDialog({
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
+  const [evidence, setEvidence] = useState<{ visitId: string; nombre: string | null } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["saved-route-detail", routeId],
