@@ -541,5 +541,11 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       };
     }
 
-    return { team: { current, previous }, reps: perRep, coaching };
+    return {
+      team: { current, previous },
+      reps: perRep,
+      coaching,
+      fecha_desde: fechaDesde,
+      fecha_hasta: fechaHasta,
+    };
   });
