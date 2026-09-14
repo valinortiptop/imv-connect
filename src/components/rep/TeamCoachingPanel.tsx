@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChronoBar } from "@/components/ChronoBar";
 import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Sparkles,
   Target,
   TrendingUp,
@@ -15,6 +24,7 @@ import {
   RefreshCw,
   Users,
   AlertTriangle,
+  Eye,
 } from "lucide-react";
 
 const money = (n: number) => "$" + Math.round(n).toLocaleString("es-MX");
