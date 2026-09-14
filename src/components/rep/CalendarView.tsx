@@ -501,6 +501,102 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
   );
 }
 
+/**
+ * Resumen del día que se muestra al pasar el cursor sobre una celda del
+ * calendario. Solo considera los tipos de evento activos en el filtro.
+ */
+function DaySummaryCard({ day, events }: { day: Date; events: CalendarEvent[] }) {
+  const label = day.toLocaleDateString("es-MX", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const byType = (t: CalendarEvent["type"]) => events.filter((e) => e.type === t);
+  const visitas = byType("visita");
+  const rutas = byType("ruta");
+  const pedidos = byType("pedido");
+  const entregas = byType("entrega");
+  const acuerdos = byType("acuerdo");
+  const llamadas = byType("llamada");
+
+  const planeadas = rutas.reduce((a, r) => a + (r.stops ?? 0), 0);
+  const cerradas = visitas.filter((v) => v.end).length;
+  const enCurso = visitas.length - cerradas;
+  const cumplimiento = planeadas ? Math.round((visitas.length / planeadas) * 100) : null;
+  const montoPedidos = pedidos.reduce((a, p) => a + (p.amount ?? 0), 0);
+
+  const reps = [...new Set(events.map((e) => e.representante_nombre).filter(Boolean))] as string[];
+
+  if (events.length === 0) {
+    return (
+      <div className="text-xs text-muted-foreground">
+        <p className="mb-1 font-medium capitalize text-foreground">{label}</p>
+        Sin eventos para los filtros activos.
+      </div>
+    );
+  }
+
+  const Row = ({ dot, children }: { dot: string; children: React.ReactNode }) => (
+    <div className="flex items-start gap-1.5 text-xs">
+      <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", dot)} />
+      <span className="min-w-0">{children}</span>
+    </div>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-semibold capitalize">{label}</p>
+      <p className="text-[11px] text-muted-foreground">
+        {events.length} evento{events.length === 1 ? "" : "s"}
+        {reps.length === 1 ? ` · ${reps[0]}` : reps.length > 1 ? ` · ${reps.length} representantes` : ""}
+      </p>
+      <div className="space-y-1 border-t pt-1.5">
+        {rutas.length > 0 && (
+          <Row dot={TYPE_META.ruta.dot}>
+            {rutas.length} ruta{rutas.length === 1 ? "" : "s"} · {planeadas} paradas planeadas
+          </Row>
+        )}
+        {visitas.length > 0 && (
+          <Row dot={TYPE_META.visita.dot}>
+            {visitas.length} visita{visitas.length === 1 ? "" : "s"} registradas · {cerradas} cerradas
+            {enCurso > 0 ? ` · ${enCurso} en curso` : ""}
+            {cumplimiento != null ? ` · ${cumplimiento}% del plan` : ""}
+          </Row>
+        )}
+        {pedidos.length > 0 && (
+          <Row dot={TYPE_META.pedido.dot}>
+            {pedidos.length} pedido{pedidos.length === 1 ? "" : "s"}
+            {montoPedidos > 0 ? ` · $${Math.round(montoPedidos).toLocaleString("es-MX")}` : ""}
+          </Row>
+        )}
+        {entregas.length > 0 && (
+          <Row dot={TYPE_META.entrega.dot}>{entregas.length} entrega{entregas.length === 1 ? "" : "s"}</Row>
+        )}
+        {acuerdos.length > 0 && (
+          <Row dot={TYPE_META.acuerdo.dot}>{acuerdos.length} acuerdo{acuerdos.length === 1 ? "" : "s"}</Row>
+        )}
+        {llamadas.length > 0 && (
+          <Row dot={TYPE_META.llamada.dot}>{llamadas.length} llamada{llamadas.length === 1 ? "" : "s"}</Row>
+        )}
+      </div>
+      <div className="space-y-0.5 border-t pt-1.5">
+        {events.slice(0, 5).map((e) => (
+          <div key={e.id} className="flex items-center gap-1.5 text-[11px]">
+            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", TYPE_META[e.type].dot)} />
+            <span className="shrink-0 text-muted-foreground">
+              {new Date(e.start).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            <span className="truncate">{e.title}</span>
+          </div>
+        ))}
+        {events.length > 5 && (
+          <p className="text-[10px] text-muted-foreground">+{events.length - 5} más · clic para ver todo</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EventRow({ e, onClick }: { e: CalendarEvent; onClick?: () => void }) {
   const meta = TYPE_META[e.type];
   return (
