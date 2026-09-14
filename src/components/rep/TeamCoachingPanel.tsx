@@ -266,7 +266,7 @@ export default function TeamCoachingPanel() {
                 ))}
                 {reps.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={8} className="py-4 text-center text-muted-foreground">
+                    <td colSpan={7} className="py-4 text-center text-muted-foreground">
                       Sin representantes activos.
                     </td>
                   </tr>
