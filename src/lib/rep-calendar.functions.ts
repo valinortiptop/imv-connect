@@ -15,6 +15,10 @@ export type CalendarEvent = {
   cliente_nombre?: string | null;
   status?: string | null;
   outcome?: string | null;
+  /** Paradas planeadas (solo eventos de tipo ruta). */
+  stops?: number | null;
+  /** Monto asociado (solo pedidos). */
+  amount?: number | null;
 };
 
 export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
@@ -207,6 +211,7 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         cliente_id: p.cliente_id,
         cliente_nombre: cli?.name ?? null,
         status: p.estado,
+        amount: p.total != null ? Number(p.total) : null,
       });
     }
 
@@ -230,8 +235,10 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
         start: `${r.fecha}T07:00:00`,
         representante_id: repId,
         representante_nombre: repId ? reps.get(repId) ?? null : null,
+        stops,
       });
     }
+
 
     events.sort((a, b) => a.start.localeCompare(b.start));
     return { events };
