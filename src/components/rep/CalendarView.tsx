@@ -532,6 +532,46 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
         <div className="text-xs text-muted-foreground">Cargando agenda…</div>
       )}
 
+      {/* Day details modal (opened from the hover summary card) */}
+      <Dialog open={!!dayDetail} onOpenChange={(open) => !open && setDayDetail(null)}>
+        <DialogContent className="flex max-h-[85dvh] w-[calc(100vw-2rem)] max-w-lg flex-col overflow-hidden p-0">
+          {dayDetail && (
+            <>
+              <DialogHeader className="border-b p-4 pb-3">
+                <DialogTitle className="capitalize">
+                  {dayDetail.toLocaleDateString("es-MX", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </DialogTitle>
+                <DialogDescription>
+                  {filteredEvents.filter((e) => sameDay(new Date(e.start), dayDetail)).length} eventos
+                  para los filtros activos
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+                <DaySummaryCard
+                  day={dayDetail}
+                  events={filteredEvents.filter((e) => sameDay(new Date(e.start), dayDetail))}
+                />
+                <div className="mt-3 space-y-2 border-t pt-3">
+                  {filteredEvents.filter((e) => sameDay(new Date(e.start), dayDetail)).length === 0 && (
+                    <div className="text-sm text-muted-foreground">Sin eventos para este día.</div>
+                  )}
+                  {filteredEvents
+                    .filter((e) => sameDay(new Date(e.start), dayDetail))
+                    .map((e) => (
+                      <EventRow key={e.id} e={e} onClick={() => setSelectedEvent(e)} />
+                    ))}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <EventDetailsDialog
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
