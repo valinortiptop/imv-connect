@@ -95,6 +95,7 @@ export default function RouteDetailsDialog({
   });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="pr-8 text-left sm:text-left">
