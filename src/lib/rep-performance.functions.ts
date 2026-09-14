@@ -169,6 +169,7 @@ export const computeDayCloseFn = createServerFn({ method: "POST" })
         context.supabase
           .from("rep_visits")
           .select("id, cliente_id, check_in_lat, check_in_lng, check_in_at, check_out_at")
+          .neq("visit_kind", "oficina")
           .eq("representante_id", rep.id)
           .gte("check_in_at", start)
           .lt("check_in_at", end)
@@ -358,6 +359,7 @@ export const supervisorReportFn = createServerFn({ method: "POST" })
     let visitsQ = context.supabase
       .from("rep_visits")
       .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, distance_m")
+      .neq("visit_kind", "oficina")
       .gte("check_in_at", from)
       .lt("check_in_at", to);
     if (data.rep_id) visitsQ = visitsQ.eq("representante_id", data.rep_id);
@@ -512,6 +514,7 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
       .select(
         "id, representante_id, cliente_id, check_in_at, check_out_at, outcome, visit_kind",
       )
+      .neq("visit_kind", "oficina")
       .gte("check_in_at", fromISO)
       .lt("check_in_at", toISO);
     if (data.rep_id) visitsQ = visitsQ.eq("representante_id", data.rep_id);

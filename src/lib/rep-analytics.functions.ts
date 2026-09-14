@@ -66,6 +66,7 @@ export const getSupervisorDashboardFn = createServerFn({ method: "POST" })
     let vq = context.supabase
       .from("rep_visits")
       .select("representante_id, cliente_id, outcome, check_in_at, check_out_at, pedido_id")
+      .neq("visit_kind", "oficina")
       .in("representante_id", repIds)
       .gte("check_in_at", sinceIso);
     let pq = context.supabase
@@ -151,6 +152,7 @@ export const getRepKpisFn = createServerFn({ method: "POST" })
       context.supabase
         .from("rep_visits")
         .select("id, cliente_id, outcome, check_in_at, check_out_at")
+        .neq("visit_kind", "oficina")
         .eq("representante_id", repId)
         .gte("check_in_at", sinceIso),
       context.supabase
@@ -213,8 +215,8 @@ export const generateRepCoachingFn = createServerFn({ method: "POST" })
     const w2 = new Date(now); w2.setDate(w2.getDate() - 14);
 
     const [{ data: v1 }, { data: v2 }, { data: p1 }, { data: p2 }] = await Promise.all([
-      context.supabase.from("rep_visits").select("id, outcome, check_in_at, check_out_at, cliente_id").eq("representante_id", repId).gte("check_in_at", w1.toISOString()),
-      context.supabase.from("rep_visits").select("id, outcome, check_in_at, check_out_at, cliente_id").eq("representante_id", repId).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
+      context.supabase.from("rep_visits").select("id, outcome, check_in_at, check_out_at, cliente_id").neq("visit_kind", "oficina").eq("representante_id", repId).gte("check_in_at", w1.toISOString()),
+      context.supabase.from("rep_visits").select("id, outcome, check_in_at, check_out_at, cliente_id").neq("visit_kind", "oficina").eq("representante_id", repId).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
       context.supabase.from("pedidos").select("id, total, created_at").eq("representante_id", repId).gte("created_at", w1.toISOString()),
       context.supabase.from("pedidos").select("id, total, created_at").eq("representante_id", repId).gte("created_at", w2.toISOString()).lt("created_at", w1.toISOString()),
     ]);
@@ -327,7 +329,7 @@ export const getGamificationFn = createServerFn({ method: "POST" })
     if (repIds.length === 0) return { me: null, ranking: [], badges: [] };
 
     const [{ data: visits }, { data: pedidos }] = await Promise.all([
-      context.supabase.from("rep_visits").select("representante_id, outcome").in("representante_id", repIds).gte("check_in_at", sinceIso),
+      context.supabase.from("rep_visits").select("representante_id, outcome").neq("visit_kind", "oficina").in("representante_id", repIds).gte("check_in_at", sinceIso),
       context.supabase.from("pedidos").select("representante_id, total").in("representante_id", repIds).gte("created_at", sinceIso),
     ]);
 
@@ -427,8 +429,8 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
 
     const sel = "representante_id, cliente_id, check_in_at, check_out_at";
     const [{ data: v1 }, { data: v2 }, { data: p1 }, { data: p2 }] = await Promise.all([
-      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w1.toISOString()).lte("check_in_at", end1.toISOString()),
-      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
+      context.supabase.from("rep_visits").select(sel).neq("visit_kind", "oficina").in("representante_id", repIds).gte("check_in_at", w1.toISOString()).lte("check_in_at", end1.toISOString()),
+      context.supabase.from("rep_visits").select(sel).neq("visit_kind", "oficina").in("representante_id", repIds).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
       context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w1.toISOString()).lte("created_at", end1.toISOString()),
       context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w2.toISOString()).lt("created_at", w1.toISOString()),
     ]);
