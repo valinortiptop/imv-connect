@@ -423,9 +423,20 @@ export default function CalendarView({ repId, clienteId, embedded }: CalendarVie
                     key={key}
                     className={cn("rounded-md border p-2 min-h-[220px]", isToday && "border-primary")}
                   >
-                    <div className="text-xs font-medium mb-2">
-                      {d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" })}
-                    </div>
+                    <HoverCard openDelay={120} closeDelay={60}>
+                      <HoverCardTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDay(d)}
+                          className="mb-2 w-full text-left text-xs font-medium hover:text-primary"
+                        >
+                          {d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" })}
+                        </button>
+                      </HoverCardTrigger>
+                      <HoverCardContent align="start" className="hidden w-72 max-w-[90vw] md:block">
+                        <DaySummaryCard day={d} events={evts} />
+                      </HoverCardContent>
+                    </HoverCard>
                     <div className="space-y-1">
                       {evts.map((e) => (
                         <button
