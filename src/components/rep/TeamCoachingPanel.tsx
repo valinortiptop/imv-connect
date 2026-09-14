@@ -1,10 +1,12 @@
 // Coach IA a nivel equipo: información relevante para admins / supervisores.
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { generateTeamCoachingFn } from "@/lib/rep-analytics.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ChronoBar } from "@/components/ChronoBar";
 import {
   Sparkles,
   Target,
@@ -16,6 +18,18 @@ import {
 } from "lucide-react";
 
 const money = (n: number) => "$" + Math.round(n).toLocaleString("es-MX");
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const defaultFrom = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  return ymd(d);
+};
+const hhmm = (iso: string | null | undefined) =>
+  iso
+    ? new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
+    : "—";
 
 function Delta({ now, prev }: { now: number; prev: number }) {
   if (!prev) return null;
@@ -35,16 +49,18 @@ function Delta({ now, prev }: { now: number; prev: number }) {
 export default function TeamCoachingPanel() {
   const qc = useQueryClient();
   const fetchTeam = useServerFn(generateTeamCoachingFn);
+  const [desde, setDesde] = useState(defaultFrom());
+  const [hasta, setHasta] = useState(ymd(new Date()));
 
   const teamQ = useQuery({
-    queryKey: ["team-coaching"],
-    queryFn: () => fetchTeam({ data: {} }),
+    queryKey: ["team-coaching", desde, hasta],
+    queryFn: () => fetchTeam({ data: { fecha_desde: desde, fecha_hasta: hasta } }),
   });
 
   const regen = useMutation({
-    mutationFn: () => fetchTeam({ data: { force: true } }),
+    mutationFn: () => fetchTeam({ data: { force: true, fecha_desde: desde, fecha_hasta: hasta } }),
     onSuccess: (d) => {
-      qc.setQueryData(["team-coaching"], d);
+      qc.setQueryData(["team-coaching", desde, hasta], d);
     },
   });
 
@@ -70,18 +86,28 @@ export default function TeamCoachingPanel() {
         </Button>
       </div>
 
+      <ChronoBar
+        compact
+        dateFrom={desde}
+        dateTo={hasta}
+        onChange={(f, t) => {
+          setDesde(f || defaultFrom());
+          setHasta(t || ymd(new Date()));
+        }}
+      />
+
       {/* KPIs del equipo (últimos 7 días vs 7 previos) */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: "Visitas 7d", value: String(cur?.visitas ?? 0), now: cur?.visitas ?? 0, prev: prev?.visitas ?? 0 },
-          { label: "Pedidos 7d", value: String(cur?.pedidos ?? 0), now: cur?.pedidos ?? 0, prev: prev?.pedidos ?? 0 },
+          { label: "Visitas", value: String(cur?.visitas ?? 0), now: cur?.visitas ?? 0, prev: prev?.visitas ?? 0 },
+          { label: "Pedidos", value: String(cur?.pedidos ?? 0), now: cur?.pedidos ?? 0, prev: prev?.pedidos ?? 0 },
           {
             label: "Ratio V→P",
             value: `${((cur?.ratio ?? 0) * 100).toFixed(0)}%`,
             now: cur?.ratio ?? 0,
             prev: prev?.ratio ?? 0,
           },
-          { label: "Ventas 7d", value: money(cur?.ventas ?? 0), now: cur?.ventas ?? 0, prev: prev?.ventas ?? 0 },
+          { label: "Ventas", value: money(cur?.ventas ?? 0), now: cur?.ventas ?? 0, prev: prev?.ventas ?? 0 },
           {
             label: "Reps activos",
             value: `${cur?.reps_activos ?? 0}/${reps.length}`,
@@ -185,12 +211,12 @@ export default function TeamCoachingPanel() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" /> Desempeño por representante · 7 días
+            <Users className="h-4 w-4 text-primary" /> Desempeño por representante
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="-mx-2 overflow-x-auto px-2">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead className="text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="py-1">Representante</th>
@@ -198,7 +224,9 @@ export default function TeamCoachingPanel() {
                   <th className="py-1 text-right">Pedidos</th>
                   <th className="py-1 text-right">Ratio</th>
                   <th className="py-1 text-right">Ventas</th>
-                  <th className="py-1 text-right">vs sem. ant.</th>
+                  <th className="py-1 text-right">1ª visita</th>
+                  <th className="py-1 text-right">Últ. check-out</th>
+                  <th className="py-1 text-right">vs periodo ant.</th>
                 </tr>
               </thead>
               <tbody>
@@ -216,6 +244,8 @@ export default function TeamCoachingPanel() {
                     <td className="py-1.5 text-right">{r.pedidos}</td>
                     <td className="py-1.5 text-right">{(r.ratio * 100).toFixed(0)}%</td>
                     <td className="py-1.5 text-right font-medium">{money(r.ventas)}</td>
+                    <td className="py-1.5 text-right whitespace-nowrap">{hhmm((r as any).first_in_at)}</td>
+                    <td className="py-1.5 text-right whitespace-nowrap">{hhmm((r as any).last_out_at)}</td>
                     <td className="py-1.5 text-right">
                       <Delta now={r.ventas} prev={r.ventas_prev} />
                     </td>
@@ -223,7 +253,7 @@ export default function TeamCoachingPanel() {
                 ))}
                 {reps.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                    <td colSpan={8} className="py-4 text-center text-muted-foreground">
                       Sin representantes activos.
                     </td>
                   </tr>

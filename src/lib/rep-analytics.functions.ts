@@ -376,14 +376,32 @@ export const getGamificationFn = createServerFn({ method: "POST" })
 /* ─── generateTeamCoachingFn: coach IA a nivel equipo (admins/supervisores) ─── */
 export const generateTeamCoachingFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ force: z.boolean().optional() }).parse(input ?? {}))
+  .inputValidator((input) =>
+    z
+      .object({
+        force: z.boolean().optional(),
+        fecha_desde: z.string().optional(),
+        fecha_hasta: z.string().optional(),
+      })
+      .parse(input ?? {}),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     void data.force;
 
+    // Rango actual: por defecto los últimos 7 días. El periodo previo tiene la
+    // misma duración e termina justo antes del rango actual.
     const now = new Date();
-    const w1 = new Date(now); w1.setDate(w1.getDate() - 7);
-    const w2 = new Date(now); w2.setDate(w2.getDate() - 14);
+    const defaultFrom = new Date(now); defaultFrom.setDate(defaultFrom.getDate() - 7);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const fechaDesde = data.fecha_desde || ymd(defaultFrom);
+    const fechaHasta = data.fecha_hasta || ymd(now);
+    const w1 = new Date(`${fechaDesde}T00:00:00`);
+    const end1 = new Date(`${fechaHasta}T23:59:59.999`);
+    const spanMs = Math.max(end1.getTime() - w1.getTime(), 24 * 3600 * 1000);
+    const w2 = new Date(w1.getTime() - spanMs);
 
     const { data: reps } = await context.supabase
       .from("representantes")
@@ -396,14 +414,20 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       duracion_prom_min: 0, ticket_prom: 0, reps_activos: 0,
     };
     if (repIds.length === 0) {
-      return { team: { current: empty, previous: empty }, reps: [], coaching: null };
+      return {
+        team: { current: empty, previous: empty },
+        reps: [],
+        coaching: null,
+        fecha_desde: fechaDesde,
+        fecha_hasta: fechaHasta,
+      };
     }
 
     const sel = "representante_id, cliente_id, check_in_at, check_out_at";
     const [{ data: v1 }, { data: v2 }, { data: p1 }, { data: p2 }] = await Promise.all([
-      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w1.toISOString()),
+      context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w1.toISOString()).lte("check_in_at", end1.toISOString()),
       context.supabase.from("rep_visits").select(sel).in("representante_id", repIds).gte("check_in_at", w2.toISOString()).lt("check_in_at", w1.toISOString()),
-      context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w1.toISOString()),
+      context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w1.toISOString()).lte("created_at", end1.toISOString()),
       context.supabase.from("pedidos").select("id, representante_id, total, created_at").in("representante_id", repIds).gte("created_at", w2.toISOString()).lt("created_at", w1.toISOString()),
     ]);
 
@@ -441,6 +465,8 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       const psPrev = (p2 ?? []).filter((p: any) => p.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
       const ventasPrev = psPrev.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
+      const inTimes = vs.map((v: any) => v.check_in_at).filter(Boolean).sort();
+      const outTimes = vs.map((v: any) => v.check_out_at).filter(Boolean).sort();
       return {
         rep_id: r.id as string,
         nombre: r.nombre as string,
@@ -451,6 +477,10 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
         ventas: Math.round(ventas),
         ventas_prev: Math.round(ventasPrev),
         ticket_prom: ps.length ? Math.round(ventas / ps.length) : 0,
+        /** Primer check-in registrado dentro del rango. */
+        first_in_at: (inTimes[0] as string | undefined) ?? null,
+        /** Último check-out registrado dentro del rango. */
+        last_out_at: outTimes.length ? (outTimes[outTimes.length - 1] as string) : null,
         sin_actividad: vs.length === 0 && ps.length === 0,
       };
     });
@@ -511,5 +541,11 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       };
     }
 
-    return { team: { current, previous }, reps: perRep, coaching };
+    return {
+      team: { current, previous },
+      reps: perRep,
+      coaching,
+      fecha_desde: fechaDesde,
+      fecha_hasta: fechaHasta,
+    };
   });
