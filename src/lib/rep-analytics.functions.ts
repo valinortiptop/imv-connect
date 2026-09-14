@@ -331,12 +331,12 @@ export const getGamificationFn = createServerFn({ method: "POST" })
       context.supabase.from("pedidos").select("representante_id, total").in("representante_id", repIds).gte("created_at", sinceIso),
     ]);
 
-    // 10 pts / visita, 50 pts / pedido, 1 pt / $1000 vendidos
+    // Enfoque en visitas: 10 pts / visita, 20 pts / pedido (ventas no suman puntos)
     const ranking = (reps ?? []).map((r: any) => {
       const v = (visits ?? []).filter((x: any) => x.representante_id === r.id).length;
       const ps = (pedidos ?? []).filter((x: any) => x.representante_id === r.id);
       const ventas = ps.reduce((a: number, p: any) => a + Number(p.total ?? 0), 0);
-      const puntos = v * 10 + ps.length * 50 + Math.floor(ventas / 1000);
+      const puntos = v * 10 + ps.length * 20;
       return { rep_id: r.id as string, nombre: r.nombre as string, visitas: v, pedidos: ps.length, ventas: Math.round(ventas), puntos, rank: 0 };
     });
     ranking.sort((a, b) => b.puntos - a.puntos);
