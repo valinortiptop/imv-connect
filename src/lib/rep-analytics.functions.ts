@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { geminiGenerate } from "./valinor-proxy.server";
 import { REP_COACHING_SYSTEM, ADMIN_COACHING_SYSTEM } from "./rep-prompts";
+import { mxDayFromIso } from "./date-utils";
 
 async function getCurrentRep(supabase: any, userId: string) {
   const { data } = await supabase
@@ -473,7 +474,7 @@ export const generateTeamCoachingFn = createServerFn({ method: "POST" })
       // último check-out (un rango de varios días ya no se mezcla en un solo par).
       const jornadaMap = new Map<string, { in: string[]; out: string[] }>();
       for (const v of vs) {
-        const dia = typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : "";
+        const dia = mxDayFromIso(v.check_in_at as string | null);
         if (!dia) continue;
         const j = jornadaMap.get(dia) ?? { in: [], out: [] };
         if (v.check_in_at) j.in.push(v.check_in_at as string);

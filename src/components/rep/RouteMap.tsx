@@ -171,6 +171,34 @@ export default function RouteMap() {
   const repsQ = useQuery({ queryKey: ["rep-assignable-reps"], queryFn: () => listReps() });
   const qc = useQueryClient();
 
+  /**
+   * Guarda la ruta del día. Si ya existe un plan con más paradas para esa fecha,
+   * el servidor pide confirmación antes de reemplazarlo.
+   */
+  const persistRoute = async (payload: any) => {
+    try {
+      const res: any = await saveRoute({ data: payload });
+      if (res?.needsConfirm) {
+        const ok = window.confirm(
+          `Ya tienes un plan guardado para ${payload.fecha} con ${res.previousStops} paradas.\n` +
+            `Esta ruta tiene solo ${res.newStops}. ¿Reemplazar el plan del día?`,
+        );
+        if (!ok) {
+          toast.info("Se conservó el plan guardado del día");
+          return;
+        }
+        await saveRoute({ data: { ...payload, confirmReplace: true } });
+        toast.success("Plan del día reemplazado");
+      } else if (res?.updated) {
+        toast.info("Se actualizó el plan guardado de ese día");
+      }
+      qc.invalidateQueries({ queryKey: ["rep-saved-routes"] });
+    } catch {
+      /* el toast de error de la optimización ya informa al usuario */
+    }
+  };
+
+
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
@@ -547,22 +575,18 @@ export default function RouteMap() {
       });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
       // Persist so it appears on Ruta history and Plan semanal
-      saveRoute({
-        data: {
-          fecha: vars?.fecha ?? routeFecha,
-          totalKm: r.total_km,
-          totalMinutes: r.total_minutes,
-          polyline: r.polyline ?? null,
-          orderedStops: r.orderedStops ?? [],
-          legs: r.legs ?? [],
-          startLat: geo?.lat ?? null,
-          startLng: geo?.lng ?? null,
-          origen: "manual",
-          assignedRepId,
-        },
-      })
-        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
-        .catch(() => {});
+      persistRoute({
+        fecha: vars?.fecha ?? routeFecha,
+        totalKm: r.total_km,
+        totalMinutes: r.total_minutes,
+        polyline: r.polyline ?? null,
+        orderedStops: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+        startLat: geo?.lat ?? null,
+        startLng: geo?.lng ?? null,
+        origen: "manual",
+        assignedRepId,
+      });
 
 
       // Fit map to route
@@ -650,22 +674,18 @@ export default function RouteMap() {
         legs: r.legs ?? [],
       });
       toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
-      saveRoute({
-        data: {
-          fecha: routeFecha,
-          totalKm: r.total_km,
-          totalMinutes: r.total_minutes,
-          polyline: r.polyline ?? null,
-          orderedStops: r.orderedStops ?? [],
-          legs: r.legs ?? [],
-          startLat: geo?.lat ?? null,
-          startLng: geo?.lng ?? null,
-          origen: "manual",
-          assignedRepId,
-        },
-      })
-        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
-        .catch(() => {});
+      persistRoute({
+        fecha: routeFecha,
+        totalKm: r.total_km,
+        totalMinutes: r.total_minutes,
+        polyline: r.polyline ?? null,
+        orderedStops: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+        startLat: geo?.lat ?? null,
+        startLng: geo?.lng ?? null,
+        origen: "manual",
+        assignedRepId,
+      });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });

@@ -13,6 +13,7 @@ import {
 } from "./rep-prompts";
 import { mergePolylines } from "./polyline";
 import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "./office";
+import { mxDayFromIso } from "./date-utils";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1061,7 +1062,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
         plannedByDay.set(dia, set);
       }
       const dayOf = (v: any) =>
-        typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : "";
+        typeof v.check_in_at === "string" ? mxDayFromIso(v.check_in_at) : "";
       const visitedByDay = new Map<string, Set<string>>();
       for (const v of rv) {
         const d = dayOf(v);
@@ -2538,6 +2539,8 @@ export const saveRouteFn = createServerFn({ method: "POST" })
       legs: z.array(z.any()).default([]),
       origen: z.string().optional(),
       assignedRepId: z.string().uuid().nullable().optional(),
+      /** Confirma reemplazar una ruta existente del mismo día con menos paradas. */
+      confirmReplace: z.boolean().optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -2578,7 +2581,7 @@ export const saveRouteFn = createServerFn({ method: "POST" })
 
     let existingQ = context.supabase
       .from("rep_rutas_guardadas")
-      .select("id")
+      .select("id, ordered_stops")
       .eq("fecha", fecha);
     existingQ = representanteId
       ? existingQ.eq("representante_id", representanteId)
@@ -2604,6 +2607,21 @@ export const saveRouteFn = createServerFn({ method: "POST" })
     };
 
     if (existing?.id) {
+      // Protección: no reemplazar en silencio un plan del día con menos paradas.
+      const prevStops = Array.isArray((existing as any).ordered_stops)
+        ? ((existing as any).ordered_stops as any[]).length
+        : 0;
+      const newStops = (data.orderedStops ?? []).length;
+      if (!data.confirmReplace && newStops < prevStops) {
+        return {
+          id: existing.id,
+          fecha,
+          needsConfirm: true as const,
+          previousStops: prevStops,
+          newStops,
+          updated: false,
+        };
+      }
       const { nombre, ...rest } = payload;
       const update = data.nombre ? { ...rest, nombre } : rest;
       const { data: row, error } = await context.supabase

@@ -80,3 +80,16 @@ export function todayMx(): string {
   );
   return dateToString(mx);
 }
+
+/**
+ * Local (Mexico City) calendar day of an ISO timestamp, as YYYY-MM-DD.
+ * Use for grouping timestamptz values by business day — a raw
+ * `iso.slice(0, 10)` would push evening visits into the next UTC day.
+ */
+export function mxDayFromIso(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return typeof iso === "string" ? iso.slice(0, 10) : "";
+  // en-CA formats as YYYY-MM-DD
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+}
