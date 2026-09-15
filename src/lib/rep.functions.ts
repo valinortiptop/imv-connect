@@ -2579,7 +2579,7 @@ export const saveRouteFn = createServerFn({ method: "POST" })
 
     let existingQ = context.supabase
       .from("rep_rutas_guardadas")
-      .select("id")
+      .select("id, ordered_stops")
       .eq("fecha", fecha);
     existingQ = representanteId
       ? existingQ.eq("representante_id", representanteId)
