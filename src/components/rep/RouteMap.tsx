@@ -575,22 +575,18 @@ export default function RouteMap() {
       });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
       // Persist so it appears on Ruta history and Plan semanal
-      saveRoute({
-        data: {
-          fecha: vars?.fecha ?? routeFecha,
-          totalKm: r.total_km,
-          totalMinutes: r.total_minutes,
-          polyline: r.polyline ?? null,
-          orderedStops: r.orderedStops ?? [],
-          legs: r.legs ?? [],
-          startLat: geo?.lat ?? null,
-          startLng: geo?.lng ?? null,
-          origen: "manual",
-          assignedRepId,
-        },
-      })
-        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
-        .catch(() => {});
+      persistRoute({
+        fecha: vars?.fecha ?? routeFecha,
+        totalKm: r.total_km,
+        totalMinutes: r.total_minutes,
+        polyline: r.polyline ?? null,
+        orderedStops: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+        startLat: geo?.lat ?? null,
+        startLng: geo?.lng ?? null,
+        origen: "manual",
+        assignedRepId,
+      });
 
 
       // Fit map to route
@@ -678,22 +674,18 @@ export default function RouteMap() {
         legs: r.legs ?? [],
       });
       toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
-      saveRoute({
-        data: {
-          fecha: routeFecha,
-          totalKm: r.total_km,
-          totalMinutes: r.total_minutes,
-          polyline: r.polyline ?? null,
-          orderedStops: r.orderedStops ?? [],
-          legs: r.legs ?? [],
-          startLat: geo?.lat ?? null,
-          startLng: geo?.lng ?? null,
-          origen: "manual",
-          assignedRepId,
-        },
-      })
-        .then(() => qc.invalidateQueries({ queryKey: ["rep-saved-routes"] }))
-        .catch(() => {});
+      persistRoute({
+        fecha: routeFecha,
+        totalKm: r.total_km,
+        totalMinutes: r.total_minutes,
+        polyline: r.polyline ?? null,
+        orderedStops: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+        startLat: geo?.lat ?? null,
+        startLng: geo?.lng ?? null,
+        origen: "manual",
+        assignedRepId,
+      });
     },
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
