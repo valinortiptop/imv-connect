@@ -2539,6 +2539,8 @@ export const saveRouteFn = createServerFn({ method: "POST" })
       legs: z.array(z.any()).default([]),
       origen: z.string().optional(),
       assignedRepId: z.string().uuid().nullable().optional(),
+      /** Confirma reemplazar una ruta existente del mismo día con menos paradas. */
+      confirmReplace: z.boolean().optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
