@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { mxDayFromIso } from "./date-utils";
 
 async function getCurrentRep(supabase: any, userId: string) {
   const { data } = await supabase
@@ -558,7 +559,7 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
       v.check_in_at && v.check_out_at
         ? Math.max(0, (new Date(v.check_out_at).getTime() - new Date(v.check_in_at).getTime()) / 60000)
         : 0;
-    const dayOf = (iso: string) => new Date(iso).toISOString().slice(0, 10);
+    const dayOf = (iso: string) => mxDayFromIso(iso);
 
     let columns: Col[] = [];
     let rows: any[] = [];

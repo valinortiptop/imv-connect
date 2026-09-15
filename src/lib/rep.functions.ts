@@ -13,6 +13,7 @@ import {
 } from "./rep-prompts";
 import { mergePolylines } from "./polyline";
 import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "./office";
+import { mxDayFromIso } from "./date-utils";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1061,7 +1062,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
         plannedByDay.set(dia, set);
       }
       const dayOf = (v: any) =>
-        typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : "";
+        typeof v.check_in_at === "string" ? mxDayFromIso(v.check_in_at) : "";
       const visitedByDay = new Map<string, Set<string>>();
       for (const v of rv) {
         const d = dayOf(v);
