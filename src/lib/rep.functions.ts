@@ -2607,6 +2607,21 @@ export const saveRouteFn = createServerFn({ method: "POST" })
     };
 
     if (existing?.id) {
+      // Protección: no reemplazar en silencio un plan del día con menos paradas.
+      const prevStops = Array.isArray((existing as any).ordered_stops)
+        ? ((existing as any).ordered_stops as any[]).length
+        : 0;
+      const newStops = (data.orderedStops ?? []).length;
+      if (!data.confirmReplace && newStops < prevStops) {
+        return {
+          id: existing.id,
+          fecha,
+          needsConfirm: true as const,
+          previousStops: prevStops,
+          newStops,
+          updated: false,
+        };
+      }
       const { nombre, ...rest } = payload;
       const update = data.nombre ? { ...rest, nombre } : rest;
       const { data: row, error } = await context.supabase
