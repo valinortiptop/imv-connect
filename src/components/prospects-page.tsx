@@ -1564,6 +1564,26 @@ function ProspectDetailDrawer({
     enabled: !!prospect,
   });
 
+  // Visitas de campo registradas al prospecto (check-in del representante).
+  const { data: prospectVisits = [] } = useQuery({
+    queryKey: ["prospect-visits", prospect?.id],
+    queryFn: async (): Promise<any[]> => {
+      if (!prospect) return [];
+      const { data, error } = await (supabase as any)
+        .from("rep_visits")
+        .select(
+          "id, check_in_at, check_out_at, outcome, notes, representante_id, representantes:representante_id(nombre)",
+        )
+        .eq("prospect_id", prospect.id)
+        .order("check_in_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!prospect,
+  });
+
+
+
   const deleteCallMut = useMutation({
     mutationFn: async (callId: string) => {
       const { error } = await (supabase as any)
