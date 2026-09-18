@@ -1564,6 +1564,26 @@ function ProspectDetailDrawer({
     enabled: !!prospect,
   });
 
+  // Visitas de campo registradas al prospecto (check-in del representante).
+  const { data: prospectVisits = [] } = useQuery({
+    queryKey: ["prospect-visits", prospect?.id],
+    queryFn: async (): Promise<any[]> => {
+      if (!prospect) return [];
+      const { data, error } = await (supabase as any)
+        .from("rep_visits")
+        .select(
+          "id, check_in_at, check_out_at, outcome, notes, representante_id, representantes:representante_id(nombre)",
+        )
+        .eq("prospect_id", prospect.id)
+        .order("check_in_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!prospect,
+  });
+
+
+
   const deleteCallMut = useMutation({
     mutationFn: async (callId: string) => {
       const { error } = await (supabase as any)
@@ -1998,8 +2018,49 @@ function ProspectDetailDrawer({
               </Button>
             </div>
 
+            <div className="rounded-lg border p-4 space-y-2">
+              <h3 className="font-semibold text-sm">
+                Visitas de campo ({prospectVisits.length})
+              </h3>
+              {prospectVisits.length === 0 && (
+                <p className="text-xs text-muted-foreground">Sin visitas registradas.</p>
+              )}
+              <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
+                {prospectVisits.map((v: any) => {
+                  const min = v.check_out_at
+                    ? Math.max(
+                        0,
+                        Math.round(
+                          (new Date(v.check_out_at).getTime() -
+                            new Date(v.check_in_at).getTime()) /
+                            60000,
+                        ),
+                      )
+                    : null;
+                  return (
+                    <div key={v.id} className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-semibold">
+                          {v.representantes?.nombre ?? "Representante"}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {fmtDateTime(v.check_in_at)}
+                          {min != null ? ` · ${min} min` : " · en curso"}
+                        </span>
+                      </div>
+                      {(v.outcome || v.notes) && (
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                          {[v.outcome, v.notes].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="rounded-lg border p-4 space-y-2 flex-1 flex flex-col min-h-0">
-              <h3 className="font-semibold text-sm shrink-0">Historial ({calls.length})</h3>
+              <h3 className="font-semibold text-sm shrink-0">Historial de llamadas ({calls.length})</h3>
               {calls.length === 0 && (
                 <p className="text-xs text-muted-foreground">Sin llamadas registradas.</p>
               )}

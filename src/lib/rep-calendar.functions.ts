@@ -65,7 +65,9 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
       (async () => {
         let q = supabase
           .from("rep_visits")
-          .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, notes")
+          .select(
+            "id, representante_id, cliente_id, prospect_id, check_in_at, check_out_at, outcome, notes, prospects:prospect_id(name)",
+          )
           .gte("check_in_at", from)
           .lte("check_in_at", to);
         if (repIds?.length) q = q.in("representante_id", repIds);
@@ -120,17 +122,19 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
     // Visits (rep_visits)
     for (const v of visitsRes.data ?? []) {
       const cli = clientMap.get(v.cliente_id);
+      const prospectoNombre = (v as any).prospects?.name ?? null;
+      const nombre = cli?.name ?? prospectoNombre ?? "Cliente";
       events.push({
         id: `v-${v.id}`,
         type: "visita",
-        title: `Visita: ${cli?.name ?? "Cliente"}`,
+        title: prospectoNombre && !cli ? `Visita prospecto: ${nombre}` : `Visita: ${nombre}`,
         subtitle: v.outcome ?? v.notes ?? undefined,
         start: v.check_in_at,
         end: v.check_out_at ?? undefined,
         representante_id: v.representante_id,
         representante_nombre: v.representante_id ? reps.get(v.representante_id) ?? null : null,
         cliente_id: v.cliente_id,
-        cliente_nombre: cli?.name ?? null,
+        cliente_nombre: nombre,
         outcome: v.outcome,
       });
     }

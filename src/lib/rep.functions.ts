@@ -1003,7 +1003,7 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
 
     let visitsQ = context.supabase
       .from("rep_visits")
-      .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, unplanned, distance_m, pedido_id")
+      .select("id, representante_id, cliente_id, prospect_id, check_in_at, check_out_at, outcome, unplanned, distance_m, pedido_id")
       // Las paradas en oficina no cuentan como visita comercial
       .neq("visit_kind", "oficina")
       .gte("check_in_at", dayStart)
@@ -1040,6 +1040,16 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
       : { data: [] as any[] };
     const clientName = new Map(
       (clientes ?? []).map((c: any) => [c.id, c.nombre_comercial ?? c.razon_social ?? "Cliente"]),
+    );
+
+    // Las visitas a prospectos no tienen cliente_id: resolvemos su nombre
+    // para que aparezcan con nombre en el detalle del supervisor.
+    const prospectIds = [...new Set((visits ?? []).map((v: any) => v.prospect_id).filter(Boolean))];
+    const { data: prospectos } = prospectIds.length
+      ? await context.supabase.from("prospects").select("id, name").in("id", prospectIds)
+      : { data: [] as any[] };
+    const prospectName = new Map(
+      (prospectos ?? []).map((p: any) => [p.id, p.name ?? "Prospecto"]),
     );
 
     const durationMin = (v: any) =>
@@ -1134,7 +1144,10 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
         detalle: rv.map((v: any) => ({
           id: v.id,
           dia: typeof v.check_in_at === "string" ? v.check_in_at.slice(0, 10) : null,
-          cliente: clientName.get(v.cliente_id) ?? "Cliente",
+          cliente: v.prospect_id
+            ? prospectName.get(v.prospect_id) ?? "Prospecto"
+            : clientName.get(v.cliente_id) ?? "Cliente",
+          es_prospecto: !!v.prospect_id,
           check_in_at: v.check_in_at,
           check_out_at: v.check_out_at,
           minutos: durationMin(v),
@@ -1176,7 +1189,7 @@ export const listMyVisitsFn = createServerFn({ method: "POST" })
     const { data: rows } = await context.supabase
       .from("rep_visits")
       .select(
-        "id, cliente_id, visit_kind, office_purpose, auto_registered, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion)",
+        "id, cliente_id, prospect_id, visit_kind, office_purpose, auto_registered, check_in_at, check_out_at, outcome, notes, check_in_lat, check_in_lng, clientes:cliente_id(razon_social, nombre_comercial, direccion), prospects:prospect_id(name, direccion)",
       )
       .order("check_in_at", { ascending: false })
       .limit(data.limit ?? 50);
