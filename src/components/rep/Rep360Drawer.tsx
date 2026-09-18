@@ -203,7 +203,10 @@ export default function Rep360Drawer({
                   <div key={v.id} className="rounded-lg border p-2.5">
                     <div className="flex items-center gap-2">
                       <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {v.cliente_nombre ?? (v.prospect_id ? "Prospecto" : "Visita")}
+                        {v.cliente_nombre ??
+                          (v.prospect_id
+                            ? `Prospecto: ${v.prospects?.name ?? "sin nombre"}`
+                            : "Visita")}
                       </p>
                       <span className="shrink-0 text-[11px] text-muted-foreground">
                         {fdatetime(v.check_in_at)}
