@@ -78,9 +78,12 @@ export default function VisitsList() {
                   )
                 : null;
               const isOffice = v.visit_kind === "oficina";
+              const isProspect = !!v.prospect_id;
               const title = isOffice
                 ? `Oficina IMV${v.office_purpose ? ` · ${v.office_purpose}` : ""}`
-                : (v.clientes?.nombre_comercial ?? v.clientes?.razon_social ?? "Cliente");
+                : isProspect
+                  ? (v.prospects?.name ?? "Prospecto")
+                  : (v.clientes?.nombre_comercial ?? v.clientes?.razon_social ?? "Cliente");
               const body = (
                 <Card className="relative overflow-hidden hover:bg-muted/40 active:bg-muted">
                   <span className={cn("absolute inset-y-0 left-0 w-1", bar)} />
@@ -90,6 +93,11 @@ export default function VisitsList() {
                       {isOffice && (
                         <Badge variant="outline" className="shrink-0">
                           {v.auto_registered ? "auto" : "oficina"}
+                        </Badge>
+                      )}
+                      {isProspect && (
+                        <Badge variant="secondary" className="shrink-0">
+                          prospecto
                         </Badge>
                       )}
                       {v.outcome && (

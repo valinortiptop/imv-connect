@@ -65,7 +65,9 @@ export const getRepCalendarEventsFn = createServerFn({ method: "POST" })
       (async () => {
         let q = supabase
           .from("rep_visits")
-          .select("id, representante_id, cliente_id, check_in_at, check_out_at, outcome, notes")
+          .select(
+            "id, representante_id, cliente_id, prospect_id, check_in_at, check_out_at, outcome, notes, prospects:prospect_id(name)",
+          )
           .gte("check_in_at", from)
           .lte("check_in_at", to);
         if (repIds?.length) q = q.in("representante_id", repIds);
