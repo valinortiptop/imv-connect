@@ -222,6 +222,8 @@ export default function RouteMap() {
   const [clientQuery, setClientQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [routeName, setRouteName] = useState<string | null>(null);
+  const pendingExtraFechas = useRef<string[]>([]);
   const [aiRationale, setAiRationale] = useState<string | null>(null);
   const [checkInClient, setCheckInClient] = useState<{ id: string; nombre: string } | null>(null);
   const [showWithoutCoords, setShowWithoutCoords] = useState(false);
@@ -575,7 +577,28 @@ export default function RouteMap() {
       });
       toast.success(`Ruta: ${r.total_km} km · ${r.total_minutes} min`);
       // Persist so it appears on Ruta history and Plan semanal
+      const basePayload = {
+        nombre: routeName ?? undefined,
+        totalKm: r.total_km,
+        totalMinutes: r.total_minutes,
+        polyline: r.polyline ?? null,
+        orderedStops: r.orderedStops ?? [],
+        legs: r.legs ?? [],
+        startLat: geo?.lat ?? null,
+        startLng: geo?.lng ?? null,
+        origen: "manual",
+        assignedRepId,
+      };
+      const extras = pendingExtraFechas.current;
+      pendingExtraFechas.current = [];
+      if (extras.length > 0) {
+        (async () => {
+          for (const f of extras) await persistRoute({ ...basePayload, fecha: f });
+          toast.success(`Ruta repetida en ${extras.length} día(s) más`);
+        })();
+      }
       persistRoute({
+        nombre: routeName ?? undefined,
         fecha: vars?.fecha ?? routeFecha,
         totalKm: r.total_km,
         totalMinutes: r.total_minutes,
@@ -675,6 +698,7 @@ export default function RouteMap() {
       });
       toast.success(`Ruta actualizada: ${r.total_km} km · ${r.total_minutes} min`);
       persistRoute({
+        nombre: routeName ?? undefined,
         fecha: routeFecha,
         totalKm: r.total_km,
         totalMinutes: r.total_minutes,
@@ -1303,8 +1327,10 @@ export default function RouteMap() {
         initialFecha={routeFecha}
         isAdmin={!!repsQ.data?.isAdmin}
         reps={repsQ.data?.reps ?? []}
-        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId, officeMotivo: om }) => {
+        onConfirm={({ fecha, clientIds, optimize: doOpt, assignedRepId: repId, officeMotivo: om, nombre, extraFechas }) => {
           setRouteFecha(fecha);
+          setRouteName(nombre ?? null);
+          pendingExtraFechas.current = extraFechas ?? [];
           setAssignedRepId(repId ?? null);
           setOfficeMotivo(om ?? null);
           setSelected(new Set(clientIds));
