@@ -135,6 +135,8 @@ export default function NewRouteWizardDialog({
     optimize: boolean;
     assignedRepId: string | null;
     officeMotivo?: string | null;
+    nombre?: string | null;
+    extraFechas?: string[];
   }) => void;
 }) {
   const listSaved = useServerFn(listSavedRoutesFn);
@@ -152,6 +154,9 @@ export default function NewRouteWizardDialog({
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [assignedRepId, setAssignedRepId] = useState<string>("__self__");
   const [officeMotivo, setOfficeMotivo] = useState<string | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [extraFechas, setExtraFechas] = useState<string[]>([]);
+  const [extraPick, setExtraPick] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -161,8 +166,29 @@ export default function NewRouteWizardDialog({
       setSel(new Set());
       setAssignedRepId("__self__");
       setOfficeMotivo(null);
+      setNombre("");
+      setExtraFechas([]);
+      setExtraPick("");
     }
   }, [open, initialFecha]);
+
+  const addExtra = (d: string) => {
+    if (!d || d === fecha) return;
+    setExtraFechas((prev) => (prev.includes(d) ? prev : [...prev, d].sort()));
+  };
+  const repeatWeekly = (weeks: number) => {
+    if (!fecha) return;
+    const base = new Date(fecha + "T12:00:00");
+    const out: string[] = [];
+    for (let i = 1; i <= weeks; i++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + 7 * i);
+      out.push(d.toLocaleDateString("en-CA"));
+    }
+    setExtraFechas((prev) => [...new Set([...prev, ...out])].sort());
+  };
+  const fmtDay = (d: string) =>
+    new Date(d + "T12:00:00").toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" });
 
 
 
@@ -258,6 +284,8 @@ export default function NewRouteWizardDialog({
       optimize,
       assignedRepId: isAdmin && assignedRepId !== "__self__" ? assignedRepId : null,
       officeMotivo,
+      nombre: nombre.trim() || null,
+      extraFechas: extraFechas.filter((d) => d !== fecha),
     });
     onOpenChange(false);
   };
@@ -289,6 +317,45 @@ export default function NewRouteWizardDialog({
                 className="h-10 w-full max-w-[11rem]"
               />
               {dowLabel && <Badge variant="secondary" className="capitalize">{dowLabel}</Badge>}
+            </div>
+            <div className="mt-3 space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Nombre de la ruta (opcional)</label>
+              <Input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder={`Ruta ${fecha}`}
+                maxLength={80}
+                className="h-9"
+              />
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Repetir esta ruta en otros días</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  value={extraPick}
+                  min={fecha}
+                  onChange={(e) => setExtraPick(e.target.value)}
+                  className="h-9 w-full max-w-[11rem]"
+                />
+                <Button type="button" size="sm" variant="outline" onClick={() => { addExtra(extraPick); setExtraPick(""); }} disabled={!extraPick}>
+                  Agregar día
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => repeatWeekly(4)}>
+                  Cada semana ×4
+                </Button>
+              </div>
+              {extraFechas.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {extraFechas.map((d) => (
+                    <Badge key={d} variant="secondary" className="gap-1 capitalize">
+                      {fmtDay(d)}
+                      <button type="button" aria-label="Quitar día" onClick={() => setExtraFechas((p) => p.filter((x) => x !== d))} className="ml-0.5 opacity-70 hover:opacity-100">×</button>
+                    </Badge>
+                  ))}
+                  <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setExtraFechas([])}>Quitar todos</button>
+                </div>
+              )}
             </div>
             {existingForDate && (
               <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400">
