@@ -40,13 +40,25 @@ export const listVisitActionsFn = createServerFn({ method: "POST" })
     ]);
     const fm = new Map((f.data ?? []).map((x: any) => [x.id, x.folio]));
     const pm = new Map((p.data ?? []).map((x: any) => [x.id, x.folio ?? x.order_code]));
-    return {
-      actions: actions.map((a) => ({
+    const sign = async (p: string | null) => {
+      if (!p) return null;
+      const { data: s } = await context.supabase.storage
+        .from("rep-evidence")
+        .createSignedUrl(p, 3600);
+      return s?.signedUrl ?? null;
+    };
+    const out = await Promise.all(
+      actions.map(async (a) => ({
         ...a,
         factura_folio: a.factura_id ? fm.get(a.factura_id) ?? null : null,
         pedido_folio: a.pedido_id ? pm.get(a.pedido_id) ?? null : null,
+        photo_urls: (
+          await Promise.all(((a.photo_paths as string[]) ?? []).map(sign))
+        ).filter(Boolean),
+        signature_url: await sign(a.signature_path ?? null),
       })),
-    };
+    );
+    return { actions: out };
   });
 
 export const listClientOpenInvoicesFn = createServerFn({ method: "POST" })
