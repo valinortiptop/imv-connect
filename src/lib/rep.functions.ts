@@ -1012,10 +1012,13 @@ export const getDailyRoutesSummaryFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const fechaDesde =
-      data.fecha_desde || data.fecha || new Date().toISOString().slice(0, 10);
+      data.fecha_desde || data.fecha || mxDayFromIso(new Date().toISOString());
     const fechaHasta = data.fecha_hasta || data.fecha || fechaDesde;
-    const dayStart = new Date(`${fechaDesde}T00:00:00`).toISOString();
-    const dayEnd = new Date(`${fechaHasta}T23:59:59.999`).toISOString();
+    // Límites del día en hora de Ciudad de México (UTC-6, sin horario de verano).
+    // El servidor corre en UTC: sin el offset, la medianoche UTC equivale a las
+    // 18:00 del día anterior en México y se colaban visitas de la tarde previa.
+    const dayStart = new Date(`${fechaDesde}T00:00:00-06:00`).toISOString();
+    const dayEnd = new Date(`${fechaHasta}T23:59:59.999-06:00`).toISOString();
 
     const isAdmin = (await context.supabase.rpc("has_any_role", {
       _user_id: context.userId,
