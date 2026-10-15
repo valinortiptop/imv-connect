@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -19,7 +19,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Download, Filter, Sparkles, Loader2 } from "lucide-react";
+import { Download, Filter, Sparkles, Loader2, Star, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+
+type FavReport = { id: string; name: string; description: string; report_type: string; rep_id: string };
+const FAV_KEY = "imv.supervisor.report-favs";
+const DETAIL_COLS: Record<string, string> = {
+  pending: "Sin visitar",
+  visited: "Visitados",
+  cartera: "Cartera",
+};
 
 const fmtMXN = (n: number) =>
   new Intl.NumberFormat("es-MX", {
@@ -63,16 +78,56 @@ export default function SupervisorReport() {
   const [reportType, setReportType] = useState<string>("auto");
   const [description, setDescription] = useState("");
 
+  const [favs, setFavs] = useState<FavReport[]>([]);
+  const [detail, setDetail] = useState<{ title: string; names: string[] } | null>(null);
+  const [detailQ, setDetailQ] = useState("");
+  useEffect(() => {
+    try {
+      setFavs(JSON.parse(localStorage.getItem(FAV_KEY) || "[]"));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const saveFavs = (next: FavReport[]) => {
+    setFavs(next);
+    localStorage.setItem(FAV_KEY, JSON.stringify(next));
+  };
+  const currentFav = favs.find(
+    (f) => f.description === description.trim() && f.report_type === reportType && f.rep_id === repId,
+  );
+  const toggleFav = () => {
+    if (currentFav) {
+      saveFavs(favs.filter((f) => f.id !== currentFav.id));
+      toast.success("Quitado de favoritos");
+      return;
+    }
+    if (!description.trim() && reportType === "auto") {
+      toast.error("Escribe una descripción o elige un tipo de reporte");
+      return;
+    }
+    const suggested =
+      description.trim().slice(0, 60) ||
+      REPORT_TYPE_LABELS[reportType as keyof typeof REPORT_TYPE_LABELS] ||
+      "Reporte";
+    const name = window.prompt("Nombre del reporte favorito", suggested);
+    if (!name?.trim()) return;
+    saveFavs([
+      ...favs,
+      { id: crypto.randomUUID(), name: name.trim(), description: description.trim(), report_type: reportType, rep_id: repId },
+    ]);
+    toast.success("Guardado en favoritos");
+  };
+
   const fn = useServerFn(customSupervisorReportFn);
   const run = useMutation({
-    mutationFn: () =>
+    mutationFn: (o?: { description: string; report_type: string; rep_id: string }) =>
       fn({
         data: {
           from,
           to,
-          rep_id: repId ? repId : undefined,
-          report_type: reportType as any,
-          description: description.trim() || undefined,
+          rep_id: (o?.rep_id ?? repId) || undefined,
+          report_type: (o?.report_type ?? reportType) as any,
+          description: (o?.description ?? description).trim() || undefined,
         },
       }),
     onError: (e: any) => toast.error(e?.message ?? "Error al generar el reporte"),
@@ -81,6 +136,17 @@ export default function SupervisorReport() {
   const result = run.data as any;
   const columns: Col[] = result?.columns ?? [];
   const rows: any[] = result?.rows ?? [];
+  const filteredDetail = useMemo(
+    () =>
+      (detail?.names ?? []).filter((n) => n.toLowerCase().includes(detailQ.toLowerCase())),
+    [detail, detailQ],
+  );
+  const loadFav = (f: FavReport) => {
+    setDescription(f.description);
+    setReportType(f.report_type);
+    setRepId(f.rep_id);
+    run.mutate({ description: f.description, report_type: f.report_type, rep_id: f.rep_id });
+  };
 
   const download = () => {
     const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -156,8 +222,42 @@ export default function SupervisorReport() {
           </div>
         </div>
 
+        {favs.length > 0 && (
+          <div>
+            <Label className="flex items-center gap-1 text-xs">
+              <Star className="h-3 w-3 fill-current text-primary" /> Reportes favoritos
+            </Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {favs.map((f) => (
+                <span key={f.id} className="inline-flex items-center rounded-full border bg-primary/5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => loadFav(f)}
+                    className="px-2 py-0.5 hover:underline"
+                    title={f.description || f.name}
+                  >
+                    {f.name}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Quitar favorito"
+                    onClick={() => saveFavs(favs.filter((x) => x.id !== f.id))}
+                    className="pr-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => run.mutate()} disabled={run.isPending}>
+          <Button size="sm" variant="outline" onClick={toggleFav} title="Guardar en favoritos">
+            <Star className={`mr-1 h-3 w-3 ${currentFav ? "fill-current text-primary" : ""}`} />
+            {currentFav ? "En favoritos" : "Favorito"}
+          </Button>
+          <Button size="sm" onClick={() => run.mutate(undefined)} disabled={run.isPending}>
             {run.isPending ? (
               <Loader2 className="mr-1 h-3 w-3 animate-spin" />
             ) : (
@@ -223,7 +323,42 @@ export default function SupervisorReport() {
                           key={c.key}
                           className={`py-1 ${c.align === "right" ? "text-right" : "text-left"}`}
                         >
-                          {fmtCell(r[c.key], c)}
+                          {r._details?.[c.key] && r._details[c.key].length > 0 ? (
+                            <HoverCard openDelay={150}>
+                              <HoverCardTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="font-medium text-primary underline-offset-2 hover:underline"
+                                  onClick={() => {
+                                    setDetailQ("");
+                                    setDetail({
+                                      title: `${DETAIL_COLS[c.key] ?? c.label} · ${r.name}`,
+                                      names: r._details[c.key],
+                                    });
+                                  }}
+                                >
+                                  {fmtCell(r[c.key], c)}
+                                </button>
+                              </HoverCardTrigger>
+                              <HoverCardContent align="end" className="w-72 text-left">
+                                <div className="mb-1 text-xs font-semibold">
+                                  {DETAIL_COLS[c.key] ?? c.label} · {r.name}
+                                </div>
+                                <ul className="space-y-0.5 text-xs">
+                                  {r._details[c.key].slice(0, 8).map((n: string, i: number) => (
+                                    <li key={i} className="truncate">{n}</li>
+                                  ))}
+                                </ul>
+                                {r._details[c.key].length > 8 && (
+                                  <div className="mt-1 text-[11px] text-muted-foreground">
+                                    +{r._details[c.key].length - 8} más · clic para ver todos
+                                  </div>
+                                )}
+                              </HoverCardContent>
+                            </HoverCard>
+                          ) : (
+                            fmtCell(r[c.key], c)
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -241,6 +376,24 @@ export default function SupervisorReport() {
           </>
         )}
       </CardContent>
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {detail?.title} ({detail?.names.length ?? 0})
+            </DialogTitle>
+          </DialogHeader>
+          <Input placeholder="Buscar cliente…" value={detailQ} onChange={(e) => setDetailQ(e.target.value)} />
+          <ul className="max-h-[60vh] divide-y overflow-y-auto text-sm">
+            {filteredDetail.map((n, i) => (
+              <li key={i} className="py-1.5">{n}</li>
+            ))}
+            {!filteredDetail.length && (
+              <li className="py-4 text-center text-muted-foreground">Sin resultados</li>
+            )}
+          </ul>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
