@@ -47,8 +47,8 @@ export const getSupervisorDashboardFn = createServerFn({ method: "POST" })
     let sinceIso: string;
     let untilIso: string | null = null;
     if (data.from) {
-      sinceIso = new Date(`${data.from}T00:00:00`).toISOString();
-      untilIso = new Date(`${data.to ?? data.from}T23:59:59.999`).toISOString();
+      sinceIso = new Date(`${data.from}T00:00:00-06:00`).toISOString();
+      untilIso = new Date(`${data.to ?? data.from}T23:59:59.999-06:00`).toISOString();
     } else {
       const since = new Date();
       since.setDate(since.getDate() - data.days);
