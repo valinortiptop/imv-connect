@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getVisitEvidenceUrlsFn } from "@/lib/rep.functions";
 import { listShelfPhotosFn } from "@/lib/rep-visits.functions";
+import { listVisitActionsFn } from "@/lib/rep-visit-actions.functions";
 import {
   Dialog,
   DialogContent,
@@ -39,11 +40,20 @@ export default function VisitEvidenceViewer({
     enabled: open && !!visitId,
   });
 
+  const fetchActions = useServerFn(listVisitActionsFn);
+  const actionsQ = useQuery({
+    queryKey: ["visit-actions", visitId],
+    queryFn: () => fetchActions({ data: { visitId: visitId! } }),
+    enabled: open && !!visitId,
+  });
+
   const photos: any[] = evidenceQ.data?.photos ?? [];
   const shelf: any[] = shelfQ.data?.photos ?? [];
+  const actions: any[] = actionsQ.data?.actions ?? [];
   const signatureUrl = evidenceQ.data?.signatureUrl ?? null;
-  const loading = evidenceQ.isLoading || shelfQ.isLoading;
-  const empty = !loading && photos.length === 0 && shelf.length === 0 && !signatureUrl;
+  const loading = evidenceQ.isLoading || shelfQ.isLoading || actionsQ.isLoading;
+  const empty =
+    !loading && photos.length === 0 && shelf.length === 0 && !signatureUrl && actions.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,6 +142,48 @@ export default function VisitEvidenceViewer({
               {evidenceQ.data?.signedByName && (
                 <p className="text-xs text-muted-foreground">Firmó: {evidenceQ.data.signedByName}</p>
               )}
+            </section>
+          )}
+
+          {actions.length > 0 && (
+            <section className="space-y-2">
+              <p className="text-sm font-medium">Acciones en la visita ({actions.length})</p>
+              <ul className="space-y-2">
+                {actions.map((a) => (
+                  <li key={a.id} className="space-y-1 rounded-md border p-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="font-medium">
+                        {a.tipo === "cobro" ? "Cobro" : a.tipo === "receta" ? "Recolección RC" : "Entrega de pedido"}
+                        {a.monto != null && ` · ${Number(a.monto).toLocaleString("es-MX", { style: "currency", currency: "MXN" })}`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(a.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", timeZone: "America/Mexico_City" })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {[
+                        a.factura_folio && `Factura ${a.factura_folio}`,
+                        a.pedido_folio && `Pedido ${a.pedido_folio}`,
+                        a.folio && `Folio ${a.folio}`,
+                        a.received_by && `Recibió: ${a.received_by}`,
+                        a.notas,
+                      ].filter(Boolean).join(" · ")}
+                    </p>
+                    {(a.photo_urls?.length > 0 || a.signature_url) && (
+                      <div className="flex flex-wrap gap-2">
+                        {(a.photo_urls ?? []).map((u: string) => (
+                          <a key={u} href={u} target="_blank" rel="noreferrer">
+                            <img src={u} alt="Foto de la acción" className="h-16 w-16 rounded border object-cover" />
+                          </a>
+                        ))}
+                        {a.signature_url && (
+                          <img src={a.signature_url} alt="Firma" className="h-16 w-28 rounded border bg-white object-contain" />
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
         </div>
