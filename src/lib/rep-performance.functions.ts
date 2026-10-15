@@ -828,7 +828,7 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
             text: `Eres analista de operaciones de campo de IMV. Analiza el reporte "${REPORT_TYPE_LABELS[reportType]}" del periodo ${data.from} a ${data.to}.
 ${desc ? `Necesidad del supervisor: "${desc}"` : ""}
 Totales: ${JSON.stringify(totals)}
-Filas (máx 40): ${JSON.stringify(rows.slice(0, 40))}
+Filas (máx 40): ${JSON.stringify(rows.slice(0, 40).map(({ _details, ...r }: any) => r))}
 
 Responde en español de México, sin markdown ni emojis, máximo 6 frases: hallazgos clave con números, quién destaca, quién requiere atención y una recomendación accionable. Si no hay datos, dilo.`,
           },
