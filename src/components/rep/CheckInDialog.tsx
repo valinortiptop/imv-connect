@@ -36,9 +36,12 @@ type Props = {
   office?: boolean;
   /** Motivo inicial de la visita a oficina. */
   officePurpose?: string;
+  /** Visita abierta conocida (p.ej. desde la barra de visita en curso). */
+  openVisitId?: string;
+  openVisitCheckInAt?: string;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned, office, officePurpose: officePurposeProp }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned, office, officePurpose: officePurposeProp, openVisitId, openVisitCheckInAt }: Props) {
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);
@@ -47,7 +50,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
   const [checkInAt, setCheckInAt] = useState<string | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
-  const [step, setStep] = useState<"start" | "in-visit">("start");
+  const [step, setStep] = useState<"loading" | "start" | "in-visit">("loading");
   const [notes, setNotes] = useState("");
   const [outcome, setOutcome] = useState<string>("");
   const [agreements, setAgreements] = useState<{ description: string; due_date?: string }[]>([]);
@@ -81,9 +84,15 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
 
   useEffect(() => {
     if (!open) return;
-    setStep("start");
-    setVisitId(null);
-    setCheckInAt(null);
+    if (openVisitId) {
+      setStep("in-visit");
+      setVisitId(openVisitId);
+      setCheckInAt(openVisitCheckInAt ?? null);
+    } else {
+      setStep("loading");
+      setVisitId(null);
+      setCheckInAt(null);
+    }
     setNotes("");
     setOutcome("");
     setAgreements([]);
@@ -98,7 +107,11 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
     let cancelled = false;
     getOpenVisit({ data: office ? { kind: "oficina" as const } : { clienteId, prospectId } })
       .then((r: any) => {
-        if (cancelled || !r?.visit) return;
+        if (cancelled) return;
+        if (!r?.visit) {
+          if (!openVisitId) setStep("start");
+          return;
+        }
         setVisitId(r.visit.id);
         setCheckInAt(r.visit.check_in_at);
         setDistanceInfo(r.visit.distance_m ?? null);
@@ -110,11 +123,13 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
             : "Tienes una visita abierta con este cliente. Registra el check-out para cerrarla.",
         );
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled && !openVisitId) setStep("start");
+      });
     return () => {
       cancelled = true;
     };
-  }, [open, clienteId, prospectId, office, getOpenVisit]);
+  }, [open, clienteId, prospectId, office, getOpenVisit, openVisitId, openVisitCheckInAt]);
 
   // Cronómetro de la visita en curso
   useEffect(() => {
@@ -215,6 +230,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
     onSuccess: () => {
       const mins = Math.max(1, Math.round(elapsedMs / 60000));
       toast.success(`Check-out registrado · duración ${mins} min`);
+      qc.setQueryData(["open-visit"], { visit: null });
       qc.invalidateQueries({ queryKey: ["open-visit"] });
       qc.invalidateQueries({ queryKey: ["client-visits", clienteId] });
       qc.invalidateQueries({ queryKey: ["rep-visits"] });
@@ -235,7 +251,7 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
       <DialogContent className="max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-2xl overflow-y-auto overflow-x-hidden sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
-            {step === "start" ? "Iniciar visita" : "Visita en curso"}
+            {step === "start" ? "Iniciar visita" : step === "loading" ? "Visita" : "Visita en curso"}
             {step === "in-visit" && checkInAt && (
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
                 <Clock className="h-3.5 w-3.5" /> {elapsedLabel}
@@ -250,6 +266,10 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
           </DialogDescription>
         </DialogHeader>
 
+
+        {step === "loading" && (
+          <div className="py-8 text-center text-sm text-muted-foreground">Buscando visita en curso…</div>
+        )}
 
         {step === "start" && (
           <div className="space-y-3">

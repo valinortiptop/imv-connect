@@ -151,6 +151,9 @@ export default function ActiveVisitBar() {
         clienteId={visit.cliente_id ?? undefined}
         prospectId={visit.prospect_id ?? undefined}
         clienteNombre={visit.nombre}
+        office={(visit as any).visit_kind === "oficina"}
+        openVisitId={visit.id}
+        openVisitCheckInAt={visit.check_in_at}
       />
     </>
   );
