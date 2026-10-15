@@ -374,7 +374,7 @@ function EntregaForm({ visitId, clienteId, userId, onDone }: FormProps) {
           <PhotoPicker files={files} setFiles={setFiles} label="Foto de la entrega (opcional)" />
           <Textarea rows={2} placeholder="Notas (opcional)" value={notas} onChange={(e) => setNotas(e.target.value)} />
           <p className="text-xs text-muted-foreground">Nombre y firma de quien recibe:</p>
-          <SignaturePad saving={m.isPending} onSave={(blob, name) => m.mutateAsync({ blob, name }).then(() => undefined)} />
+          <SignaturePad saving={m.isPending} onSave={(blob, name) => m.mutateAsync({ blob, name }).then(() => undefined, () => undefined)} />
         </>
       )}
     </div>
