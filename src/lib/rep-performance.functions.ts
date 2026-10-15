@@ -693,7 +693,11 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
         }
       }
       rows = [...m.values()].map((r) => {
-        const visited = visitedByRep.get(r.key)?.size ?? 0;
+        const vSet = visitedByRep.get(r.key) ?? new Set<string>();
+        const visited = vSet.size;
+        const ids = [...r._ids] as string[];
+        const nm = (id: string) => clientName.get(id) || "—";
+        const sortNames = (a: string[]) => a.sort((x, y) => x.localeCompare(y, "es"));
         return {
           key: r.key,
           name: r.name,
@@ -701,6 +705,11 @@ Responde JSON: {"report_type":"<id>","reason":"<una frase en español>"}`,
           visited,
           coverage: r.cartera ? Math.round((visited / r.cartera) * 100) : 0,
           pending: r.cartera - visited,
+          _details: {
+            cartera: sortNames(ids.map(nm)),
+            visited: sortNames(ids.filter((id) => vSet.has(id)).map(nm)),
+            pending: sortNames(ids.filter((id) => !vSet.has(id)).map(nm)),
+          },
         };
       }).sort((a, b) => b.coverage - a.coverage);
       totals = {
