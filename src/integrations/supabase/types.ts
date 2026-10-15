@@ -9878,6 +9878,74 @@ export type Database = {
           },
         ]
       }
+      rep_visit_actions: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          created_by: string
+          factura_id: string | null
+          folio: string | null
+          id: string
+          monto: number | null
+          notas: string | null
+          pago_id: string | null
+          pedido_id: string | null
+          photo_paths: string[]
+          piezas: number | null
+          received_by: string | null
+          representante_id: string | null
+          signature_path: string | null
+          tipo: string
+          visit_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string
+          factura_id?: string | null
+          folio?: string | null
+          id?: string
+          monto?: number | null
+          notas?: string | null
+          pago_id?: string | null
+          pedido_id?: string | null
+          photo_paths?: string[]
+          piezas?: number | null
+          received_by?: string | null
+          representante_id?: string | null
+          signature_path?: string | null
+          tipo: string
+          visit_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string
+          factura_id?: string | null
+          folio?: string | null
+          id?: string
+          monto?: number | null
+          notas?: string | null
+          pago_id?: string | null
+          pedido_id?: string | null
+          photo_paths?: string[]
+          piezas?: number | null
+          received_by?: string | null
+          representante_id?: string | null
+          signature_path?: string | null
+          tipo?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_visit_actions_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "rep_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rep_visit_agreements: {
         Row: {
           created_at: string
