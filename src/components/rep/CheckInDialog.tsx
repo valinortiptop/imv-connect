@@ -21,6 +21,7 @@ import OrderQuickCreate from "./OrderQuickCreate";
 import EvidenceUploader from "./EvidenceUploader";
 import ShelfPhotoUploader from "./ShelfPhotoUploader";
 import VisitFormFiller from "./VisitFormFiller";
+import VisitActionsPanel from "./VisitActionsPanel";
 
 type Props = {
   open: boolean;
@@ -375,13 +376,30 @@ export default function CheckInDialog({ open, onOpenChange, clienteId, prospectI
 
         {step === "in-visit" && visitId && (
           <Tabs defaultValue="cierre" className="w-full">
-            <TabsList className={cn("grid w-full", clienteId ? "grid-cols-5" : "grid-cols-3")}>
+            <TabsList
+              className={cn(
+                "grid h-auto w-full",
+                clienteId ? "grid-cols-3 sm:grid-cols-6" : "grid-cols-3",
+              )}
+            >
               <TabsTrigger value="cierre">Cierre</TabsTrigger>
+              {clienteId && <TabsTrigger value="acciones">Acciones</TabsTrigger>}
               {clienteId && <TabsTrigger value="pedido">Pedido</TabsTrigger>}
               {clienteId && <TabsTrigger value="anaquel">Anaquel</TabsTrigger>}
               <TabsTrigger value="forms">Forms</TabsTrigger>
               <TabsTrigger value="evidencia">Evidencia</TabsTrigger>
             </TabsList>
+
+            {clienteId && (
+              <TabsContent value="acciones" className="pt-2">
+                {userId ? (
+                  <VisitActionsPanel visitId={visitId} clienteId={clienteId} userId={userId} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Cargando sesión…</p>
+                )}
+              </TabsContent>
+            )}
+
 
             {clienteId && (
               <TabsContent value="pedido" className="pt-2">
