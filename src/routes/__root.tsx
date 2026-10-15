@@ -35,7 +35,8 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+function ErrorComponent({ error: rawError, reset }: { error: unknown; reset: () => void }) {
+  const error = rawError as Error | undefined;
   console.error(error);
   const router = useRouter();
   const details = [error?.name, error?.message].filter(Boolean).join(": ") || String(error);
