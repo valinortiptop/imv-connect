@@ -843,6 +843,26 @@ export const checkInFn = createServerFn({ method: "POST" })
       }
     }
 
+    // Si ya hay una visita abierta para el mismo destino, la reanudamos en vez de duplicarla.
+    {
+      let oq = context.supabase
+        .from("rep_visits")
+        .select("*")
+        .eq("representante_id", rep.id)
+        .is("check_out_at", null)
+        .eq("visit_kind", data.kind)
+        .order("check_in_at", { ascending: false })
+        .limit(1);
+      if (data.kind !== "oficina") {
+        if (data.clienteId) oq = oq.eq("cliente_id", data.clienteId);
+        else if (data.prospectId) oq = oq.eq("prospect_id", data.prospectId);
+      }
+      const { data: openRows } = await oq;
+      if (openRows && openRows[0]) {
+        return { visit: openRows[0], distanceM: openRows[0].distance_m ?? distanceM, resumed: true };
+      }
+    }
+
     const { data: row, error } = await context.supabase
       .from("rep_visits")
       .insert({
@@ -892,7 +912,7 @@ export const checkOutFn = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("rep_visits")
       .update({
         check_out_at: new Date().toISOString(),
@@ -901,8 +921,12 @@ export const checkOutFn = createServerFn({ method: "POST" })
         notes: data.notes ?? null,
         outcome: data.outcome ?? null,
       })
-      .eq("id", data.visitId);
+      .eq("id", data.visitId)
+      .select("id");
     if (error) throw error;
+    if (!updated || updated.length === 0) {
+      throw new Error("No se pudo cerrar la visita (no encontrada o sin permiso). Recarga e intenta de nuevo.");
+    }
 
     if (data.agreements && data.agreements.length > 0) {
       const rows = data.agreements.map((a) => ({
