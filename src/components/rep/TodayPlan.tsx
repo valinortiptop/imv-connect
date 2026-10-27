@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { OFFICE_LOCATION } from "@/lib/office";
+import { OFFICE_LOCATION, OFFICE_STOP_ID } from "@/lib/office";
 import { useOfficeAutoVisit } from "@/hooks/use-office-auto-visit";
 
 import { Link } from "@tanstack/react-router";
