@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkInFn, checkOutFn, getOpenVisitFn } from "@/lib/rep.functions";
 import { toast } from "sonner";
 import { MapPin, Plus, Trash2, AlertTriangle, Clock, Building2 } from "lucide-react";
-import { OFFICE_LOCATION, OFFICE_PURPOSES } from "@/lib/office";
+import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "@/lib/office";
 
 import { cn } from "@/lib/utils";
 import OrderQuickCreate from "./OrderQuickCreate";
@@ -42,7 +42,11 @@ type Props = {
   openVisitCheckInAt?: string;
 };
 
-export default function CheckInDialog({ open, onOpenChange, clienteId, prospectId, clienteNombre, unplanned, office, officePurpose: officePurposeProp, openVisitId, openVisitCheckInAt }: Props) {
+export default function CheckInDialog({ open, onOpenChange, clienteId: clienteIdProp, prospectId, clienteNombre, unplanned, office: officeProp, officePurpose: officePurposeProp, openVisitId, openVisitCheckInAt }: Props) {
+  // Las paradas de oficina dentro de una ruta guardada usan el id especial
+  // "oficina" (no es un UUID de cliente): se tratan como visita a oficina.
+  const office = !!officeProp || clienteIdProp === OFFICE_STOP_ID;
+  const clienteId = office ? undefined : clienteIdProp;
   const qc = useQueryClient();
   const doCheckIn = useServerFn(checkInFn);
   const doCheckOut = useServerFn(checkOutFn);

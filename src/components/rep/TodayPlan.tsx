@@ -23,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, CheckCircle2, ClipboardList, Navigation, Plus, Search, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { OFFICE_LOCATION } from "@/lib/office";
+import { OFFICE_LOCATION, OFFICE_STOP_ID } from "@/lib/office";
 import { useOfficeAutoVisit } from "@/hooks/use-office-auto-visit";
 
 import { Link } from "@tanstack/react-router";
@@ -85,6 +85,7 @@ export default function TodayPlan() {
           clientes.push({
             cliente_id: id,
             nombre: s.nombre ?? "Cliente",
+            motivo: s.motivo ?? null,
             razon: r.nombre ? `Ruta guardada · ${r.nombre}` : "Ruta guardada",
             prioridad: null,
           });
@@ -112,7 +113,7 @@ export default function TodayPlan() {
         d.getMonth() === now.getMonth() &&
         d.getDate() === now.getDate()
       ) {
-        set.add(v.cliente_id);
+        set.add(v.visit_kind === "oficina" ? OFFICE_STOP_ID : v.cliente_id);
       }
     });
     return set;
@@ -122,13 +123,14 @@ export default function TodayPlan() {
   const openByClient = useMemo(() => {
     const map = new Map<string, string>();
     (visitsQ.data?.visits ?? []).forEach((v: any) => {
-      if (!v.check_out_at && !map.has(v.cliente_id)) map.set(v.cliente_id, v.check_in_at);
+      const key = v.visit_kind === "oficina" ? OFFICE_STOP_ID : v.cliente_id;
+      if (!v.check_out_at && key && !map.has(key)) map.set(key, v.check_in_at);
     });
     return map;
   }, [visitsQ.data]);
 
 
-  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean } | null>(null);
+  const [target, setTarget] = useState<{ id: string; nombre: string; unplanned?: boolean; isProspect?: boolean; motivo?: string | null } | null>(null);
   const [officeOpen, setOfficeOpen] = useState(false);
   const { enabled: officeAuto, setEnabled: setOfficeAuto } = useOfficeAutoVisit();
 
@@ -270,13 +272,17 @@ export default function TodayPlan() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <Link
-                          to="/rep/clientes/$id"
-                          params={{ id: c.cliente_id }}
-                          className="min-w-0 truncate text-sm font-medium hover:underline"
-                        >
-                          {c.nombre}
-                        </Link>
+                        {c.cliente_id === OFFICE_STOP_ID ? (
+                          <span className="min-w-0 truncate text-sm font-medium">{c.nombre}</span>
+                        ) : (
+                          <Link
+                            to="/rep/clientes/$id"
+                            params={{ id: c.cliente_id }}
+                            className="min-w-0 truncate text-sm font-medium hover:underline"
+                          >
+                            {c.nombre}
+                          </Link>
+                        )}
                         {c.prioridad && (
                           <Badge
                             variant="outline"
@@ -300,7 +306,7 @@ export default function TodayPlan() {
                       variant={openAt ? "default" : done ? "outline" : "default"}
                       className="shrink-0"
                       onClick={() =>
-                        setTarget({ id: c.cliente_id, nombre: c.nombre })
+                        setTarget({ id: c.cliente_id, nombre: c.nombre, motivo: c.motivo })
                       }
                     >
                       <MapPin className="mr-1 h-3.5 w-3.5" />
@@ -348,6 +354,7 @@ export default function TodayPlan() {
           prospectId={target.isProspect ? target.id : undefined}
           clienteNombre={target.nombre}
           unplanned={target.unplanned}
+          officePurpose={target.motivo ?? undefined}
         />
       )}
 
