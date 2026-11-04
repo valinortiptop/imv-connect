@@ -18,6 +18,7 @@ import { AIToggle } from "@/components/ai/AIToggle";
 import { AICopilotButton } from "@/components/ai/AICopilotButton";
 import { Highlight, useNavSearchShortcut } from "@/components/admin-nav-search";
 import { RepNavSearch } from "./RepNavSearch";
+import { SidebarThemePicker, REP_SIDEBAR_THEMES, type RepSidebarTheme } from "./SidebarThemePicker";
 import {
   repNavGroups,
   flattenRepNav,
@@ -40,6 +41,8 @@ export const useRepContext = () => useContext(Ctx);
 const LS_GROUPS = "imv.rep.sidebar.groups";
 const LS_FAVS = "imv.rep.sidebar.favs";
 const LS_RECENT = "imv.rep.sidebar.recent";
+const LS_RECENT_OPEN = "imv.rep.sidebar.recentOpen";
+const LS_THEME = "imv.rep.sidebar.theme";
 
 function readLS<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -71,6 +74,8 @@ export default function RepLayout({ children }: { children: ReactNode }) {
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
+  const [recentOpen, setRecentOpen] = useState(false);
+  const [sidebarTheme, setSidebarTheme] = useState<RepSidebarTheme>("claro");
 
   useNavSearchShortcut(useCallback(() => setPaletteOpen(true), []));
 
@@ -78,6 +83,9 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     setOpenGroups(readLS<string[]>(LS_GROUPS, []));
     setFavs(readLS<string[]>(LS_FAVS, []));
     setRecent(readLS<string[]>(LS_RECENT, []));
+    setRecentOpen(readLS<boolean>(LS_RECENT_OPEN, false));
+    const t = readLS<string>(LS_THEME, "claro");
+    if (REP_SIDEBAR_THEMES.some((x) => x.id === t)) setSidebarTheme(t as RepSidebarTheme);
   }, []);
 
   const refreshGeo = () => {
@@ -149,6 +157,17 @@ export default function RepLayout({ children }: { children: ReactNode }) {
       writeLS(LS_GROUPS, next);
       return next;
     });
+
+  const toggleRecentOpen = () =>
+    setRecentOpen((prev) => {
+      writeLS(LS_RECENT_OPEN, !prev);
+      return !prev;
+    });
+
+  const changeSidebarTheme = (t: RepSidebarTheme) => {
+    setSidebarTheme(t);
+    writeLS(LS_THEME, t);
+  };
 
   const toggleFav = (key: string) =>
     setFavs((prev) => {
@@ -224,7 +243,10 @@ export default function RepLayout({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ rep: data?.rep ?? null, isAdmin, geo, refreshGeo }}>
       <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:flex-row">
         {/* Sidebar desktop */}
-        <aside className="fixed inset-y-0 left-0 z-40 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <aside
+          data-rep-sidebar={sidebarTheme === "claro" ? undefined : sidebarTheme}
+          className="fixed inset-y-0 left-0 z-40 hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card text-card-foreground md:flex"
+        >
           <div className="flex shrink-0 items-start justify-between px-4 pt-4 pb-2">
             <div className="min-w-0">
               <div className="text-lg font-semibold">Panel Rep</div>
@@ -277,14 +299,29 @@ export default function RepLayout({ children }: { children: ReactNode }) {
             {/* Recientes */}
             {!searching && recentItems.length > 0 && (
               <div className="mb-1 border-t border-border pt-2">
-                <div className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-3 w-3" /> Recientes
-                </div>
-                <ul className="space-y-0.5">
-                  {recentItems.map((i) => (
-                    <Row key={`recent-${i.key}`} item={i} />
-                  ))}
-                </ul>
+                <button
+                  type="button"
+                  onClick={toggleRecentOpen}
+                  aria-expanded={recentOpen}
+                  className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Clock className="h-3 w-3" />
+                  <span className="flex-1">Recientes</span>
+                  <span className="text-[10px] font-normal text-muted-foreground/70">{recentItems.length}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                      !recentOpen && "-rotate-90",
+                    )}
+                  />
+                </button>
+                {recentOpen && (
+                  <ul className="mt-0.5 space-y-0.5">
+                    {recentItems.map((i) => (
+                      <Row key={`recent-${i.key}`} item={i} />
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
@@ -349,8 +386,9 @@ export default function RepLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="shrink-0 space-y-2 border-t border-border bg-card p-3">
-            <div className="px-2">
+            <div className="flex items-center gap-2 px-2">
               <AIToggle compact />
+              <SidebarThemePicker value={sidebarTheme} onChange={changeSidebarTheme} />
             </div>
             <Button asChild variant="ghost" size="sm" className="w-full justify-start">
               <Link to="/rep/cuenta">
