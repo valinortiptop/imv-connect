@@ -233,3 +233,70 @@
   --imv-navy: #001D77;
   --imv-aqua: #2DE2C5;
 }
+
+/* ---- Panel Rep: sidebar color themes (scoped token overrides) ---- */
+[data-rep-sidebar="pizarra"] {
+  --card: oklch(0.22 0.03 262);
+  --card-foreground: oklch(0.97 0.005 250);
+  --foreground: oklch(0.97 0.005 250);
+  --muted: oklch(0.3 0.035 262);
+  --muted-foreground: oklch(0.75 0.03 258);
+  --secondary: oklch(0.3 0.035 262);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --primary: oklch(0.8 0.12 230);
+  --primary-foreground: oklch(0.2 0.03 262);
+  --background: oklch(0.22 0.03 262);
+}
+[data-rep-sidebar="bosque"] {
+  --card: oklch(0.26 0.045 160);
+  --card-foreground: oklch(0.97 0.01 150);
+  --foreground: oklch(0.97 0.01 150);
+  --muted: oklch(0.33 0.05 160);
+  --muted-foreground: oklch(0.8 0.04 155);
+  --secondary: oklch(0.33 0.05 160);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --primary: oklch(0.85 0.14 145);
+  --primary-foreground: oklch(0.24 0.045 160);
+  --background: oklch(0.26 0.045 160);
+}
+[data-rep-sidebar="vino"] {
+  --card: oklch(0.27 0.07 10);
+  --card-foreground: oklch(0.97 0.01 20);
+  --foreground: oklch(0.97 0.01 20);
+  --muted: oklch(0.34 0.08 10);
+  --muted-foreground: oklch(0.8 0.04 15);
+  --secondary: oklch(0.34 0.08 10);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --primary: oklch(0.85 0.1 40);
+  --primary-foreground: oklch(0.25 0.07 10);
+  --background: oklch(0.27 0.07 10);
+}
+[data-rep-sidebar="oceano"] {
+  --card: oklch(0.32 0.09 250);
+  --card-foreground: oklch(0.98 0.01 240);
+  --foreground: oklch(0.98 0.01 240);
+  --muted: oklch(0.39 0.1 250);
+  --muted-foreground: oklch(0.85 0.04 240);
+  --secondary: oklch(0.39 0.1 250);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --primary: oklch(0.88 0.12 200);
+  --primary-foreground: oklch(0.3 0.09 250);
+  --background: oklch(0.32 0.09 250);
+}
+[data-rep-sidebar="arena"] {
+  --card: oklch(0.96 0.02 80);
+  --card-foreground: oklch(0.28 0.03 60);
+  --foreground: oklch(0.28 0.03 60);
+  --muted: oklch(0.92 0.03 80);
+  --muted-foreground: oklch(0.5 0.04 65);
+  --secondary: oklch(0.92 0.03 80);
+  --border: oklch(0.88 0.03 80);
+  --input: oklch(0.88 0.03 80);
+  --primary: oklch(0.55 0.13 50);
+  --primary-foreground: oklch(0.98 0.01 80);
+  --background: oklch(0.96 0.02 80);
+}
