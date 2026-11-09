@@ -32,7 +32,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { aiChatFn, googleGeocodeFn } from "@/lib/valinor.functions";
+import { aiChatFn, geocodeAddressFn } from "@/lib/valinor.functions";
 import { GENERIC_RFC } from "@/lib/vm-client";
 import { parseClientName, clientNameKey } from "@/lib/client-name";
 
@@ -528,33 +528,35 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
     setGeoProgress({ done: 0, total: candidates.length });
     const next = [...rows];
     let done = 0;
-    // Run in small batches of 5 in parallel to be polite to the API.
+    // Same address repeated in the file → look it up once and reuse it.
+    // The server also checks the saved-address cache before calling Google.
+    const byAddress = new Map<string, Promise<any>>();
+    const lookup = (address: string) => {
+      const k = address.trim().toLowerCase().replace(/\s+/g, " ");
+      let p = byAddress.get(k);
+      if (!p) {
+        p = geocodeAddress({ data: { address } }).catch(() => null);
+        byAddress.set(k, p);
+      }
+      return p;
+    };
     const batchSize = 5;
     for (let i = 0; i < candidates.length; i += batchSize) {
       const batch = candidates.slice(i, i + batchSize);
       await Promise.all(
         batch.map(async ({ r, i: idx }) => {
           try {
-            const resp = await googleGeocodeFn({
-              data: { address: r.address, region: "mx", language: "es" },
-            });
-            const top = (resp as any)?.results?.[0];
-            if (top) {
-              const loc = top.geometry?.location;
-              const cp = top.address_components?.find((c: any) =>
-                c.types?.includes("postal_code"),
-              )?.long_name;
+            const g: any = await lookup(r.address);
+            if (g?.status === "ok" && typeof g.lat === "number" && typeof g.lng === "number") {
               next[idx] = {
                 ...next[idx],
-                lat: typeof loc?.lat === "number" ? loc.lat : null,
-                lng: typeof loc?.lng === "number" ? loc.lng : null,
-                google_place_id: top.place_id ?? null,
-                codigo_postal: next[idx].codigo_postal || cp || "",
-                address: top.formatted_address || next[idx].address,
+                lat: g.lat,
+                lng: g.lng,
+                google_place_id: g.place_id ?? next[idx].google_place_id ?? null,
+                codigo_postal: next[idx].codigo_postal || g.postal_code || "",
+                address: g.formatted_address || next[idx].address,
               };
             }
-          } catch (e) {
-            // skip — leave row as-is
           } finally {
             done++;
             setGeoProgress({ done, total: candidates.length });
