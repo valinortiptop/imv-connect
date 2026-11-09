@@ -5771,48 +5771,69 @@ export type Database = {
       }
       onboarding_items: {
         Row: {
+          area: string | null
           categoria: Database["public"]["Enums"]["onboarding_categoria"]
           clave: string
           descripcion: string | null
           estado: Database["public"]["Enums"]["onboarding_estado"]
+          fecha_compromiso: string | null
           id: string
           notas: string | null
           orden: number
+          plantilla_clave: string | null
           requerido: boolean
           requiere_archivo: boolean
+          responsable_nombre: string | null
+          responsable_rol: string | null
           titulo: string
           updated_at: string
           updated_by: string | null
+          validado_at: string | null
+          validado_por: string | null
           valor_texto: string | null
         }
         Insert: {
+          area?: string | null
           categoria: Database["public"]["Enums"]["onboarding_categoria"]
           clave: string
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["onboarding_estado"]
+          fecha_compromiso?: string | null
           id?: string
           notas?: string | null
           orden?: number
+          plantilla_clave?: string | null
           requerido?: boolean
           requiere_archivo?: boolean
+          responsable_nombre?: string | null
+          responsable_rol?: string | null
           titulo: string
           updated_at?: string
           updated_by?: string | null
+          validado_at?: string | null
+          validado_por?: string | null
           valor_texto?: string | null
         }
         Update: {
+          area?: string | null
           categoria?: Database["public"]["Enums"]["onboarding_categoria"]
           clave?: string
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["onboarding_estado"]
+          fecha_compromiso?: string | null
           id?: string
           notas?: string | null
           orden?: number
+          plantilla_clave?: string | null
           requerido?: boolean
           requiere_archivo?: boolean
+          responsable_nombre?: string | null
+          responsable_rol?: string | null
           titulo?: string
           updated_at?: string
           updated_by?: string | null
+          validado_at?: string | null
+          validado_por?: string | null
           valor_texto?: string | null
         }
         Relationships: [
@@ -5824,6 +5845,168 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      onboarding_paralelo_semanas: {
+        Row: {
+          cartera_app: number | null
+          cartera_netsuite: number | null
+          comentario: string | null
+          created_at: string
+          id: string
+          inventario_app: number | null
+          inventario_netsuite: number | null
+          moneda: string
+          semana_inicio: string
+          updated_at: string
+          ventas_app: number | null
+          ventas_netsuite: number | null
+        }
+        Insert: {
+          cartera_app?: number | null
+          cartera_netsuite?: number | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          inventario_app?: number | null
+          inventario_netsuite?: number | null
+          moneda?: string
+          semana_inicio: string
+          updated_at?: string
+          ventas_app?: number | null
+          ventas_netsuite?: number | null
+        }
+        Update: {
+          cartera_app?: number | null
+          cartera_netsuite?: number | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          inventario_app?: number | null
+          inventario_netsuite?: number | null
+          moneda?: string
+          semana_inicio?: string
+          updated_at?: string
+          ventas_app?: number | null
+          ventas_netsuite?: number | null
+        }
+        Relationships: []
+      }
+      onboarding_programa: {
+        Row: {
+          apagado_aprobado_at: string | null
+          apagado_aprobado_por: string | null
+          created_at: string
+          decision_netsuite: string
+          fase: string
+          fecha_corte: string | null
+          id: number
+          nota_decision: string | null
+          updated_at: string
+        }
+        Insert: {
+          apagado_aprobado_at?: string | null
+          apagado_aprobado_por?: string | null
+          created_at?: string
+          decision_netsuite?: string
+          fase?: string
+          fecha_corte?: string | null
+          id?: number
+          nota_decision?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apagado_aprobado_at?: string | null
+          apagado_aprobado_por?: string | null
+          created_at?: string
+          decision_netsuite?: string
+          fase?: string
+          fecha_corte?: string | null
+          id?: number
+          nota_decision?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_sesiones: {
+        Row: {
+          acuerdos: string | null
+          created_at: string
+          duracion: string | null
+          estado: string
+          fecha_hora: string | null
+          id: string
+          objetivo: string | null
+          orden: number
+          participantes: string | null
+          pendientes: string | null
+          responsables: string[]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          acuerdos?: string | null
+          created_at?: string
+          duracion?: string | null
+          estado?: string
+          fecha_hora?: string | null
+          id?: string
+          objetivo?: string | null
+          orden: number
+          participantes?: string | null
+          pendientes?: string | null
+          responsables?: string[]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          acuerdos?: string | null
+          created_at?: string
+          duracion?: string | null
+          estado?: string
+          fecha_hora?: string | null
+          id?: string
+          objetivo?: string | null
+          orden?: number
+          participantes?: string | null
+          pendientes?: string | null
+          responsables?: string[]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_tareas_dev: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string
+          fecha_compromiso: string | null
+          id: string
+          orden: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_compromiso?: string | null
+          id?: string
+          orden: number
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          fecha_compromiso?: string | null
+          id?: string
+          orden?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       ordenes_compra: {
         Row: {

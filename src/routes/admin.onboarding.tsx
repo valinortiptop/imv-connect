@@ -1,951 +1,578 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { analyzeOnboardingDocFn } from "@/lib/valinor.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { AiUploader } from "@/components/onboarding/AiUploader";
 import {
- parseSheet,
- importProductos,
- importPriceList,
- importClientes,
- importLaboratorios,
- importRepresentantes,
-  type ImportResult,
-} from "@/lib/onboarding-import";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AREAS, FASES, RESPONSABLES, estadoDoc, isDone, diasHasta, toLocalInput, fromLocalInput,
+  type Item, type Archivo, type EstadoDoc,
+} from "@/components/onboarding/types";
+import { downloadTemplate, hasTemplate } from "@/components/onboarding/templates";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/onboarding")({
+  head: () => ({
+    meta: [
+      { title: "Salida de NetSuite · Onboarding IMV" },
+      { name: "description", content: "Seguimiento de documentos, sesiones y responsables para operar IMV sin NetSuite." },
+      { property: "og:title", content: "Salida de NetSuite · Onboarding IMV" },
+      { property: "og:description", content: "Documentos, sesiones y responsables para el arranque oficial." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OnboardingPage,
 });
 
-type Item = {
-  id: string;
-  categoria: string;
-  clave: string;
-  titulo: string;
-  descripcion: string | null;
-  requerido: boolean;
-  requiere_archivo: boolean;
-  estado: "pendiente" | "en_proceso" | "entregado" | "no_aplica";
-  notas: string | null;
-  valor_texto: string | null;
-  orden: number;
+type Programa = {
+  id: number; fecha_corte: string | null; fase: string; decision_netsuite: string;
+  nota_decision: string | null; apagado_aprobado_at: string | null;
+};
+type Sesion = {
+  id: string; orden: number; titulo: string; participantes: string | null; duracion: string | null;
+  objetivo: string | null; fecha_hora: string | null; estado: string; acuerdos: string | null;
+  pendientes: string | null; responsables: string[];
+};
+type Tarea = { id: string; orden: number; titulo: string; descripcion: string | null; estado: string; fecha_compromiso: string | null };
+type Semana = {
+  id: string; semana_inicio: string; moneda: string; comentario: string | null;
+  ventas_app: number | null; ventas_netsuite: number | null; cartera_app: number | null;
+  cartera_netsuite: number | null; inventario_app: number | null; inventario_netsuite: number | null;
 };
 
-type Archivo = {
-  id: string;
-  item_id: string;
-  storage_path: string;
-  nombre_original: string;
-  size_bytes: number | null;
-  uploaded_at: string;
-};
+const db = supabase as any;
 
-const CAT_LABEL: Record<string, string> = {
-  empresa: "Datos de empresa",
-  documentos_legales: "Documentos legales",
-  catalogos: "Catálogos",
-  precios: "Precios",
-  promociones: "Promociones",
-  branding: "Branding y diseño",
-  integraciones: "Integraciones (NetSuite, Resend, Twilio)",
-  comunicaciones: "Plantillas de comunicación",
-  otros: "Otros",
-};
+async function loadAll() {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  const [items, archivos, programa, sesiones, tareas, semanas, admin, conta] = await Promise.all([
+    db.from("onboarding_items").select("*").order("orden"),
+    db.from("onboarding_archivos").select("*").order("uploaded_at", { ascending: false }),
+    db.from("onboarding_programa").select("*").eq("id", 1).maybeSingle(),
+    db.from("onboarding_sesiones").select("*").order("orden"),
+    db.from("onboarding_tareas_dev").select("*").order("orden"),
+    db.from("onboarding_paralelo_semanas").select("*").order("semana_inicio"),
+    uid ? supabase.rpc("has_role", { _user_id: uid, _role: "admin" }) : { data: false },
+    uid ? supabase.rpc("has_role", { _user_id: uid, _role: "contabilidad" }) : { data: false },
+  ]);
+  const err = [items, archivos, programa, sesiones, tareas, semanas].find((r: any) => r.error);
+  if (err) throw new Error(err.error.message);
+  return {
+    uid: uid ?? null,
+    items: items.data as Item[],
+    archivos: archivos.data as Archivo[],
+    programa: programa.data as Programa | null,
+    sesiones: sesiones.data as Sesion[],
+    tareas: tareas.data as Tarea[],
+    semanas: semanas.data as Semana[],
+    isAdmin: !!admin.data,
+    canValidate: !!admin.data || !!conta.data,
+  };
+}
 
-const ESTADO_COLOR: Record<string, string> = {
+const ESTADO_LABEL: Record<string, string> = {
+  pendiente: "Pendiente", en_proceso: "En proceso", entregado: "Entregado", validado: "Validado", no_aplica: "No aplica",
+  por_agendar: "Por agendar", agendada: "Agendada", realizada: "Realizada", listo: "Listo",
+};
+const ESTADO_CLS: Record<string, string> = {
   pendiente: "bg-muted text-muted-foreground",
-  en_proceso: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
-  entregado: "bg-green-500/15 text-green-700 dark:text-green-400",
-  no_aplica: "bg-gray-500/15 text-gray-600",
+  por_agendar: "bg-muted text-muted-foreground",
+  en_proceso: "bg-accent text-accent-foreground",
+  agendada: "bg-accent text-accent-foreground",
+  entregado: "bg-primary/15 text-primary",
+  realizada: "bg-primary/15 text-primary",
+  listo: "bg-primary/15 text-primary",
+  validado: "bg-primary text-primary-foreground",
+  no_aplica: "bg-muted text-muted-foreground line-through",
 };
+function Pill({ e }: { e: string }) {
+  return <span className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_CLS[e] ?? ""}`}>{ESTADO_LABEL[e] ?? e}</span>;
+}
 
 function OnboardingPage() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [archivos, setArchivos] = useState<Archivo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["onboarding-netsuite"], queryFn: loadAll });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["onboarding-netsuite"] });
 
-  const load = async () => {
-    setLoading(true);
-    const [a, b] = await Promise.all([
-      supabase.from("onboarding_items").select("*").order("categoria").order("orden"),
-      supabase.from("onboarding_archivos").select("*").order("uploaded_at", { ascending: false }),
-    ]);
-    setItems((a.data as Item[]) ?? []);
-    setArchivos((b.data as Archivo[]) ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const grouped = useMemo(() => {
-    const g: Record<string, Item[]> = {};
-    for (const it of items) {
-      if (filter !== "all" && it.categoria !== filter) continue;
-      (g[it.categoria] ??= []).push(it);
-    }
-    return g;
-  }, [items, filter]);
-
-  // An item counts as "effectively delivered" if its DB state says so OR it
-  // requires a file and at least one file is already uploaded. This protects
-  // against the case where the upload succeeded but the follow-up status
-  // update failed silently (e.g. RLS) and the user kept seeing "pendiente".
-  const effectiveEstado = (it: Item): Item["estado"] => {
-    if (it.estado === "no_aplica") return "no_aplica";
-    if (it.estado === "entregado") return "entregado";
-    if (it.requiere_archivo && archivos.some((a) => a.item_id === it.id)) {
-      return "entregado";
-    }
-    return it.estado;
-  };
-
-  const stats = useMemo(() => {
-    const req = items.filter((i) => i.requerido && i.estado !== "no_aplica");
-    const done = req.filter((i) => effectiveEstado(i) === "entregado").length;
-    return { total: req.length, done, pct: req.length ? Math.round((done / req.length) * 100) : 0 };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, archivos]);
-
-  const updateItem = async (id: string, patch: Partial<Item>) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-    const { error, data } = await supabase
-      .from("onboarding_items")
-      .update(patch)
-      .eq("id", id)
-      .select("id");
-    if (error) {
-      alert("No se pudo guardar: " + error.message);
-      await load();
-    } else if (!data || data.length === 0) {
-      alert("No se pudo guardar (sin permisos). Pide a un admin que te asigne permisos de edición.");
-      await load();
-    }
-  };
-
-  const uploadFile = async (item: Item, file: File) => {
-    const path = `${item.clave}/${Date.now()}_${file.name}`;
-    const up = await supabase.storage.from("onboarding").upload(path, file, { upsert: false });
-    if (up.error) {
-      alert("Error al subir: " + up.error.message);
-      return;
-    }
-    const { data: u } = await supabase.auth.getUser();
-    await supabase.from("onboarding_archivos").insert({
-      item_id: item.id,
-      storage_path: path,
-      nombre_original: file.name,
-      mime_type: file.type,
-      size_bytes: file.size,
-      uploaded_by: u.user?.id,
-    });
-    // Optimistic local update — guarantees the badge flips to ENTREGADO
-    // even if the server-side `onboarding_items` update is blocked by RLS.
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, estado: "entregado" } : i)),
+  if (q.isLoading) return <p className="p-6 text-muted-foreground">Cargando tablero…</p>;
+  if (q.error || !q.data)
+    return (
+      <div className="space-y-3 p-6">
+        <p className="text-destructive">No se pudo cargar el tablero: {(q.error as Error)?.message}</p>
+        <Button variant="outline" onClick={() => q.refetch()}>Reintentar</Button>
+      </div>
     );
-    // Best-effort sync to DB; ignore RLS failures (derived state covers it).
-    await supabase
-      .from("onboarding_items")
-      .update({ estado: "entregado" })
-      .eq("id", item.id);
-    await load();
-  };
+  const d = q.data;
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <Header d={d} refresh={refresh} />
+      <Tabs defaultValue="documentos">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start">
+          <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          <TabsTrigger value="sesiones">Sesiones</TabsTrigger>
+          <TabsTrigger value="responsables">Responsables</TabsTrigger>
+          <TabsTrigger value="desarrollo">Desarrollo pendiente</TabsTrigger>
+          <TabsTrigger value="paralelo">Paralelo</TabsTrigger>
+        </TabsList>
+        <TabsContent value="documentos"><Documentos d={d} refresh={refresh} /></TabsContent>
+        <TabsContent value="sesiones"><Sesiones d={d} refresh={refresh} /></TabsContent>
+        <TabsContent value="responsables"><Responsables d={d} /></TabsContent>
+        <TabsContent value="desarrollo"><Desarrollo d={d} refresh={refresh} /></TabsContent>
+        <TabsContent value="paralelo"><Paralelo d={d} refresh={refresh} /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
 
-  const uploadFiles = async (item: Item, files: FileList | File[]) => {
-    const arr = Array.from(files);
-    for (const f of arr) {
-      // upload sequentially so we don't overwhelm the bucket with parallel ops
-      // and keep filenames deterministic.
-      // eslint-disable-next-line no-await-in-loop
-      await uploadFile(item, f);
+type D = Awaited<ReturnType<typeof loadAll>>;
+type P = { d: D; refresh: () => void };
+
+async function save(table: string, match: Record<string, unknown>, patch: Record<string, unknown>, refresh: () => void) {
+  let qb = db.from(table).update(patch);
+  for (const [k, v] of Object.entries(match)) qb = qb.eq(k, v);
+  const { data, error } = await qb.select("id");
+  if (error || !data?.length) toast.error(error?.message ?? "Sin permisos para guardar");
+  refresh();
+}
+
+/* ───────── Encabezado ───────── */
+function Header({ d, refresh }: P) {
+  const p = d.programa;
+  const docs = d.items.filter((i) => i.requerido && i.area !== "configuracion" && i.estado !== "no_aplica");
+  const done = docs.filter((i) => isDone(estadoDoc(i, d.archivos))).length;
+  const ses = d.sesiones.filter((s) => s.estado === "realizada").length;
+  const dev = d.tareas.filter((t) => t.estado === "listo").length;
+  const total = docs.length + d.sesiones.length + d.tareas.length;
+  const pct = total ? Math.round(((done + ses + dev) / total) * 100) : 0;
+  const faseIdx = FASES.findIndex((f) => f.key === p?.fase);
+  const dias = p?.fecha_corte ? diasHasta(p.fecha_corte) : null;
+  const upd = (patch: Partial<Programa>) => save("onboarding_programa", { id: 1 }, patch, refresh);
+
+  return (
+    <header className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold">Salida de NetSuite</h1>
+        <p className="text-sm text-muted-foreground">
+          Documentos, sesiones y responsables para empezar a operar oficialmente en la app.
+        </p>
+      </div>
+
+      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {FASES.map((f, i) => (
+          <li key={f.key}>
+            <button
+              disabled={!d.isAdmin}
+              onClick={() => upd({ fase: f.key })}
+              className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                i === faseIdx ? "border-primary bg-primary text-primary-foreground" : i < faseIdx ? "border-primary/40 bg-primary/10" : "border-border text-muted-foreground"
+              }`}
+            >
+              <span className="block text-[10px] opacity-70">Fase {i + 1}</span>
+              {f.label}
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-border p-4">
+          <div className="text-xs text-muted-foreground">Avance general</div>
+          <div className="text-3xl font-bold">{pct}%</div>
+          <Progress value={pct} className="mt-2" />
+          <div className="mt-2 text-xs text-muted-foreground">
+            Documentos {done}/{docs.length} · Sesiones {ses}/{d.sesiones.length} · Desarrollo {dev}/{d.tareas.length}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border p-4">
+          <label htmlFor="fecha-corte" className="text-xs text-muted-foreground">Fecha de corte</label>
+          <Input
+            id="fecha-corte" type="date" className="mt-1" disabled={!d.isAdmin}
+            defaultValue={p?.fecha_corte ?? ""}
+            onBlur={(e) => e.target.value !== (p?.fecha_corte ?? "") && upd({ fecha_corte: e.target.value || null })}
+          />
+          <div className="mt-2 text-sm">
+            {dias == null ? <span className="text-muted-foreground">Por definir en la sesión de arranque</span>
+              : dias >= 0 ? <b>Faltan {dias} días</b> : <b>Hace {-dias} días</b>}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border p-4">
+          <label htmlFor="decision" className="text-xs text-muted-foreground">Decisión NetSuite</label>
+          <select
+            id="decision" disabled={!d.isAdmin} value={p?.decision_netsuite ?? "manual"}
+            onChange={(e) => upd({ decision_netsuite: e.target.value })}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+          >
+            <option value="manual">Cargas manuales al corte (recomendado)</option>
+            <option value="api_paralelo">API durante el paralelo</option>
+          </select>
+          <Textarea
+            aria-label="Nota de la decisión" placeholder="Nota" rows={2} className="mt-2 text-xs" disabled={!d.isAdmin}
+            defaultValue={p?.nota_decision ?? ""}
+            onBlur={(e) => e.target.value !== (p?.nota_decision ?? "") && upd({ nota_decision: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {AREAS.filter((a) => a.key !== "configuracion").map((a) => {
+          const l = docs.filter((i) => i.area === a.key);
+          const n = l.filter((i) => isDone(estadoDoc(i, d.archivos))).length;
+          return (
+            <div key={a.key} className="rounded-lg border border-border p-3">
+              <div className="text-xs text-muted-foreground">{a.label}</div>
+              <div className="font-semibold">{n}/{l.length}</div>
+              <Progress value={l.length ? (n / l.length) * 100 : 0} className="mt-1 h-1.5" />
+            </div>
+          );
+        })}
+      </div>
+    </header>
+  );
+}
+
+/* ───────── Documentos ───────── */
+function Documentos({ d, refresh }: P) {
+  const [area, setArea] = useState("all");
+  const [soloPend, setSoloPend] = useState(false);
+  const list = d.items.filter((i) => (area === "all" || i.area === area) && (!soloPend || !isDone(estadoDoc(i, d.archivos))));
+
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="flex flex-wrap gap-2">
+        {[{ key: "all", label: "Todas" }, ...AREAS].map((a) => (
+          <Button key={a.key} size="sm" variant={area === a.key ? "default" : "outline"} onClick={() => setArea(a.key)}>{a.label}</Button>
+        ))}
+        <Button size="sm" variant={soloPend ? "default" : "ghost"} onClick={() => setSoloPend(!soloPend)}>Solo pendientes</Button>
+      </div>
+      {(area === "all" || area === "configuracion") && <AiUploader items={d.items as any} onCommitted={refresh} />}
+      {AREAS.filter((a) => area === "all" || a.key === area).map((a) => {
+        const l = list.filter((i) => (i.area ?? "configuracion") === a.key);
+        if (!l.length) return null;
+        return (
+          <section key={a.key} className="overflow-hidden rounded-xl border border-border">
+            <h2 className="border-b border-border bg-muted/40 px-4 py-2 text-sm font-semibold">{a.label}</h2>
+            <div className="divide-y divide-border">
+              {l.map((it) => <DocRow key={it.id} it={it} d={d} refresh={refresh} />)}
+            </div>
+          </section>
+        );
+      })}
+      {!list.length && <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No hay documentos en este filtro.</p>}
+    </div>
+  );
+}
+
+function DocRow({ it, d, refresh }: { it: Item } & P) {
+  const files = d.archivos.filter((a) => a.item_id === it.id);
+  const eff: EstadoDoc = estadoDoc(it, d.archivos);
+  const isImg = it.clave === "imagenes_productos";
+  const upd = (patch: Partial<Item>) => save("onboarding_items", { id: it.id }, patch, refresh);
+
+  const upload = async (fl: FileList) => {
+    for (const f of Array.from(fl)) {
+      const path = `${it.clave}/${Date.now()}_${f.name.replace(/[^\w.\-]/g, "_")}`;
+      const up = await supabase.storage.from("onboarding").upload(path, f);
+      if (up.error) { toast.error("Error al subir: " + up.error.message); return; }
+      await db.from("onboarding_archivos").insert({
+        item_id: it.id, storage_path: path, nombre_original: f.name, mime_type: f.type, size_bytes: f.size, uploaded_by: d.uid,
+      });
     }
+    if (it.estado === "pendiente" || it.estado === "en_proceso") await db.from("onboarding_items").update({ estado: "entregado" }).eq("id", it.id);
+    toast.success("Archivo subido");
+    refresh();
   };
-
-  const downloadFile = async (a: Archivo) => {
-    const { data, error } = await supabase.storage
-      .from("onboarding")
-      .createSignedUrl(a.storage_path, 60);
-    if (error || !data) return alert("Error: " + error?.message);
+  const ver = async (a: Archivo) => {
+    const { data, error } = await supabase.storage.from("onboarding").createSignedUrl(a.storage_path, 60);
+    if (error || !data) return toast.error(error?.message ?? "Error");
     window.open(data.signedUrl, "_blank");
   };
-
-  const deleteFile = async (a: Archivo) => {
+  const borrar = async (a: Archivo) => {
     if (!confirm("¿Eliminar archivo?")) return;
     await supabase.storage.from("onboarding").remove([a.storage_path]);
-    await supabase.from("onboarding_archivos").delete().eq("id", a.id);
-    await load();
+    await db.from("onboarding_archivos").delete().eq("id", a.id);
+    refresh();
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Onboarding IMV</h1>
-          <p className="text-sm text-muted-foreground">
-            Checklist de información, archivos y credenciales que necesitamos del cliente para
-            arrancar la operación.
-          </p>
-        </div>
-        <div className="rounded-lg border border-border p-4 text-right">
-          <div className="text-xs text-muted-foreground">Avance requeridos</div>
-          <div className="text-2xl font-bold">
-            {stats.done}/{stats.total}
+    <div className={`space-y-3 p-4 ${eff === "validado" ? "bg-primary/5" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">{it.titulo}</span>
+            {it.requerido && <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-destructive">Requerido</span>}
+            <Pill e={eff} />
           </div>
-          <div className="mt-2 h-2 w-40 overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-primary" style={{ width: `${stats.pct}%` }} />
-          </div>
+          {it.descripcion && <p className="mt-1 text-xs text-muted-foreground">{it.descripcion}</p>}
         </div>
-      </header>
-
-      <AiUploader items={items} onCommitted={load} />
-
-
-
-      <div className="flex flex-wrap gap-2">
-        <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
-          Todos
-        </FilterBtn>
-        {Object.keys(CAT_LABEL).map((c) => (
-          <FilterBtn key={c} active={filter === c} onClick={() => setFilter(c)}>
-            {CAT_LABEL[c]}
-          </FilterBtn>
-        ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {hasTemplate(it.plantilla_clave) && (
+            <Button size="sm" variant="outline" onClick={() => downloadTemplate(it.plantilla_clave!)}>Plantilla Excel</Button>
+          )}
+          {it.requiere_archivo && (
+            <label className="inline-flex cursor-pointer items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent focus-within:ring-2 focus-within:ring-ring">
+              Subir archivo
+              <input type="file" className="sr-only" multiple={isImg} accept={isImg ? "image/*" : undefined}
+                onChange={(e) => { if (e.target.files?.length) upload(e.target.files); e.target.value = ""; }} />
+            </label>
+          )}
+          <select
+            aria-label="Estado" value={it.estado}
+            onChange={(e) => upd({ estado: e.target.value as Item["estado"] })}
+            className="rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+          >
+            <option value="pendiente">Pendiente</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="entregado">Entregado</option>
+            <option value="no_aplica">No aplica</option>
+          </select>
+          {d.canValidate && isDone(eff) && (
+            eff === "validado"
+              ? <Button size="sm" variant="ghost" onClick={() => upd({ validado_at: null, validado_por: null })}>Quitar validación</Button>
+              : <Button size="sm" onClick={() => upd({ validado_at: new Date().toISOString(), validado_por: d.uid })}>Validar</Button>
+          )}
+        </div>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground">Cargando…</p>
-      ) : (
-        Object.entries(grouped).map(([cat, list]) => (
-          <section key={cat} className="rounded-xl border border-border">
-            <h2 className="border-b border-border bg-muted/40 px-4 py-2 text-sm font-semibold">
-              {CAT_LABEL[cat] ?? cat}
-            </h2>
-            <div className="divide-y divide-border">
-              {list.map((it) => {
-                const files = archivos.filter((a) => a.item_id === it.id);
-                const eff = effectiveEstado(it);
-                const isImgBulk = it.clave === "imagenes_productos";
-                return (
-                  <div key={it.id} className={`p-4 ${eff === "entregado" ? "bg-green-500/10 dark:bg-green-500/5" : ""}`}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{it.titulo}</span>
-                          {it.requerido && (
-                            <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-red-600">
-                              Requerido
-                            </span>
-                          )}
-                          <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_COLOR[eff]}`}
-                          >
-                            {eff.replace("_", " ")}
-                          </span>
-                          {isImgBulk && files.length > 0 && (
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
-                              {files.length} {files.length === 1 ? "imagen" : "imágenes"}
-                            </span>
-                          )}
-                        </div>
-                        {it.descripcion && (
-                          <p className="mt-1 text-xs text-muted-foreground">{it.descripcion}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="cursor-pointer rounded-md border border-input bg-background px-2 py-1 text-xs hover:bg-muted">
-                          + Subir
-                          <input
-                            type="file"
-                            className="hidden"
-                            multiple={isImgBulk}
-                            accept={isImgBulk ? "image/*" : undefined}
-                            onChange={(e) => {
-                              const fs = e.target.files;
-                              if (fs && fs.length > 0) {
-                                if (isImgBulk) uploadFiles(it, fs);
-                                else uploadFile(it, fs[0]);
-                              }
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
-                        <select
-                          value={eff}
-                          onChange={(e) => updateItem(it.id, { estado: e.target.value as Item["estado"] })}
-                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
-                        >
-                          <option value="pendiente">Pendiente</option>
-                          <option value="en_proceso">En proceso</option>
-                          <option value="entregado">Entregado</option>
-                          <option value="no_aplica">No aplica</option>
-                        </select>
-                      </div>
-                    </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div>
+          <label className="text-[11px] text-muted-foreground" htmlFor={`r-${it.id}`}>Responsable</label>
+          <select id={`r-${it.id}`} value={it.responsable_rol ?? ""} onChange={(e) => upd({ responsable_rol: e.target.value || null })}
+            className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs">
+            <option value="">Sin asignar</option>
+            {RESPONSABLES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground" htmlFor={`n-${it.id}`}>Persona</label>
+          <Input id={`n-${it.id}`} className="h-8 text-xs" placeholder="Nombre" defaultValue={it.responsable_nombre ?? ""}
+            onBlur={(e) => e.target.value !== (it.responsable_nombre ?? "") && upd({ responsable_nombre: e.target.value || null })} />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground" htmlFor={`f-${it.id}`}>Fecha compromiso</label>
+          <Input id={`f-${it.id}`} type="date" className="h-8 text-xs" defaultValue={it.fecha_compromiso ?? ""}
+            onBlur={(e) => e.target.value !== (it.fecha_compromiso ?? "") && upd({ fecha_compromiso: e.target.value || null })} />
+        </div>
+      </div>
 
-                    {!it.requiere_archivo && (
-                      <input
-                        type="text"
-                        placeholder="Valor / dato"
-                        defaultValue={it.valor_texto ?? ""}
-                        onBlur={(e) => {
-                          const v = e.target.value;
-                          if (v !== (it.valor_texto ?? "")) {
-                            const patch: Partial<Item> = { valor_texto: v };
-                            if (v.trim() && it.estado !== "entregado" && it.estado !== "no_aplica") {
-                              patch.estado = "entregado";
-                            } else if (!v.trim() && it.estado === "entregado") {
-                              patch.estado = "pendiente";
-                            }
-                            updateItem(it.id, patch);
-                          }
-                        }}
-                        className="mt-3 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                      />
-                    )}
+      {!it.requiere_archivo && (
+        <Input placeholder="Valor / dato" defaultValue={it.valor_texto ?? ""} className="text-sm"
+          onBlur={(e) => {
+            const v = e.target.value;
+            if (v === (it.valor_texto ?? "")) return;
+            upd({ valor_texto: v, ...(v.trim() && it.estado === "pendiente" ? { estado: "entregado" as const } : {}) });
+          }} />
+      )}
+      {files.length > 0 && (
+        <ul className="space-y-1">
+          {files.slice(0, isImg ? 5 : 50).map((a) => (
+            <li key={a.id} className="flex items-center justify-between gap-2 rounded border border-border px-2 py-1 text-xs">
+              <span className="truncate">{a.nombre_original}</span>
+              <span className="flex shrink-0 gap-3">
+                <button className="text-primary hover:underline" onClick={() => ver(a)}>Ver</button>
+                <button className="text-destructive hover:underline" onClick={() => borrar(a)}>Eliminar</button>
+              </span>
+            </li>
+          ))}
+          {isImg && files.length > 5 && <li className="text-xs text-muted-foreground">+{files.length - 5} imágenes más</li>}
+        </ul>
+      )}
+      <Textarea placeholder="Notas" rows={1} className="text-xs" defaultValue={it.notas ?? ""}
+        onBlur={(e) => e.target.value !== (it.notas ?? "") && upd({ notas: e.target.value })} />
+    </div>
+  );
+}
 
-                    {it.requiere_archivo && (
-                      <div className="mt-3">
-                        <input
-                          type="file"
-                          multiple={isImgBulk}
-                          accept={isImgBulk ? "image/*" : undefined}
-                          onChange={(e) => {
-                            const fs = e.target.files;
-                            if (fs && fs.length > 0) {
-                              if (isImgBulk) uploadFiles(it, fs);
-                              else uploadFile(it, fs[0]);
-                            }
-                            e.target.value = "";
-                          }}
-                          className="text-xs"
-                        />
-                        {files.length > 0 && (
-                          <ul className="mt-2 space-y-1">
-                            {files.map((a) => (
-                              <li
-                                key={a.id}
-                                className="flex items-center justify-between rounded border border-border px-2 py-1 text-xs"
-                              >
-                                <span className="truncate">{a.nombre_original}</span>
-                                <span className="flex gap-2">
-                                  <button
-                                    onClick={() => downloadFile(a)}
-                                    className="text-primary hover:underline"
-                                  >
-                                    Ver
-                                  </button>
-                                  <button
-                                    onClick={() => deleteFile(a)}
-                                    className="text-red-600 hover:underline"
-                                  >
-                                    Eliminar
-                                  </button>
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-
-                    <textarea
-                      placeholder="Notas"
-                      defaultValue={it.notas ?? ""}
-                      onBlur={(e) =>
-                        e.target.value !== (it.notas ?? "") &&
-                        updateItem(it.id, { notas: e.target.value })
-                      }
-                      className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                      rows={1}
-                    />
-                  </div>
-                );
-              })}
+/* ───────── Sesiones ───────── */
+function Sesiones({ d, refresh }: P) {
+  if (!d.sesiones.length) return <Empty text="No hay sesiones registradas." />;
+  return (
+    <div className="grid gap-3 pt-4 md:grid-cols-2">
+      {d.sesiones.map((s) => {
+        const upd = (patch: Partial<Sesion>) => save("onboarding_sesiones", { id: s.id }, patch, refresh);
+        return (
+          <article key={s.id} className="space-y-2 rounded-xl border border-border p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="text-[11px] text-muted-foreground">Sesión {s.orden} · {s.duracion}</div>
+                <h3 className="font-semibold">{s.titulo}</h3>
+              </div>
+              <Pill e={s.estado} />
             </div>
-          </section>
-        ))
+            <p className="text-xs text-muted-foreground">{s.objetivo}</p>
+            <p className="text-xs"><b>Participantes:</b> {s.participantes}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input type="datetime-local" aria-label="Fecha y hora (CDMX)" className="h-8 text-xs" disabled={!d.isAdmin}
+                defaultValue={toLocalInput(s.fecha_hora)}
+                onBlur={(e) => {
+                  const iso = fromLocalInput(e.target.value);
+                  if (iso !== s.fecha_hora) upd({ fecha_hora: iso, ...(iso && s.estado === "por_agendar" ? { estado: "agendada" } : {}) });
+                }} />
+              <select aria-label="Estado de la sesión" value={s.estado} disabled={!d.isAdmin} onChange={(e) => upd({ estado: e.target.value })}
+                className="rounded-md border border-input bg-background px-2 py-1.5 text-xs">
+                <option value="por_agendar">Por agendar</option>
+                <option value="agendada">Agendada</option>
+                <option value="realizada">Realizada</option>
+              </select>
+            </div>
+            <Textarea placeholder="Acuerdos" rows={2} className="text-xs" disabled={!d.isAdmin} defaultValue={s.acuerdos ?? ""}
+              onBlur={(e) => e.target.value !== (s.acuerdos ?? "") && upd({ acuerdos: e.target.value })} />
+            <Textarea placeholder="Pendientes que surgieron" rows={2} className="text-xs" disabled={!d.isAdmin} defaultValue={s.pendientes ?? ""}
+              onBlur={(e) => e.target.value !== (s.pendientes ?? "") && upd({ pendientes: e.target.value })} />
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ───────── Responsables ───────── */
+function Responsables({ d }: { d: D }) {
+  const rows = useMemo(() => RESPONSABLES.map((r) => {
+    const docs = d.items.filter((i) => i.responsable_rol === r.key && i.estado !== "no_aplica");
+    const pend = docs.filter((i) => !isDone(estadoDoc(i, d.archivos)));
+    const ses = d.sesiones.filter((s) => s.responsables?.includes(r.key) && s.estado !== "realizada");
+    const tareas = r.key === "valinor" ? d.tareas.filter((t) => t.estado !== "listo") : [];
+    return { ...r, docs, pend, ses, tareas };
+  }), [d]);
+  return (
+    <div className="grid gap-3 pt-4 md:grid-cols-2">
+      {rows.map((r) => {
+        const pct = r.docs.length ? Math.round(((r.docs.length - r.pend.length) / r.docs.length) * 100) : null;
+        return (
+          <article key={r.key} className="space-y-2 rounded-xl border border-border p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold">{r.label}</h3>
+                <p className="text-xs text-muted-foreground">{r.desc}</p>
+              </div>
+              <span className="text-sm font-semibold">{pct == null ? "—" : `${pct}%`}</span>
+            </div>
+            {pct != null && <Progress value={pct} className="h-1.5" />}
+            <Lista titulo={`Documentos pendientes (${r.pend.length})`} items={r.pend.map((i) => i.titulo)} />
+            <Lista titulo={`Sesiones por realizar (${r.ses.length})`} items={r.ses.map((s) => s.titulo)} />
+            {r.key === "valinor" && <Lista titulo={`Desarrollo abierto (${r.tareas.length})`} items={r.tareas.map((t) => t.titulo)} />}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+function Lista({ titulo, items }: { titulo: string; items: string[] }) {
+  return (
+    <div>
+      <div className="text-xs font-medium">{titulo}</div>
+      {items.length ? (
+        <ul className="ml-4 list-disc text-xs text-muted-foreground">{items.map((t) => <li key={t}>{t}</li>)}</ul>
+      ) : <p className="text-xs text-muted-foreground">Nada pendiente</p>}
+    </div>
+  );
+}
+
+/* ───────── Desarrollo ───────── */
+function Desarrollo({ d, refresh }: P) {
+  if (!d.tareas.length) return <Empty text="No hay tareas de desarrollo." />;
+  return (
+    <div className="space-y-2 pt-4">
+      {d.tareas.map((t) => (
+        <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2"><span className="font-medium">{t.titulo}</span><Pill e={t.estado} /></div>
+            <p className="text-xs text-muted-foreground">{t.descripcion}</p>
+          </div>
+          <div className="flex gap-2">
+            <Input type="date" aria-label="Fecha compromiso" className="h-8 w-36 text-xs" disabled={!d.isAdmin} defaultValue={t.fecha_compromiso ?? ""}
+              onBlur={(e) => e.target.value !== (t.fecha_compromiso ?? "") && save("onboarding_tareas_dev", { id: t.id }, { fecha_compromiso: e.target.value || null }, refresh)} />
+            <select aria-label="Estado" value={t.estado} disabled={!d.isAdmin}
+              onChange={(e) => save("onboarding_tareas_dev", { id: t.id }, { estado: e.target.value }, refresh)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-xs">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_proceso">En proceso</option>
+              <option value="listo">Listo</option>
+            </select>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ───────── Paralelo ───────── */
+const fmt = (v: number | null) => v == null ? "No reportado" : v.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+function Diff({ a, b }: { a: number | null; b: number | null }) {
+  if (a == null || b == null) return <span className="text-muted-foreground">—</span>;
+  const diff = a - b;
+  return <span className={Math.abs(diff) < 1 ? "text-primary" : "text-destructive"}>{fmt(diff)}</span>;
+}
+function Paralelo({ d, refresh }: P) {
+  const p = d.programa;
+  const activo = p?.fase === "paralelo" || p?.fase === "apagado";
+  const [semana, setSemana] = useState("");
+  if (!activo)
+    return <Empty text="Esta sección se activa cuando el programa pasa a la fase Paralelo." />;
+
+  const add = async () => {
+    if (!semana) return;
+    const { error } = await db.from("onboarding_paralelo_semanas").insert({ semana_inicio: semana });
+    if (error) toast.error(error.message); else { setSemana(""); refresh(); }
+  };
+  const num = (v: string) => (v.trim() === "" ? null : Number(v));
+  const aprobar = async () => {
+    if (!confirm("¿Aprobar el apagado de NetSuite? Esto cierra el programa.")) return;
+    await save("onboarding_programa", { id: 1 }, { fase: "apagado", apagado_aprobado_at: new Date().toISOString(), apagado_aprobado_por: d.uid }, refresh);
+  };
+  const campos: [keyof Semana, keyof Semana, string][] = [
+    ["ventas_app", "ventas_netsuite", "Ventas"],
+    ["cartera_app", "cartera_netsuite", "Cartera"],
+    ["inventario_app", "inventario_netsuite", "Inventario"],
+  ];
+
+  return (
+    <div className="space-y-4 pt-4">
+      {d.isAdmin && (
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label htmlFor="sem" className="text-xs text-muted-foreground">Inicio de semana</label>
+            <Input id="sem" type="date" value={semana} onChange={(e) => setSemana(e.target.value)} className="h-9" />
+          </div>
+          <Button onClick={add} disabled={!semana}>Agregar revisión</Button>
+        </div>
+      )}
+      {!d.semanas.length && <Empty text="Aún no hay revisiones semanales." />}
+      {d.semanas.map((s) => (
+        <article key={s.id} className="space-y-3 rounded-xl border border-border p-4">
+          <h3 className="font-semibold">Semana del {s.semana_inicio} <span className="text-xs text-muted-foreground">({s.moneda})</span></h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {campos.map(([a, b, label]) => (
+              <div key={label} className="space-y-1 rounded-lg bg-muted/40 p-3 text-xs">
+                <div className="font-medium">{label}</div>
+                <Input type="number" step="0.01" aria-label={`${label} app`} placeholder="App" disabled={!d.isAdmin} className="h-8 text-xs"
+                  defaultValue={(s[a] as number | null) ?? ""} onBlur={(e) => save("onboarding_paralelo_semanas", { id: s.id }, { [a]: num(e.target.value) }, refresh)} />
+                <Input type="number" step="0.01" aria-label={`${label} NetSuite`} placeholder="NetSuite" disabled={!d.isAdmin} className="h-8 text-xs"
+                  defaultValue={(s[b] as number | null) ?? ""} onBlur={(e) => save("onboarding_paralelo_semanas", { id: s.id }, { [b]: num(e.target.value) }, refresh)} />
+                <div>Diferencia: <Diff a={s[a] as number | null} b={s[b] as number | null} /></div>
+              </div>
+            ))}
+          </div>
+          <Textarea placeholder="Comentario" rows={2} className="text-xs" disabled={!d.isAdmin} defaultValue={s.comentario ?? ""}
+            onBlur={(e) => e.target.value !== (s.comentario ?? "") && save("onboarding_paralelo_semanas", { id: s.id }, { comentario: e.target.value }, refresh)} />
+        </article>
+      ))}
+      {p?.apagado_aprobado_at ? (
+        <p className="rounded-lg bg-primary/10 p-4 text-sm font-medium text-primary">
+          Apagado de NetSuite aprobado el {new Date(p.apagado_aprobado_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}.
+        </p>
+      ) : d.isAdmin && d.semanas.length > 0 && (
+        <Button variant="destructive" onClick={aprobar}>Aprobar apagado de NetSuite</Button>
       )}
     </div>
   );
 }
 
-function FilterBtn({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-md border px-3 py-1 text-xs transition-colors ${
-        active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border text-muted-foreground hover:bg-accent"
-      }`}
-    >
-      {children}
-    </button>
-  );
+function Empty({ text }: { text: string }) {
+  return <p className="mt-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{text}</p>;
 }
-
-/* ───────────────────────── AI Uploader ───────────────────────── */
-
-type ExtraFill = { clave: string; valor_texto?: string; notas?: string };
-
-type Suggestion = {
-  categoria?: string;
-  item_clave_sugerida?: string | null;
-  confianza?: number;
-  resumen?: string;
-  campos?: Record<string, string>;
-  texto_para_notas?: string;
-  extra_fills?: ExtraFill[];
-};
-
-// Map de nombres de campo (en español, sin acentos, minúsculas) → clave del item de onboarding.
-const FIELD_TO_CLAVE: Record<string, string> = {
-  rfc: "rfc",
-  razon_social: "razon_social",
-  razonsocial: "razon_social",
-  nombre: "razon_social",
-  regimen_fiscal: "regimen_fiscal",
-  regimen_capital: "regimen_fiscal",
-  regimencapital: "regimen_fiscal",
-  representante_legal: "representante_legal",
-  representantelegal: "representante_legal",
-};
-
-// Campos de domicilio que se concatenan en "direccion_fiscal".
-const DIRECCION_FIELDS = [
-  "calle",
-  "nombre_vialidad",
-  "tipo_vialidad",
-  "numero_exterior",
-  "numero_interior",
-  "colonia",
-  "localidad",
-  "municipio",
-  "entidad_federativa",
-  "estado",
-  "codigo_postal",
-  "cp",
-];
-
-function norm(k: string): string {
-  return k
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-}
-
-function deriveExtrasFromCampos(
-  campos: Record<string, string> | undefined,
-  validClaves: Set<string>,
-  excludeClave: string,
-): ExtraFill[] {
-  if (!campos) return [];
-  const out: ExtraFill[] = [];
-  const seen = new Set<string>();
-
-  // Mapeos directos
-  for (const [k, v] of Object.entries(campos)) {
-    if (!v) continue;
-    const nk = norm(k);
-    const clave = FIELD_TO_CLAVE[nk];
-    if (clave && validClaves.has(clave) && clave !== excludeClave && !seen.has(clave)) {
-      seen.add(clave);
-      out.push({ clave, valor_texto: String(v).trim() });
-    }
-  }
-
-  // Dirección fiscal compuesta
-  if (validClaves.has("direccion_fiscal") && excludeClave !== "direccion_fiscal" && !seen.has("direccion_fiscal")) {
-    const parts: string[] = [];
-    const getC = (key: string) => {
-      for (const [k, v] of Object.entries(campos)) {
-        if (norm(k) === key && v) return String(v).trim();
-      }
-      return null;
-    };
-    const tipo = getC("tipo_vialidad");
-    const nombreV = getC("nombre_vialidad") ?? getC("calle");
-    if (nombreV) parts.push([tipo, nombreV].filter(Boolean).join(" "));
-    const numExt = getC("numero_exterior");
-    if (numExt) parts.push(`No. ${numExt}`);
-    const numInt = getC("numero_interior");
-    if (numInt) parts.push(`Int. ${numInt}`);
-    const colonia = getC("colonia");
-    if (colonia) parts.push(`Col. ${colonia}`);
-    const cp = getC("codigo_postal") ?? getC("cp");
-    if (cp) parts.push(`CP ${cp}`);
-    const mun = getC("municipio") ?? getC("localidad") ?? getC("delegacion");
-    if (mun) parts.push(mun);
-    const edo = getC("entidad_federativa") ?? getC("estado");
-    if (edo) parts.push(edo);
-    if (parts.length > 0) {
-      out.push({ clave: "direccion_fiscal", valor_texto: parts.join(", ") });
-    }
-  }
-
-  return out;
-}
-
-/**
- * Build a patch for `empresa_datos` from AI-extracted campos.
- * Returns null if there's nothing relevant.
- */
-function buildEmpresaPatch(
-  campos: Record<string, string> | undefined,
-): Record<string, string> | null {
-  if (!campos) return null;
-  const get = (...keys: string[]) => {
-    for (const [k, v] of Object.entries(campos)) {
-      const nk = norm(k);
-      if (keys.includes(nk) && v) return String(v).trim();
-    }
-    return null;
-  };
-  const patch: Record<string, string> = {};
-  const rfc = get("rfc");
-  if (rfc) patch.rfc = rfc;
-  const razon = get("razon_social", "razonsocial", "nombre", "denominacion");
-  if (razon) patch.razon_social = razon;
-  const reg = get("regimen_fiscal", "regimencapital", "regimen_capital");
-  if (reg) patch.regimen_fiscal = reg;
-  const rep = get("representante_legal", "representantelegal");
-  if (rep) patch.representante_legal = rep;
-  const cp = get("codigo_postal", "cp");
-  if (cp) patch.cp_fiscal = cp;
-
-  // Compose direccion_fiscal
-  const tipo = get("tipo_vialidad");
-  const nombreV = get("nombre_vialidad", "calle");
-  const numExt = get("numero_exterior");
-  const numInt = get("numero_interior");
-  const colonia = get("colonia");
-  const mun = get("municipio", "localidad", "delegacion");
-  const edo = get("entidad_federativa", "estado");
-  const parts: string[] = [];
-  if (nombreV) parts.push([tipo, nombreV].filter(Boolean).join(" "));
-  if (numExt) parts.push(`No. ${numExt}`);
-  if (numInt) parts.push(`Int. ${numInt}`);
-  if (colonia) parts.push(`Col. ${colonia}`);
-  if (cp) parts.push(`CP ${cp}`);
-  if (mun) parts.push(mun);
-  if (edo) parts.push(edo);
-  if (parts.length > 0) patch.direccion_fiscal = parts.join(", ");
-
-  return Object.keys(patch).length > 0 ? patch : null;
-}
-
-function combineExtras(
-  suggestion: Suggestion | null,
-  items: Item[],
-  excludeClave: string,
-): ExtraFill[] {
-  const validClaves = new Set(items.map((i) => i.clave));
-  const aiList = (suggestion?.extra_fills ?? []).filter(
-    (ef) => ef.clave && validClaves.has(ef.clave) && ef.clave !== excludeClave,
-  );
-  const derived = deriveExtrasFromCampos(suggestion?.campos, validClaves, excludeClave);
-  const byClave = new Map<string, ExtraFill>();
-  for (const ef of [...aiList, ...derived]) {
-    if (!byClave.has(ef.clave)) byClave.set(ef.clave, ef);
-  }
-  return Array.from(byClave.values());
-}
-
-function AiUploader({
-  items,
-  onCommitted,
-}: {
-  items: Item[];
-  onCommitted: () => Promise<void> | void;
-}) {
-  const analyze = useServerFn(analyzeOnboardingDocFn);
-  const [drag, setDrag] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
-  const [targetClave, setTargetClave] = useState<string>("");
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [extraSelected, setExtraSelected] = useState<Record<string, boolean>>({});
-  const [importSummary, setImportSummary] = useState<string | null>(null);
-
-  const handleFiles = async (f: File | null) => {
-    if (!f) return;
-    setError(null);
-    if (f.size > 10 * 1024 * 1024) {
-      setError("Archivo demasiado grande (máx 10 MB).");
-      return;
-    }
-    setFile(f);
-    setBusy(true);
-    try {
-      const buf = await f.arrayBuffer();
-      // base64 en chunks para evitar stack overflow
-      let bin = "";
-      const bytes = new Uint8Array(buf);
-      const CHUNK = 0x8000;
-      for (let i = 0; i < bytes.length; i += CHUNK) {
-        bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-      }
-      const base64 = btoa(bin);
-      const res = await analyze({
-        data: {
-          filename: f.name,
-          mime: f.type || "application/octet-stream",
-          base64,
-        },
-      });
-      const s = (res.suggestion ?? null) as Suggestion | null;
-      setSuggestion(s);
-      setTargetClave(s?.item_clave_sugerida ?? "");
-      // Pre-seleccionar todos los extras (AI + derivados de campos) válidos
-      const sel: Record<string, boolean> = {};
-      for (const ef of combineExtras(s, items, s?.item_clave_sugerida ?? "")) {
-        sel[ef.clave] = true;
-      }
-      setExtraSelected(sel);
-      setOpen(true);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const commit = async () => {
-    if (!file || !targetClave) return;
-    const item = items.find((i) => i.clave === targetClave);
-    if (!item) {
-      setError("Selecciona un item válido.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const path = `${item.clave}/${Date.now()}_${file.name}`;
-      const up = await supabase.storage
-        .from("onboarding")
-        .upload(path, file, { upsert: false });
-      if (up.error) throw up.error;
-
-      const { data: u } = await supabase.auth.getUser();
-      const ins = await supabase.from("onboarding_archivos").insert({
-        item_id: item.id,
-        storage_path: path,
-        nombre_original: file.name,
-        mime_type: file.type,
-        size_bytes: file.size,
-        uploaded_by: u.user?.id,
-      });
-      if (ins.error) throw ins.error;
-
-      const camposText = suggestion?.campos
-        ? Object.entries(suggestion.campos)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join(" · ")
-        : "";
-      await supabase
-        .from("onboarding_items")
-        .update({
-          estado: "entregado",
-          notas:
-            [item.notas, suggestion?.texto_para_notas ?? suggestion?.resumen]
-              .filter(Boolean)
-              .join("\n") || null,
-          valor_texto: camposText || item.valor_texto,
-        })
-        .eq("id", item.id);
-
-      // Aplicar pre-llenados extra a otros items (AI + derivados)
-      const extras = combineExtras(suggestion, items, item.clave).filter(
-        (ef) => extraSelected[ef.clave],
-      );
-      for (const ef of extras) {
-        const target = items.find((i) => i.clave === ef.clave);
-        if (!target) continue;
-        const newNotas =
-          [target.notas, ef.notas].filter(Boolean).join("\n") || null;
-        const patch: Record<string, unknown> = {
-          notas: newNotas,
-          estado: ef.valor_texto ? "entregado" : target.estado,
-        };
-        if (ef.valor_texto && !target.requiere_archivo) {
-          patch.valor_texto = ef.valor_texto;
-        }
-        await supabase.from("onboarding_items").update(patch).eq("id", target.id);
-      }
-
-      // Si el documento es de categoría "empresa" (p. ej. Constancia de
-      // Situación Fiscal), sincronizar también la tabla `empresa_datos` para
-      // que RFC, razón social, régimen y dirección queden disponibles para
-      // facturación, PDFs, etc.
-      const isEmpresaDoc =
-        item.categoria === "empresa" || suggestion?.categoria === "empresa";
-      if (isEmpresaDoc) {
-        const empresaPatch = buildEmpresaPatch(suggestion?.campos);
-        if (empresaPatch) {
-          await supabase.from("empresa_datos").update(empresaPatch).eq("id", 1);
-        }
-      }
-
-      // Si el documento es un catálogo de productos o una lista de precios
-      // (XLSX/CSV) intentamos parsearlo e importarlo a las tablas de negocio.
-      const isCatalogo =
-        item.categoria === "catalogos" || item.clave === "catalogo_productos";
-      const isPrecios =
-        item.categoria === "precios" ||
-        item.clave?.startsWith("lista_precios") ||
-        item.clave === "precios_cliente";
-      const isClientes = item.clave === "catalogo_clientes";
-      const isLaboratorios = item.clave === "catalogo_laboratorios";
-      const isRepresentantes = item.clave === "catalogo_representantes";
-      const looksLikeSheet =
-        /\.(xlsx|xls|csv)$/i.test(file.name) ||
-        file.type.includes("spreadsheet") ||
-        file.type.includes("excel") ||
-        file.type === "text/csv";
-
-      if (
-        (isCatalogo || isPrecios || isClientes || isLaboratorios || isRepresentantes) &&
-        looksLikeSheet
-      ) {
-        try {
-          const rows = await parseSheet(file);
-          let result: ImportResult | null = null;
-          if (isClientes) {
-            result = await importClientes(rows);
-          } else if (isLaboratorios) {
-            result = await importLaboratorios(rows);
-          } else if (isRepresentantes) {
-            result = await importRepresentantes(rows);
-          } else if (isPrecios) {
-            const listName = file.name.replace(/\.(xlsx|xls|csv)$/i, "");
-            result = await importPriceList(listName, rows);
-          } else if (isCatalogo) {
-            result = await importProductos(rows);
-          }
-          if (result) {
-            setImportSummary(
-              `Importadas ${result.inserted} nuevas, ${result.updated} actualizadas` +
-                (result.skipped ? `, ${result.skipped} omitidas` : "") +
-                (result.errors.length
-                  ? `. Errores: ${result.errors.slice(0, 3).join("; ")}${
-                      result.errors.length > 3 ? "…" : ""
-                    }`
-                  : ""),
-            );
-          }
-        } catch (e) {
-          setImportSummary(`No se pudo importar el archivo: ${(e as Error).message}`);
-        }
-      }
-
-
-
-      await onCommitted();
-      setOpen(false);
-      setFile(null);
-      setSuggestion(null);
-      setExtraSelected({});
-      if (importSummary) {
-        alert(importSummary);
-        setImportSummary(null);
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div>
-      <label
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDrag(true);
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDrag(false);
-          handleFiles(e.dataTransfer.files?.[0] ?? null);
-        }}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-6 py-8 text-center text-sm transition-colors ${
-          drag
-            ? "border-primary bg-primary/5"
-            : "border-border hover:bg-accent/30"
-        }`}
-      >
-        <input
-          type="file"
-          className="hidden"
-          accept="application/pdf,image/*,text/plain"
-          onChange={(e) => {
-            handleFiles(e.target.files?.[0] ?? null);
-            e.target.value = "";
-          }}
-        />
-        <span className="font-medium">
-          {busy
-            ? `Analizando ${file?.name ?? ""}…`
-            : "Subir o arrastrar documento (IA lo clasifica)"}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          PDF, imágenes o texto · Gemini vía Valinor decide la categoría
-        </span>
-        {error && <span className="mt-1 text-xs text-destructive">{error}</span>}
-      </label>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Revisar clasificación IA</DialogTitle>
-          </DialogHeader>
-
-          {suggestion ? (
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  Categoría sugerida:{" "}
-                  <strong className="text-foreground">
-                    {suggestion.categoria ?? "—"}
-                  </strong>
-                </span>
-                <span>
-                  Confianza:{" "}
-                  <strong className="text-foreground">
-                    {((suggestion.confianza ?? 0) * 100).toFixed(0)}%
-                  </strong>
-                </span>
-              </div>
-
-              {suggestion.resumen && (
-                <p className="rounded-md bg-muted/50 p-2 text-xs">
-                  {suggestion.resumen}
-                </p>
-              )}
-
-              <label className="block text-xs font-medium">
-                Item destino
-                <select
-                  value={targetClave}
-                  onChange={(e) => setTargetClave(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                >
-                  <option value="">— Seleccionar —</option>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.clave}>
-                      [{i.categoria}] {i.titulo}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {suggestion.campos &&
-                Object.keys(suggestion.campos).length > 0 && (
-                  <div className="rounded-md border border-border p-2 text-xs">
-                    <div className="mb-1 font-semibold">Campos extraídos</div>
-                    <ul className="space-y-0.5">
-                      {Object.entries(suggestion.campos).map(([k, v]) => (
-                        <li key={k}>
-                          <span className="text-muted-foreground">{k}:</span>{" "}
-                          {v}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-              {(() => {
-                const extras = combineExtras(suggestion, items, targetClave);
-                if (extras.length === 0) return null;
-                return (
-                  <div className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">
-                    <div className="mb-2 font-semibold">
-                      Pre-llenar otros items con datos de este documento
-                    </div>
-                    <ul className="space-y-1.5">
-                      {extras.map((ef) => {
-                        const target = items.find((i) => i.clave === ef.clave);
-                        if (!target) return null;
-                        return (
-                          <li key={ef.clave} className="flex items-start gap-2">
-                            <input
-                              type="checkbox"
-                              className="mt-0.5"
-                              checked={!!extraSelected[ef.clave]}
-                              onChange={(e) =>
-                                setExtraSelected((p) => ({
-                                  ...p,
-                                  [ef.clave]: e.target.checked,
-                                }))
-                              }
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium">
-                                [{target.categoria}] {target.titulo}
-                              </div>
-                              {ef.valor_texto && (
-                                <div className="text-muted-foreground">
-                                  → {ef.valor_texto}
-                                </div>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })()}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No se obtuvo sugerencia. Selecciona manualmente el item.
-            </p>
-          )}
-
-          {error && <p className="text-xs text-destructive">{error}</p>}
-
-          <DialogFooter>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={commit}
-              disabled={saving || !targetClave || !file}
-              className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
-            >
-              {saving ? "Guardando…" : "Adjuntar al item"}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
