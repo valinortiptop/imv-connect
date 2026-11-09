@@ -535,7 +535,7 @@ Responde: {"map":{"<campo>":"<encabezado exacto del Excel>", ...}} omitiendo los
       const k = address.trim().toLowerCase().replace(/\s+/g, " ");
       let p = byAddress.get(k);
       if (!p) {
-        p = geocodeAddress({ data: { address } }).catch(() => null);
+        p = geocodeAddressFn({ data: { address } }).catch(() => null);
         byAddress.set(k, p);
       }
       return p;
