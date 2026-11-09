@@ -8,8 +8,9 @@ import {
   geminiGenerateInline,
   googlePlacesAutocomplete,
   googlePlaceDetails,
-  googleGeocode,
 } from "./valinor-proxy.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildGeocodeQuery, geocodeWithCache } from "./geocoding.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 
@@ -161,19 +162,18 @@ export const googlePlaceEnrichFn = createServerFn({ method: "POST" })
     };
   });
 
-export const googleGeocodeFn = createServerFn({ method: "POST" })
+/**
+ * Ubica una dirección suelta (p. ej. filas de un importador). Usa el caché de
+ * direcciones: solo llama a Google Maps si la dirección nunca se ha ubicado.
+ */
+export const geocodeAddressFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({
-        address: z.string().min(1).max(500),
-        region: z.string().min(2).max(8).optional(),
-        language: z.string().min(2).max(8).optional(),
-      })
-      .parse(input),
+    z.object({ address: z.string().trim().min(5).max(500) }).parse(input),
   )
-  .handler(async ({ data }) => googleGeocode(data));
-
-
+  .handler(async ({ data, context }) =>
+    geocodeWithCache(context.supabase, buildGeocodeQuery(data.address)),
+  );
 
 /* ──────────────────── Análisis IA de docs de onboarding ──────────────────── */
 

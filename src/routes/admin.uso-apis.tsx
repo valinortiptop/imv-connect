@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getUsageReportFn } from "@/lib/valinor.functions";
+import { GeocodeBackfillCard } from "@/components/admin/GeocodeBackfillCard";
 
 export const Route = createFileRoute("/admin/uso-apis")({
   ssr: false,
@@ -85,6 +86,8 @@ function UsoApisPage() {
           </button>
         </div>
       </header>
+
+      <GeocodeBackfillCard />
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       {error && (

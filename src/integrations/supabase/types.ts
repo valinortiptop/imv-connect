@@ -29,6 +29,54 @@ export type Database = {
         }
         Relationships: []
       }
+      address_geocodes: {
+        Row: {
+          address_key: string
+          address_query: string
+          created_at: string
+          formatted_address: string | null
+          geocoded_at: string
+          hit_count: number
+          last_hit_at: string | null
+          latitude: number | null
+          longitude: number | null
+          place_id: string | null
+          postal_code: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address_key: string
+          address_query: string
+          created_at?: string
+          formatted_address?: string | null
+          geocoded_at?: string
+          hit_count?: number
+          last_hit_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
+          postal_code?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          address_key?: string
+          address_query?: string
+          created_at?: string
+          formatted_address?: string | null
+          geocoded_at?: string
+          hit_count?: number
+          last_hit_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
+          postal_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       almacenes: {
         Row: {
           activo: boolean
@@ -1162,6 +1210,9 @@ export type Database = {
           email: string | null
           email_extra: string | null
           facturapi_id: string | null
+          formatted_address: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
           google_place_id: string | null
           id: string
           lat: number | null
@@ -1205,6 +1256,9 @@ export type Database = {
           email?: string | null
           email_extra?: string | null
           facturapi_id?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_place_id?: string | null
           id?: string
           lat?: number | null
@@ -1248,6 +1302,9 @@ export type Database = {
           email?: string | null
           email_extra?: string | null
           facturapi_id?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_place_id?: string | null
           id?: string
           lat?: number | null
@@ -8553,6 +8610,9 @@ export type Database = {
           direccion: string | null
           enriched_at: string | null
           enrichment_status: string | null
+          formatted_address: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
           google_maps_url: string | null
           id: string
           lat: number | null
@@ -8585,6 +8645,9 @@ export type Database = {
           direccion?: string | null
           enriched_at?: string | null
           enrichment_status?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_maps_url?: string | null
           id?: string
           lat?: number | null
@@ -8617,6 +8680,9 @@ export type Database = {
           direccion?: string | null
           enriched_at?: string | null
           enrichment_status?: string | null
+          formatted_address?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
           google_maps_url?: string | null
           id?: string
           lat?: number | null
@@ -15368,6 +15434,51 @@ export type Database = {
       }
       facturas_recalc: { Args: { _factura: string }; Returns: undefined }
       fmt_month: { Args: { d: string }; Returns: string }
+      geocode_address_key: { Args: { _q: string }; Returns: string }
+      geocode_cache_get: {
+        Args: { _query: string }
+        Returns: {
+          address_key: string
+          address_query: string
+          created_at: string
+          formatted_address: string | null
+          geocoded_at: string
+          hit_count: number
+          last_hit_at: string | null
+          latitude: number | null
+          longitude: number | null
+          place_id: string | null
+          postal_code: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "address_geocodes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      geocode_cache_put: {
+        Args: {
+          _formatted: string
+          _lat: number
+          _lng: number
+          _place_id: string
+          _postal_code: string
+          _query: string
+          _status: string
+        }
+        Returns: undefined
+      }
+      geocode_cache_stats: {
+        Args: never
+        Returns: {
+          entries: number
+          hits: number
+          ok_entries: number
+        }[]
+      }
       get_all_users_for_admin: {
         Args: never
         Returns: {
