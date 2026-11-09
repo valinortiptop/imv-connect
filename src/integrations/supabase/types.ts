@@ -15329,7 +15329,6 @@ export type Database = {
       }
       current_rep_id: { Args: never; Returns: string }
       current_rep_ids: { Args: never; Returns: string[] }
-      current_user_ai_allowed: { Args: never; Returns: boolean }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
