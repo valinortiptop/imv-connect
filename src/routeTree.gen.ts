@@ -137,6 +137,7 @@ import { Route as AdminIntegracionesNetsuiteRouteImport } from './routes/admin.i
 import { Route as AdminPedidosIndexRouteImport } from './routes/admin.pedidos.index'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin.pedidos.$id'
 import { Route as ApiPublicBackfillNetsuite2026RouteImport } from './routes/api/public/backfill-netsuite-2026'
+import { Route as ApiPublicValinorLaunchSyncRouteImport } from './routes/api/public/valinor-launch-sync'
 import { Route as RepClientesIndexRouteImport } from './routes/rep.clientes.index'
 import { Route as RepClientesIdRouteImport } from './routes/rep.clientes.$id'
 import { Route as AdminClientesIdPreciosRouteImport } from './routes/admin.clientes.$id.precios'
@@ -816,6 +817,12 @@ const ApiPublicBackfillNetsuite2026Route =
     path: '/api/public/backfill-netsuite-2026',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicValinorLaunchSyncRoute =
+  ApiPublicValinorLaunchSyncRouteImport.update({
+    id: '/api/public/valinor-launch-sync',
+    path: '/api/public/valinor-launch-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const RepClientesIndexRoute = RepClientesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -1029,6 +1036,7 @@ export interface FileRoutesByFullPath {
   '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
+  '/api/public/valinor-launch-sync': typeof ApiPublicValinorLaunchSyncRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen/': typeof AdminAlmacenIndexRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
@@ -1168,6 +1176,7 @@ export interface FileRoutesByTo {
   '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
+  '/api/public/valinor-launch-sync': typeof ApiPublicValinorLaunchSyncRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen': typeof AdminAlmacenIndexRoute
   '/admin/bancos': typeof AdminBancosIndexRoute
@@ -1315,6 +1324,7 @@ export interface FileRoutesById {
   '/admin/integraciones/netsuite': typeof AdminIntegracionesNetsuiteRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/api/public/backfill-netsuite-2026': typeof ApiPublicBackfillNetsuite2026Route
+  '/api/public/valinor-launch-sync': typeof ApiPublicValinorLaunchSyncRoute
   '/rep/clientes/$id': typeof RepClientesIdRoute
   '/admin/almacen/': typeof AdminAlmacenIndexRoute
   '/admin/bancos/': typeof AdminBancosIndexRoute
@@ -1463,6 +1473,7 @@ export interface FileRouteTypes {
     | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
+    | '/api/public/valinor-launch-sync'
     | '/rep/clientes/$id'
     | '/admin/almacen/'
     | '/admin/bancos/'
@@ -1602,6 +1613,7 @@ export interface FileRouteTypes {
     | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
+    | '/api/public/valinor-launch-sync'
     | '/rep/clientes/$id'
     | '/admin/almacen'
     | '/admin/bancos'
@@ -1748,6 +1760,7 @@ export interface FileRouteTypes {
     | '/admin/integraciones/netsuite'
     | '/admin/pedidos/$id'
     | '/api/public/backfill-netsuite-2026'
+    | '/api/public/valinor-launch-sync'
     | '/rep/clientes/$id'
     | '/admin/almacen/'
     | '/admin/bancos/'
@@ -1783,6 +1796,7 @@ export interface RootRouteChildren {
   ManiobraTokenRoute: typeof ManiobraTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   ApiPublicBackfillNetsuite2026Route: typeof ApiPublicBackfillNetsuite2026Route
+  ApiPublicValinorLaunchSyncRoute: typeof ApiPublicValinorLaunchSyncRoute
   ApiPublicHooksCobranzaEdoCuentaRoute: typeof ApiPublicHooksCobranzaEdoCuentaRoute
   ApiPublicHooksCobranzaRecordatoriosRoute: typeof ApiPublicHooksCobranzaRecordatoriosRoute
   ApiPublicHooksCobranzaRiesgoNocturnoRoute: typeof ApiPublicHooksCobranzaRiesgoNocturnoRoute
@@ -2690,6 +2704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBackfillNetsuite2026RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/valinor-launch-sync': {
+      id: '/api/public/valinor-launch-sync'
+      path: '/api/public/valinor-launch-sync'
+      fullPath: '/api/public/valinor-launch-sync'
+      preLoaderRoute: typeof ApiPublicValinorLaunchSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rep/clientes/': {
       id: '/rep/clientes/'
       path: '/'
@@ -3187,6 +3208,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManiobraTokenRoute: ManiobraTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   ApiPublicBackfillNetsuite2026Route: ApiPublicBackfillNetsuite2026Route,
+  ApiPublicValinorLaunchSyncRoute: ApiPublicValinorLaunchSyncRoute,
   ApiPublicHooksCobranzaEdoCuentaRoute: ApiPublicHooksCobranzaEdoCuentaRoute,
   ApiPublicHooksCobranzaRecordatoriosRoute:
     ApiPublicHooksCobranzaRecordatoriosRoute,
