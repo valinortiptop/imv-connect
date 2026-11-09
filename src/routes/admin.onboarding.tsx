@@ -93,7 +93,6 @@ const ESTADO_CLS: Record<string, string> = {
 function Pill({ e }: { e: string }) {
   return <span className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${ESTADO_CLS[e] ?? ""}`}>{ESTADO_LABEL[e] ?? e}</span>;
 }
-const respLabel = (k: string | null) => RESPONSABLES.find((r) => r.key === k)?.label ?? "Sin asignar";
 
 function OnboardingPage() {
   const qc = useQueryClient();
@@ -577,5 +576,3 @@ function Paralelo({ d, refresh }: P) {
 function Empty({ text }: { text: string }) {
   return <p className="mt-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{text}</p>;
 }
-
-export { respLabel };

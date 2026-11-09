@@ -1,3 +1,4 @@
 
 - All address geocoding goes through `geocodeWithCache` (src/lib/geocoding.server.ts), which checks the `address_geocodes` table (key = SQL `geocode_address_key`) before calling Google via Valinor; why: each address is billed once and no-result addresses are never retried.
 - Lists and maps never geocode automatically; clientes/prospects carry `geocode_status` (ok/pendiente/sin_resultado) set by triggers on address change; why: prevents repeated paid lookups on every render.
+- The /admin/onboarding page is the NetSuite-exit tracker: documents live in `onboarding_items` (grouped by `area`), sessions/dev tasks/parallel-run weeks in their own `onboarding_*` tables; why: one place for IMV and Valinor to track go-live readiness.
