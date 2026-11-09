@@ -43,6 +43,10 @@ export const aiRepAskFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ text: string }> => {
     const { supabase } = context;
+    const { isAiAllowedForUser } = await import("@/lib/ai/ai-access.server");
+    if (!(await isAiAllowedForUser(supabase, context.userId))) {
+      throw new Error("El asistente IA no está habilitado para tu usuario. Pide acceso a un administrador.");
+    }
     const { generateRepNarrative } = await import("@/lib/ai/rep-ai.server");
     const text = await generateRepNarrative({
       supabase,
