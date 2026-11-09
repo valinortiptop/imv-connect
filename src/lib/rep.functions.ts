@@ -1413,12 +1413,13 @@ export const geocodeClientFn = createServerFn({ method: "POST" })
  * cobrar las mismas direcciones. */
 type GeoTarget = "clientes" | "prospects";
 
-function pendingFilter<T extends { or: (f: string) => T; not: (...a: any[]) => T }>(q: T): T {
+function pendingFilter(q: any): any {
   return q
-    .or("lat.is.null,lng.is.null,geocode_status.eq.pendiente")
-    .or("geocode_status.is.null,geocode_status.neq.sin_resultado")
+    .or(
+      "geocode_status.eq.pendiente,and(geocode_status.is.null,or(lat.is.null,lng.is.null))",
+    )
     .not("direccion", "is", null)
-    .neq("direccion" as never, "" as never);
+    .neq("direccion", "");
 }
 
 async function countGeo(supabase: any, target: GeoTarget) {
