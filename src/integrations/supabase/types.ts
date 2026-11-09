@@ -9498,6 +9498,45 @@ export type Database = {
           },
         ]
       }
+      rep_ai_access: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          representante_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          representante_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          representante_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_ai_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: true
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_ai_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: true
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_client_insights: {
         Row: {
           churn_reasons: Json | null

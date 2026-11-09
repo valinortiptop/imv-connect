@@ -4,7 +4,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 export function AIToggle({ compact = false }: { compact?: boolean }) {
-  const { enabled, setEnabled } = useAI();
+  const { enabled, allowed, setEnabled } = useAI();
+
+  // Representantes sin permiso del administrador no ven el interruptor.
+  if (!allowed) return null;
 
   if (compact) {
     return (

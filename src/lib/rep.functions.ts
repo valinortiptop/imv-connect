@@ -83,7 +83,9 @@ export const getMyRepFn = createServerFn({ method: "POST" })
       _user_id: context.userId,
       _role: "admin",
     });
-    return { rep, isAdmin: !!isAdminData };
+    const { isAiAllowedForUser } = await import("@/lib/ai/ai-access.server");
+    const aiAllowed = !!isAdminData || (await isAiAllowedForUser(context.supabase, context.userId));
+    return { rep, isAdmin: !!isAdminData, aiAllowed };
   });
 
 /* ─── 2. getMyClients: clientes + métricas base ─── */

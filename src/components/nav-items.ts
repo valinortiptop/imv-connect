@@ -286,6 +286,7 @@ export const navGroups: NavGroup[] = [
         items: [
           { key: "navEmpresas", label: "Empresas", url: "/admin/empresas", icon: icEmpresas.url, adminOnly: true },
           { key: "navPlantillas", label: "Plantillas de mensajes", url: "/admin/configuracion/plantillas", icon: icDocumentos.url, adminOnly: true },
+          { key: "navRepIA", label: "IA para representantes", url: "/admin/configuracion/ia-representantes", icon: icAdmin.url, adminOnly: true },
           { key: "navApiStatus", label: "Estado de APIs", url: "/admin/estado-apis", icon: icEstadoApis.url, adminOnly: true },
           { key: "navNetsuite", label: "Integración NetSuite", url: "/admin/integraciones/netsuite", icon: icEstadoApis.url, adminOnly: true },
           { key: "navApiUsage", label: "Uso de APIs", url: "/admin/uso-apis", icon: icUsoApis.url, adminOnly: true },
