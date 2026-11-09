@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   openaiChat,
-  googleGeocode,
   googleDirections,
   geminiGenerate,
 } from "./valinor-proxy.server";
@@ -14,6 +13,7 @@ import {
 import { mergePolylines } from "./polyline";
 import { OFFICE_LOCATION, OFFICE_PURPOSES, OFFICE_STOP_ID } from "./office";
 import { mxDayFromIso } from "./date-utils";
+import { buildGeocodeQuery, geocodeWithCache } from "./geocoding.server";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1360,7 +1360,7 @@ export const optimizeRouteFn = createServerFn({ method: "POST" })
     };
   });
 
-/* ─── 10. geocodeClient ─── */
+/* ─── 10. geocodeClient — ubica UN cliente bajo demanda (usa caché) ─── */
 export const geocodeClientFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -1369,70 +1369,183 @@ export const geocodeClientFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: cliente } = await context.supabase
       .from("clientes")
-      .select("id, direccion, codigo_postal, razon_social")
+      .select("id, direccion, codigo_postal, lat, lng, geocode_status")
       .eq("id", data.clienteId)
       .maybeSingle();
-    if (!cliente?.direccion) throw new Error("Cliente sin dirección");
-    const q = `${cliente.direccion}, CP ${cliente.codigo_postal ?? ""}, México`;
-    const res = await googleGeocode({ address: q });
-    const loc = res.results?.[0]?.geometry?.location;
-    if (!loc) throw new Error(`Geocode falló: ${res.status}`);
+    if (!cliente) throw new Error("Cliente no encontrado");
+    // Ya tiene coordenadas vigentes → no se llama a Google.
+    if (
+      cliente.lat != null &&
+      cliente.lng != null &&
+      cliente.geocode_status !== "pendiente"
+    ) {
+      return { lat: Number(cliente.lat), lng: Number(cliente.lng), source: "db" as const };
+    }
+    if (!cliente.direccion?.trim()) throw new Error("Cliente sin dirección");
+    const r = await geocodeWithCache(
+      context.supabase,
+      buildGeocodeQuery(cliente.direccion, cliente.codigo_postal),
+    );
+    if (r.status !== "ok" || r.lat == null || r.lng == null) {
+      await context.supabase
+        .from("clientes")
+        .update({ geocode_status: "sin_resultado", geocoded_at: new Date().toISOString() })
+        .eq("id", data.clienteId);
+      throw new Error("Google Maps no encontró esta dirección. Revísala o fija el punto a mano.");
+    }
     await context.supabase
       .from("clientes")
-      .update({ lat: loc.lat, lng: loc.lng })
+      .update({
+        lat: r.lat,
+        lng: r.lng,
+        formatted_address: r.formatted_address,
+        geocoded_at: new Date().toISOString(),
+        geocode_status: "ok",
+      })
       .eq("id", data.clienteId);
-    return { lat: loc.lat, lng: loc.lng };
+    return { lat: r.lat, lng: r.lng, source: r.source };
   });
 
-/* ─── 10b. geocodeClientsBulk — geolocaliza en lotes los clientes sin coords ─── */
-export const geocodeClientsBulkFn = createServerFn({ method: "POST" })
+/* ─── 10b. Geocodificación pendiente (una sola vez por dirección) ───
+ * Pendiente = sin coordenadas o con la dirección cambiada ("pendiente"), con
+ * dirección escrita y que no haya fallado antes ("sin_resultado"). Cada
+ * registro procesado queda marcado, así que repetir el proceso no vuelve a
+ * cobrar las mismas direcciones. */
+type GeoTarget = "clientes" | "prospects";
+
+function pendingFilter<T extends { or: (f: string) => T; not: (...a: any[]) => T }>(q: T): T {
+  return q
+    .or("lat.is.null,lng.is.null,geocode_status.eq.pendiente")
+    .or("geocode_status.is.null,geocode_status.neq.sin_resultado")
+    .not("direccion", "is", null)
+    .neq("direccion" as never, "" as never);
+}
+
+async function countGeo(supabase: any, target: GeoTarget) {
+  const [pending, failed, noAddress, total] = await Promise.all([
+    pendingFilter(supabase.from(target).select("id", { count: "exact", head: true })),
+    supabase
+      .from(target)
+      .select("id", { count: "exact", head: true })
+      .eq("geocode_status", "sin_resultado"),
+    supabase
+      .from(target)
+      .select("id", { count: "exact", head: true })
+      .is("lat", null)
+      .or("direccion.is.null,direccion.eq."),
+    supabase.from(target).select("id", { count: "exact", head: true }),
+  ]);
+  return {
+    pending: (pending as any).count ?? 0,
+    sin_resultado: failed.count ?? 0,
+    sin_direccion: noAddress.count ?? 0,
+    total: total.count ?? 0,
+  };
+}
+
+async function assertGeoManager(supabase: any, userId: string) {
+  const { data: ok } = await supabase.rpc("has_any_role", {
+    _user_id: userId,
+    _roles: ["admin", "ventas"],
+  });
+  if (!ok) throw new Error("Solo administración o ventas pueden ubicar direcciones en lote.");
+}
+
+export const geocodeStatusFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [clientes, prospects, stats] = await Promise.all([
+      countGeo(context.supabase, "clientes"),
+      countGeo(context.supabase, "prospects"),
+      context.supabase.rpc("geocode_cache_stats"),
+    ]);
+    const s = Array.isArray(stats.data) ? stats.data[0] : null;
+    return {
+      clientes,
+      prospects,
+      cache: {
+        entries: Number(s?.entries ?? 0),
+        ok_entries: Number(s?.ok_entries ?? 0),
+        hits: Number(s?.hits ?? 0),
+      },
+    };
+  });
+
+export const geocodeBackfillFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ limit: z.number().int().min(1).max(40).optional() }).parse(input ?? {}),
+    z
+      .object({
+        target: z.enum(["clientes", "prospects"]),
+        limit: z.number().int().min(1).max(25).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await assertGeoManager(context.supabase, context.userId);
     const limit = data.limit ?? 20;
-
-    const { count: remainingBefore } = await context.supabase
-      .from("clientes")
-      .select("id", { count: "exact", head: true })
-      .is("lat", null);
-
-    const { data: pending } = await context.supabase
-      .from("clientes")
-      .select("id, direccion, codigo_postal, razon_social, nombre_comercial")
-      .is("lat", null)
+    const target = data.target;
+    const cols = target === "clientes" ? "id, direccion, codigo_postal" : "id, direccion";
+    const { data: rows, error } = await pendingFilter(
+      (context.supabase as any).from(target).select(cols),
+    )
+      .order("id")
       .limit(limit);
+    if (error) throw new Error(error.message);
 
     let updated = 0;
     let failed = 0;
+    let fromCache = 0;
+    let fromGoogle = 0;
+    let stoppedError: string | null = null;
 
-    for (const c of pending ?? []) {
-      const base = c.direccion || c.razon_social || c.nombre_comercial;
-      if (!base) { failed++; continue; }
-      const q = `${base}${c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}, México`;
+    for (const row of (rows ?? []) as Array<{ id: string; direccion: string; codigo_postal?: string | null }>) {
+      let r;
       try {
-        const res = await googleGeocode({ address: q });
-        const loc = res.results?.[0]?.geometry?.location;
-        if (!loc) { failed++; continue; }
-        await context.supabase
-          .from("clientes")
-          .update({ lat: loc.lat, lng: loc.lng })
-          .eq("id", c.id);
+        r = await geocodeWithCache(
+          context.supabase,
+          buildGeocodeQuery(row.direccion, row.codigo_postal ?? null),
+        );
+      } catch (e) {
+        // Problema temporal (cuota, red): detener sin marcar el registro.
+        stoppedError = e instanceof Error ? e.message : String(e);
+        break;
+      }
+      if (r.source === "cache") fromCache++;
+      else fromGoogle++;
+      const now = new Date().toISOString();
+      if (r.status === "ok" && r.lat != null && r.lng != null) {
+        await (context.supabase as any)
+          .from(target)
+          .update({
+            lat: r.lat,
+            lng: r.lng,
+            formatted_address: r.formatted_address,
+            geocoded_at: now,
+            geocode_status: "ok",
+          })
+          .eq("id", row.id);
         updated++;
-      } catch {
+      } else {
+        await (context.supabase as any)
+          .from(target)
+          .update({ geocode_status: "sin_resultado", geocoded_at: now })
+          .eq("id", row.id);
         failed++;
       }
     }
 
+    const after = await countGeo(context.supabase, target);
     return {
-      processed: (pending ?? []).length,
+      processed: updated + failed,
       updated,
       failed,
-      remaining: Math.max(0, (remainingBefore ?? 0) - updated),
+      from_cache: fromCache,
+      from_google: fromGoogle,
+      remaining: after.pending,
+      error: stoppedError,
     };
   });
-
 
 
 /* ─── 11. quickInventoryLookup ─── */
