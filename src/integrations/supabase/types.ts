@@ -9498,6 +9498,45 @@ export type Database = {
           },
         ]
       }
+      rep_ai_access: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          representante_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          representante_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          representante_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rep_ai_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: true
+            referencedRelation: "representantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rep_ai_access_representante_id_fkey"
+            columns: ["representante_id"]
+            isOneToOne: true
+            referencedRelation: "v_comisiones_representante"
+            referencedColumns: ["representante_id"]
+          },
+        ]
+      }
       rep_client_insights: {
         Row: {
           churn_reasons: Json | null
@@ -15290,6 +15329,7 @@ export type Database = {
       }
       current_rep_id: { Args: never; Returns: string }
       current_rep_ids: { Args: never; Returns: string[] }
+      current_user_ai_allowed: { Args: never; Returns: boolean }
       current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
