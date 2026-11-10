@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const PERMISSIONS_CHANGED_EVENT = "permissions-changed";
@@ -62,19 +62,35 @@ export function usePermissions() {
     return () => window.removeEventListener(PERMISSIONS_CHANGED_EVENT, onChange);
   }, [fetchPermissions]);
 
-  const allowedRouteKeys = new Set(permissions.map((p) => p.route_key));
-  const allowedRoutePaths = permissions.map((p) => p.route_path);
-  const allowedGroups = [...new Set(permissions.map((p) => p.group_label))];
+  // Valores derivados estables: otros componentes los usan como dependencias
+  // de efectos/memos; si cambian en cada render provocan ciclos infinitos.
+  const allowedRouteKeys = useMemo(
+    () => new Set(permissions.map((p) => p.route_key)),
+    [permissions],
+  );
+  const allowedRoutePaths = useMemo(() => permissions.map((p) => p.route_path), [permissions]);
+  const allowedGroups = useMemo(
+    () => [...new Set(permissions.map((p) => p.group_label))],
+    [permissions],
+  );
 
-  const canAccess = (pathname: string): boolean => {
-    if (permissive) return true;
-    return allowedRoutePaths.some((r) =>
-      r === "/admin" ? pathname === "/admin" : pathname.startsWith(r)
-    );
-  };
-  const canAccessKey = (key: string): boolean => permissive || allowedRouteKeys.has(key);
-  const canAccessPath = (path: string): boolean =>
-    permissive || allowedRoutePaths.includes(path);
+  const canAccess = useCallback(
+    (pathname: string): boolean => {
+      if (permissive) return true;
+      return allowedRoutePaths.some((r) =>
+        r === "/admin" ? pathname === "/admin" : pathname.startsWith(r),
+      );
+    },
+    [permissive, allowedRoutePaths],
+  );
+  const canAccessKey = useCallback(
+    (key: string): boolean => permissive || allowedRouteKeys.has(key),
+    [permissive, allowedRouteKeys],
+  );
+  const canAccessPath = useCallback(
+    (path: string): boolean => permissive || allowedRoutePaths.includes(path),
+    [permissive, allowedRoutePaths],
+  );
 
   return {
     permissions,
