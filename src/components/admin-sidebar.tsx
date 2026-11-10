@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, LogOut, Search, Star, UserCog, Clock } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -23,13 +23,14 @@ import {
   type NavGroup,
   type NavItem,
 } from "@/components/nav-items";
-import { AdminNavSearch, Highlight, useNavSearchShortcut } from "@/components/admin-nav-search";
+import { Highlight } from "@/components/admin-nav-search";
 
 const ADMIN_BUILD_MARKER = `Build ${__BUILD_ID__}`;
 
 const LS_GROUPS = "imv.sidebar.groups";
 const LS_FAVS = "imv.sidebar.favs";
 const LS_RECENT = "imv.sidebar.recent";
+const LS_RECENT_OPEN = "imv.sidebar.recentOpen";
 
 function readLS<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -52,9 +53,12 @@ function writeLS(key: string, value: unknown) {
 export function AdminSidebar({
   email,
   onSignOut,
+  onGroupsChange,
 }: {
   email: string | null;
   onSignOut: () => void;
+  /** Recibe el menú visible (ya filtrado por permisos) para la búsqueda general. */
+  onGroupsChange?: (groups: NavGroup[]) => void;
 }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { canAccessKey, loading } = usePermissions();
@@ -62,12 +66,10 @@ export function AdminSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   const [query, setQuery] = useState("");
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-
-  useNavSearchShortcut(useCallback(() => setPaletteOpen(true), []));
+  const [recentOpen, setRecentOpen] = useState(false);
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
@@ -80,6 +82,7 @@ export function AdminSidebar({
     setOpenGroups(readLS<string[]>(LS_GROUPS, []));
     setFavs(readLS<string[]>(LS_FAVS, []));
     setRecent(readLS<string[]>(LS_RECENT, []));
+    setRecentOpen(readLS<boolean>(LS_RECENT_OPEN, false));
   }, []);
 
   // ---- visible tree (permissions + role filtering) -------------------------
@@ -103,6 +106,10 @@ export function AdminSidebar({
   }, [loading, rolesLoading, isAdmin, canAccessKey]);
 
   const allItems = useMemo(() => flattenNav(visibleGroups), [visibleGroups]);
+
+  useEffect(() => {
+    onGroupsChange?.(visibleGroups);
+  }, [visibleGroups, onGroupsChange]);
 
   const activeGroupLabel = useMemo(() => {
     const match = allItems
@@ -136,6 +143,12 @@ export function AdminSidebar({
       const next = prev.includes(label) ? prev.filter((l) => l !== label) : [label];
       writeLS(LS_GROUPS, next);
       return next;
+    });
+
+  const toggleRecentOpen = () =>
+    setRecentOpen((prev) => {
+      writeLS(LS_RECENT_OPEN, !prev);
+      return !prev;
     });
 
   const toggleFav = (key: string) =>
@@ -214,11 +227,11 @@ export function AdminSidebar({
   };
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" className="!border-r-0">
       {/* Brand header — full IMV lockup on its native navy background */}
       <Link
         to="/admin"
-        className="block border-b border-sidebar-border bg-[#0b1f5c] px-4 py-2"
+        className="mx-2 mt-2 block rounded-xl bg-[#0b1f5c] px-4 py-2 shadow-sm"
         aria-label="IMV — ir al inicio"
       >
         <div className="flex h-8 items-center justify-center overflow-hidden">
@@ -231,23 +244,16 @@ export function AdminSidebar({
       </Link>
 
       {/* Search */}
-      <div className="border-b border-sidebar-border px-2 py-2">
+      <div className="px-2 pb-1 pt-2">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar página…"
-            className="h-8 pl-7 pr-12 text-[13px]"
+            placeholder="Buscar en el menú…"
+            aria-label="Buscar en el menú"
+            className="h-8 border-sidebar-border bg-background/70 pl-7 text-[13px]"
           />
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
-            aria-label="Abrir buscador de páginas"
-          >
-            ⌘K
-          </button>
         </div>
       </div>
 
@@ -271,14 +277,31 @@ export function AdminSidebar({
             {/* Recientes */}
             {!searching && recentItems.length > 0 && (
               <div className="mb-2 border-t border-sidebar-border pt-2">
-                <div className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-3 w-3" /> Recientes
-                </div>
-                <ul className="space-y-0.5">
-                  {recentItems.map((i) => (
-                    <Row key={`recent-${i.key}`} item={i} />
-                  ))}
-                </ul>
+                <button
+                  type="button"
+                  onClick={toggleRecentOpen}
+                  aria-expanded={recentOpen}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent"
+                >
+                  <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Recientes
+                  </span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground/70">{recentItems.length}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+                      !recentOpen && "-rotate-90",
+                    )}
+                  />
+                </button>
+                {recentOpen && (
+                  <ul className="ml-2 space-y-0.5 border-l border-sidebar-border pb-1 pl-1.5 pt-1">
+                    {recentItems.map((i) => (
+                      <Row key={`recent-${i.key}`} item={i} />
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
@@ -345,7 +368,7 @@ export function AdminSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="space-y-2 border-t p-3">
+        <div className="space-y-2 border-t border-sidebar-border p-3">
           <Link
             to="/admin/cuenta"
             className="flex items-center gap-2 rounded-md px-1 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -369,7 +392,6 @@ export function AdminSidebar({
         </div>
       </SidebarFooter>
 
-      <AdminNavSearch groups={visibleGroups} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </Sidebar>
   );
 }

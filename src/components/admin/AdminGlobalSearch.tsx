@@ -137,7 +137,7 @@ export function AdminGlobalSearch({ groups }: { groups: NavGroup[] }) {
         onClick={() => setOpen(true)}
         aria-label="Buscar en toda la app"
         className={cn(
-          "group flex h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-sidebar-border bg-background/70 px-2.5 text-left text-sm text-muted-foreground shadow-xs transition-colors",
+          "group flex h-9 w-full min-w-0 items-center justify-center gap-2 sm:justify-start rounded-lg border border-sidebar-border bg-background/70 px-2.5 text-left text-sm text-muted-foreground shadow-xs transition-colors",
           "hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
