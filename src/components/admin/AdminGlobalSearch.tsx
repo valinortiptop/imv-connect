@@ -13,9 +13,9 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-  CommandDialog,
-  CommandEmpty,
+  Command,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -150,7 +150,13 @@ export function AdminGlobalSearch({ groups }: { groups: NavGroup[] }) {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="top-[12%] translate-y-0 overflow-hidden p-0 sm:max-w-xl">
+          <DialogTitle className="sr-only">Búsqueda general</DialogTitle>
+          <Command
+            shouldFilter={false}
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2.5"
+          >
         <CommandInput
           placeholder="Busca un cliente, folio de pedido o factura, producto o página…"
           value={q}
@@ -162,7 +168,7 @@ export function AdminGlobalSearch({ groups }: { groups: NavGroup[] }) {
               <CommandGroup heading="Búsquedas recientes">
                 {recent.map((r) => (
                   <CommandItem key={`r-${r}`} value={`recent-${r}`} onSelect={() => setQ(r)}>
-                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Clock className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                     {r}
                   </CommandItem>
                 ))}
@@ -226,10 +232,14 @@ export function AdminGlobalSearch({ groups }: { groups: NavGroup[] }) {
             </div>
           )}
           {!isFetching && pageHits.length === 0 && recordGroups.length === 0 && t.length >= 2 && (
-            <CommandEmpty>Sin resultados para “{q.trim()}”.</CommandEmpty>
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              Sin resultados para “{q.trim()}”.
+            </div>
           )}
         </CommandList>
-      </CommandDialog>
+          </Command>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
