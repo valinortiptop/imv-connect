@@ -116,7 +116,7 @@ export const globalSearchFn = createServerFn({ method: "POST" })
       })),
       prospectos: (pro.data ?? []).map((p) => ({
         id: p.id,
-        title: p.name,
+        title: p.name ?? "Prospecto sin nombre",
         subtitle: [p.municipio, p.status].filter(Boolean).join(" · ") || null,
         url: "/admin/prospectos",
       })),
