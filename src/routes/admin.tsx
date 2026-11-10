@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminGlobalSearch } from "@/components/admin/AdminGlobalSearch";
 import { resolveAdminPageTitle } from "@/components/admin/page-title";
@@ -66,7 +66,7 @@ function AdminLayout() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-sidebar text-foreground">
         <AdminSidebar email={email} onSignOut={signOut} onGroupsChange={setVisibleGroups} />
-        <SidebarInset className="min-w-0 bg-sidebar">
+        <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-2 bg-sidebar px-2 pt-[env(safe-area-inset-top)] text-sidebar-foreground sm:gap-3 sm:px-3">
             <SidebarTrigger aria-label="Abrir o cerrar menú" className="size-9 shrink-0" />
             <div className="min-w-0 shrink" aria-live="polite">
@@ -75,12 +75,12 @@ function AdminLayout() {
                   {page.section}
                 </div>
               )}
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
+              <div className="truncate text-sm font-semibold leading-tight sm:text-base">
                 {page.title}
                 {page.detail && (
                   <span className="font-normal text-muted-foreground"> › {page.detail}</span>
                 )}
-              </h1>
+              </div>
             </div>
             <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
               <div className="w-9 min-w-0 sm:w-full sm:max-w-sm lg:max-w-md">
@@ -95,7 +95,7 @@ function AdminLayout() {
           >
             <Outlet />
           </main>
-        </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
