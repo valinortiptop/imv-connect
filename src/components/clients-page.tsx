@@ -1702,12 +1702,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               <colgroup>
                 <col className="hidden md:table-column" style={{ width: "40px" }} />
                 <col style={{ width: "40px" }} />
-                <col style={{ width: "17%" }} />
+                <col style={{ width: "16%" }} />
                 <col className="hidden md:table-column" style={{ width: "12%" }} />
                 <col className="hidden md:table-column" style={{ width: "11%" }} />
                 <col className="hidden lg:table-column" style={{ width: "16%" }} />
                 <col className="hidden lg:table-column" style={{ width: "12%" }} />
-                <col style={{ width: "7%" }} />
+                <col style={{ width: "8%" }} />
                 <col style={{ width: "80px" }} />
               </colgroup>
               <TableHeader>
