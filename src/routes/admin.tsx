@@ -91,7 +91,7 @@ function AdminLayout() {
           </header>
           <main
             data-mobile-safe
-            className="w-full min-w-0 flex-1 overflow-x-hidden bg-background px-3 py-4 sm:px-6 sm:py-6 md:mb-2 md:mr-2 md:rounded-2xl md:border md:border-sidebar-border md:shadow-sm lg:px-8"
+            className="w-full min-w-0 flex-1 overflow-x-clip bg-background px-3 py-4 sm:px-6 sm:py-6 md:mb-2 md:mr-2 md:rounded-2xl md:border md:border-sidebar-border md:shadow-sm lg:px-8"
           >
             <Outlet />
           </main>
