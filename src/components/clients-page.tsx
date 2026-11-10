@@ -494,7 +494,7 @@ function SortHeader({
         className,
       )}
     >
-      <span className="min-w-0 break-words">{label}</span>
+      <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
       <Icon className="h-3.5 w-3.5 shrink-0 opacity-60" />
     </button>
   );
@@ -1702,10 +1702,10 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               <colgroup>
                 <col className="hidden md:table-column" style={{ width: "40px" }} />
                 <col style={{ width: "40px" }} />
-                <col style={{ width: "18%" }} />
+                <col style={{ width: "17%" }} />
                 <col className="hidden md:table-column" style={{ width: "12%" }} />
                 <col className="hidden md:table-column" style={{ width: "11%" }} />
-                <col className="hidden lg:table-column" style={{ width: "15%" }} />
+                <col className="hidden lg:table-column" style={{ width: "16%" }} />
                 <col className="hidden lg:table-column" style={{ width: "12%" }} />
                 <col style={{ width: "7%" }} />
                 <col style={{ width: "80px" }} />
