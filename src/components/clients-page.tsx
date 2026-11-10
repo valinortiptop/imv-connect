@@ -494,8 +494,8 @@ function SortHeader({
         className,
       )}
     >
-      {label}
-      <Icon className="h-3.5 w-3.5 opacity-60" />
+      <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+      <Icon className="h-3.5 w-3.5 shrink-0 opacity-60" />
     </button>
   );
 }
@@ -600,22 +600,39 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
   }, []);
 
   const toggleExpand = (id: string, anchorEl?: HTMLElement | null) => {
-    // Keep the clicked row visually anchored: remember its offset from the top
-    // of the viewport and restore it after the expand/collapse re-render.
+    const willExpand = !expandedIds.has(id);
     const before = anchorEl?.getBoundingClientRect().top ?? null;
     setExpandedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-    if (before != null && anchorEl) {
+    if (!anchorEl) return;
+    if (willExpand) {
+      // Bring the opened client to the top of the screen (below the app
+      // header) so the client and its details are in view.
+      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const scrollToRow = (behavior: ScrollBehavior) => {
+        const headerOffset = 96;
+        const top = anchorEl.getBoundingClientRect().top + window.scrollY - headerOffset;
+        window.scrollTo({ top: Math.max(0, top), behavior });
+      };
+      requestAnimationFrame(() => scrollToRow(reduce ? "auto" : "smooth"));
+      // The details grow over ~300ms; near the end of the list the page may
+      // not be tall enough yet, so correct once the animation has finished.
+      window.setTimeout(() => {
+        const off = anchorEl.getBoundingClientRect().top - 96;
+        if (Math.abs(off) > 8) scrollToRow(reduce ? "auto" : "smooth");
+      }, 380);
+    } else if (before != null) {
+      // Collapsing: keep the row where it was on screen.
       requestAnimationFrame(() => {
-        const after = anchorEl.getBoundingClientRect().top;
-        const delta = after - before;
+        const delta = anchorEl.getBoundingClientRect().top - before;
         if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: "instant" as ScrollBehavior });
       });
     }
   };
+
 
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -1545,8 +1562,9 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
             paginatedClients.map(c => (
               <div
                 key={c.id}
+                data-client-row
                 className={cn(
-                  "rounded-lg border border-border bg-card overflow-hidden transition-colors",
+                  "rounded-lg border border-border bg-card overflow-hidden transition-colors scroll-mt-24",
                   !c.active && "opacity-50",
                   expandedIds.has(c.id) && "ring-1 ring-primary/30"
                 )}
@@ -1684,12 +1702,12 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
               <colgroup>
                 <col className="hidden md:table-column" style={{ width: "40px" }} />
                 <col style={{ width: "40px" }} />
-                <col style={{ width: "18%" }} />
-                <col className="hidden md:table-column" style={{ width: "14%" }} />
+                <col style={{ width: "15%" }} />
                 <col className="hidden md:table-column" style={{ width: "12%" }} />
-                <col className="hidden lg:table-column" style={{ width: "10%" }} />
+                <col className="hidden md:table-column" style={{ width: "11%" }} />
+                <col className="hidden lg:table-column" style={{ width: "16%" }} />
                 <col className="hidden lg:table-column" style={{ width: "12%" }} />
-                <col style={{ width: "7%" }} />
+                <col style={{ width: "9%" }} />
                 <col style={{ width: "80px" }} />
               </colgroup>
               <TableHeader>
