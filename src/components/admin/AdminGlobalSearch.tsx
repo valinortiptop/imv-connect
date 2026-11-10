@@ -151,11 +151,11 @@ export function AdminGlobalSearch({ groups }: { groups: NavGroup[] }) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="top-[12%] translate-y-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogContent className="top-[10%] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-xl sm:p-0">
           <DialogTitle className="sr-only">Búsqueda general</DialogTitle>
           <Command
             shouldFilter={false}
-            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2.5"
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-input-wrapper]]:pr-10 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2.5"
           >
         <CommandInput
           placeholder="Busca un cliente, folio de pedido o factura, producto o página…"
