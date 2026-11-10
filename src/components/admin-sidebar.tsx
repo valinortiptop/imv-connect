@@ -107,9 +107,13 @@ export function AdminSidebar({
 
   const allItems = useMemo(() => flattenNav(visibleGroups), [visibleGroups]);
 
+  // Avisar al encabezado solo cuando cambia el contenido del menú (no la
+  // referencia), para no entrar en un ciclo de renders con el padre.
+  const groupsSignature = allItems.map((i) => i.key).join("|");
   useEffect(() => {
     onGroupsChange?.(visibleGroups);
-  }, [visibleGroups, onGroupsChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupsSignature, onGroupsChange]);
 
   const activeGroupLabel = useMemo(() => {
     const match = allItems
