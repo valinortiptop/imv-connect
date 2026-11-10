@@ -145,9 +145,12 @@
     border-color: var(--color-border);
   }
 
+  /* `clip` (not `hidden`) so html/body never become their own scroll
+   * containers: expanding a row must keep the page where it is. */
   html,
   body {
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
