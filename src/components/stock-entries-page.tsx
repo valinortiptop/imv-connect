@@ -1326,7 +1326,7 @@ export default function StockEntries() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="relative min-h-screen bg-background" onPointerMove={handlePointerMove}>
+    <div className="relative min-h-screen overflow-clip bg-background" onPointerMove={handlePointerMove}>
       <AnimatedGridPattern className="inset-x-0 inset-y-[-40%] h-[220%] [mask-image:radial-gradient(900px_circle_at_center,white,transparent_85%)]" />
 
       <div className="relative z-10 p-4 md:p-8 space-y-6">

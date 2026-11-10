@@ -101,7 +101,7 @@ export default function Centrales() {
 
   return (
     <div
-      className="relative min-h-screen bg-background"
+      className="relative min-h-screen overflow-clip bg-background"
       onPointerMove={(e) => {
         const el = e.currentTarget as HTMLElement;
         el.style.setProperty("--x", `${e.clientX}px`);
