@@ -15730,6 +15730,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       iva_ieps_saldos: {
         Args: { _empresa: string; _hasta: string }
         Returns: {
