@@ -3,6 +3,7 @@ import {
   LaunchSyncBody,
   itemEstado,
   launchKeyMatches,
+  mergeDisponibilidad,
   semanaEstado,
   sesionEstadoTrasConfirmar,
 } from "@/lib/launch-sync";
@@ -10,7 +11,8 @@ import {
 /**
  * Valinor Studio launch sync. Valinor reads NetSuite-exit onboarding progress
  * and confirms session times. Auth: header `x-launch-key` must equal the
- * VALINOR_LAUNCH_SYNC_KEY secret. Runs with the service role; never returns
+ * VALINOR_LAUNCH_SYNC_KEY secret. "import_availability" merges hours painted on Valinor's
+ * scheduling link into onboarding_disponibilidad (adds slots, never removes them or rows). Runs with the service role; never returns
  * files, signed URLs, notes, amounts or valor_texto.
  */
 const corsHeaders = {
@@ -100,6 +102,43 @@ export const Route = createFileRoute("/api/public/valinor-launch-sync")({
                 estado: semanaEstado(w),
               })),
             });
+          }
+
+          if (parsed.data.action === "import_availability") {
+            const { data: existing, error: readErr } = await supabaseAdmin
+              .from("onboarding_disponibilidad")
+              .select("persona, rol, slots")
+              .range(0, 999);
+            if (readErr) {
+              console.error("[valinor-launch-sync] availability read failed:", readErr.message);
+              return json({ error: "Could not read availability" }, 500);
+            }
+            const { insert, update } = mergeDisponibilidad(
+              (existing ?? []).map((r) => ({ persona: r.persona, rol: r.rol, slots: r.slots ?? [] })),
+              parsed.data.personas.map((p) => ({ persona: p.persona, rol: p.rol, slots: p.slots })),
+            );
+            if (update.length) {
+              const { error } = await supabaseAdmin
+                .from("onboarding_disponibilidad")
+                .upsert(update, { onConflict: "persona,rol" });
+              if (error) {
+                console.error("[valinor-launch-sync] availability update failed:", error.message);
+                return json({ error: "Could not update availability" }, 500);
+              }
+            }
+            if (insert.length) {
+              const { error } = await supabaseAdmin
+                .from("onboarding_disponibilidad")
+                .upsert(insert, { onConflict: "persona,rol" });
+              if (error) {
+                console.error("[valinor-launch-sync] availability insert failed:", error.message);
+                return json({ error: "Could not insert availability" }, 500);
+              }
+            }
+            console.log(
+              `[valinor-launch-sync] availability import: ${parsed.data.personas.length} personas -> ${insert.length} insertados, ${update.length} actualizados`,
+            );
+            return json({ ok: true, insertados: insert.length, actualizados: update.length });
           }
 
           const { orden, titulo, fecha_hora } = parsed.data;

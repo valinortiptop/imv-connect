@@ -42,6 +42,9 @@ export const ROLES = [
   { key: "almacen", label: "Almacén / Compras" },
   { key: "netsuite", label: "Admin NetSuite" },
   { key: "valinor", label: "Valinor Studio" },
+  { key: "facturacion", label: "Facturación" },
+  { key: "ti", label: "Sistemas / TI (Doris)" },
+  { key: "usuarios", label: "Usuario de área" },
 ];
 export const roleLabel = (k: string) => ROLES.find((r) => r.key === k)?.label ?? k;
 
