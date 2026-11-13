@@ -36,7 +36,7 @@ export const AREAS = [
 
 export const ROLES = [
   { key: "direccion", label: "Dirección IMV" },
-  { key: "maresi", label: "Maresi (comercial)" },
+  { key: "marisol", label: "Marisol (comercial)" },
   { key: "contador", label: "Contador" },
   { key: "cobranza", label: "Cobranza / Tesorería" },
   { key: "almacen", label: "Almacén / Compras" },
