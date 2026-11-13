@@ -80,7 +80,7 @@ function LaunchHubPage() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative"><Ring pct={stats.pct} /><span className="absolute inset-0 flex items-center justify-center text-xl font-bold">{stats.pct}%</span></div>
               <div className="grid grid-cols-3 gap-2">
-                {[["Documentos", `${stats.listos}/${q.data!.reqs.length}`, `${stats.subidos} subidos`], ["Sesiones", `${stats.ses}/${q.data!.sesiones.length}`, `${stats.agend} agendadas`], ["Abiertas", String(stats.abiertas), `${stats.bugs} bugs`]].map(([l, v, s]) => (
+                {[["Documentos", `${stats.subidos}/${q.data!.reqs.length}`, `subidos · ${stats.listos} listos`], ["Sesiones", `${stats.ses}/${q.data!.sesiones.length}`, `${stats.agend} agendadas`], ["Abiertas", String(stats.abiertas), `${stats.bugs} bugs`]].map(([l, v, s]) => (
                   <div key={l} className="rounded-2xl bg-primary-foreground/10 px-3 py-2 backdrop-blur">
                     <p className="text-[11px] uppercase tracking-wider opacity-70">{l}</p>
                     <p className="text-2xl font-bold">{v}</p>

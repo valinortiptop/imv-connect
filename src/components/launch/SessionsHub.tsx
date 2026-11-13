@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CalendarCheck, ChevronLeft, ChevronRight, Download, Users, Plus, X, Check, Clock, Sparkles, Loader2 } from "lucide-react";
+import { CalendarCheck, ChevronLeft, ChevronRight, Download, Users, Plus, X, Check, Clock, Sparkles, Loader2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { daySlots, icsFor, nowSlot, planSchedule, slotToUtcIso, windowDays } from "@/lib/availability";
-import { ROLES, db, durationMinutes, roleLabel, type HubData, type Sesion } from "./hub-data";
+import { ROLES, db, durationMinutes, roleLabel, type Disp, type HubData, type Sesion } from "./hub-data";
 import { cn } from "@/lib/utils";
 
-const START_H = 8, END_H = 19;
-const slotLabel = (s: string) => new Date(`${s}:00-06:00`).toLocaleString("es-MX", { timeZone: "America/Mexico_City", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+export const START_H = 8, END_H = 19;
+export const slotLabel = (s: string) => new Date(`${s}:00-06:00`).toLocaleString("es-MX", { timeZone: "America/Mexico_City", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("es-MX", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
-const isoToSlot = (iso: string) => {
+export const isoToSlot = (iso: string) => {
   const t = new Date(iso).getTime() - 6 * 3600000; const r = Math.round(t / 1800000) * 1800000;
   return new Date(r).toISOString().slice(0, 16);
 };
 
-function businessDays(from: string, n: number) {
+export function businessDays(from: string, n: number) {
   return windowDays(from, n * 2).filter((d) => { const w = new Date(`${d}T12:00:00Z`).getUTCDay(); return w !== 0 && w !== 6; }).slice(0, n);
 }
 
@@ -77,7 +77,7 @@ export function SessionsHub({ data, refresh }: { data: HubData; refresh: () => v
           );
         })}
       </div>
-      <AvailabilityGrid data={data} days={days} refresh={refresh} />
+      <AvailabilityGrid data={data} days={days} refresh={refresh} shareLink />
     </div>
   );
 }
@@ -159,7 +159,9 @@ function SessionDetail({ s, data, conf, entry, onConfirm, onIcs, refresh }: {
   );
 }
 
-function AvailabilityGrid({ data, days, refresh }: { data: HubData; days: string[]; refresh: () => void }) {
+export type AgendaData = { disponibilidad: Disp[]; sesiones: Pick<Sesion, "titulo" | "fecha_hora" | "duracion">[]; uid: string | null };
+
+export function AvailabilityGrid({ data, days, refresh, shareLink }: { data: AgendaData; days: string[]; refresh: () => void; shareLink?: boolean }) {
   const [name, setName] = useState(""); const [role, setRole] = useState("");
   const [mine, setMine] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0); const [saving, setSaving] = useState(false); const [dirty, setDirty] = useState(false);
@@ -204,6 +206,13 @@ function AvailabilityGrid({ data, days, refresh }: { data: HubData; days: string
           <h3 className="text-lg font-semibold">Agenda: pinta tus horas libres</h3>
           <p className="text-sm text-muted-foreground">Arrastra sobre la cuadrícula. El sistema propone el mejor horario de cada sesión con base en quién coincide. Hora de CDMX.</p>
         </div>
+        {shareLink && (
+          <Button size="sm" variant="outline" className="shrink-0 rounded-xl" onClick={async () => {
+            const url = `${window.location.origin}/agenda`;
+            try { await navigator.clipboard.writeText(url); toast.success("Enlace copiado", { description: url }); }
+            catch { toast.message("Comparte este enlace", { description: url }); }
+          }}><Link2 className="mr-1 h-3.5 w-3.5" />Copiar enlace</Button>
+        )}
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <Input aria-label="Tu nombre" placeholder="Tu nombre (p. ej. Doris)" value={name} onChange={(e) => setName(e.target.value)}

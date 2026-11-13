@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   UploadCloud, FileText, FileSpreadsheet, FileImage, Star, AlertTriangle, CheckCircle2, Sparkles,
-  Loader2, Search, Download, Trash2, ShieldCheck, RefreshCw, X, Inbox,
+  Loader2, Search, Download, Trash2, ShieldCheck, RefreshCw, X, Inbox, LayoutGrid, List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
   const [overReq, setOverReq] = useState<string | null>(null);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [openReq, setOpenReq] = useState<string | null>(null);
+  const [view, setView] = useState<"cards" | "list">("cards");
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
+  useEffect(() => { const v = localStorage.getItem("launch-hub-docs-view"); if (v === "list" || v === "cards") setView(v); }, []);
+  const changeView = (v: "cards" | "list") => { setView(v); localStorage.setItem("launch-hub-docs-view", v); };
   const inputRef = useRef<HTMLInputElement>(null);
   const targetRef = useRef<string | null>(null);
   const depth = useRef(0);
@@ -114,6 +118,20 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
     return c;
   }, [data.reqs, docsByReq]);
 
+  const pendientes = data.docs.filter((d) => d.ai_estado === "pendiente" || d.ai_estado === "error");
+  async function reviewPending() {
+    const list = pendientes.slice();
+    setBulk({ done: 0, total: list.length });
+    let fails = 0;
+    for (let i = 0; i < list.length; i++) {
+      try { const r = await review({ data: { archivoId: list[i].id } }); if (!r.ok) fails++; } catch { fails++; }
+      setBulk({ done: i + 1, total: list.length });
+      if ((i + 1) % 3 === 0) refresh();
+    }
+    setBulk(null); refresh();
+    if (fails) toast.error(`${fails} archivo${fails > 1 ? "s" : ""} no se pudieron revisar`); else toast.success("Revisión terminada");
+  }
+
   const grouped = AREAS.map((a) => ({ ...a, reqs: reqs.filter((r) => (r.area ?? "configuracion") === a.key) })).filter((g) => g.reqs.length);
   const selected = data.reqs.find((r) => r.id === openReq) ?? null;
   const openOtros = openReq === "_otros";
@@ -170,11 +188,31 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
           ))}
         </div>
       </div>
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {[{ key: "todas", label: "Todas las áreas" }, ...AREAS].map((a) => (
-          <button key={a.key} onClick={() => setArea(a.key)} className={cn("shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition", area === a.key ? "bg-hub-glow text-hub-ink" : "text-muted-foreground hover:bg-muted")}>{a.label}</button>
-        ))}
+      <div className="flex items-center gap-2">
+        <div className="-mx-1 flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 pb-1">
+          {[{ key: "todas", label: "Todas las áreas" }, ...AREAS].map((a) => (
+            <button key={a.key} onClick={() => setArea(a.key)} className={cn("shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition", area === a.key ? "bg-hub-glow text-hub-ink" : "text-muted-foreground hover:bg-muted")}>{a.label}</button>
+          ))}
+        </div>
+        <div className="flex shrink-0 rounded-xl border bg-card p-0.5" role="group" aria-label="Vista de documentos">
+          {([["cards", "Tarjetas", LayoutGrid], ["list", "Lista", List]] as const).map(([k, l, I]) => (
+            <button key={k} onClick={() => changeView(k)} aria-pressed={view === k} title={l}
+              className={cn("flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", view === k ? "bg-hub-ink text-primary-foreground" : "text-muted-foreground hover:bg-muted")}>
+              <I className="h-3.5 w-3.5" /><span className="hidden sm:inline">{l}</span>
+            </button>
+          ))}
+        </div>
       </div>
+
+      {pendientes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-hub-violet/30 bg-hub-violet/5 px-4 py-3 text-sm">
+          <Sparkles className="h-4 w-4 shrink-0 text-hub-violet" />
+          <span className="min-w-0 flex-1">{pendientes.length} archivo{pendientes.length > 1 ? "s" : ""} subido{pendientes.length > 1 ? "s" : ""} aún sin revisar por la IA. Cuentan como subidos, no como listos.</span>
+          <Button size="sm" className="rounded-xl" disabled={!!bulk} onClick={reviewPending}>
+            {bulk ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />Revisando {bulk.done}/{bulk.total}</> : "Revisar con IA"}
+          </Button>
+        </div>
+      )}
 
       {grouped.length === 0 && otros.length === 0 && (
         <div className="rounded-3xl border bg-card p-10 text-center text-muted-foreground"><Inbox className="mx-auto mb-2 h-8 w-8" />Nada coincide con este filtro.</div>
@@ -183,6 +221,35 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
       {grouped.map((g) => (
         <section key={g.key} className="space-y-3">
           <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{g.label}<span className="h-px flex-1 bg-border" /></h3>
+          {view === "list" ? (
+            <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
+              {g.reqs.map((r) => {
+                const docs = docsByReq.get(r.id) ?? [];
+                const st = reqState(r, docs);
+                const latest = docs[0];
+                const Icon = latest ? fileIcon(latest.nombre_original, latest.mime_type) : FileText;
+                return (
+                  <li key={r.id} data-req-drop
+                    onDragOver={(e) => { e.preventDefault(); setOverReq(r.id); }}
+                    onDragLeave={() => setOverReq((x) => (x === r.id ? null : x))}
+                    onDrop={(e) => { e.preventDefault(); setOverReq(null); const f = Array.from(e.dataTransfer.files); if (f.length) uploadFiles(f, r.id); }}
+                    className={cn("relative flex items-center gap-3 px-4 py-2.5 transition hover:bg-muted/40", overReq === r.id && "bg-hub-violet/10 ring-2 ring-inset ring-hub-violet")}>
+                    <button className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Abrir ${r.titulo}`} onClick={() => setOpenReq(r.id)} />
+                    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-xl", st === "falta" ? "bg-muted text-muted-foreground" : "bg-hub-ink text-hub-glow")}><Icon className="h-4 w-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{r.titulo}{latest?.destacado && <Star className="ml-1 inline h-3.5 w-3.5 fill-hub-warn text-hub-warn" aria-label="Importante" />}</p>
+                      <p className="truncate text-xs text-muted-foreground">{latest ? `${latest.nombre_original} · ${fmtDate(latest.uploaded_at)}` : r.descripcion ?? "Sin descripción"}</p>
+                    </div>
+                    {docs.some((d) => d.atencion) && <AlertTriangle className="h-4 w-4 shrink-0 text-hub-bad" aria-label="Requiere atención" />}
+                    {latest?.ai_estado === "analizando" && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-hub-violet" aria-label="IA revisando" />}
+                    <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{docs.length ? `${docs.length} archivo${docs.length > 1 ? "s" : ""}` : ""}</span>
+                    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-medium", STATE_UI[st].cls)}>{STATE_UI[st].label}</span>
+                    <Button size="icon" variant="ghost" className="relative h-8 w-8 shrink-0 rounded-xl" aria-label={`Subir archivo para ${r.titulo}`} onClick={() => pick(r.id)}><UploadCloud className="h-4 w-4" /></Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {g.reqs.map((r) => {
               const docs = docsByReq.get(r.id) ?? [];
@@ -219,6 +286,7 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
               );
             })}
           </div>
+          )}
         </section>
       ))}
 

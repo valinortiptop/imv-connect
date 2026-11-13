@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RepRouteImport } from './routes/rep'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -163,6 +164,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendaRoute = AgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -918,6 +924,7 @@ const ApiPublicMapsTileZXYRoute = ApiPublicMapsTileZXYRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agenda': typeof AgendaRoute
   '/login': typeof LoginRoute
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
@@ -1064,6 +1071,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/login': typeof LoginRoute
   '/admin/administracion': typeof AdminAdministracionRoute
   '/admin/almacen-dashboard': typeof AdminAlmacenDashboardRoute
@@ -1206,6 +1214,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/agenda': typeof AgendaRoute
   '/login': typeof LoginRoute
   '/rep': typeof RepRouteWithChildren
   '/admin/administracion': typeof AdminAdministracionRoute
@@ -1355,6 +1364,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/agenda'
     | '/login'
     | '/rep'
     | '/admin/administracion'
@@ -1501,6 +1511,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agenda'
     | '/login'
     | '/admin/administracion'
     | '/admin/almacen-dashboard'
@@ -1642,6 +1653,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/agenda'
     | '/login'
     | '/rep'
     | '/admin/administracion'
@@ -1790,6 +1802,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AgendaRoute: typeof AgendaRoute
   LoginRoute: typeof LoginRoute
   RepRoute: typeof RepRouteWithChildren
   EntregaTokenRoute: typeof EntregaTokenRoute
@@ -1820,6 +1833,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agenda': {
+      id: '/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -3202,6 +3222,7 @@ const RepRouteWithChildren = RepRoute._addFileChildren(RepRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AgendaRoute: AgendaRoute,
   LoginRoute: LoginRoute,
   RepRoute: RepRouteWithChildren,
   EntregaTokenRoute: EntregaTokenRoute,
