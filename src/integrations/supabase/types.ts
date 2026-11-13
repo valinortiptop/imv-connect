@@ -5723,8 +5723,15 @@ export type Database = {
       }
       onboarding_archivos: {
         Row: {
+          ai_at: string | null
+          ai_estado: string
+          ai_observaciones: Json
+          ai_resumen: string | null
+          ai_veredicto: string | null
+          atencion: boolean
+          destacado: boolean
           id: string
-          item_id: string
+          item_id: string | null
           mime_type: string | null
           nombre_original: string
           size_bytes: number | null
@@ -5733,8 +5740,15 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          ai_at?: string | null
+          ai_estado?: string
+          ai_observaciones?: Json
+          ai_resumen?: string | null
+          ai_veredicto?: string | null
+          atencion?: boolean
+          destacado?: boolean
           id?: string
-          item_id: string
+          item_id?: string | null
           mime_type?: string | null
           nombre_original: string
           size_bytes?: number | null
@@ -5743,8 +5757,15 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          ai_at?: string | null
+          ai_estado?: string
+          ai_observaciones?: Json
+          ai_resumen?: string | null
+          ai_veredicto?: string | null
+          atencion?: boolean
+          destacado?: boolean
           id?: string
-          item_id?: string
+          item_id?: string | null
           mime_type?: string | null
           nombre_original?: string
           size_bytes?: number | null
@@ -5768,6 +5789,77 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      onboarding_asistentes: {
+        Row: {
+          asistio: boolean | null
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          rol: string | null
+          sesion_id: string
+          updated_at: string
+        }
+        Insert: {
+          asistio?: boolean | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre: string
+          rol?: string | null
+          sesion_id: string
+          updated_at?: string
+        }
+        Update: {
+          asistio?: boolean | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          rol?: string | null
+          sesion_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_asistentes_sesion_id_fkey"
+            columns: ["sesion_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_sesiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_disponibilidad: {
+        Row: {
+          created_at: string
+          id: string
+          persona: string
+          rol: string
+          slots: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          persona: string
+          rol: string
+          slots?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          persona?: string
+          rol?: string
+          slots?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       onboarding_items: {
         Row: {
@@ -5977,36 +6069,65 @@ export type Database = {
       }
       onboarding_tareas_dev: {
         Row: {
+          adjunto_path: string | null
           created_at: string
+          created_by: string | null
           descripcion: string | null
           estado: string
           fecha_compromiso: string | null
           id: string
+          modulo: string | null
           orden: number
+          prioridad: string
+          responsable: string | null
+          sesion_id: string | null
+          tipo: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          adjunto_path?: string | null
           created_at?: string
+          created_by?: string | null
           descripcion?: string | null
           estado?: string
           fecha_compromiso?: string | null
           id?: string
+          modulo?: string | null
           orden: number
+          prioridad?: string
+          responsable?: string | null
+          sesion_id?: string | null
+          tipo?: string
           titulo: string
           updated_at?: string
         }
         Update: {
+          adjunto_path?: string | null
           created_at?: string
+          created_by?: string | null
           descripcion?: string | null
           estado?: string
           fecha_compromiso?: string | null
           id?: string
+          modulo?: string | null
           orden?: number
+          prioridad?: string
+          responsable?: string | null
+          sesion_id?: string | null
+          tipo?: string
           titulo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_tareas_dev_sesion_id_fkey"
+            columns: ["sesion_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_sesiones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ordenes_compra: {
         Row: {

@@ -304,3 +304,32 @@
   --primary-foreground: oklch(0.98 0.01 80);
   --background: oklch(0.96 0.02 80);
 }
+
+/* Launch hub (/admin/onboarding): page-scoped palette, overrides shadcn tokens inside the hub only. */
+.launch-hub {
+  --hub-ink: oklch(0.2 0.03 265);
+  --hub-glow: oklch(0.86 0.17 128);
+  --hub-glow-soft: oklch(0.95 0.07 128);
+  --hub-violet: oklch(0.62 0.17 285);
+  --hub-ok: oklch(0.68 0.15 155);
+  --hub-warn: oklch(0.78 0.15 75);
+  --hub-bad: oklch(0.62 0.2 25);
+  --hub-surface: oklch(0.985 0.004 265);
+  --hub-hero: radial-gradient(120% 140% at 0% 0%, oklch(0.32 0.08 275) 0%, var(--hub-ink) 55%), var(--hub-ink);
+  --primary: var(--hub-ink);
+  --primary-foreground: oklch(0.98 0 0);
+  --ring: var(--hub-violet);
+}
+@theme inline {
+  --color-hub-ink: var(--hub-ink);
+  --color-hub-glow: var(--hub-glow);
+  --color-hub-glow-soft: var(--hub-glow-soft);
+  --color-hub-violet: var(--hub-violet);
+  --color-hub-ok: var(--hub-ok);
+  --color-hub-warn: var(--hub-warn);
+  --color-hub-bad: var(--hub-bad);
+  --color-hub-surface: var(--hub-surface);
+}
+@utility bg-hub-hero {
+  background: var(--hub-hero);
+}
