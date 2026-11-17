@@ -13,7 +13,10 @@ function EstadoApisPage() {
   const { data, isFetching, refetch, error } = useQuery({
     queryKey: ["valinor-ping"],
     queryFn: () => ping({ data: undefined as never }),
-    staleTime: 30_000,
+    // Each test is a paid call to every provider: run only when the admin clicks.
+    enabled: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   return (

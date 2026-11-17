@@ -1499,6 +1499,7 @@ export const geocodeBackfillFn = createServerFn({ method: "POST" })
     let fromCache = 0;
     let fromGoogle = 0;
     let stoppedError: string | null = null;
+    let cacheWriteFailed = 0;
 
     for (const row of (rows ?? []) as Array<{ id: string; direccion: string; codigo_postal?: string | null }>) {
       let r;
@@ -1514,6 +1515,7 @@ export const geocodeBackfillFn = createServerFn({ method: "POST" })
       }
       if (r.source === "cache") fromCache++;
       else fromGoogle++;
+      if (r.cacheWriteFailed) cacheWriteFailed++;
       const now = new Date().toISOString();
       if (r.status === "ok" && r.lat != null && r.lng != null) {
         await (context.supabase as any)
@@ -1543,6 +1545,7 @@ export const geocodeBackfillFn = createServerFn({ method: "POST" })
       failed,
       from_cache: fromCache,
       from_google: fromGoogle,
+      cache_write_failed: cacheWriteFailed,
       remaining: after.pending,
       error: stoppedError,
     };

@@ -23,6 +23,8 @@ export type GeocodeResult = {
   place_id: string | null;
   postal_code: string | null;
   source: "cache" | "google";
+  /** True when Google answered but saving to the cache failed (the address may be billed again). */
+  cacheWriteFailed?: boolean;
 };
 
 /** Construye el texto que se manda a Google (y del que sale la llave del caché). */
@@ -89,7 +91,10 @@ export async function geocodeWithCache(
     _place_id: result.place_id as string,
     _postal_code: result.postal_code as string,
   });
-  if (putErr) console.error("[geocode] cache write failed:", putErr.message);
+  if (putErr) {
+    console.error("[geocode] cache write failed:", putErr.message);
+    result.cacheWriteFailed = true;
+  }
 
   return result;
 }

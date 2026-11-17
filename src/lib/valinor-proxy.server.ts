@@ -374,7 +374,9 @@ async function timed(fn: () => Promise<unknown>): Promise<{ ok: boolean; ms: num
   }
 }
 
-export async function pingProviders(): Promise<ProviderPing[]> {
+export async function pingProviders(
+  googleCheck?: () => Promise<unknown>,
+): Promise<ProviderPing[]> {
   const checks: Array<{ provider: string; run: () => Promise<unknown> }> = [
     {
       provider: "gemini",
@@ -445,12 +447,15 @@ export async function pingProviders(): Promise<ProviderPing[]> {
     },
     {
       provider: "google",
-      run: () =>
-        callValinor({
-          provider: "google",
-          endpoint: "/maps/api/geocode/json?address=Mexico",
-          method: "GET",
-        }),
+      // Uses the saved-address cache when provided, so the check is not a paid lookup.
+      run:
+        googleCheck ??
+        (() =>
+          callValinor({
+            provider: "google",
+            endpoint: "/maps/api/geocode/json?address=Mexico",
+            method: "GET",
+          })),
     },
   ];
 

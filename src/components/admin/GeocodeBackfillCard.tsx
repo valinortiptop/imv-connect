@@ -49,6 +49,11 @@ export function GeocodeBackfillCard() {
             failed: p.failed + r.failed,
           },
         );
+        if (r.cache_write_failed > 0) {
+          toast.warning(
+            `${r.cache_write_failed} direcciones no se guardaron en la memoria y podrían cobrarse otra vez.`,
+          );
+        }
         if (r.error) {
           toast.error(`Se detuvo: ${r.error}`);
           break;

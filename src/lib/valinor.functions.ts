@@ -68,11 +68,20 @@ export const getUsageReportFn = createServerFn({ method: "POST" })
   });
 
 /** Health-check de cada proveedor del gateway de Valinor. */
-export const pingProvidersFn = createServerFn({ method: "POST" }).handler(
-  async () => {
-    return { results: await pingProviders(), checked_at: new Date().toISOString() };
-  },
-);
+/** Fixed address for the Google check: saved once, then always served from the cache. */
+export const GOOGLE_PING_QUERY = "Zócalo, Centro, Ciudad de México, México";
+
+export const pingProvidersFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Solo administradores pueden probar las APIs");
+    const results = await pingProviders(() => geocodeWithCache(context.supabase, GOOGLE_PING_QUERY));
+    return { results, checked_at: new Date().toISOString() };
+  });
 
 /* ───────────────────── Google Maps (Places + Geocoding) ───────────────── */
 

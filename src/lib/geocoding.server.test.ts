@@ -73,3 +73,12 @@ describe("buildGeocodeQuery", () => {
     expect(buildGeocodeQuery("Puno 628, 07300 CDMX, México", "07300")).toBe("Puno 628, 07300 CDMX, México");
   });
 });
+
+describe("api status check", () => {
+  it("the Google check makes no Google call when the address is already saved", async () => {
+    const sb = fakeSupabase([{ status: "ok", latitude: 19.43, longitude: -99.13, formatted_address: "Zócalo", place_id: "p", postal_code: null }]);
+    const r = await geocodeWithCache(sb.client, "Zócalo, Centro, Ciudad de México, México");
+    expect(r.source).toBe("cache");
+    expect(googleGeocode).toHaveBeenCalledTimes(0);
+  });
+});
