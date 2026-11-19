@@ -16023,6 +16023,7 @@ export type Database = {
       }
       mark_pickup_delivered: { Args: { p_order_id: string }; Returns: Json }
       oc_recalc_totales: { Args: { _oc: string }; Returns: undefined }
+      onboarding_full_access: { Args: { _user_id: string }; Returns: boolean }
       orders_dashboard_stats: {
         Args: {
           p_client_ids?: string[]

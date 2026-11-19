@@ -300,7 +300,7 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
         <SheetContent className="launch-hub w-full overflow-y-auto sm:max-w-2xl">
           {(selected || openOtros) && (
             <DocDetail req={selected} docs={openOtros ? otros : docsByReq.get(selected!.id) ?? []} reqs={data.reqs}
-              canValidate={data.canValidate} isAdmin={data.isAdmin} uid={data.uid} refresh={refresh}
+              canValidate={data.canValidate} isAdmin={data.isAdmin} uid={data.uid} refresh={refresh} limited={!data.fullAccess}
               onUpload={() => pick(selected?.id ?? null)} onReview={async (id) => { const r = await review({ data: { archivoId: id } }); if (!r.ok) toast.error(r.error); refresh(); }} />
           )}
         </SheetContent>
@@ -309,8 +309,8 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
   );
 }
 
-function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUpload, onReview }: {
-  req: Req | null; docs: Doc[]; reqs: Req[]; canValidate: boolean; isAdmin: boolean; uid: string | null;
+function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUpload, onReview, limited }: {
+  req: Req | null; docs: Doc[]; reqs: Req[]; canValidate: boolean; isAdmin: boolean; uid: string | null; limited: boolean;
   refresh: () => void; onUpload: () => void; onReview: (id: string) => Promise<void>;
 }) {
   const [active, setActive] = useState<string | null>(docs[0]?.id ?? null);
@@ -321,7 +321,7 @@ function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUplo
 
   useEffect(() => {
     setUrl(null); setTable(null);
-    if (!doc) return;
+    if (!doc || limited) return;
     let cancel = false;
     (async () => {
       const s = await db.storage.from(BUCKET).createSignedUrl(doc.storage_path, 600);
@@ -368,8 +368,11 @@ function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUplo
           : <Button size="sm" variant="outline" disabled={!docs.length} onClick={() => validate(true)}><ShieldCheck className="mr-1 h-4 w-4" />Validar documento</Button>)}
       </div>
 
+      {limited && (
+        <p className="rounded-2xl bg-muted px-3 py-2 text-xs text-muted-foreground">Aquí solo ves los archivos que tú subiste. Doris y el equipo de implementación revisan todos los documentos.</p>
+      )}
       {docs.length === 0 ? (
-        <div className="rounded-3xl border border-dashed p-10 text-center text-muted-foreground">Aún no se ha subido nada.</div>
+        <div className="rounded-3xl border border-dashed p-10 text-center text-muted-foreground">{limited ? "Aún no has subido nada aquí." : "Aún no se ha subido nada."}</div>
       ) : (
         <>
           {doc && (
@@ -386,7 +389,7 @@ function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUplo
             </div>
           )}
 
-          <div className="overflow-hidden rounded-3xl border bg-muted/40">
+          {!limited && <div className="overflow-hidden rounded-3xl border bg-muted/40">
             {!url ? <div className="flex h-64 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
               : isImg ? <img src={url} alt={doc!.nombre_original} className="max-h-[60vh] w-full object-contain" />
               : isPdf ? <iframe src={url} title={doc!.nombre_original} className="h-[60vh] w-full bg-card" />
@@ -395,9 +398,9 @@ function DocDetail({ req, docs, reqs, canValidate, isAdmin, uid, refresh, onUplo
                   <tbody>{table.map((r, i) => <tr key={i} className={i === 0 ? "sticky top-0 bg-card font-semibold" : "border-t"}>{r.map((c, j) => <td key={j} className="whitespace-nowrap px-2 py-1">{c}</td>)}</tr>)}</tbody>
                 </table></div>)
               : <div className="p-10 text-center text-sm text-muted-foreground">Vista previa no disponible. Descárgalo para verlo.</div>}
-          </div>
+          </div>}
 
-          {doc && (
+          {doc && !limited && (
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" asChild disabled={!url}><a href={url ?? "#"} target="_blank" rel="noreferrer" download={doc.nombre_original}><Download className="mr-1 h-4 w-4" />Descargar</a></Button>
               <Button size="sm" variant={doc.destacado ? "default" : "outline"} onClick={() => patchDoc({ destacado: !doc.destacado })}><Star className="mr-1 h-4 w-4" />Importante</Button>

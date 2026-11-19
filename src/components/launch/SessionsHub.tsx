@@ -4,7 +4,7 @@ import { CalendarCheck, ChevronLeft, ChevronRight, Download, Users, Plus, X, Che
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { daySlots, icsFor, nowSlot, planSchedule, slotToUtcIso, windowDays } from "@/lib/availability";
+import { daySlots, icsFor, normName, nowSlot, planSchedule, sessionAttendance, slotToUtcIso, windowDays, type RoleAttendance } from "@/lib/availability";
 import { ROLES, db, durationMinutes, roleLabel, type Disp, type HubData, type Sesion } from "./hub-data";
 import { cn } from "@/lib/utils";
 
@@ -82,45 +82,121 @@ export function SessionsHub({ data, refresh }: { data: HubData; refresh: () => v
   );
 }
 
+function AttendanceLine({ att }: { att: RoleAttendance[] }) {
+  return (
+    <ul className="mt-1 space-y-0.5 text-xs">
+      {att.map((a) => (
+        <li key={a.role} className="flex flex-wrap gap-x-1">
+          <span className="font-medium">{roleLabel(a.role)}:</span>
+          {a.present.length ? <span className="text-hub-ok">{a.present.join(", ")}</span> : <span className="text-hub-bad">nadie libre</span>}
+          {a.busy.length > 0 && <span className="text-muted-foreground">· ocupados: {a.busy.join(", ")}</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const TIMES = daySlots("2026-01-01", START_H, END_H).map((x) => x.slice(11));
+
 function SessionDetail({ s, data, conf, entry, onConfirm, onIcs, refresh }: {
   s: Sesion; data: HubData; conf?: string; entry?: ReturnType<typeof planSchedule>[string];
   onConfirm: (s: Sesion, slot: string | null) => void; onIcs: (s: Sesion, slot: string) => void; refresh: () => void;
 }) {
   const att = data.asistentes.filter((a) => a.sesion_id === s.id);
+  const minutes = durationMinutes(s.duracion);
+  const people = useMemo(() => data.disponibilidad.map((d) => ({ person_name: d.persona, role_key: d.rol, slots: d.slots })), [data.disponibilidad]);
   const [n, setN] = useState(""); const [r, setR] = useState(s.responsables[0] ?? "direccion"); const [e, setE] = useState("");
   const [acuerdos, setAcuerdos] = useState(s.acuerdos ?? "");
+  const [day, setDay] = useState(""); const [time, setTime] = useState("10:00"); const [newRole, setNewRole] = useState("");
+  const manualSlot = day ? `${day}T${time}` : null;
+  const manualAtt = manualSlot ? sessionAttendance(people, s.responsables, manualSlot, minutes) : [];
+
+  const addAttendee = async (nombre: string, rol: string, email: string | null) => {
+    const { error } = await db.from("onboarding_asistentes").insert({ sesion_id: s.id, nombre: nombre.slice(0, 120), rol, email });
+    if (error) { toast.error(error.message); return false; }
+    refresh(); return true;
+  };
   const add = async () => {
     if (!n.trim()) return;
     const email = e.trim();
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Correo no válido");
-    const { error } = await db.from("onboarding_asistentes").insert({ sesion_id: s.id, nombre: n.trim().slice(0, 120), rol: r, email: email || null });
-    if (error) toast.error(error.message); else { setN(""); setE(""); refresh(); }
+    if (await addAttendee(n.trim(), r, email || null)) { setN(""); setE(""); }
   };
+  const setAreas = async (next: string[]) => {
+    const { error } = await db.from("onboarding_sesiones").update({ responsables: next }).eq("id", s.id);
+    if (error) toast.error(error.message.includes("row-level") ? "Solo un admin puede cambiar las áreas" : error.message); else refresh();
+  };
+  const run = async (q: Promise<{ error: { message: string } | null }>) => { const { error } = await q; if (error) toast.error(error.message); else refresh(); };
+
+  // People who painted hours in this session's areas and aren't attendees yet.
+  const suggested = data.disponibilidad.filter((d) => s.responsables.includes(d.rol) && d.slots.length
+    && !att.some((a) => normName(a.nombre) === normName(d.persona)));
   const options = [...(entry?.pick ? [{ ...entry.pick, outOfOrder: false }] : []), ...(entry?.alts ?? [])];
+  const painted = data.disponibilidad.filter((d) => s.responsables.includes(d.rol) && d.slots.length);
+
   return (
     <div className="space-y-4 border-t px-4 pb-4 pt-3 text-sm">
       {s.objetivo && <p className="text-muted-foreground">{s.objetivo}</p>}
-      <div className="flex flex-wrap gap-1.5">{s.responsables.map((k) => <span key={k} className="rounded-full bg-muted px-2.5 py-1 text-xs">{roleLabel(k)}</span>)}</div>
+
+      <div className="space-y-2">
+        <p className="font-semibold">Áreas que deben asistir</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {s.responsables.map((k) => (
+            <span key={k} className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs">
+              {roleLabel(k)}
+              {data.isAdmin && <button aria-label={`Quitar ${roleLabel(k)}`} onClick={() => setAreas(s.responsables.filter((x) => x !== k))}><X className="h-3 w-3" /></button>}
+            </span>
+          ))}
+          {data.isAdmin && (
+            <select aria-label="Agregar área" className="h-7 rounded-full border bg-card px-2 text-xs" value={newRole}
+              onChange={(x) => { const v = x.target.value; setNewRole(""); if (v) setAreas([...s.responsables, v]); }}>
+              <option value="">+ Área</option>
+              {ROLES.filter((x) => !s.responsables.includes(x.key)).map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+            </select>
+          )}
+        </div>
+      </div>
 
       <div className="space-y-2">
         <p className="font-semibold">Horario</p>
         {conf ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-hub-glow-soft p-3">
-            <CalendarCheck className="h-4 w-4" /><span className="flex-1 font-medium capitalize">{slotLabel(conf)}</span>
-            <Button size="sm" variant="outline" onClick={() => onIcs(s, conf)}><Download className="mr-1 h-3.5 w-3.5" />.ics</Button>
-            {data.isAdmin && <Button size="sm" variant="ghost" onClick={() => onConfirm(s, null)}>Liberar</Button>}
+          <div className="rounded-2xl bg-hub-glow-soft p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <CalendarCheck className="h-4 w-4" /><span className="flex-1 font-medium capitalize">{slotLabel(conf)}</span>
+              <Button size="sm" variant="outline" onClick={() => onIcs(s, conf)}><Download className="mr-1 h-3.5 w-3.5" />.ics</Button>
+              {data.isAdmin && <Button size="sm" variant="ghost" onClick={() => onConfirm(s, null)}>Liberar</Button>}
+            </div>
+            <AttendanceLine att={sessionAttendance(people, s.responsables, conf, minutes)} />
           </div>
         ) : options.length === 0 ? (
-          <p className="text-muted-foreground">Aún nadie de estas áreas ha pintado horas libres. Pide que llenen la agenda de la derecha.</p>
+          <p className="text-muted-foreground">
+            {painted.length
+              ? `Ya pintaron horas ${painted.map((d) => d.persona).join(", ")}, pero nadie de estas áreas tiene ${s.duracion ?? "1 h"} seguidas libres. Agenda a mano abajo.`
+              : "Aún nadie de estas áreas ha pintado horas libres. Puedes agendarla a mano abajo."}
+          </p>
         ) : options.map((o, i) => (
           <div key={o.start} className={cn("flex flex-wrap items-center gap-2 rounded-2xl border p-3", i === 0 && "border-hub-violet bg-hub-violet/5")}>
             <div className="min-w-0 flex-1">
-              <p className="font-medium capitalize">{i === 0 && <Sparkles className="mr-1 inline h-3.5 w-3.5 text-hub-violet" />}{slotLabel(o.start)}</p>
-              <p className="text-xs text-muted-foreground">{o.people.join(", ")}{o.rolesMissing.length > 0 && ` · falta: ${o.rolesMissing.map(roleLabel).join(", ")}`}{o.outOfOrder && " · fuera de orden"}</p>
+              <p className="font-medium capitalize">{i === 0 && <Sparkles className="mr-1 inline h-3.5 w-3.5 text-hub-violet" />}{slotLabel(o.start)}{o.outOfOrder && <span className="ml-1 text-xs font-normal text-muted-foreground">· fuera de orden</span>}</p>
+              <AttendanceLine att={sessionAttendance(people, s.responsables, o.start, minutes)} />
             </div>
             {data.isAdmin && <Button size="sm" onClick={() => onConfirm(s, o.start)}><Check className="mr-1 h-3.5 w-3.5" />Confirmar</Button>}
           </div>
         ))}
+
+        {data.isAdmin && (
+          <div className="rounded-2xl border border-dashed p-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{conf ? "Mover a otro horario" : "Agendar a mano"}</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+              <Input type="date" aria-label="Día de la sesión" value={day} min={nowSlot().slice(0, 10)} onChange={(x) => setDay(x.target.value)} />
+              <select aria-label="Hora de inicio" className="h-10 rounded-md border bg-card px-2" value={time} onChange={(x) => setTime(x.target.value)}>
+                {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <Button disabled={!manualSlot} onClick={() => manualSlot && onConfirm(s, manualSlot)}><CalendarCheck className="mr-1 h-4 w-4" />Agendar</Button>
+            </div>
+            {manualSlot && <AttendanceLine att={manualAtt} />}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -132,16 +208,26 @@ function SessionDetail({ s, data, conf, entry, onConfirm, onIcs, refresh }: {
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-hub-ink text-xs font-semibold text-primary-foreground">{a.nombre.slice(0, 1).toUpperCase()}</span>
               <span className="min-w-0 flex-1 truncate">{a.nombre} <span className="text-xs text-muted-foreground">· {roleLabel(a.rol ?? "")}{a.email ? ` · ${a.email}` : ""}</span></span>
               <button className={cn("rounded-full px-2 py-0.5 text-xs", a.asistio ? "bg-hub-ok/15 text-hub-ok" : "bg-card text-muted-foreground")}
-                onClick={async () => { await db.from("onboarding_asistentes").update({ asistio: !a.asistio }).eq("id", a.id); refresh(); }}>{a.asistio ? "Asistió" : "¿Asistió?"}</button>
-              <button aria-label={`Quitar ${a.nombre}`} onClick={async () => { await db.from("onboarding_asistentes").delete().eq("id", a.id); refresh(); }}><X className="h-4 w-4" /></button>
+                onClick={() => run(db.from("onboarding_asistentes").update({ asistio: !a.asistio }).eq("id", a.id))}>{a.asistio ? "Asistió" : "¿Asistió?"}</button>
+              <button aria-label={`Quitar ${a.nombre}`} onClick={() => run(db.from("onboarding_asistentes").delete().eq("id", a.id))}><X className="h-4 w-4" /></button>
             </li>
           ))}
         </ul>
+        {suggested.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Agregar rápido:</span>
+            {suggested.map((d) => (
+              <button key={d.id} className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs hover:bg-muted" onClick={() => addAttendee(d.persona, d.rol, null)}>
+                <Plus className="h-3 w-3" />{d.persona} <span className="text-muted-foreground">({roleLabel(d.rol)})</span>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr_auto]">
           <Input aria-label="Nombre del asistente" placeholder="Nombre" value={n} onChange={(x) => setN(x.target.value)} />
           <select aria-label="Rol" className="h-10 rounded-md border bg-card px-2" value={r} onChange={(x) => setR(x.target.value)}>{ROLES.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}</select>
           <Input aria-label="Correo" placeholder="Correo (opcional)" value={e} onChange={(x) => setE(x.target.value)} />
-          <Button onClick={add}><Plus className="h-4 w-4" /></Button>
+          <Button onClick={add} aria-label="Agregar asistente"><Plus className="h-4 w-4" /></Button>
         </div>
       </div>
 
@@ -151,7 +237,7 @@ function SessionDetail({ s, data, conf, entry, onConfirm, onIcs, refresh }: {
         {data.isAdmin && acuerdos !== (s.acuerdos ?? "") && (
           <div className="flex gap-2">
             <Button size="sm" onClick={async () => { const { error } = await db.from("onboarding_sesiones").update({ acuerdos: acuerdos.slice(0, 5000) }).eq("id", s.id); if (error) toast.error(error.message); else refresh(); }}>Guardar</Button>
-            {s.estado !== "realizada" && <Button size="sm" variant="outline" onClick={async () => { await db.from("onboarding_sesiones").update({ acuerdos, estado: "realizada" }).eq("id", s.id); refresh(); }}>Guardar y marcar realizada</Button>}
+            {s.estado !== "realizada" && <Button size="sm" variant="outline" onClick={() => run(db.from("onboarding_sesiones").update({ acuerdos, estado: "realizada" }).eq("id", s.id))}>Guardar y marcar realizada</Button>}
           </div>
         )}
       </div>
@@ -171,15 +257,17 @@ export function AvailabilityGrid({ data, days, refresh, shareLink }: { data: Age
   const now = nowSlot();
 
   useEffect(() => { setName(localStorage.getItem("launch-hub-name") ?? ""); setRole(localStorage.getItem("launch-hub-role") ?? ""); }, []);
-  useEffect(() => {
-    const me = data.disponibilidad.find((d) => d.persona.toLowerCase() === name.trim().toLowerCase() && d.rol === role);
+  const loadMine = (who: string, area: string) => {
+    const me = data.disponibilidad.find((d) => normName(d.persona) === normName(who) && d.rol === area);
     setMine(new Set(me?.slots ?? [])); setDirty(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, data.disponibilidad.length]);
+  };
+  useEffect(() => { loadMine(name, role); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [role, data.disponibilidad]);
+  const [focus, setFocus] = useState<string | null>(null);
+  const focusSlots = useMemo(() => new Set(data.disponibilidad.find((d) => d.id === focus)?.slots ?? []), [data.disponibilidad, focus]);
 
   const others = useMemo(() => {
     const m = new Map<string, string[]>();
-    data.disponibilidad.forEach((p) => { if (p.persona.toLowerCase() === name.trim().toLowerCase() && p.rol === role) return; p.slots.forEach((s) => m.set(s, [...(m.get(s) ?? []), p.persona])); });
+    data.disponibilidad.forEach((p) => { if (normName(p.persona) === normName(name) && p.rol === role) return; p.slots.forEach((s) => m.set(s, [...(m.get(s) ?? []), `${p.persona} (${roleLabel(p.rol)})`])); });
     return m;
   }, [data.disponibilidad, name, role]);
   const max = Math.max(1, ...[...others.values()].map((v) => v.length));
@@ -216,7 +304,7 @@ export function AvailabilityGrid({ data, days, refresh, shareLink }: { data: Age
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <Input aria-label="Tu nombre" placeholder="Tu nombre (p. ej. Doris)" value={name} onChange={(e) => setName(e.target.value)}
-          onBlur={() => { const me = data.disponibilidad.find((d) => d.persona.toLowerCase() === name.trim().toLowerCase() && d.rol === role); if (me) setMine(new Set(me.slots)); }} />
+          onBlur={() => loadMine(name, role)} />
         <select aria-label="Tu área" className="h-10 rounded-md border bg-card px-2 text-sm" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">¿Qué área representas?</option>{ROLES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
         </select>
@@ -249,6 +337,7 @@ export function AvailabilityGrid({ data, days, refresh, shareLink }: { data: Age
                       past ? "bg-muted/40" : on ? "bg-hub-glow" : "bg-muted hover:bg-hub-glow-soft", h.endsWith("00") && "mt-px")}
                     style={!on && o.length && !past ? { backgroundColor: `color-mix(in oklab, var(--hub-violet) ${15 + (o.length / max) * 55}%, transparent)` } : undefined}>
                     {conf && <span className="absolute inset-0 rounded-[4px] ring-2 ring-inset ring-hub-ink" />}
+                    {focusSlots.has(slot) && <span className="absolute inset-1 rounded-[3px] bg-hub-ink/70" />}
                   </button>
                 );
               })}
@@ -262,7 +351,17 @@ export function AvailabilityGrid({ data, days, refresh, shareLink }: { data: Age
         <span className="flex items-center gap-1"><span className="h-3 w-3 rounded ring-2 ring-inset ring-hub-ink" />Sesión confirmada</span>
       </div>
       {data.disponibilidad.length > 0 && (
-        <p className="mt-3 text-xs text-muted-foreground">Ya respondieron: {data.disponibilidad.map((d) => `${d.persona} (${roleLabel(d.rol)})`).join(", ")}</p>
+        <div className="mt-3 text-xs text-muted-foreground">
+          <p>Ya respondieron (toca un nombre para ver sus horas):</p>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {data.disponibilidad.map((d) => (
+              <button key={d.id} type="button" aria-pressed={focus === d.id} onClick={() => setFocus(focus === d.id ? null : d.id)}
+                className={cn("rounded-full border px-2 py-0.5", focus === d.id ? "border-hub-ink bg-hub-ink text-primary-foreground" : "hover:bg-muted")}>
+                {d.persona} · {roleLabel(d.rol)}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </section>
   );

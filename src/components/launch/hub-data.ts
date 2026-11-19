@@ -39,7 +39,8 @@ export const ROLES = [
   { key: "marisol", label: "Marisol (comercial)" },
   { key: "contador", label: "Contador" },
   { key: "cobranza", label: "Cobranza / Tesorería" },
-  { key: "almacen", label: "Almacén / Compras" },
+  { key: "almacen", label: "Almacén" },
+  { key: "compras", label: "Compras" },
   { key: "netsuite", label: "Admin NetSuite" },
   { key: "valinor", label: "Valinor Studio" },
   { key: "facturacion", label: "Facturación" },
@@ -104,6 +105,8 @@ export async function loadHub() {
     tasks: tasks.data as Task[],
     isAdmin: !!admin.data,
     canValidate: !!admin.data || !!conta.data,
+    /** Admin or contabilidad: every tab and every file. Everyone else only uploads and sees their own files. */
+    fullAccess: !!admin.data || !!conta.data,
   };
 }
 export type HubData = Awaited<ReturnType<typeof loadHub>>;

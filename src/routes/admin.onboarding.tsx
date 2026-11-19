@@ -45,6 +45,10 @@ function LaunchHubPage() {
   const q = useQuery({ queryKey: ["launch-hub"], queryFn: loadHub, refetchInterval: (query) => query.state.data?.docs.some((d) => d.ai_estado === "analizando") ? 4000 : false });
   const refresh = () => qc.invalidateQueries({ queryKey: ["launch-hub"] });
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("docs");
+  // Without full access (admin/contabilidad) people only upload documents.
+  const full = q.data?.fullAccess ?? false;
+  const tabs = full ? TABS : TABS.filter((t) => t.key === "docs");
+  const activeTab = full ? tab : "docs";
 
   const stats = useMemo(() => {
     if (!q.data) return null;
@@ -76,7 +80,7 @@ function LaunchHubPage() {
               </p>
             )}
           </div>
-          {stats ? (
+          {stats && full ? (
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative"><Ring pct={stats.pct} /><span className="absolute inset-0 flex items-center justify-center text-xl font-bold">{stats.pct}%</span></div>
               <div className="grid grid-cols-3 gap-2">
@@ -92,10 +96,10 @@ function LaunchHubPage() {
           ) : null}
         </div>
         <nav className="relative mt-6 flex gap-1 overflow-x-auto rounded-2xl bg-primary-foreground/10 p-1" role="tablist">
-          {TABS.map((t) => (
-            <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
+          {tabs.map((t) => (
+            <button key={t.key} role="tab" aria-selected={activeTab === t.key} onClick={() => setTab(t.key)}
               className={cn("flex shrink-0 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition",
-                tab === t.key ? "bg-hub-glow text-hub-ink shadow" : "hover:bg-primary-foreground/10")}>
+                activeTab === t.key ? "bg-hub-glow text-hub-ink shadow" : "hover:bg-primary-foreground/10")}>
               <t.icon className="h-4 w-4" />{t.label}
             </button>
           ))}
@@ -112,8 +116,8 @@ function LaunchHubPage() {
           <Button className="mt-4" onClick={refresh}>Reintentar</Button>
         </div>
       ) : q.data ? (
-        tab === "docs" ? <DocumentsHub data={q.data} refresh={refresh} />
-          : tab === "sesiones" ? <SessionsHub data={q.data} refresh={refresh} />
+        activeTab === "docs" ? <DocumentsHub data={q.data} refresh={refresh} />
+          : activeTab === "sesiones" ? <SessionsHub data={q.data} refresh={refresh} />
           : <TasksBoard data={q.data} refresh={refresh} />
       ) : null}
     </div>
