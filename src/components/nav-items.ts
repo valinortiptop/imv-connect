@@ -250,6 +250,7 @@ export const navGroups: NavGroup[] = [
         items: [
           { key: "navContaElec", label: "Contabilidad electrónica", url: "/admin/contabilidad/electronica", icon: icContaElectronica.url },
           { key: "navContaIVA", label: "IVA / IEPS", url: "/admin/contabilidad/impuestos", icon: icImpuestos.url },
+          { key: "navContaProdFiscal", label: "Impuestos por producto", url: "/admin/contabilidad/productos-fiscal", icon: icImpuestos.url },
           { key: "navContaFact", label: "Facturas contables", url: "/admin/contabilidad/facturas", icon: icFacturas.url },
           { key: "navContaSAT", label: "Cumplimiento SAT", url: "/admin/contabilidad/sat", icon: icSAT.url },
         ],

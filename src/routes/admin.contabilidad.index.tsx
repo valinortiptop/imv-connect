@@ -83,6 +83,7 @@ function ContabilidadDashboard() {
     { label: "Balanza",             to: "/admin/contabilidad/balanza",   icon: Scale },
     { label: "Estados financieros", to: "/admin/contabilidad/estados",   icon: PieChart },
     { label: "IVA / IEPS",          to: "/admin/contabilidad/impuestos", icon: Receipt },
+    { label: "Impuestos por producto", to: "/admin/contabilidad/productos-fiscal", icon: Receipt },
     { label: "Facturas contables",  to: "/admin/contabilidad/facturas",  icon: Receipt },
     { label: "Cumplimiento SAT",    to: "/admin/contabilidad/sat",       icon: ShieldCheck },
   ] as const;

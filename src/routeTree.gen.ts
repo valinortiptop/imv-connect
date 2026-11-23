@@ -119,6 +119,7 @@ import { Route as AdminContabilidadFacturasRouteImport } from './routes/admin.co
 import { Route as AdminContabilidadImpuestosRouteImport } from './routes/admin.contabilidad.impuestos'
 import { Route as AdminContabilidadMayorRouteImport } from './routes/admin.contabilidad.mayor'
 import { Route as AdminContabilidadPolizasRouteImport } from './routes/admin.contabilidad.polizas'
+import { Route as AdminContabilidadProductosFiscalRouteImport } from './routes/admin.contabilidad.productos-fiscal'
 import { Route as AdminContabilidadSatRouteImport } from './routes/admin.contabilidad.sat'
 import { Route as AdminCreditoCobranzaIndexRouteImport } from './routes/admin.credito-cobranza.index'
 import { Route as AdminCreditoCobranzaAlertasRouteImport } from './routes/admin.credito-cobranza.alertas'
@@ -717,6 +718,12 @@ const AdminContabilidadPolizasRoute =
     path: '/contabilidad/polizas',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminContabilidadProductosFiscalRoute =
+  AdminContabilidadProductosFiscalRouteImport.update({
+    id: '/contabilidad/productos-fiscal',
+    path: '/contabilidad/productos-fiscal',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminContabilidadSatRoute = AdminContabilidadSatRouteImport.update({
   id: '/contabilidad/sat',
   path: '/contabilidad/sat',
@@ -1027,6 +1034,7 @@ export interface FileRoutesByFullPath {
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
+  '/admin/contabilidad/productos-fiscal': typeof AdminContabilidadProductosFiscalRoute
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/alertas': typeof AdminCreditoCobranzaAlertasRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
@@ -1168,6 +1176,7 @@ export interface FileRoutesByTo {
   '/admin/contabilidad/facturas': typeof AdminContabilidadFacturasRoute
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
+  '/admin/contabilidad/productos-fiscal': typeof AdminContabilidadProductosFiscalRoute
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/alertas': typeof AdminCreditoCobranzaAlertasRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
@@ -1317,6 +1326,7 @@ export interface FileRoutesById {
   '/admin/contabilidad/impuestos': typeof AdminContabilidadImpuestosRoute
   '/admin/contabilidad/mayor': typeof AdminContabilidadMayorRoute
   '/admin/contabilidad/polizas': typeof AdminContabilidadPolizasRouteWithChildren
+  '/admin/contabilidad/productos-fiscal': typeof AdminContabilidadProductosFiscalRoute
   '/admin/contabilidad/sat': typeof AdminContabilidadSatRoute
   '/admin/credito-cobranza/alertas': typeof AdminCreditoCobranzaAlertasRoute
   '/admin/credito-cobranza/autorizaciones': typeof AdminCreditoCobranzaAutorizacionesRoute
@@ -1467,6 +1477,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
+    | '/admin/contabilidad/productos-fiscal'
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/alertas'
     | '/admin/credito-cobranza/autorizaciones'
@@ -1608,6 +1619,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/facturas'
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
+    | '/admin/contabilidad/productos-fiscal'
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/alertas'
     | '/admin/credito-cobranza/autorizaciones'
@@ -1756,6 +1768,7 @@ export interface FileRouteTypes {
     | '/admin/contabilidad/impuestos'
     | '/admin/contabilidad/mayor'
     | '/admin/contabilidad/polizas'
+    | '/admin/contabilidad/productos-fiscal'
     | '/admin/contabilidad/sat'
     | '/admin/credito-cobranza/alertas'
     | '/admin/credito-cobranza/autorizaciones'
@@ -2591,6 +2604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContabilidadPolizasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contabilidad/productos-fiscal': {
+      id: '/admin/contabilidad/productos-fiscal'
+      path: '/contabilidad/productos-fiscal'
+      fullPath: '/admin/contabilidad/productos-fiscal'
+      preLoaderRoute: typeof AdminContabilidadProductosFiscalRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/contabilidad/sat': {
       id: '/admin/contabilidad/sat'
       path: '/contabilidad/sat'
@@ -3071,6 +3091,7 @@ interface AdminRouteChildren {
   AdminContabilidadImpuestosRoute: typeof AdminContabilidadImpuestosRoute
   AdminContabilidadMayorRoute: typeof AdminContabilidadMayorRoute
   AdminContabilidadPolizasRoute: typeof AdminContabilidadPolizasRouteWithChildren
+  AdminContabilidadProductosFiscalRoute: typeof AdminContabilidadProductosFiscalRoute
   AdminContabilidadSatRoute: typeof AdminContabilidadSatRoute
   AdminFacturasIdRoute: typeof AdminFacturasIdRoute
   AdminIntegracionesNetsuiteRoute: typeof AdminIntegracionesNetsuiteRoute
@@ -3146,6 +3167,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContabilidadImpuestosRoute: AdminContabilidadImpuestosRoute,
   AdminContabilidadMayorRoute: AdminContabilidadMayorRoute,
   AdminContabilidadPolizasRoute: AdminContabilidadPolizasRouteWithChildren,
+  AdminContabilidadProductosFiscalRoute: AdminContabilidadProductosFiscalRoute,
   AdminContabilidadSatRoute: AdminContabilidadSatRoute,
   AdminFacturasIdRoute: AdminFacturasIdRoute,
   AdminIntegracionesNetsuiteRoute: AdminIntegracionesNetsuiteRoute,

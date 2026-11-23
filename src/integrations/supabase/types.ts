@@ -1963,6 +1963,60 @@ export type Database = {
         }
         Relationships: []
       }
+      codigos_fiscales: {
+        Row: {
+          activo: boolean
+          clave: string
+          created_at: string
+          id: string
+          ieps_pct: number
+          iva_modo: string
+          iva_pct: number
+          nombre: string
+          objeto_impuesto: boolean
+          orden: number
+          ret_isr_modo: string
+          ret_isr_pct: number
+          ret_iva_modo: string
+          ret_iva_pct: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          clave: string
+          created_at?: string
+          id?: string
+          ieps_pct?: number
+          iva_modo?: string
+          iva_pct?: number
+          nombre: string
+          objeto_impuesto?: boolean
+          orden?: number
+          ret_isr_modo?: string
+          ret_isr_pct?: number
+          ret_iva_modo?: string
+          ret_iva_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          clave?: string
+          created_at?: string
+          id?: string
+          ieps_pct?: number
+          iva_modo?: string
+          iva_pct?: number
+          nombre?: string
+          objeto_impuesto?: boolean
+          orden?: number
+          ret_isr_modo?: string
+          ret_isr_pct?: number
+          ret_iva_modo?: string
+          ret_iva_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       competitor_migrations: {
         Row: {
           cliente_id: string
@@ -8708,6 +8762,7 @@ export type Database = {
           activo: boolean
           bonificacion_pct: number | null
           categoria: string | null
+          codigo_fiscal_id: string | null
           costo: number | null
           costo_civa: number | null
           costo_siva: number | null
@@ -8719,6 +8774,7 @@ export type Database = {
           id: string
           ieps_pct: number
           imagen_url: string | null
+          iva_modo: string
           iva_pct: number
           laboratorio_id: string | null
           linea: string | null
@@ -8727,11 +8783,16 @@ export type Database = {
           margen_normal_pct: number | null
           netsuite_id: string | null
           nombre: string
+          objeto_impuesto: boolean
           peso_kg: number | null
           precio_lista: number
           presentacion: string | null
           promo: boolean
           proveedor: string | null
+          ret_isr_modo: string
+          ret_isr_pct: number
+          ret_iva_modo: string
+          ret_iva_pct: number
           sat_clave: string | null
           sat_product_key: string | null
           sat_unit_key: string | null
@@ -8750,6 +8811,7 @@ export type Database = {
           activo?: boolean
           bonificacion_pct?: number | null
           categoria?: string | null
+          codigo_fiscal_id?: string | null
           costo?: number | null
           costo_civa?: number | null
           costo_siva?: number | null
@@ -8761,6 +8823,7 @@ export type Database = {
           id?: string
           ieps_pct?: number
           imagen_url?: string | null
+          iva_modo?: string
           iva_pct?: number
           laboratorio_id?: string | null
           linea?: string | null
@@ -8769,11 +8832,16 @@ export type Database = {
           margen_normal_pct?: number | null
           netsuite_id?: string | null
           nombre: string
+          objeto_impuesto?: boolean
           peso_kg?: number | null
           precio_lista?: number
           presentacion?: string | null
           promo?: boolean
           proveedor?: string | null
+          ret_isr_modo?: string
+          ret_isr_pct?: number
+          ret_iva_modo?: string
+          ret_iva_pct?: number
           sat_clave?: string | null
           sat_product_key?: string | null
           sat_unit_key?: string | null
@@ -8792,6 +8860,7 @@ export type Database = {
           activo?: boolean
           bonificacion_pct?: number | null
           categoria?: string | null
+          codigo_fiscal_id?: string | null
           costo?: number | null
           costo_civa?: number | null
           costo_siva?: number | null
@@ -8803,6 +8872,7 @@ export type Database = {
           id?: string
           ieps_pct?: number
           imagen_url?: string | null
+          iva_modo?: string
           iva_pct?: number
           laboratorio_id?: string | null
           linea?: string | null
@@ -8811,11 +8881,16 @@ export type Database = {
           margen_normal_pct?: number | null
           netsuite_id?: string | null
           nombre?: string
+          objeto_impuesto?: boolean
           peso_kg?: number | null
           precio_lista?: number
           presentacion?: string | null
           promo?: boolean
           proveedor?: string | null
+          ret_isr_modo?: string
+          ret_isr_pct?: number
+          ret_iva_modo?: string
+          ret_iva_pct?: number
           sat_clave?: string | null
           sat_product_key?: string | null
           sat_unit_key?: string | null
@@ -8831,6 +8906,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "productos_codigo_fiscal_id_fkey"
+            columns: ["codigo_fiscal_id"]
+            isOneToOne: false
+            referencedRelation: "codigos_fiscales"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "productos_laboratorio_id_fkey"
             columns: ["laboratorio_id"]

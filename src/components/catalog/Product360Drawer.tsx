@@ -20,6 +20,7 @@ import {
   BadgePercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ProductFiscalPanel } from "./ProductFiscalPanel";
 
 type Props = {
   productId: string | null;
@@ -50,7 +51,7 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
         supabase
           .from("productos")
           .select(
-            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, ieps_pct, tax_regime, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
+            "id, sku, nombre, descripcion, presentacion, especie, categoria, imagen_url, precio_lista, unidad, iva_pct, ieps_pct, tax_regime, sat_product_key, sat_unit_key, codigo_fiscal_id, iva_modo, objeto_impuesto, ret_iva_modo, ret_iva_pct, ret_isr_modo, ret_isr_pct, marca, proveedor, peso_kg, costo_civa, costo_siva, bonificacion_pct, linea, grupo, tipo_producto, sat_clave, stock_comprometido, stock_en_camino, activo, laboratorios(nombre, logo_url)",
           )
           .eq("id", productId)
           .maybeSingle(),
@@ -167,12 +168,13 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
             </div>
 
             <Tabs defaultValue="general" className="mt-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
                 <TabsTrigger value="stock">Stock</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
                 <TabsTrigger value="promos">Promos</TabsTrigger>
+                <TabsTrigger value="fiscal">Fiscal</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-3 pt-4">
@@ -197,6 +199,10 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                     <p className="text-sm whitespace-pre-wrap">{p.descripcion}</p>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="fiscal" className="pt-4">
+                <ProductFiscalPanel producto={p as any} />
               </TabsContent>
 
               <TabsContent value="precios" className="space-y-4 pt-4">
