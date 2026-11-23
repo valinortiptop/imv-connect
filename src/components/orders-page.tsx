@@ -50,6 +50,7 @@ import { OrderRowActions } from "@/components/orders/OrderRowActions";
 import { CotizacionesTab } from "@/components/orders/CotizacionesTab";
 import { ORDER_STATUSES, STATUS_LABELS, fmtMXN } from "@/types/orders";
 import type { OrderSummaryRow } from "@/types/orders";
+import type { TablaExport } from "@/lib/exportar-tabla";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseLocalDate } from "@/lib/date-utils";
@@ -318,6 +319,44 @@ export default function Orders({
   });
   const orders = ordersResult.rows;
   const ordersTotal = ordersResult.count;
+
+  // Exportar: mismos filtros y orden que la tabla, pero todas las páginas
+  // (en lotes de 1,000, máximo 10,000 pedidos).
+  const datosPedidos = async (): Promise<TablaExport> => {
+    const columnas = ["Pedido", "Cliente", "Fecha pedido", "Fecha entrega", "Estado", "Total con IVA (MXN)", "SKUs"];
+    if (restrictClientIds && restrictClientIds.length === 0) return { columnas, filas: [] };
+    const cleanSearch = search.trim().replace(/[%*,]/g, " ").replace(/\s+/g, " ");
+    const filas: TablaExport["filas"] = [];
+    for (let desde = 0; desde < 10000; desde += 1000) {
+      let q = supabase.from("order_summary").select("*");
+      if (restrictClientIds && restrictClientIds.length > 0) q = q.in("client_id", restrictClientIds);
+      if (dateFrom) q = q.gte("order_date", dateFrom);
+      if (dateTo) q = q.lte("order_date", dateTo);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (typeFilter === "mayoreo") q = q.or("client_type.eq.mayoreo,client_type.is.null");
+      if (typeFilter === "menudeo") q = q.eq("client_type", "menudeo");
+      if (cleanSearch) q = q.or(`client_name.ilike.%${cleanSearch}%,order_code.ilike.%${cleanSearch}%`);
+      const { data, error } = await q
+        .order(sort.key, { ascending: sort.dir === "asc", nullsFirst: false })
+        .order("order_code", { ascending: false, nullsFirst: false })
+        .range(desde, desde + 999);
+      if (error) throw error;
+      const lote = (data ?? []) as OrderSummaryRow[];
+      for (const o of lote) {
+        filas.push([
+          o.order_code ?? "", o.client_name ?? "", o.order_date ?? "", o.delivery_date ?? "",
+          o.status ? (STATUS_LABELS[o.status as keyof typeof STATUS_LABELS] ?? o.status) : "",
+          o.total_with_iva ?? null, o.line_items ?? null,
+        ]);
+      }
+      if (lote.length < 1000) break;
+    }
+    return { columnas, filas };
+  };
+  const contextoPedidos = [
+    dateFrom || dateTo ? `Fechas de pedido: ${dateFrom || "…"} a ${dateTo || "…"}` : null,
+    typeFilter !== "todos" ? `Tipo de cliente: ${typeFilter}` : null,
+  ].filter((x): x is string => !!x);
   const totalPages = Math.max(1, Math.ceil(ordersTotal / ORDERS_PAGE_SIZE));
   const pageFrom = ordersTotal === 0 ? 0 : (page - 1) * ORDERS_PAGE_SIZE + 1;
   const pageTo = Math.min(page * ORDERS_PAGE_SIZE, ordersTotal);
@@ -962,6 +1001,7 @@ export default function Orders({
           <BarraHerramientas
             className="mb-0"
             busqueda={{ valor: search, onChange: setSearch, placeholder: t("searchOrderPlaceholder") }}
+            exportar={{ titulo: "Pedidos", datos: datosPedidos, contexto: contextoPedidos, deshabilitado: ordersTotal === 0 }}
             filtros={[
               {
                 id: "estado",

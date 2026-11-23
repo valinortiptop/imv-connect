@@ -1,6 +1,10 @@
-import { ArrowUpDown, Download as DownloadIcon, FileSpreadsheet, FileText, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, Download as DownloadIcon, FileSpreadsheet, FileText, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
+
+import { resolveAdminPageTitle } from "@/components/admin/page-title";
+import { buscarTablaDespues, descargarExcel, descargarPdf, tablaDesdeDom, type TablaExport } from "@/lib/exportar-tabla";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +14,29 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 /**
  * Barra estándar de listados (una sola fila):
- *   [Buscar ……………] [Filtros (n)] [Orden]            [Vistas] [Exportar]
+ *   [Buscar ……………] [Filtros (n)] [Orden]            [Vistas] [Acciones] [Exportar]
  * Debajo, sólo si hay filtros activos: chips quitables + "Quitar todo" y el resumen.
  * Los filtros viven en un panel (popover en compu, hoja inferior en teléfono).
+ * "Exportar" (Excel / PDF) aparece siempre: por defecto exporta la tabla que está
+ * en pantalla debajo de la barra; la página puede pasar `exportar.datos` con todas
+ * las filas filtradas (tablas paginadas o vistas en tarjetas).
  */
+
+export type ExportarDef = {
+  /** Título del reporte y nombre del archivo; por defecto, el título de la página. */
+  titulo?: string;
+  /** Todas las filas ya filtradas. Si falta, se lee la tabla en pantalla. */
+  datos?: () => TablaExport | Promise<TablaExport>;
+  /** Excel con formato propio de la página (p. ej. con imágenes). */
+  onExcel?: () => void | Promise<void>;
+  /** PDF con formato propio de la página. */
+  onPdf?: () => void | Promise<void>;
+  deshabilitado?: boolean;
+  /** Filtros de la página que no están en la barra (fechas, tipo…), para el encabezado del archivo. */
+  contexto?: string[];
+  /** Texto de progreso mientras la página arma su propio archivo. */
+  ocupado?: string | null;
+};
 
 export type FiltroDef = {
   id: string;
@@ -36,8 +59,10 @@ type Props<V extends string> = {
   chipsExtra?: { id: string; texto: string; quitar: () => void }[];
   orden?: { valor: string; onChange: (v: string) => void; opciones: [string, string][] };
   vistas?: { valor: V; onChange: (v: V) => void; opciones: VistaDef<V>[] };
-  /** Botones a la derecha (exportar, columnas…). */
+  /** Botones a la derecha (columnas, acciones de la página…). */
   acciones?: ReactNode;
+  /** Exportar a Excel y PDF. `false` lo oculta (p. ej. buscadores sin tabla). */
+  exportar?: ExportarDef | false;
   /** Controles siempre visibles junto a filtros (p. ej. selector de plataforma). */
   enLinea?: ReactNode;
   onLimpiar?: () => void;
@@ -57,9 +82,11 @@ function SelectCampo({ valor, onChange, opciones, className = "" }: { valor: str
 }
 
 export function BarraHerramientas<V extends string>({
-  busqueda, filtros = [], filtrosExtra, chipsExtra = [], orden, vistas, acciones, enLinea, onLimpiar, resumen, className = "",
+  busqueda, filtros = [], filtrosExtra, chipsExtra = [], orden, vistas, acciones, exportar = {}, enLinea, onLimpiar, resumen, className = "",
 }: Props<V>) {
   const [hoja, setHoja] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
+  const [exportando, setExportando] = useState<null | "excel" | "pdf">(null);
   const visibles = filtros.filter((f) => !f.oculto);
   const activos = visibles.filter((f) => !vacio(f));
   const nActivos = activos.length + chipsExtra.length;
@@ -68,6 +95,42 @@ export function BarraHerramientas<V extends string>({
   const ordenOpciones: [string, string][] = orden
     ? orden.opciones.some(([v]) => v === orden.valor) ? orden.opciones : [[orden.valor, "Orden de columna"], ...orden.opciones]
     : [];
+  const contexto = (): string[] => {
+    const out: string[] = [];
+    if (busqueda?.valor.trim()) out.push(`Búsqueda: "${busqueda.valor.trim()}"`);
+    activos.forEach((f) => out.push(`${f.etiqueta}: ${f.opciones.find(([v]) => v === f.valor)?.[1] ?? f.valor}`));
+    chipsExtra.forEach((c) => out.push(c.texto));
+    const o = orden ? ordenOpciones.find(([v]) => v === orden.valor)?.[1] : null;
+    if (o) out.push(`Orden: ${o}`);
+    return out;
+  };
+
+  const exportarA = async (tipo: "excel" | "pdf") => {
+    if (!exportar || exportando) return;
+    const propio = tipo === "excel" ? exportar.onExcel : exportar.onPdf;
+    setExportando(tipo);
+    try {
+      if (propio) { await propio(); return; }
+      let tabla: TablaExport;
+      if (exportar.datos) tabla = await exportar.datos();
+      else {
+        const t = raiz.current ? buscarTablaDespues(raiz.current) : null;
+        if (!t) { toast.info("Esta vista no tiene una tabla para exportar. Cambia a la vista de lista."); return; }
+        tabla = tablaDesdeDom(t);
+      }
+      if (!tabla.filas.length) { toast.info("No hay registros para exportar con los filtros actuales"); return; }
+      const pagina = typeof window === "undefined" ? null : resolveAdminPageTitle(window.location.pathname);
+      const titulo = exportar.titulo ?? (pagina ? [pagina.title, pagina.detail].filter(Boolean).join(" · ") : "Exportación");
+      const meta = { titulo, filtros: [...contexto(), ...(exportar.contexto ?? [])] };
+      if (tipo === "excel") await descargarExcel(tabla, meta); else await descargarPdf(tabla, meta);
+      toast.success(`${tipo === "excel" ? "Excel" : "PDF"} descargado · ${tabla.filas.length.toLocaleString("es-MX")} registros`);
+    } catch (e) {
+      toast.error(`No se pudo exportar: ${e instanceof Error ? e.message : "error desconocido"}`);
+    } finally {
+      setExportando(null);
+    }
+  };
+
   const limpiarTodo = () => { if (onLimpiar) onLimpiar(); else visibles.forEach((f) => f.onChange(f.opciones[0]?.[0] ?? "")); };
 
   const panel = (
@@ -87,7 +150,7 @@ export function BarraHerramientas<V extends string>({
   ) : null;
 
   return (
-    <div className={`mb-3 space-y-2 ${className}`}>
+    <div ref={raiz} className={`mb-3 space-y-2 ${className}`}>
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
         {busqueda ? (
           <div className="relative min-w-0 flex-1 basis-56">
@@ -172,6 +235,14 @@ export function BarraHerramientas<V extends string>({
             </TooltipProvider>
           ) : null}
           {acciones}
+          {exportar ? (
+            <MenuExportar
+              onExcel={() => void exportarA("excel")}
+              onPdf={() => void exportarA("pdf")}
+              disabled={!!exportar.deshabilitado}
+              ocupado={exportar.ocupado ?? (exportando ? `Generando ${exportando === "excel" ? "Excel" : "PDF"}…` : null)}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -207,18 +278,21 @@ export function BotonExcel({ onClick, disabled }: { onClick: () => void; disable
   );
 }
 
-/** Exportar con menú Excel / PDF. */
-export function MenuExportar({ onExcel, onPdf, disabled }: { onExcel: () => void; onPdf: () => void; disabled?: boolean }) {
+/** Botón "Exportar" con menú Excel / PDF. */
+export function MenuExportar({ onExcel, onPdf, disabled, ocupado }: { onExcel: () => void; onPdf: () => void; disabled?: boolean; ocupado?: string | null }) {
+  // Al abrir el menú se precargan las librerías para que la descarga salga enseguida.
+  const precargar = (abierto: boolean) => { if (abierto) { void import("xlsx"); void import("jspdf"); void import("jspdf-autotable"); } };
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={precargar}>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline" className="h-9 gap-1.5" disabled={disabled}>
-          <DownloadIcon className="size-4" /> <span className="hidden sm:inline">Exportar</span>
+        <Button size="sm" variant="outline" className="h-9 gap-1.5" disabled={disabled || !!ocupado} aria-label="Exportar a Excel o PDF">
+          {ocupado ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+          <span className="hidden sm:inline">{ocupado ?? "Exportar"}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onExcel} className="gap-2"><FileSpreadsheet className="size-4" /> Excel (.xlsx)</DropdownMenuItem>
-        <DropdownMenuItem onClick={onPdf} className="gap-2"><FileText className="size-4" /> PDF</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onExcel} className="gap-2"><FileSpreadsheet className="size-4" /> Excel (.xlsx)</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onPdf} className="gap-2"><FileText className="size-4" /> PDF</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

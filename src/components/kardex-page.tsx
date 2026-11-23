@@ -23,7 +23,8 @@ import { Link, useSearchParams } from "@/lib/router-compat";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-import { BarraHerramientas, BotonExcel } from "@/components/barra-herramientas";
+import { BarraHerramientas } from "@/components/barra-herramientas";
+import type { TablaExport } from "@/lib/exportar-tabla";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import * as XLSX from "xlsx-js-style";
 
 const REASON_LABELS: Record<string, string> = {
   seed: "Carga inicial",
@@ -263,15 +263,16 @@ export default function Kardex() {
     setFilter("reasons", next.size === 0 ? null : [...next].join(","));
   };
 
-  const handleExport = async () => {
-    try {
-      // Same filter pipeline as the paginated query, but pull the full set
-      // (capped at 10k rows so we don't melt the browser if no filters are set)
+  const datosKardex = async (): Promise<TablaExport> => {
+    {
+      // Same filter pipeline as the paginated query, but pull the full set in
+      // pages of 1,000 (the API max), capped at 10k rows.
+      const armar = () => {
       let q = (supabase as any)
         .from("v_kardex_movements")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(10000);
+        .order("id", { ascending: false });
       if (from) q = q.gte("created_at", startOfLocalDayUTC(from));
       if (to) q = q.lte("created_at", endOfLocalDayUTC(to));
       if (slotId) q = q.eq("slot_id", slotId);
@@ -292,31 +293,32 @@ export default function Kardex() {
           parts.push(`description.ilike.*${esc}*`);
         }
         if (parts.length > 0) q = q.or(parts.join(","));
-        else {
-          toast.warning("La búsqueda no tiene coincidencias — no hay nada que exportar");
-          return;
-        }
+        else return null;
       }
-      const { data, error } = await q;
-      if (error) throw error;
-      const exportRows = (data ?? []).map((r: any) => ({
-        FECHA: format(new Date(r.created_at), "yyyy-MM-dd HH:mm"),
-        POSICION: r.slot_code ?? "—",
-        SKU: r.product_clave ?? "",
-        PRODUCTO: r.product_name ?? r.description ?? "",
-        LOTE: r.lote ?? "",
-        DELTA: r.delta,
-        RAZON: REASON_LABELS[r.reason] ?? r.reason,
-        NOTA: r.note ?? "",
-      }));
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportRows);
-      XLSX.utils.book_append_sheet(wb, ws, "KARDEX");
-      const ymd = format(new Date(), "yyyy-MM-dd");
-      XLSX.writeFile(wb, `Kardex ${ymd}.xlsx`);
-      toast.success(`Kardex exportado · ${exportRows.length.toLocaleString("es-MX")} movimientos`);
-    } catch (err: any) {
-      toast.error("Error al exportar: " + (err.message ?? "desconocido"));
+      return q;
+      };
+      const data: any[] = [];
+      for (let desde = 0; desde < 10000; desde += 1000) {
+        const q = armar();
+        if (!q) return { columnas: [], filas: [] };
+        const { data: lote, error } = await q.range(desde, desde + 999);
+        if (error) throw error;
+        data.push(...(lote ?? []));
+        if (!lote || lote.length < 1000) break;
+      }
+      return {
+        columnas: ["Fecha", "Posición", "SKU", "Producto", "Lote", "Movimiento", "Razón", "Nota"],
+        filas: data.map((r: any) => [
+          format(new Date(r.created_at), "yyyy-MM-dd HH:mm"),
+          r.slot_code ?? "—",
+          r.product_clave ?? "",
+          r.product_name ?? r.description ?? "",
+          r.lote ?? "",
+          r.delta,
+          REASON_LABELS[r.reason] ?? r.reason,
+          r.note ?? "",
+        ]),
+      };
     }
   };
 
@@ -392,7 +394,7 @@ export default function Kardex() {
           ...reasons.map((r) => ({ id: `r-${r}`, texto: `Razón: ${REASON_LABELS[r]}`, quitar: () => toggleReason(r) })),
         ]}
         onLimpiar={clearFilters}
-        acciones={<BotonExcel onClick={handleExport} />}
+        exportar={{ titulo: "Kardex", datos: datosKardex }}
         resumen={
           isLoading ? undefined : (
             <>

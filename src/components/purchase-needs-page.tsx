@@ -426,24 +426,6 @@ export default function PurchaseNeeds() {
             <Upload className="h-4 w-4 mr-2" />
             Importar proveedores
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadExcel}
-            disabled={shortageRows.length === 0}
-          >
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Excel
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadImage}
-            disabled={shortageRows.length === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Descargar PDF
-          </Button>
         </div>
       </div>
 
@@ -509,6 +491,8 @@ export default function PurchaseNeeds() {
         className="mb-0"
         busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar pedido, cliente o producto..." }}
         filtros={[{ id: "proveedor", etiqueta: "Proveedor", valor: supplierFilter, onChange: setSupplierFilter, opciones: [["all", "Todos los proveedores"], ...suppliers.map((s) => [s, s] as [string, string])] }]}
+        // Excel y PDF con el formato de compras de siempre.
+        exportar={{ onExcel: handleDownloadExcel, onPdf: handleDownloadImage, deshabilitado: shortageRows.length === 0 }}
       />
 
       {/* Delivery day selector */}

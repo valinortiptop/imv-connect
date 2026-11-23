@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import type { TablaExport } from "@/lib/exportar-tabla";
 import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,11 +108,7 @@ function CarteraPage() {
           { id: "estado", etiqueta: "Estado", valor: estado, onChange: setEstado, opciones: [["deudores", "Con saldo"], ["todos", "Todos"], ["vencidos", "Vencidos"], ["bloqueados", "Bloqueados"]] },
           { id: "riesgo", etiqueta: "Riesgo", valor: riesgo, onChange: setRiesgo, opciones: [["todos", "Todo riesgo"], ["bajo", "Bajo"], ["medio", "Medio"], ["alto", "Alto"], ["critico", "Crítico"]] },
         ]}
-        acciones={
-          <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => exportCsv(filtered)}>
-            <Download className="size-4" /> <span className="hidden sm:inline">Exportar CSV</span>
-          </Button>
-        }
+        exportar={{ titulo: "Cartera de clientes", datos: () => tablaCartera(filtered), deshabilitado: filtered.length === 0 }}
         resumen={<>{filtered.length.toLocaleString("es-MX")} clientes</>}
       />
 
@@ -204,24 +201,18 @@ function Kpi({
   );
 }
 
-function exportCsv(rows: Row[]) {
-  const headers = [
-    "Cliente", "Razón social", "Saldo", "Vencido", "Facturas abiertas", "Facturas vencidas",
-    "Límite crédito", "Uso %", "Días pago prom.", "Riesgo", "Bloqueado",
-  ];
-  const lines = rows.map((r) => [
-    r.nombre_comercial || r.razon_social,
-    r.razon_social,
-    r.saldo_total, r.saldo_vencido, r.facturas_abiertas, r.facturas_vencidas,
-    r.limite_credito, r.utilizacion_pct ?? "", r.dias_pago_prom, r.riesgo_calculado,
-    r.bloqueado ? "sí" : "no",
-  ].map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
-  const csv = [headers.join(","), ...lines].join("\n");
-  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `cartera-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+function tablaCartera(rows: Row[]): TablaExport {
+  return {
+    columnas: [
+      "Cliente", "Razón social", "Saldo (MXN)", "Vencido (MXN)", "Facturas abiertas", "Facturas vencidas",
+      "Límite crédito (MXN)", "Uso %", "Días pago prom.", "Riesgo", "Bloqueado",
+    ],
+    filas: rows.map((r) => [
+      r.nombre_comercial || r.razon_social,
+      r.razon_social,
+      r.saldo_total, r.saldo_vencido, r.facturas_abiertas, r.facturas_vencidas,
+      r.limite_credito, r.utilizacion_pct ?? null, r.dias_pago_prom ?? null, r.riesgo_calculado,
+      r.bloqueado ? "Sí" : "No",
+    ]),
+  };
 }

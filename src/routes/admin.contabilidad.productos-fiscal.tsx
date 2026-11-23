@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { ArrowUpDown, Download, Receipt, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BarraHerramientas, BotonExcel } from "@/components/barra-herramientas";
+import { BarraHerramientas } from "@/components/barra-herramientas";
+import type { TablaExport } from "@/lib/exportar-tabla";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -155,17 +155,14 @@ function ProductosFiscalPage() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
   });
 
-  const exportXlsx = () => {
-    const data = filtered.map((r) => ({
-      SKU: r.sku ?? "", Producto: r.nombre, Laboratorio: r.laboratorio, "Código fiscal": codeOf(r)?.clave ?? "Personalizado",
-      IVA: describeIva(r), "IEPS %": r.ieps_pct, "Ret. IVA": describeRet(r.ret_iva_modo, r.ret_iva_pct),
-      "Ret. ISR": describeRet(r.ret_isr_modo, r.ret_isr_pct), "Clave SAT producto": r.sat_prod ?? "", "Clave SAT unidad": r.sat_unit ?? "",
-      Activo: r.activo ? "Sí" : "No",
-    }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Impuestos");
-    XLSX.writeFile(wb, "impuestos_por_producto.xlsx");
-  };
+  const datosExport = (): TablaExport => ({
+    columnas: ["SKU", "Producto", "Laboratorio", "Código fiscal", "IVA", "IEPS %", "Ret. IVA", "Ret. ISR", "Clave SAT producto", "Clave SAT unidad", "Activo"],
+    filas: filtered.map((r) => [
+      r.sku ?? "", r.nombre, r.laboratorio, codeOf(r)?.clave ?? "Personalizado",
+      describeIva(r), r.ieps_pct, describeRet(r.ret_iva_modo, r.ret_iva_pct),
+      describeRet(r.ret_isr_modo, r.ret_isr_pct), r.sat_prod ?? "", r.sat_unit ?? "", r.activo ? "Sí" : "No",
+    ]),
+  });
 
   const Th = ({ k, children, right }: { k: SortKey; children: React.ReactNode; right?: boolean }) => (
     <th className={`px-2 py-2 font-medium ${right ? "text-right" : "text-left"}`}>
@@ -212,7 +209,7 @@ function ProductosFiscalPage() {
         ] as [string, string, string, (v: string) => void, [string, string][]][]).map(([id, etiqueta, valor, set, opciones]) => ({
           id, etiqueta, valor, opciones, onChange: (v: string) => { set(v); setPage(0); },
         }))}
-        acciones={<BotonExcel onClick={exportXlsx} disabled={!filtered.length} />}
+        exportar={{ titulo: "Impuestos por producto", datos: datosExport, deshabilitado: !filtered.length }}
         resumen={q.isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} productos</>}
       />
 

@@ -532,11 +532,12 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
               Disponible en venta
             </span>
           ) : undefined}
-          acciones={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
+          exportar={{
+            titulo: isProjected && projectedLabel ? `Inventario proyectado ${projectedLabel}` : "Inventario",
+            deshabilitado: items.length === 0,
+            ocupado: exporting ? `Descargando… ${exporting.done}/${exporting.total}` : null,
+            // Excel propio con fotos; el PDF sale de las mismas filas.
+            onExcel: async () => {
               if (items.length === 0) {
                 toast("No hay productos para exportar");
                 return;
@@ -565,23 +566,12 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
               } finally {
                 setExporting(null);
               }
-            }}
-            disabled={exporting !== null || items.length === 0}
-            className="h-9 gap-2"
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Descargando… {exporting.done}/{exporting.total}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Excel</span>
-              </>
-            )}
-          </Button>
-          }
+            },
+            datos: () => ({
+              columnas: ["Clave", "Producto", "Proveedor", "Existencia", "Comprometido", "Disponible", "Por llegar"],
+              filas: items.map((it) => [it.clave, it.name, it.supplier ?? "", it.stock_actual, it.stock_committed, it.stock_disponible, it.stock_incoming]),
+            }),
+          }}
           resumen={<>{items.length.toLocaleString("es-MX")} productos</>}
         />
 

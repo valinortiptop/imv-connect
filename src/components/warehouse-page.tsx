@@ -1019,8 +1019,7 @@ export default function Warehouse() {
 
   // Export current contents as the exact Excel layout the warehouse
   // team is already used to (same column order as their seed file).
-  const exportExcel = () => {
-    try {
+  const filasInventario = () => {
       // Output every storage slot (so empty positions are visible too),
       // sorted by code. Multi-SKU slots get one row per (slot, sku, lote).
       const rows: any[] = [];
@@ -1067,6 +1066,12 @@ export default function Warehouse() {
           }
         }
       }
+      return rows;
+  };
+
+  const exportExcel = () => {
+    try {
+      const rows = filasInventario();
       const ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [{ wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 50 }, { wch: 10 }, { wch: 14 }, { wch: 12 }];
       const wb = XLSX.utils.book_new();
@@ -1175,16 +1180,6 @@ export default function Warehouse() {
           <Button
             variant="outline"
             size="sm"
-            onClick={exportExcel}
-            disabled={isLoading}
-            className="gap-1.5"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Exportar Excel
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
             onClick={() => setImportOpen(true)}
             disabled={isLoading || isHistorical}
             className="gap-1.5"
@@ -1209,6 +1204,19 @@ export default function Warehouse() {
       <BarraHerramientas
         className="mb-0"
         busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por posición, SKU, lote o producto..." }}
+        exportar={{
+          titulo: "Inventario por ubicación",
+          deshabilitado: isLoading,
+          // Excel con el formato de siempre del almacén; el PDF lleva las mismas filas.
+          onExcel: exportExcel,
+          datos: () => {
+            const cols = ["UBICACION", "SKU", "CODIGO DE BARRAS", "DESCRIPCION", "CANTIDAD", "LOTE", "FECHA DE CAD."];
+            return {
+              columnas: ["Ubicación", "SKU", "Código de barras", "Descripción", "Cantidad", "Lote", "Caducidad"],
+              filas: filasInventario().map((r: Record<string, string | number>) => cols.map((c) => r[c] ?? "")),
+            };
+          },
+        }}
       />
 
       {/* Filter stats — fixed-height container so the layout never

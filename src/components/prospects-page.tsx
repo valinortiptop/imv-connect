@@ -958,6 +958,24 @@ export default function Prospects({ scopeToMe = false }: { scopeToMe?: boolean }
 
       <BarraHerramientas
         busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar teléfono, nombre, colonia…" }}
+        exportar={{
+          titulo: "Prospectos",
+          deshabilitado: filtered.length === 0,
+          // Todos los prospectos filtrados, no sólo la página visible.
+          datos: () => ({
+            columnas: ["Teléfono", "Nombre", "Contacto", "Municipio", "Colonia", "Estado", "Lista", "Última llamada", "Próximo seguimiento", "Asignado"],
+            filas: filtered.map((p) => {
+              const info = callsByProspect[p.id];
+              const perfil = profiles.find((u) => u.id === p.assigned_to);
+              return [
+                p.phone ? humanPhone(p.phone) : "Sin teléfono", p.name ?? "", p.contact_person ?? "", p.municipio ?? "", p.colonia ?? "",
+                STATUS_LABELS[p.status as ProspectStatus] ?? p.status, p.source ?? "",
+                info?.last ? fmtDate(info.last) : "", info?.next ? fmtDate(info.next) : "",
+                perfil ? userLabel(perfil) : p.assigned_to ? "Usuario sin perfil" : "Sin asignar",
+              ];
+            }),
+          }),
+        }}
         filtros={[
           {
             id: "estado",

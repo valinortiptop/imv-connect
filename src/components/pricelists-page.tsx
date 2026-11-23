@@ -750,6 +750,27 @@ export default function PriceLists() {
             <BarraHerramientas
               className="mb-0"
               busqueda={{ valor: search, onChange: setSearch, placeholder: lang === "es" ? "Buscar producto..." : "Search product..." }}
+              exportar={{
+                titulo: `Lista de precios ${currentPL.name}`,
+                deshabilitado: filtered.length === 0,
+                // PDF con el formato de lista de precios de siempre.
+                onPdf: () => {
+                  const pdfItems = filtered.map((item) => ({
+                    clave: item.products?.clave ?? "",
+                    name: item.products?.name ?? "",
+                    brand: item.products?.brand ?? "",
+                    price: item.price_with_iva,
+                    catalogPrice: item.products?.sale_price_with_iva ?? 0,
+                  })).sort((a, b) => a.clave.localeCompare(b.clave));
+                  generatePriceListPDF(currentPL.name, pdfItems);
+                },
+                datos: () => ({
+                  columnas: ["Clave", "Producto", "Marca", "Precio lista con IVA (MXN)", "Precio catálogo con IVA (MXN)"],
+                  filas: filtered
+                    .map((item) => [item.products?.clave ?? "", item.products?.name ?? "", item.products?.brand ?? "", item.price_with_iva, item.products?.sale_price_with_iva ?? null] as (string | number | null)[])
+                    .sort((x, y) => String(x[0]).localeCompare(String(y[0]))),
+                }),
+              }}
               acciones={<>
               {currentPL.markup_pct != null && (
                 <Button
@@ -766,25 +787,6 @@ export default function PriceLists() {
                     : (lang === "es" ? "Resincronizar" : "Resync")}
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 shrink-0"
-                onClick={() => {
-                  const pdfItems = filtered.map((item) => ({
-                    clave: item.products?.clave ?? "",
-                    name: item.products?.name ?? "",
-                    brand: item.products?.brand ?? "",
-                    price: item.price_with_iva,
-                    catalogPrice: item.products?.sale_price_with_iva ?? 0,
-                  })).sort((a, b) => a.clave.localeCompare(b.clave));
-                  generatePriceListPDF(currentPL.name, pdfItems);
-                }}
-                disabled={filtered.length === 0}
-              >
-                <Download className="h-4 w-4" />
-                PDF
-              </Button>
               </>}
             />
           </div>

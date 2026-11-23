@@ -408,6 +408,23 @@ export default function Devoluciones() {
         <BarraHerramientas
           className="mb-0"
           busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, pedido, cliente o nota..." }}
+          exportar={{
+            titulo: `Devoluciones y faltantes ${rangeLabel}`,
+            deshabilitado: filtered.length === 0,
+            datos: () => ({
+              columnas: ["Fecha", "Tipo", "SKU", "Producto", "Pedido", "Cliente", "Bultos", "Precio unitario (MXN)", "Crédito (MXN)", "Destino", "Nota"],
+              filas: filtered.map((adj) => [
+                adj.created_at ? format(new Date(adj.created_at), "yyyy-MM-dd") : "",
+                tipoConfig[adj.tipo]?.label ?? adj.tipo,
+                adj.products?.clave ?? "", adj.products?.name ?? "", adj.orders?.order_code ?? "", adj.clients?.name ?? "",
+                adj.quantity ?? null,
+                adj.unit_price === null || adj.unit_price === undefined ? null : Number(adj.unit_price),
+                adj.credit_amount === null || adj.credit_amount === undefined ? null : Number(adj.credit_amount),
+                adj.tipo === "faltante" ? (adj.faltante_destino === "bodega" ? "Quedó en bodega" : "Perdido en camino") : "",
+                adj.notes ?? "",
+              ]),
+            }),
+          }}
           filtros={[{ id: "tipo", etiqueta: "Tipo", valor: tipoFilter, onChange: (v) => setTipoFilter(v as TipoFilter), opciones: [["all", "Todos los tipos"], ["devolucion_buena", "Devolución (buena)"], ["devolucion_danada", "Devolución (dañada)"], ["perdida_total", "Pérdida total"], ["faltante", "Faltante"]] }]}
           resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} ajustes</>}
         />

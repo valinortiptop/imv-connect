@@ -1403,6 +1403,18 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
         <BarraHerramientas
           className="mb-0"
           busqueda={{ valor: search, onChange: setSearch, placeholder: t("searchClientsPlaceholder") }}
+          exportar={{
+            titulo: "Clientes",
+            deshabilitado: filtered.length === 0,
+            // Todos los clientes filtrados (no sólo la página visible) y también desde la vista de mapa.
+            datos: () => ({
+              columnas: ["Cliente", "Tipo", "Empresa", "RFC", "Teléfono", "Representante", "Método de pago", "Activo"],
+              filas: filtered.map((c) => [
+                stripVmPrefix(c.name) || c.name, c.client_type ?? "", c.company ?? "", c.rfc ?? "", c.phone ?? "",
+                c.representante_nombre ?? "Sin representante", c.payment_method ?? "Sin especificar", c.active ? "Sí" : "No",
+              ]),
+            }),
+          }}
           filtros={[
             {
               id: "estado",

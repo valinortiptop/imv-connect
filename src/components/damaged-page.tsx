@@ -414,6 +414,18 @@ export default function Damaged() {
         <BarraHerramientas
           className="mb-0"
           busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, producto o nota..." }}
+          exportar={{
+            titulo: "Bultos dañados",
+            deshabilitado: filtered.length === 0,
+            datos: () => ({
+              columnas: ["SKU", "Producto", "Proveedor", "Condición", "Estado", "Bultos originales", "Bultos restantes", "Precio unitario con IVA (MXN)", "Nota"],
+              filas: filtered.map((b) => [
+                b.product_clave ?? "", b.product_name ?? "", b.product_supplier ?? "", b.condition,
+                b.status === "pendiente_preciar" ? "Pendiente de precio" : b.status,
+                b.original_quantity, b.remaining_quantity, b.unit_price, b.notes ?? "",
+              ]),
+            }),
+          }}
           filtros={[
             { id: "estado", etiqueta: "Estado", valor: statusFilter, onChange: (v) => setStatusFilter(v as StatusFilter), opciones: [["disponible", "Disponibles"], ["pendiente_preciar", "Pendientes de precio"], ["agotado", "Agotados"], ["descartado", "Descartados"], ["all", "Todos"]] },
             { id: "condicion", etiqueta: "Condición", valor: conditionFilter, onChange: (v) => setConditionFilter(v as ConditionFilter), opciones: [["all", "Todas las condiciones"], ["leve", "Leve"], ["moderado", "Moderado"], ["severo", "Severo"]] },
