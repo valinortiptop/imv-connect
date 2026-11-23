@@ -12,6 +12,7 @@ import {
   regenerarAlertasCompras,
 } from "@/lib/compras.functions";
 import { Button } from "@/components/ui/button";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 
@@ -106,31 +107,21 @@ function AlertasPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            {Object.entries(TIPOS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filtroPrio} onValueChange={setFiltroPrio}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Toda prioridad" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toda prioridad</SelectItem>
-            <SelectItem value="critica">Crítica</SelectItem>
-            <SelectItem value="alta">Alta</SelectItem>
-            <SelectItem value="media">Media</SelectItem>
-            <SelectItem value="baja">Baja</SelectItem>
-          </SelectContent>
-        </Select>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />
-          Sólo asignadas a mí
-        </label>
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        filtros={[
+          { id: "tipo", etiqueta: "Tipo", valor: filtroTipo, onChange: setFiltroTipo, opciones: [["all", "Todos los tipos"], ...Object.entries(TIPOS).map(([k, v]) => [k, v.label] as [string, string])] },
+          { id: "prioridad", etiqueta: "Prioridad", valor: filtroPrio, onChange: setFiltroPrio, opciones: [["all", "Toda prioridad"], ["critica", "Crítica"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]] },
+        ]}
+        chipsExtra={mine ? [{ id: "mine", texto: "Sólo asignadas a mí", quitar: () => setMine(false) }] : []}
+        onLimpiar={() => { setFiltroTipo("all"); setFiltroPrio("all"); setMine(false); }}
+        enLinea={
+          <label className="flex h-9 items-center gap-2 px-2 text-sm">
+            <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />
+            Sólo asignadas a mí
+          </label>
+        }
+      />
 
       {/* Table view: sm+ */}
       <div className="hidden sm:block overflow-x-auto rounded-md border border-border">

@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Search, RefreshCw, ShoppingCart, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -102,23 +103,22 @@ function PlaneacionPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2 top-2.5 size-4 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="SKU o nombre" className="pl-8 w-64" />
-        </div>
-        <select value={labFilter} onChange={(e) => setLabFilter(e.target.value)} className="input">
-          <option value="all">Todos los proveedores</option>
-          {labs.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={soloCritico} onChange={(e) => setSoloCritico(e.target.checked)} />
-          Solo bajo punto de reorden
-        </label>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-        </Button>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar SKU o nombre" }}
+        filtros={[{ id: "proveedor", etiqueta: "Proveedor", valor: labFilter, onChange: setLabFilter, opciones: [["all", "Todos los proveedores"], ...labs.map((l) => [l, l] as [string, string])] }]}
+        chipsExtra={soloCritico ? [{ id: "critico", texto: "Solo bajo punto de reorden", quitar: () => setSoloCritico(false) }] : []}
+        onLimpiar={() => { setLabFilter("all"); setSoloCritico(false); }}
+        enLinea={
+          <label className="flex h-9 items-center gap-2 px-2 text-sm">
+            <input type="checkbox" checked={soloCritico} onChange={(e) => setSoloCritico(e.target.checked)} />
+            Solo bajo punto de reorden
+          </label>
+        }
+        acciones={<>
+          <Button variant="outline" size="sm" className="h-9" aria-label="Actualizar" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setShowAI(true)} disabled={filtered.length === 0}>
             <Sparkles className="mr-1 size-4" /> Asistente IA
           </Button>
@@ -128,8 +128,8 @@ function PlaneacionPage() {
           <div className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm">
             <span className="tabular-nums">{totales.unidades.toFixed(0)} u · {mxn.format(totales.importe)}</span>
           </div>
-        </div>
-      </div>
+        </>}
+      />
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Cargando…</p>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { AlertTriangle, X, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { registerSupplierIncident } from "@/lib/compras.functions";
@@ -26,10 +27,29 @@ function ProveedoresPage() {
       return data ?? [];
     },
   });
+  const [q, setQ] = useState("");
+  const [orden, setOrden] = useState("fill|desc");
+  const rows = (() => {
+    const t = q.trim().toLowerCase();
+    const list = (data ?? []).filter((p: any) => !t || String(p.laboratorio ?? "").toLowerCase().includes(t));
+    const [k, d] = orden.split("|");
+    const key: Record<string, string> = { fill: "fill_rate_pct", ontime: "on_time_pct", lead: "lead_time_prom_dias", ocs: "ocs_12m", inc: "incidencias_12m", nombre: "laboratorio" };
+    const col = key[k] ?? "fill_rate_pct";
+    return [...list].sort((a: any, b: any) => {
+      const r = col === "laboratorio" ? String(a[col] ?? "").localeCompare(String(b[col] ?? ""), "es") : Number(a[col] ?? 0) - Number(b[col] ?? 0);
+      return d === "asc" ? r : -r;
+    });
+  })();
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">KPIs por proveedor · últimos 12 meses.</p>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar proveedor…" }}
+        orden={{ valor: orden, onChange: setOrden, opciones: [["fill|desc", "Mayor fill rate"], ["fill|asc", "Menor fill rate"], ["ontime|desc", "Mayor puntualidad"], ["lead|asc", "Menor lead time"], ["ocs|desc", "Más OCs"], ["inc|desc", "Más incidencias"], ["nombre|asc", "Nombre (A→Z)"]] }}
+        resumen={isLoading ? undefined : <>{rows.length.toLocaleString("es-MX")} de {(data ?? []).length.toLocaleString("es-MX")} proveedores</>}
+      />
       {isLoading ? <p className="text-sm text-muted-foreground">Cargando…</p> : (
         <>
           <div className="hidden md:block overflow-x-auto rounded-md border border-border">
@@ -46,7 +66,7 @@ function ProveedoresPage() {
                 </tr>
               </thead>
               <tbody>
-                {(data ?? []).map((p: any) => (
+                {rows.map((p: any) => (
                   <tr key={p.laboratorio_id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-3 py-2 font-medium">
                       <button className="text-left hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>
@@ -65,14 +85,14 @@ function ProveedoresPage() {
                     </td>
                   </tr>
                 ))}
-                {(data ?? []).length === 0 && (
+                {rows.length === 0 && (
                   <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin datos.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
           <div className="md:hidden space-y-2">
-            {(data ?? []).map((p: any) => (
+            {rows.map((p: any) => (
               <div key={p.laboratorio_id} className="rounded-md border border-border p-3">
                 <div className="flex items-start justify-between gap-2">
                   <button className="text-left font-medium hover:underline" onClick={() => setDrawerFor({ id: p.laboratorio_id, nombre: p.laboratorio, kpi: p })}>

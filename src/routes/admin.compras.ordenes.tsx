@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 
 export const Route = createFileRoute("/admin/compras/ordenes")({
   component: ComprasPage,
@@ -34,6 +35,7 @@ const ESTADOS: Record<string, string> = {
 function ComprasPage() {
   const qc = useQueryClient();
   const [filtro, setFiltro] = useState<string>("");
+  const [q, setQ] = useState("");
   const [nueva, setNueva] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -51,6 +53,8 @@ function ComprasPage() {
 
   const filtered = (data ?? []).filter((o) => {
     if (filtro && o.estado !== filtro) return false;
+    const t = q.trim().toLowerCase();
+    if (t && ![o.folio, o.laboratorio, o.almacen].some((v) => (v ?? "").toLowerCase().includes(t))) return false;
     return true;
   });
 
@@ -68,16 +72,12 @@ function ComprasPage() {
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className="input w-full max-w-xs">
-          <option value="">Todos los estados</option>
-          <option value="borrador">Borrador</option>
-          <option value="enviada">Enviada</option>
-          <option value="parcial">Parcial</option>
-          <option value="recibida">Recibida</option>
-          <option value="cancelada">Cancelada</option>
-        </select>
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar folio, laboratorio o almacén…" }}
+        filtros={[{ id: "estado", etiqueta: "Estado", valor: filtro, onChange: setFiltro, opciones: [["", "Todos los estados"], ["borrador", "Borrador"], ["enviada", "Enviada"], ["parcial", "Parcial"], ["recibida", "Recibida"], ["cancelada", "Cancelada"]] }]}
+        resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} de {(data ?? []).length.toLocaleString("es-MX")} órdenes recientes</>}
+      />
 
       {isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
 

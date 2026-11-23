@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRoles, type AppRole } from "@/lib/use-roles";
 import { toast } from "sonner";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 
 export const Route = createFileRoute("/admin/usuarios")({
   component: UsuariosPage,
@@ -34,6 +36,8 @@ const ROLE_LABEL: Record<AppRole, string> = {
 function UsuariosPage() {
   const { isAdmin, isLoading: loadingRoles, roles } = useRoles();
   const qc = useQueryClient();
+  const [q, setQ] = useState("");
+  const [rolFiltro, setRolFiltro] = useState("todos");
 
   const usuariosQ = useQuery({
     queryKey: ["usuarios-roles"],
@@ -125,6 +129,14 @@ function UsuariosPage() {
     );
   }
 
+  const todos = usuariosQ.data ?? [];
+  const usuarios = todos.filter((u) => {
+    if (rolFiltro === "sin_rol" && u.roles.length > 0) return false;
+    if (rolFiltro !== "todos" && rolFiltro !== "sin_rol" && !u.roles.includes(rolFiltro as AppRole)) return false;
+    const t = q.trim().toLowerCase();
+    return !t || (u.email ?? "").toLowerCase().includes(t);
+  });
+
   return (
     <section className="space-y-4">
       <div>
@@ -135,6 +147,13 @@ function UsuariosPage() {
           cobranza).
         </p>
       </div>
+
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar por correo…" }}
+        filtros={[{ id: "rol", etiqueta: "Rol", valor: rolFiltro, onChange: setRolFiltro, opciones: [["todos", "Todos los roles"], ["sin_rol", "Sin rol"], ...ROLES.map((r) => [r, ROLE_LABEL[r]] as [string, string])] }]}
+        resumen={usuariosQ.isLoading ? undefined : <>{usuarios.length.toLocaleString("es-MX")} de {todos.length.toLocaleString("es-MX")} usuarios</>}
+      />
 
       {usuariosQ.isLoading && (
         <p className="text-sm text-muted-foreground">Cargando usuarios…</p>
@@ -153,7 +172,7 @@ function UsuariosPage() {
             </tr>
           </thead>
           <tbody>
-            {(usuariosQ.data ?? []).map((u) => {
+            {usuarios.map((u) => {
               const faltantes = ROLES.filter((r) => !u.roles.includes(r));
               return (
                 <tr key={u.user_id} className="border-t border-border align-top">
@@ -197,7 +216,7 @@ function UsuariosPage() {
                 </tr>
               );
             })}
-            {(usuariosQ.data ?? []).length === 0 && !usuariosQ.isLoading && (
+            {usuarios.length === 0 && !usuariosQ.isLoading && (
               <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Sin usuarios.</td></tr>
             )}
           </tbody>
@@ -206,7 +225,7 @@ function UsuariosPage() {
 
       {/* Card view: mobile */}
       <div className="sm:hidden space-y-2">
-        {(usuariosQ.data ?? []).map((u) => {
+        {usuarios.map((u) => {
           const faltantes = ROLES.filter((r) => !u.roles.includes(r));
           return (
             <div key={u.user_id} className="rounded-lg border border-border bg-card p-3 space-y-2">
@@ -244,7 +263,7 @@ function UsuariosPage() {
             </div>
           );
         })}
-        {(usuariosQ.data ?? []).length === 0 && !usuariosQ.isLoading && (
+        {usuarios.length === 0 && !usuariosQ.isLoading && (
           <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">Sin usuarios.</div>
         )}
       </div>
