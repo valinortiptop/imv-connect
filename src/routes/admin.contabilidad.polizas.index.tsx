@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ScrollText, Plus, FileText, XCircle, CheckCircle2, Search, Pencil, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -214,20 +215,7 @@ function PolizasPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar folio o concepto…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
-            </div>
-            <Select value={origenFiltro} onValueChange={setOrigenFiltro}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los orígenes</SelectItem>
-                <SelectItem value="automatica">Automática</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="modificada">Modificada</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="flex gap-1">
               <Button onClick={() => abrirNueva("ingreso")} size="sm"><Plus className="h-4 w-4 mr-1" /> Ingreso</Button>
               <Button onClick={() => abrirNueva("egreso")} size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Salida</Button>
@@ -261,36 +249,33 @@ function PolizasPage() {
           </div>
 
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={anioFiltro} onValueChange={setAnioFiltro}>
-              <SelectTrigger className="w-[120px]"><SelectValue placeholder="Año" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los años</SelectItem>
-                {aniosDisponibles.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={mesFiltro} onValueChange={setMesFiltro}>
-              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mes" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los meses</SelectItem>
-                {MESES.map((m, i) => <SelectItem key={m} value={String(i + 1).padStart(2, "0")}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-1">
-              <Label htmlFor="f-desde" className="text-xs text-muted-foreground">Desde</Label>
-              <Input id="f-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="w-[150px] h-9" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label htmlFor="f-hasta" className="text-xs text-muted-foreground">Hasta</Label>
-              <Input id="f-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="w-[150px] h-9" />
-            </div>
-            {hayFiltroFecha && (
-              <Button variant="ghost" size="sm" onClick={() => { setAnioFiltro("todos"); setMesFiltro("todos"); setDesde(""); setHasta(""); }}>
-                <X className="h-3.5 w-3.5 mr-1" /> Limpiar fechas
-              </Button>
-            )}
-            <div className="ml-auto text-xs text-muted-foreground">{filtered.length} de {polizas.length}</div>
-          </div>
+          <BarraHerramientas
+            className="mb-0"
+            busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar folio o concepto…" }}
+            filtros={[
+              { id: "origen", etiqueta: "Origen", valor: origenFiltro, onChange: setOrigenFiltro, opciones: [["todos", "Todos los orígenes"], ["automatica", "Automática"], ["manual", "Manual"], ["modificada", "Modificada"]] },
+              { id: "anio", etiqueta: "Año", valor: anioFiltro, onChange: setAnioFiltro, opciones: [["todos", "Todos los años"], ...aniosDisponibles.map((a) => [a, a] as [string, string])] },
+              { id: "mes", etiqueta: "Mes", valor: mesFiltro, onChange: setMesFiltro, opciones: [["todos", "Todos los meses"], ...MESES.map((m, i) => [String(i + 1).padStart(2, "0"), m] as [string, string])] },
+            ]}
+            filtrosExtra={
+              <div className="grid grid-cols-2 gap-3">
+                <label htmlFor="f-desde" className="space-y-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Desde</span>
+                  <Input id="f-desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="h-9" />
+                </label>
+                <label htmlFor="f-hasta" className="space-y-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Hasta</span>
+                  <Input id="f-hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="h-9" />
+                </label>
+              </div>
+            }
+            chipsExtra={[
+              ...(desde ? [{ id: "desde", texto: `Desde: ${desde}`, quitar: () => setDesde("") }] : []),
+              ...(hasta ? [{ id: "hasta", texto: `Hasta: ${hasta}`, quitar: () => setHasta("") }] : []),
+            ]}
+            onLimpiar={() => { setOrigenFiltro("todos"); setAnioFiltro("todos"); setMesFiltro("todos"); setDesde(""); setHasta(""); }}
+            resumen={<>{filtered.length.toLocaleString("es-MX")} de {polizas.length.toLocaleString("es-MX")} pólizas</>}
+          />
 
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">

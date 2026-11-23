@@ -7,6 +7,7 @@ import { ArrowUpDown, Download, Receipt, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas, BotonExcel } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -187,7 +188,6 @@ function ProductosFiscalPage() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><Receipt className="h-6 w-6 text-primary" /> Impuestos por producto</h1>
           <p className="text-sm text-muted-foreground">Código fiscal, IVA, IEPS y retenciones de cada producto. Haz clic en un producto para editarlo.</p>
         </div>
-        <Button variant="outline" onClick={exportXlsx} disabled={!filtered.length}><Download className="size-4" /> Exportar Excel</Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -198,19 +198,23 @@ function ProductosFiscalPage() {
         <Badge variant="outline" className="font-normal">Sin clave SAT completa: {counts.sinSat}</Badge>
       </div>
 
-      <div className="grid gap-2 sm:flex sm:flex-wrap">
-        <div className="relative sm:w-64">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input aria-label="Buscar producto" className="pl-8 h-9" placeholder="Buscar SKU, nombre…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-        </div>
-        <F label="Código fiscal" value={fCodigo} onChange={setFCodigo} opts={[["all", "Todos los códigos"], ["none", "Sin código asignado"], ["custom", "Personalizado"], ...codigos.map((c) => [c.id, c.clave] as [string, string])]} />
-        <F label="IVA" value={fIva} onChange={setFIva} opts={[["all", "IVA: todos"], ["16%", "IVA 16%"], ["0%", "IVA 0%"], ["Exento", "Exento"], ["No objeto", "No objeto"], ["Por tipo", "Por tipo"]]} />
-        <F label="IEPS" value={fIeps} onChange={setFIeps} opts={[["all", "IEPS: todos"], ["si", "Con IEPS"], ["no", "Sin IEPS"]]} />
-        <F label="Retenciones" value={fRet} onChange={setFRet} opts={[["all", "Retenciones: todas"], ["iva", "Con ret. IVA"], ["isr", "Con ret. ISR"], ["ninguna", "Sin retenciones"]]} />
-        <F label="Claves SAT" value={fSat} onChange={setFSat} opts={[["all", "Claves SAT: todas"], ["sin_prod", "Sin clave producto"], ["sin_unit", "Sin clave unidad"]]} />
-        <F label="Estado" value={fActivo} onChange={setFActivo} opts={[["activos", "Activos"], ["inactivos", "Inactivos"], ["todos", "Todos"]]} />
-        <F label="Laboratorio" value={fLab} onChange={setFLab} opts={[["all", "Todos los laboratorios"], ...labs.map((l) => [l, l] as [string, string])]} />
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: "Buscar SKU, nombre…" }}
+        filtros={([
+          ["codigo", "Código fiscal", fCodigo, setFCodigo, [["all", "Todos los códigos"], ["none", "Sin código asignado"], ["custom", "Personalizado"], ...codigos.map((c) => [c.id, c.clave] as [string, string])]],
+          ["iva", "IVA", fIva, setFIva, [["all", "Todos"], ["16%", "IVA 16%"], ["0%", "IVA 0%"], ["Exento", "Exento"], ["No objeto", "No objeto"], ["Por tipo", "Por tipo"]]],
+          ["ieps", "IEPS", fIeps, setFIeps, [["all", "Todos"], ["si", "Con IEPS"], ["no", "Sin IEPS"]]],
+          ["ret", "Retenciones", fRet, setFRet, [["all", "Todas"], ["iva", "Con ret. IVA"], ["isr", "Con ret. ISR"], ["ninguna", "Sin retenciones"]]],
+          ["sat", "Claves SAT", fSat, setFSat, [["all", "Todas"], ["sin_prod", "Sin clave producto"], ["sin_unit", "Sin clave unidad"]]],
+          ["activo", "Estado", fActivo, setFActivo, [["activos", "Activos"], ["inactivos", "Inactivos"], ["todos", "Todos"]]],
+          ["lab", "Laboratorio", fLab, setFLab, [["all", "Todos los laboratorios"], ...labs.map((l) => [l, l] as [string, string])]],
+        ] as [string, string, string, (v: string) => void, [string, string][]][]).map(([id, etiqueta, valor, set, opciones]) => ({
+          id, etiqueta, valor, opciones, onChange: (v: string) => { set(v); setPage(0); },
+        }))}
+        acciones={<BotonExcel onClick={exportXlsx} disabled={!filtered.length} />}
+        resumen={q.isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} productos</>}
+      />
 
       {canEdit && sel.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 p-2 text-sm">

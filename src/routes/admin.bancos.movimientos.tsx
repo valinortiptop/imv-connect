@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -293,30 +294,11 @@ function MovimientosPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <Select value={cuentaId} onValueChange={setCuentaId}>
-          <SelectTrigger className="w-72">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las cuentas</SelectItem>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {a.alias} — {a.banco}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="relative flex-1 max-w-md">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Buscar descripción, contraparte, referencia…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar descripción, contraparte, referencia…" }}
+        filtros={[{ id: "cuenta", etiqueta: "Cuenta bancaria", valor: cuentaId, onChange: setCuentaId, opciones: [["all", "Todas las cuentas"], ...accounts.map((a) => [a.id, `${a.alias} — ${a.banco}`] as [string, string])] }]}
+      />
 
       <div className="rounded-lg border bg-card overflow-hidden">
         <table className="w-full text-sm">

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BookText, Plus, Trash2, Search, Check, X, Upload, Download, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -282,16 +283,7 @@ function CuentasPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por código, nombre o agrupador…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Button onClick={() => setEditing({ naturaleza: "deudora", nivel: 3, permite_movimientos: true, activa: true, moneda: "MXN" })}>
               <Plus className="h-4 w-4 mr-1" /> Nueva cuenta
             </Button>
@@ -310,12 +302,17 @@ function CuentasPage() {
               <Landmark className="h-4 w-4 mr-1" />
               {seed.isPending ? "Cargando…" : "Cargar catálogo SAT"}
             </Button>
-            {cuentas.length > 0 && (
-              <Button variant="ghost" onClick={exportCsv}>
-                <Download className="h-4 w-4 mr-1" /> Exportar
-              </Button>
-            )}
           </div>
+
+          <BarraHerramientas
+            className="mb-0"
+            busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por código, nombre o agrupador…" }}
+            acciones={
+              <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={exportCsv} disabled={cuentas.length === 0}>
+                <Download className="size-4" /> <span className="hidden sm:inline">Exportar CSV</span>
+              </Button>
+            }
+          />
 
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">

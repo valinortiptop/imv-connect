@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -99,37 +100,20 @@ function CarteraPage() {
         <Kpi title="Bloqueados" value={String(totals.bloqueados)} icon={Ban} tone="text-red-500" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar cliente…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select value={estado} onValueChange={setEstado}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="deudores">Con saldo</SelectItem>
-            <SelectItem value="vencidos">Vencidos</SelectItem>
-            <SelectItem value="bloqueados">Bloqueados</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={riesgo} onValueChange={setRiesgo}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Riesgo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todo riesgo</SelectItem>
-            <SelectItem value="bajo">Bajo</SelectItem>
-            <SelectItem value="medio">Medio</SelectItem>
-            <SelectItem value="alto">Alto</SelectItem>
-            <SelectItem value="critico">Crítico</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button size="sm" variant="outline" className="ml-auto" onClick={() => exportCsv(filtered)}>
-          <Download className="h-4 w-4 mr-1" /> Exportar CSV
-        </Button>
-      </div>
-
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar cliente…" }}
+        filtros={[
+          { id: "estado", etiqueta: "Estado", valor: estado, onChange: setEstado, opciones: [["deudores", "Con saldo"], ["todos", "Todos"], ["vencidos", "Vencidos"], ["bloqueados", "Bloqueados"]] },
+          { id: "riesgo", etiqueta: "Riesgo", valor: riesgo, onChange: setRiesgo, opciones: [["todos", "Todo riesgo"], ["bajo", "Bajo"], ["medio", "Medio"], ["alto", "Alto"], ["critico", "Crítico"]] },
+        ]}
+        acciones={
+          <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => exportCsv(filtered)}>
+            <Download className="size-4" /> <span className="hidden sm:inline">Exportar CSV</span>
+          </Button>
+        }
+        resumen={<>{filtered.length.toLocaleString("es-MX")} clientes</>}
+      />
 
       <div className="rounded-lg border border-border overflow-x-auto">
         <table className="w-full text-sm">

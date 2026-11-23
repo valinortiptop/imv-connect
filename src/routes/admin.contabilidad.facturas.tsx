@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { FileText, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,8 @@ function FacturasContPage() {
   const empresaId = selected?.id;
   const [filtro, setFiltro] = useState<string>("todas");
 
-  const { data: facturas = [], isLoading } = useQuery({
+  const [busca, setBusca] = useState("");
+  const { data: todasFacturas = [], isLoading } = useQuery({
     queryKey: ["facturas-contables", empresaId, filtro],
     enabled: !!empresaId,
     queryFn: async () => {
@@ -39,6 +41,11 @@ function FacturasContPage() {
       if (error) throw error;
       return (data ?? []) as any[];
     },
+  });
+  const facturas = todasFacturas.filter((f: any) => {
+    const t = busca.trim().toLowerCase();
+    if (!t) return true;
+    return [f.folio, f.clientes?.nombre_comercial, f.clientes?.razon_social].some((v) => String(v ?? "").toLowerCase().includes(t));
   });
 
   const contabilizar = useMutation({
@@ -113,16 +120,12 @@ function FacturasContPage() {
         <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Elige una empresa.</div>
       ) : (
         <>
-          <div className="flex items-center gap-2">
-            <Select value={filtro} onValueChange={setFiltro}>
-              <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pendientes">Pendientes de contabilizar</SelectItem>
-                <SelectItem value="contabilizadas">Contabilizadas</SelectItem>
-                <SelectItem value="todas">Todas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <BarraHerramientas
+            className="mb-0"
+            busqueda={{ valor: busca, onChange: setBusca, placeholder: "Buscar folio o cliente…" }}
+            filtros={[{ id: "estado", etiqueta: "Contabilidad", valor: filtro, onChange: setFiltro, opciones: [["todas", "Todas"], ["pendientes", "Pendientes de contabilizar"], ["contabilizadas", "Contabilizadas"]] }]}
+            resumen={isLoading ? undefined : <>{facturas.length.toLocaleString("es-MX")} de {todasFacturas.length.toLocaleString("es-MX")} facturas recientes</>}
+          />
 
           <div className="hidden sm:block rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-sm">

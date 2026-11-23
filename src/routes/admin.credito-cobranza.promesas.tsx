@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -56,17 +57,12 @@ function PromesasPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-semibold flex items-center gap-2"><HandCoins className="h-4 w-4 text-primary" /> Promesas de pago</h2>
-        <Select value={estado} onValueChange={setEstado}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pendiente">Pendientes</SelectItem>
-            <SelectItem value="cumplida">Cumplidas</SelectItem>
-            <SelectItem value="incumplida">Incumplidas</SelectItem>
-            <SelectItem value="cancelada">Canceladas</SelectItem>
-            <SelectItem value="todas">Todas</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
+
+      <BarraHerramientas
+        className="mb-0"
+        filtros={[{ id: "estado", etiqueta: "Estado", valor: estado, onChange: setEstado, opciones: [["pendiente", "Pendientes"], ["cumplida", "Cumplidas"], ["incumplida", "Incumplidas"], ["cancelada", "Canceladas"], ["todas", "Todas"]] }]}
+      />
 
       <div className="rounded-lg border border-border overflow-x-auto">
         <table className="w-full text-sm">

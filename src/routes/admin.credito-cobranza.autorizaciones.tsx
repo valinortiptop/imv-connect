@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -55,15 +56,6 @@ function AutorizacionesPage() {
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-semibold flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" /> Autorizaciones de crédito</h2>
         <div className="flex gap-2">
-          <Select value={estado} onValueChange={setEstado}>
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="solicitada">Solicitadas</SelectItem>
-              <SelectItem value="aprobada">Aprobadas</SelectItem>
-              <SelectItem value="rechazada">Rechazadas</SelectItem>
-              <SelectItem value="todas">Todas</SelectItem>
-            </SelectContent>
-          </Select>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-3.5 w-3.5 mr-1" /> Solicitar</Button>
@@ -79,6 +71,11 @@ function AutorizacionesPage() {
           </Dialog>
         </div>
       </div>
+
+      <BarraHerramientas
+        className="mb-0"
+        filtros={[{ id: "estado", etiqueta: "Estado", valor: estado, onChange: setEstado, opciones: [["solicitada", "Solicitadas"], ["aprobada", "Aprobadas"], ["rechazada", "Rechazadas"], ["todas", "Todas"]] }]}
+      />
 
       <div className="rounded-lg border border-border overflow-x-auto">
         <table className="w-full text-sm">

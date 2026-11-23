@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BookText, Search, Link2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { EmpresaSelector } from "@/components/contabilidad/EmpresaSelector";
 import { useSelectedEmpresa } from "@/hooks/use-selected-empresa";
@@ -148,21 +149,16 @@ function AgrupadoresPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar agrupador por código o nombre…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button onClick={() => autoWire.mutate()} disabled={autoWire.isPending || sinAgrupador.length === 0}>
-              <Wand2 className="h-4 w-4 mr-1" />
-              {autoWire.isPending ? "Enlazando…" : `Auto-enlazar ${sinAgrupador.length} cuentas`}
-            </Button>
-          </div>
+          <BarraHerramientas
+            className="mb-0"
+            busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar agrupador por código o nombre…" }}
+            acciones={
+              <Button size="sm" className="h-9" onClick={() => autoWire.mutate()} disabled={autoWire.isPending || sinAgrupador.length === 0}>
+                <Wand2 className="h-4 w-4 mr-1" />
+                {autoWire.isPending ? "Enlazando…" : `Auto-enlazar ${sinAgrupador.length} cuentas`}
+              </Button>
+            }
+          />
 
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
