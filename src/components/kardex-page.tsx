@@ -23,6 +23,7 @@ import { Link, useSearchParams } from "@/lib/router-compat";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas, BotonExcel } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -340,157 +341,67 @@ export default function Kardex() {
             posición, producto o razón y exporta a Excel.
           </p>
         </div>
-        <Button onClick={handleExport} variant="outline" className="gap-2">
-          <Download className="h-4 w-4" /> Exportar Excel
-        </Button>
       </div>
 
-      {/* Filter rail */}
-      <div className="rounded-xl border bg-card p-4 space-y-4">
-        {/* Free-text search — hits SKU, código de barras, nombre, lote,
-            posición, y nota. Resolves product_id / slot_id locally from
-            the dropdown caches; lote / note / description use ilike on
-            the server. Empty string → no filter. */}
-        <div className="space-y-1">
-          <Label className="text-xs">Buscar</Label>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQ}
-              onChange={(e) => setFilter("q", e.target.value || null)}
-              placeholder="SKU, código de barras, nombre, lote, posición o nota..."
-              className="pl-8"
-            />
-            {searchQ && (
-              <button
-                type="button"
-                onClick={() => setFilter("q", null)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                title="Limpiar búsqueda"
-              >
-                <XCircleSearch />
-              </button>
-            )}
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: searchQ, onChange: (v) => setFilter("q", v || null), placeholder: "SKU, código de barras, nombre, lote, posición o nota..." }}
+        filtros={[
+          { id: "slot", etiqueta: "Posición", valor: slotId || "__all__", onChange: (v) => setFilter("slot", v === "__all__" ? null : v), opciones: [["__all__", "Todas las posiciones"], ...slots.map((s) => [s.id, s.code] as [string, string])] },
+          { id: "product", etiqueta: "Producto", valor: productId || "__all__", onChange: (v) => setFilter("product", v === "__all__" ? null : v), opciones: [["__all__", "Todos los productos"], ...productsList.map((p) => [p.id, `${p.clave} · ${p.name}`] as [string, string])] },
+        ]}
+        filtrosExtra={
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Desde</span>
+                <Input type="date" value={from} onChange={(e) => setFilter("from", e.target.value || null)} className="h-9" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Hasta</span>
+                <Input type="date" value={to} onChange={(e) => setFilter("to", e.target.value || null)} className="h-9" />
+              </label>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Razón</span>
+              <div className="flex flex-wrap gap-2">
+                {ALL_REASONS.map((r) => {
+                  const active = reasons.includes(r);
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleReason(r)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs transition",
+                        active ? REASON_BADGE_CLASS[r] : "border-border text-muted-foreground hover:bg-muted/30",
+                      )}
+                    >
+                      {REASON_LABELS[r]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Desde</Label>
-            <Input
-              type="date"
-              value={from}
-              onChange={(e) => setFilter("from", e.target.value || null)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Hasta</Label>
-            <Input
-              type="date"
-              value={to}
-              onChange={(e) => setFilter("to", e.target.value || null)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Posición</Label>
-            <Select
-              value={slotId || "__all__"}
-              onValueChange={(v) => setFilter("slot", v === "__all__" ? null : v)}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Todas las posiciones</SelectItem>
-                {slots.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    <span className="font-mono">{s.code}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Producto</Label>
-            <Select
-              value={productId || "__all__"}
-              onValueChange={(v) =>
-                setFilter("product", v === "__all__" ? null : v)
-              }
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Todos los productos</SelectItem>
-                {productsList.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    <span className="font-mono mr-2">{p.clave}</span>
-                    <span className="text-xs text-muted-foreground truncate inline-block max-w-[180px] align-middle">
-                      {p.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Reason pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Label className="text-xs text-muted-foreground mr-1">Razón:</Label>
-          {ALL_REASONS.map((r) => {
-            const active = reasons.includes(r);
-            return (
-              <button
-                key={r}
-                type="button"
-                onClick={() => toggleReason(r)}
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs transition",
-                  active
-                    ? REASON_BADGE_CLASS[r]
-                    : "border-border text-muted-foreground hover:bg-muted/30",
-                )}
-              >
-                {REASON_LABELS[r]}
-              </button>
-            );
-          })}
-          {hasAnyFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="ml-auto gap-1 h-7 text-xs"
-            >
-              <FilterX className="h-3 w-3" /> Limpiar filtros
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Count + page indicator */}
-      <div className="text-xs text-muted-foreground flex items-center justify-between flex-wrap gap-2">
-        <span>
-          {isLoading ? (
-            <Skeleton className="h-3 w-40 inline-block align-middle" />
-          ) : (
+        }
+        chipsExtra={[
+          ...(from ? [{ id: "from", texto: `Desde: ${from}`, quitar: () => setFilter("from", null) }] : []),
+          ...(to ? [{ id: "to", texto: `Hasta: ${to}`, quitar: () => setFilter("to", null) }] : []),
+          ...reasons.map((r) => ({ id: `r-${r}`, texto: `Razón: ${REASON_LABELS[r]}`, quitar: () => toggleReason(r) })),
+        ]}
+        onLimpiar={clearFilters}
+        acciones={<BotonExcel onClick={handleExport} />}
+        resumen={
+          isLoading ? undefined : (
             <>
-              {total.toLocaleString("es-MX")} movimientos · Página {page + 1} de{" "}
-              {totalPages}
+              {total.toLocaleString("es-MX")} movimientos · Página {page + 1} de {totalPages}
+              {rows.length > 0 ? ` · Mostrando ${(page * PAGE_SIZE + 1).toLocaleString("es-MX")}–${(page * PAGE_SIZE + rows.length).toLocaleString("es-MX")}` : ""}
             </>
-          )}
-        </span>
-        {rows.length > 0 && (
-          <span className="font-mono text-[10px]">
-            Mostrando {(page * PAGE_SIZE + 1).toLocaleString("es-MX")}–
-            {(page * PAGE_SIZE + rows.length).toLocaleString("es-MX")}
-          </span>
-        )}
-      </div>
+          )
+        }
+      />
 
       {/* Table */}
       <div className="rounded-xl border bg-card overflow-x-auto">

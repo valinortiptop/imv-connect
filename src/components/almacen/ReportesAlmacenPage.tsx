@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -305,13 +306,14 @@ export default function ReportesAlmacenPage() {
             <RefreshCw className={`mr-1 h-4 w-4 ${recalcular.isPending ? "animate-spin" : ""}`} />
             Recalcular bloqueos
           </Button>
-          <div className="relative w-72">
-            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Buscar en el reporte…" value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
         </div>
 
       </header>
+
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar en el reporte…" }}
+      />
 
       <Tabs defaultValue="rotacion">
         <TabsList className="flex-wrap">

@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { Search, Lock, Package, PackageCheck, PackageOpen, Inbox, Truck, Pencil, Plus, Trash2, Download, FileSpreadsheet, Loader2, ScanLine, MoveRight, History, PackageX, XCircle, CheckCircle2, Layers, MapPin, CalendarClock, Undo2, RotateCcw, Hand } from "lucide-react";
@@ -1205,16 +1206,10 @@ export default function Warehouse() {
         <Stat icon={<Layers className="h-5 w-5" />}       label="Bultos total" value={stats.totalBultos.toLocaleString("es-MX")} loading={isLoading} accent="amber" />
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por posición, SKU, lote o producto..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por posición, SKU, lote o producto..." }}
+      />
 
       {/* Filter stats — fixed-height container so the layout never
           shifts. Disclaimer card when no search; 6 stat tiles when the

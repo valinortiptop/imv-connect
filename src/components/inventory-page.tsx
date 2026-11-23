@@ -6,6 +6,7 @@ import { GlowCard } from "@/components/ui/spotlight-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ProductThumb } from "@/components/ui/product-thumb";
@@ -419,54 +420,6 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
             <Upload className="h-4 w-4" />
             Importar Excel
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              if (items.length === 0) {
-                toast("No hay productos para exportar");
-                return;
-              }
-              try {
-                setExporting({ done: 0, total: items.length });
-                await downloadInventoryExcel(
-                  items.map(it => ({
-                    clave: it.clave,
-                    name: it.name,
-                    supplier: it.supplier ?? null,
-                    image_url: it.image_url,
-                    stock_actual: it.stock_actual,
-                    stock_committed: it.stock_committed,
-                    stock_disponible: it.stock_disponible,
-                    stock_incoming: it.stock_incoming,
-                  })),
-                  {
-                    fileLabel: (isProjected ? projectedLabel : todayMx()) ?? undefined,
-                    onProgress: (done, total) => setExporting({ done, total }),
-                  },
-                );
-                toast.success(`Excel descargado (${items.length} productos)`);
-              } catch (err: any) {
-                toast.error("Error al exportar: " + (err?.message ?? "desconocido"));
-              } finally {
-                setExporting(null);
-              }
-            }}
-            disabled={exporting !== null || items.length === 0}
-            className="gap-2"
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Descargando… {exporting.done}/{exporting.total}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                Descargar Excel
-              </>
-            )}
-          </Button>
           </div>
         </div>
 
@@ -560,81 +513,77 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
           </div>
         )}
 
-        {/* Filters */}
-        <GlowCard>
-          <div className="p-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por SKU, producto o marca..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background"
-              />
-            </div>
-            {!isRep && (
-              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                  <SelectValue placeholder="Proveedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los proveedores</SelectItem>
-                  {suppliers.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-            <Select value={claseFilter} onValueChange={setClaseFilter}>
-              <SelectTrigger className="w-full sm:w-[170px] bg-background">
-                <SelectValue placeholder="Clase" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las clases</SelectItem>
-                {clases.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={labFilter} onValueChange={setLabFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                <SelectValue placeholder="Laboratorio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los laboratorios</SelectItem>
-                {labsInStock.map(l => <SelectItem key={l.id} value={l.id}>{l.nombre}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={almacenFilter} onValueChange={setAlmacenFilter}>
-              <SelectTrigger className="w-full sm:w-[170px] bg-background">
-                <SelectValue placeholder="Almacén" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los almacenes</SelectItem>
-                {almacenes.map(a => <SelectItem key={a.id} value={a.id}>{a.nombre}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            {isRep ? (
-              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-500 text-sm font-medium border border-green-500/20">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                </span>
-                Disponible en venta
-              </div>
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, producto o marca..." }}
+          filtros={[
+            { id: "proveedor", etiqueta: "Proveedor", valor: supplierFilter, onChange: setSupplierFilter, oculto: isRep, opciones: [["all", "Todos los proveedores"], ...suppliers.map((s) => [s, s] as [string, string])] },
+            { id: "clase", etiqueta: "Clase", valor: claseFilter, onChange: setClaseFilter, opciones: [["all", "Todas las clases"], ...clases.map((c) => [c, c] as [string, string])] },
+            { id: "laboratorio", etiqueta: "Laboratorio", valor: labFilter, onChange: setLabFilter, opciones: [["all", "Todos los laboratorios"], ...labsInStock.map((l) => [l.id, l.nombre] as [string, string])] },
+            { id: "almacen", etiqueta: "Almacén", valor: almacenFilter, onChange: setAlmacenFilter, opciones: [["all", "Todos los almacenes"], ...almacenes.map((a) => [a.id, a.nombre] as [string, string])] },
+            { id: "stock", etiqueta: "Estado de stock", valor: stockFilter, onChange: (v) => setStockFilter(v as StockFilter), oculto: isRep, opciones: [["all", "Todos"], ["disponible", "Disponible"], ["low_stock", "Stock ajustado"], ["committed", "Con comprometido"]] },
+          ]}
+          enLinea={isRep ? (
+            <span className="inline-flex h-9 items-center gap-2 rounded-md border border-primary/20 bg-primary/10 px-3 text-sm font-medium text-primary">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              Disponible en venta
+            </span>
+          ) : undefined}
+          acciones={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (items.length === 0) {
+                toast("No hay productos para exportar");
+                return;
+              }
+              try {
+                setExporting({ done: 0, total: items.length });
+                await downloadInventoryExcel(
+                  items.map(it => ({
+                    clave: it.clave,
+                    name: it.name,
+                    supplier: it.supplier ?? null,
+                    image_url: it.image_url,
+                    stock_actual: it.stock_actual,
+                    stock_committed: it.stock_committed,
+                    stock_disponible: it.stock_disponible,
+                    stock_incoming: it.stock_incoming,
+                  })),
+                  {
+                    fileLabel: (isProjected ? projectedLabel : todayMx()) ?? undefined,
+                    onProgress: (done, total) => setExporting({ done, total }),
+                  },
+                );
+                toast.success(`Excel descargado (${items.length} productos)`);
+              } catch (err: any) {
+                toast.error("Error al exportar: " + (err?.message ?? "desconocido"));
+              } finally {
+                setExporting(null);
+              }
+            }}
+            disabled={exporting !== null || items.length === 0}
+            className="h-9 gap-2"
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Descargando… {exporting.done}/{exporting.total}
+              </>
             ) : (
-              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-background">
-                  <SelectValue placeholder="Estado de stock" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="disponible">Disponible</SelectItem>
-                  <SelectItem value="low_stock">Stock ajustado</SelectItem>
-                  <SelectItem value="committed">Con comprometido</SelectItem>
-                </SelectContent>
-              </Select>
+              <>
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Excel</span>
+              </>
             )}
-            <span className="text-xs text-muted-foreground">{items.length} productos</span>
-          </div>
-        </GlowCard>
+          </Button>
+          }
+          resumen={<>{items.length.toLocaleString("es-MX")} productos</>}
+        />
 
         {/* Mobile Card View */}
         <div className="space-y-3 md:hidden">

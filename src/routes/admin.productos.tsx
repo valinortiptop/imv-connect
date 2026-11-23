@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -456,96 +457,20 @@ function ProductosPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[260px] flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por clave, nombre o clase…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={proveedorFilter} onValueChange={setProveedorFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Proveedor" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los proveedores</SelectItem>
-            {proveedores.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={marcaFilter} onValueChange={setMarcaFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Clase" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las marcas</SelectItem>
-            {marcas.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={lineaFilter} onValueChange={setLineaFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Línea" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las líneas</SelectItem>
-            {lineas.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={grupoFilter} onValueChange={setGrupoFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Grupo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los grupos</SelectItem>
-            {grupos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={tipoFilter} onValueChange={setTipoFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            {tipos.map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={taxFilter} onValueChange={(v) => setTaxFilter(v as typeof taxFilter)}>
-          <SelectTrigger className="w-[190px]"><SelectValue placeholder="Régimen fiscal" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los regímenes</SelectItem>
-            <SelectItem value="normal">Normal (IVA 16%)</SelectItem>
-            <SelectItem value="iva0">IVA 0%</SelectItem>
-            <SelectItem value="ieps_iva0">IEPS 6% + IVA 0%</SelectItem>
-            <SelectItem value="ieps_iva16">IEPS 6% + IVA 16%</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex rounded-md border border-border bg-muted/30 p-0.5">
-          {(["todos", "activos", "inactivos", "comprometidos", "promo"] as const).map(
-            (k) => (
-              <button
-                key={k}
-                onClick={() => setEstadoFilter(k)}
-                className={
-                  estadoFilter === k
-                    ? "rounded bg-foreground px-3 py-1 text-xs font-medium text-background"
-                    : "px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
-                }
-              >
-                {k[0].toUpperCase() + k.slice(1)}
-              </button>
-            ),
-          )}
-        </div>
-      </div>
-
-      <div className="text-sm text-muted-foreground">
-        {filtered.length} / {productos.length} productos
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por clave, nombre o clase…" }}
+        filtros={[
+          { id: "estado", etiqueta: "Estado", valor: estadoFilter, onChange: (v) => setEstadoFilter(v as typeof estadoFilter), opciones: [["todos", "Todos"], ["activos", "Activos"], ["inactivos", "Inactivos"], ["comprometidos", "Comprometidos"], ["promo", "Promo"]] },
+          { id: "proveedor", etiqueta: "Proveedor", valor: proveedorFilter, onChange: setProveedorFilter, opciones: [["all", "Todos los proveedores"], ...proveedores.map((p) => [p, p] as [string, string])] },
+          { id: "marca", etiqueta: "Marca", valor: marcaFilter, onChange: setMarcaFilter, opciones: [["all", "Todas las marcas"], ...marcas.map((m) => [m, m] as [string, string])] },
+          { id: "linea", etiqueta: "Línea", valor: lineaFilter, onChange: setLineaFilter, opciones: [["all", "Todas las líneas"], ...lineas.map((x) => [x, x] as [string, string])] },
+          { id: "grupo", etiqueta: "Grupo", valor: grupoFilter, onChange: setGrupoFilter, opciones: [["all", "Todos los grupos"], ...grupos.map((x) => [x, x] as [string, string])] },
+          { id: "tipo", etiqueta: "Tipo", valor: tipoFilter, onChange: setTipoFilter, opciones: [["all", "Todos los tipos"], ...tipos.map((x) => [x, x] as [string, string])] },
+          { id: "regimen", etiqueta: "Régimen fiscal", valor: taxFilter, onChange: (v) => setTaxFilter(v as typeof taxFilter), opciones: [["all", "Todos los regímenes"], ["normal", "Normal (IVA 16%)"], ["iva0", "IVA 0%"], ["ieps_iva0", "IEPS 6% + IVA 0%"], ["ieps_iva16", "IEPS 6% + IVA 16%"]] },
+        ]}
+        resumen={<>{filtered.length.toLocaleString("es-MX")} / {productos.length.toLocaleString("es-MX")} productos</>}
+      />
 
       {/* Bulk bar */}
       <div className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">

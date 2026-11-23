@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChronoBar } from "@/components/ChronoBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1243,35 +1244,17 @@ export default function OrderDocuments() {
         </div>
       </div>
 
-      {/* Filters row: chronological bar + search */}
-      <div className="flex flex-wrap items-center gap-3">
-        <ChronoBar
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
-        />
+      <ChronoBar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+      />
 
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm ml-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={lang === "es" ? "Buscar por pedido o cliente..." : "Search by order or client..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-          {search && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearch("")}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: lang === "es" ? "Buscar por pedido o cliente..." : "Search by order or client..." }}
+        resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} {lang === "es" ? "resultados" : "results"}</>}
+      />
 
       {/* Mobile card list */}
       {isLoading ? (
@@ -1695,36 +1678,17 @@ function EntradasView() {
         </div>
       </div>
 
-      {/* Filters row: same ChronoBar pattern as Pedidos so the toggle
-          feels seamless. Search stays on the right. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <ChronoBar
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
-        />
+      <ChronoBar
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onChange={(from, to) => { setDateFrom(from); setDateTo(to); }}
+      />
 
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm ml-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={lang === "es" ? "Buscar por entrada o proveedor..." : "Search by entry or supplier..."}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-          {search && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearch("")}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: lang === "es" ? "Buscar por entrada o proveedor..." : "Search by entry or supplier..." }}
+        resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} {lang === "es" ? "resultados" : "results"}</>}
+      />
 
       {/* List */}
       {isLoading ? (
