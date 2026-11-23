@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ban, FileDown, FileText, Pencil, Printer, Search } from "lucide-react";
+import { Ban, FileDown, FileText, Pencil, Printer } from "lucide-react";
 import { remisionPdf } from "@/lib/almacen-pdf";
 import NuevaRemisionDialog from "./NuevaRemisionDialog";
 import RemisionDetalleDialog from "./RemisionDetalleDialog";
@@ -157,10 +157,6 @@ export default function RemisionesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Folio, cliente, pedido, lote…" value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
           <Button onClick={() => setNueva(true)}>Nueva remisión</Button>
         </div>
       </header>
@@ -235,6 +231,11 @@ export default function RemisionesPage() {
           )}
         </CardContent>
       </Card>
+
+      <BarraHerramientas
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar folio, cliente, pedido, lote…" }}
+        resumen={isLoading ? undefined : <>{grouped.length.toLocaleString("es-MX")} remisiones</>}
+      />
 
       {isLoading && <div className="text-sm text-muted-foreground">Cargando…</div>}
       {!isLoading && grouped.length === 0 && (

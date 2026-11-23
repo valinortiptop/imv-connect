@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -202,21 +203,18 @@ export default function VendedoresPage() {
             value={mxn.format(totals.comision)} />
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre, email o teléfono…"
-              value={search} onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <Switch checked={showInactive} onCheckedChange={setShowInactive} />
-            Mostrar inactivos
-          </label>
-        </div>
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por nombre, email o teléfono…" }}
+          enLinea={
+            <label className="flex h-9 items-center gap-2 px-2 text-sm">
+              <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+              Mostrar inactivos
+            </label>
+          }
+          chipsExtra={showInactive ? [{ id: "inactivos", texto: "Incluye inactivos", quitar: () => setShowInactive(false) }] : []}
+          resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} vendedores</>}
+        />
 
         {/* Table */}
         <Card>

@@ -22,7 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ChronoBar } from "@/components/ChronoBar";
-import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Pencil, Plus, Trash2, ChevronRight, ChevronDown, Loader2, DollarSign, Users, ShoppingCart, Crown, Download, Upload, FileText, X, CheckCircle2, Eye, Wand2, MapPin, ArrowUpDown, ArrowUp, ArrowDown, List } from "lucide-react";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { parseCfdiPdf, type CfdiData } from "@/lib/cfdi-parser";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
@@ -1399,98 +1400,72 @@ export default function Clients({ restrictClientIds }: { restrictClientIds?: str
           </>
         )}
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-end gap-2 sm:gap-3">
-          <div className="relative w-full min-w-0 sm:flex-1 sm:w-auto sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t("searchClientsPlaceholder")}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-1">
-            {(["all", "active", "inactive"] as const).map(s => (
-              <Button
-                key={s}
-                variant={activeFilter === s ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveFilter(s)}
-              >
-                {s === "all" ? t("all") : s === "active" ? t("activeOnly") : t("inactiveOnly")}
-              </Button>
-            ))}
-          </div>
-
-          {/* Representative filter */}
-          <Select value={repFilter} onValueChange={setRepFilter}>
-            <SelectTrigger className="h-9 w-full min-w-0 text-sm sm:w-[200px]" aria-label="Filtrar por representante">
-              <SelectValue placeholder="Representante…" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos los representantes</SelectItem>
-              <SelectItem value="__none__">Sin representante</SelectItem>
-              {repOptions?.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* "Sin horario" filter chip — shows how many active clients
-              still need their delivery window captured. Clicking it
-              toggles the filter; the count itself is always visible so
-              the team sees the data-quality gap at a glance. */}
-          <Button
-            variant={sinHorarioOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSinHorarioOnly(v => !v)}
-            className={cn(
-              "gap-1.5",
-              sinHorarioOnly && "bg-amber-500 hover:bg-amber-600 text-white",
-              !sinHorarioOnly && sinHorarioCount > 0 && "border-amber-500/40 text-amber-700 dark:text-amber-300",
-            )}
-            title="Filtra clientes activos sin horario de recepción capturado"
-          >
-            🕐 Sin horario
-            <span className="tabular-nums font-bold">{sinHorarioCount}</span>
-          </Button>
-
-          {(search || activeFilter !== "all" || sinHorarioOnly || repFilter !== "__all__" || sortKey !== "name" || sortDir !== "asc") && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setActiveFilter("all"); setSinHorarioOnly(false); setRepFilter("__all__"); setSortKey("name"); setSortDir("asc"); }}>
-              {t("clean")}
-            </Button>
-          )}
-
-          {/* View mode toggle — Lista vs Mapa */}
-          <div className="flex items-center rounded-md border border-border bg-card p-0.5 sm:ml-auto">
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: t("searchClientsPlaceholder") }}
+          filtros={[
+            {
+              id: "estado",
+              etiqueta: "Estado",
+              valor: activeFilter,
+              onChange: (v) => setActiveFilter(v as typeof activeFilter),
+              opciones: [["all", t("all")], ["active", t("activeOnly")], ["inactive", t("inactiveOnly")]],
+            },
+            {
+              id: "representante",
+              etiqueta: "Representante",
+              valor: repFilter,
+              onChange: setRepFilter,
+              opciones: [
+                ["__all__", "Todos los representantes"],
+                ["__none__", "Sin representante"],
+                ...(repOptions ?? []).map((r) => [r.id, r.nombre] as [string, string]),
+              ],
+            },
+          ]}
+          chipsExtra={sinHorarioOnly ? [{ id: "sin-horario", texto: "Sin horario", quitar: () => setSinHorarioOnly(false) }] : []}
+          onLimpiar={() => { setActiveFilter("all"); setSinHorarioOnly(false); setRepFilter("__all__"); }}
+          orden={{
+            valor: `${sortKey}|${sortDir}`,
+            onChange: (v) => {
+              const [k, d] = v.split("|") as [typeof sortKey, typeof sortDir];
+              setSortKey(k);
+              setSortDir(d);
+            },
+            opciones: [
+              ["name|asc", "Nombre (A→Z)"],
+              ["name|desc", "Nombre (Z→A)"],
+              ["company|asc", "Empresa (A→Z)"],
+              ["representante|asc", "Representante (A→Z)"],
+              ["payment_method|asc", "Método de pago"],
+              ["active|desc", "Activos primero"],
+            ],
+          }}
+          enLinea={
             <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
+              variant={sinHorarioOnly ? "secondary" : "outline"}
               size="sm"
-              className="h-7 px-2.5"
-              onClick={() => setViewMode("list")}
+              onClick={() => setSinHorarioOnly(v => !v)}
+              className="h-9 gap-1.5"
+              title="Filtra clientes activos sin horario de recepción capturado"
             >
-              Lista
+              🕐 Sin horario
+              <span className="tabular-nums font-bold">{sinHorarioCount}</span>
             </Button>
-            <Button
-              variant={viewMode === "map" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 px-2.5"
-              onClick={() => setViewMode("map")}
-            >
-              <MapPin className="size-3.5 mr-1" /> Mapa
-            </Button>
-          </div>
-
-        </div>
-
-        {/* Count */}
-        <p className="text-xs text-muted-foreground break-words">
-          {viewMode === "list" && filtered.length > 0
-            ? `${pageStart}-${pageEnd} de ${filtered.length}`
-            : filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
-        </p>
+          }
+          vistas={{
+            valor: viewMode,
+            onChange: setViewMode,
+            opciones: [["list", List, "Lista"], ["map", MapPin, "Mapa"]],
+          }}
+          resumen={
+            <>
+              {viewMode === "list" && filtered.length > 0
+                ? `${pageStart}-${pageEnd} de ${filtered.length}`
+                : filtered.length} / {clients?.length ?? 0} {t("navClients").toLowerCase()}
+            </>
+          }
+        />
 
         <PaginationControls />
 

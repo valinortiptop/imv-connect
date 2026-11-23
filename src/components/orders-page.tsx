@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import {
   Select,
   SelectContent,
@@ -56,7 +56,6 @@ import { parseLocalDate } from "@/lib/date-utils";
 import { useNavigate } from "@/lib/router-compat";
 import {
   Plus,
-  Search,
   ShoppingCart,
   DollarSign,
   TruckIcon,
@@ -960,31 +959,49 @@ export default function Orders({
             </Collapsible>
           )}
 
-          {/* Search + Status filter */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <div className="relative flex-1 sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("searchOrderPlaceholder")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allStatuses")}</SelectItem>
-                {ORDER_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {STATUS_LABELS[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <BarraHerramientas
+            className="mb-0"
+            busqueda={{ valor: search, onChange: setSearch, placeholder: t("searchOrderPlaceholder") }}
+            filtros={[
+              {
+                id: "estado",
+                etiqueta: "Estado",
+                valor: statusFilter,
+                onChange: setStatusFilter,
+                opciones: [["all", t("allStatuses")], ...ORDER_STATUSES.map((s) => [s, STATUS_LABELS[s]] as [string, string])],
+              },
+            ]}
+            orden={{
+              valor: `${sort.key}|${sort.dir}`,
+              onChange: (v) => {
+                const [k, d] = v.split("|") as [SortKey, SortDir];
+                setSort({ key: k, dir: d });
+              },
+              opciones: [
+                ["order_code|desc", "Pedido (más nuevo)"],
+                ["order_code|asc", "Pedido (más viejo)"],
+                ["delivery_date|asc", "Fecha entrega (próxima)"],
+                ["delivery_date|desc", "Fecha entrega (lejana)"],
+                ["order_date|desc", "Fecha pedido (reciente)"],
+                ["order_date|asc", "Fecha pedido (vieja)"],
+                ["client_name|asc", "Cliente (A→Z)"],
+                ["client_name|desc", "Cliente (Z→A)"],
+                ["status|asc", "Estado (A→Z)"],
+                ["total_with_iva|desc", "Total (mayor)"],
+                ["total_with_iva|asc", "Total (menor)"],
+                ["line_items|desc", "SKUs (más)"],
+                ["line_items|asc", "SKUs (menos)"],
+              ],
+            }}
+            resumen={
+              isLoading ? undefined : (
+                <span className="tabular-nums">
+                  {isFetching ? "Actualizando · " : ""}
+                  Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de {ordersTotal.toLocaleString("es-MX")}
+                </span>
+              )
+            }
+          />
 
           {/* Bulk action bar */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-3 rounded-lg border border-border min-h-[48px] hidden sm:flex">
@@ -1070,44 +1087,6 @@ export default function Orders({
                     </button>
                   </>
                 )}
-                <span className="ml-auto text-muted-foreground tabular-nums">
-                  {isFetching && !isLoading ? "Actualizando · " : ""}
-                  Mostrando {pageFrom.toLocaleString("es-MX")}-{pageTo.toLocaleString("es-MX")} de{" "}
-                  {ordersTotal.toLocaleString("es-MX")}
-                </span>
-              </div>
-
-              {/* Mobile sort pill — cards don't have headers to click, so
-              this dropdown gives mobile users the same access. Same
-              options as desktop column headers. */}
-              <div className="flex items-center justify-end md:hidden">
-                <Select
-                  value={`${sort.key}|${sort.dir}`}
-                  onValueChange={(v) => {
-                    const [k, d] = v.split("|") as [SortKey, SortDir];
-                    setSort({ key: k, dir: d });
-                  }}
-                >
-                  <SelectTrigger className="h-8 w-auto gap-1.5 text-xs">
-                    <ArrowUpDown className="h-3.5 w-3.5" />
-                    <SelectValue placeholder="Ordenar" />
-                  </SelectTrigger>
-                  <SelectContent align="end">
-                    <SelectItem value="order_code|desc">Pedido (más nuevo)</SelectItem>
-                    <SelectItem value="order_code|asc">Pedido (más viejo)</SelectItem>
-                    <SelectItem value="delivery_date|asc">Fecha entrega (próxima)</SelectItem>
-                    <SelectItem value="delivery_date|desc">Fecha entrega (lejana)</SelectItem>
-                    <SelectItem value="order_date|desc">Fecha pedido (reciente)</SelectItem>
-                    <SelectItem value="order_date|asc">Fecha pedido (vieja)</SelectItem>
-                    <SelectItem value="client_name|asc">Cliente (A→Z)</SelectItem>
-                    <SelectItem value="client_name|desc">Cliente (Z→A)</SelectItem>
-                    <SelectItem value="status|asc">Estado (A→Z)</SelectItem>
-                    <SelectItem value="total_with_iva|desc">Total (mayor)</SelectItem>
-                    <SelectItem value="total_with_iva|asc">Total (menor)</SelectItem>
-                    <SelectItem value="line_items|desc">SKUs (más)</SelectItem>
-                    <SelectItem value="line_items|asc">SKUs (menos)</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* ── Mobile: Card view ── */}

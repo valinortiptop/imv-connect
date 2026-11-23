@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileDown, Printer, Search, Ban, Pencil, PackageCheck } from "lucide-react";
+import { FileDown, Printer, Ban, Pencil, PackageCheck } from "lucide-react";
 import { recepcionPdf } from "@/lib/almacen-pdf";
 import EditarRecepcionDialog from "./EditarRecepcionDialog";
 import OcAlertsCard from "./OcAlertsCard";
@@ -110,13 +110,14 @@ export default function RecepcionesPage() {
             Ingresos sobre órdenes de compra con lote y caducidad. Cada ingreso genera su PDF y puede corregirse o cancelarse.
           </p>
         </div>
-        <div className="relative w-72">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Folio, OC, proveedor, clave, lote…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
       </header>
 
       <OcAlertsCard />
+
+      <BarraHerramientas
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar folio, OC, proveedor, clave, lote…" }}
+        resumen={isLoading ? undefined : <>{grouped.length.toLocaleString("es-MX")} recepciones</>}
+      />
 
       {isLoading && <div className="text-sm text-muted-foreground">Cargando…</div>}
 

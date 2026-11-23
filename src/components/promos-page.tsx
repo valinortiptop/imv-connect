@@ -7,6 +7,7 @@ import { GlowCard } from "@/components/ui/spotlight-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Button } from "@/components/ui/button";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { Label } from "@/components/ui/label";
@@ -434,27 +435,12 @@ export default function Promos() {
           </GlowCard>
         </div>
 
-        {/* Search + status filter */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por SKU, producto, proveedor..."
-              className="pl-9"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="active">Activas</SelectItem>
-              <SelectItem value="upcoming">Próximas</SelectItem>
-              <SelectItem value="expired">Expiradas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, producto, proveedor..." }}
+          filtros={[{ id: "estado", etiqueta: "Estado", valor: statusFilter, onChange: (v) => setStatusFilter(v as any), opciones: [["all", "Todas"], ["active", "Activas"], ["upcoming", "Próximas"], ["expired", "Expiradas"]] }]}
+          resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} de {promos.length.toLocaleString("es-MX")} promociones</>}
+        />
 
         {/* ── Mobile: Card view ── */}
         {isLoading ? (

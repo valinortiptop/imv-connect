@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Search, Link2, Copy, Check, Eye, Loader2 } from "lucide-react";
@@ -174,15 +175,11 @@ export default function PortalAdmin() {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar cliente..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <BarraHerramientas
+        className="mb-0"
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar cliente..." }}
+        resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} de {clients.length.toLocaleString("es-MX")} clientes</>}
+      />
 
       {error ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">

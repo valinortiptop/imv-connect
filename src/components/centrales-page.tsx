@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,35 +116,33 @@ export default function Centrales() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          {/* Filters */}
-          <GlowCard>
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{t("filters")}</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    {t("clearFilters")}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <FilterSelect label={t("allStates")} value={fState} onChange={setFState} options={distinctStates} />
-                  <FilterSelect label={t("allTypes")} value={fType} onChange={setFType} options={distinctTypes} labelMap={TYPE_LABELS} />
-                  <FilterSelect label={t("allStatuses")} value={fStatus} onChange={setFStatus} options={distinctStatuses} />
-                  <FilterSelect label={t("allTiers")} value={fTier} onChange={setFTier} options={distinctTiers} />
-                  <div>
-                    <Label className="text-xs text-muted-foreground">{t("ratingMin")}</Label>
-                    <Input type="number" min="0" step="any" placeholder="0" value={ratingMin} onChange={(e) => setRatingMin(e.target.value)} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">{t("ratingMax")}</Label>
-                    <Input type="number" min="0" step="any" placeholder="10" value={ratingMax} onChange={(e) => setRatingMax(e.target.value)} className="mt-1" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </GlowCard>
+          <BarraHerramientas
+            className="mb-0"
+            filtros={[
+              { id: "estado", etiqueta: "Estado", valor: fState, onChange: setFState, opciones: [["__all__", t("allStates")], ...distinctStates.map((o) => [o, o] as [string, string])] },
+              { id: "tipo", etiqueta: "Tipo", valor: fType, onChange: setFType, opciones: [["__all__", t("allTypes")], ...distinctTypes.map((o) => [o, TYPE_LABELS[o] ?? o] as [string, string])] },
+              { id: "estatus", etiqueta: "Estatus", valor: fStatus, onChange: setFStatus, opciones: [["__all__", t("allStatuses")], ...distinctStatuses.map((o) => [o, o] as [string, string])] },
+              { id: "nivel", etiqueta: "Nivel", valor: fTier, onChange: setFTier, opciones: [["__all__", t("allTiers")], ...distinctTiers.map((o) => [o, o] as [string, string])] },
+            ]}
+            filtrosExtra={
+              <div className="grid grid-cols-2 gap-3">
+                <label className="space-y-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t("ratingMin")}</span>
+                  <Input type="number" min="0" step="any" placeholder="0" value={ratingMin} onChange={(e) => setRatingMin(e.target.value)} />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t("ratingMax")}</span>
+                  <Input type="number" min="0" step="any" placeholder="10" value={ratingMax} onChange={(e) => setRatingMax(e.target.value)} />
+                </label>
+              </div>
+            }
+            chipsExtra={[
+              ...(ratingMin ? [{ id: "rmin", texto: `${t("ratingMin")}: ${ratingMin}`, quitar: () => setRatingMin("") }] : []),
+              ...(ratingMax ? [{ id: "rmax", texto: `${t("ratingMax")}: ${ratingMax}`, quitar: () => setRatingMax("") }] : []),
+            ]}
+            onLimpiar={clearFilters}
+            resumen={<>{filtered.length.toLocaleString("es-MX")} centrales</>}
+          />
 
           {/* Table */}
           <GlowCard>

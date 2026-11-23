@@ -6,6 +6,7 @@ import { formatMarkup, applyMarkup } from "@/lib/price-list-math";
 import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductThumb } from "@/components/ui/product-thumb";
@@ -714,7 +715,7 @@ export default function PriceLists() {
       {viewMode === "tier" && currentPL && (
         <>
           {/* Description + search */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">{currentPL.description}</span>
               <Badge variant="secondary" className="text-xs">
@@ -746,16 +747,10 @@ export default function PriceLists() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={lang === "es" ? "Buscar producto..." : "Search product..."}
-                  className="pl-9 h-9"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+            <BarraHerramientas
+              className="mb-0"
+              busqueda={{ valor: search, onChange: setSearch, placeholder: lang === "es" ? "Buscar producto..." : "Search product..." }}
+              acciones={<>
               {currentPL.markup_pct != null && (
                 <Button
                   variant="outline"
@@ -790,7 +785,8 @@ export default function PriceLists() {
                 <Download className="h-4 w-4" />
                 PDF
               </Button>
-            </div>
+              </>}
+            />
           </div>
 
           {/* Products by brand */}

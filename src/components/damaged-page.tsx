@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { ProductThumb } from "@/components/ui/product-thumb";
@@ -410,44 +411,15 @@ export default function Damaged() {
           </GlowCard>
         </div>
 
-        {/* Filters */}
-        <GlowCard>
-          <div className="p-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por SKU, producto o nota..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-full sm:w-[160px] bg-background">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="disponible">Disponibles</SelectItem>
-                <SelectItem value="pendiente_preciar">Pendientes de precio</SelectItem>
-                <SelectItem value="agotado">Agotados</SelectItem>
-                <SelectItem value="descartado">Descartados</SelectItem>
-                <SelectItem value="all">Todos</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={conditionFilter} onValueChange={(v) => setConditionFilter(v as ConditionFilter)}>
-              <SelectTrigger className="w-full sm:w-[160px] bg-background">
-                <SelectValue placeholder="Condición" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las condiciones</SelectItem>
-                <SelectItem value="leve">Leve</SelectItem>
-                <SelectItem value="moderado">Moderado</SelectItem>
-                <SelectItem value="severo">Severo</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-xs text-muted-foreground">{filtered.length} lotes</span>
-          </div>
-        </GlowCard>
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, producto o nota..." }}
+          filtros={[
+            { id: "estado", etiqueta: "Estado", valor: statusFilter, onChange: (v) => setStatusFilter(v as StatusFilter), opciones: [["disponible", "Disponibles"], ["pendiente_preciar", "Pendientes de precio"], ["agotado", "Agotados"], ["descartado", "Descartados"], ["all", "Todos"]] },
+            { id: "condicion", etiqueta: "Condición", valor: conditionFilter, onChange: (v) => setConditionFilter(v as ConditionFilter), opciones: [["all", "Todas las condiciones"], ["leve", "Leve"], ["moderado", "Moderado"], ["severo", "Severo"]] },
+          ]}
+          resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} lotes</>}
+        />
 
         {/* Grid */}
         {isLoading ? (

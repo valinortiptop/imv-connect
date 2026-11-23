@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Button } from "@/components/ui/button";
 import { ProductThumb } from "@/components/ui/product-thumb";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -404,33 +405,12 @@ export default function Devoluciones() {
           </GlowCard>
         </div>
 
-        {/* Filters */}
-        <GlowCard>
-          <div className="p-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por SKU, pedido, cliente o nota..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background"
-              />
-            </div>
-            <Select value={tipoFilter} onValueChange={(v) => setTipoFilter(v as TipoFilter)}>
-              <SelectTrigger className="w-full sm:w-[200px] bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="devolucion_buena">Devolución (buena)</SelectItem>
-                <SelectItem value="devolucion_danada">Devolución (dañada)</SelectItem>
-                <SelectItem value="perdida_total">Pérdida total</SelectItem>
-                <SelectItem value="faltante">Faltante</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-xs text-muted-foreground">{filtered.length} ajustes</span>
-          </div>
-        </GlowCard>
+        <BarraHerramientas
+          className="mb-0"
+          busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por SKU, pedido, cliente o nota..." }}
+          filtros={[{ id: "tipo", etiqueta: "Tipo", valor: tipoFilter, onChange: (v) => setTipoFilter(v as TipoFilter), opciones: [["all", "Todos los tipos"], ["devolucion_buena", "Devolución (buena)"], ["devolucion_danada", "Devolución (dañada)"], ["perdida_total", "Pérdida total"], ["faltante", "Faltante"]] }]}
+          resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} ajustes</>}
+        />
 
         {/* List */}
         {isLoading ? (

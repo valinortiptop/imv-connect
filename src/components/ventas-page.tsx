@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -660,49 +661,15 @@ function ReporteADM({
           <CardTitle className="text-base">
             Detalle por tienda — {monthLabelA} vs {monthLabelB}
           </CardTitle>
-          <div className="flex flex-wrap gap-3 mt-3">
-            <div>
-              <Label className="text-xs">Municipio</Label>
-              <Select value={filterMuni} onValueChange={setFilterMuni}>
-                <SelectTrigger className="w-[200px] h-8"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {municipios.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Tipo</Label>
-              <Select value={filterType} onValueChange={(v) => setFilterType(v as any)}>
-                <SelectTrigger className="w-[160px] h-8"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="new">Solo nuevas</SelectItem>
-                  <SelectItem value="lost">Solo perdidas</SelectItem>
-                  <SelectItem value="grew">Que crecieron</SelectItem>
-                  <SelectItem value="shrank">Que bajaron</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Orden</Label>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-                <SelectTrigger className="w-[220px] h-8"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bultosDesc">Más bultos (mes actual)</SelectItem>
-                  <SelectItem value="importeDesc">Más importe (mes actual)</SelectItem>
-                  <SelectItem value="deltaBultos">Δ Bultos (magnitud)</SelectItem>
-                  <SelectItem value="deltaImporte">Δ Importe (magnitud)</SelectItem>
-                  <SelectItem value="cliente">Nombre cliente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="ml-auto text-xs text-muted-foreground self-end">
-              {fmtInt(filtered.length)} de {fmtInt(diffRows.length)} tiendas
-            </div>
-          </div>
+          <BarraHerramientas
+            className="mb-0 mt-3"
+            filtros={[
+              { id: "municipio", etiqueta: "Municipio", valor: filterMuni, onChange: setFilterMuni, opciones: [["all", "Todos"], ...municipios.map((m) => [m, m] as [string, string])] },
+              { id: "tipo", etiqueta: "Tipo", valor: filterType, onChange: (v) => setFilterType(v as any), opciones: [["all", "Todas"], ["new", "Solo nuevas"], ["lost", "Solo perdidas"], ["grew", "Que crecieron"], ["shrank", "Que bajaron"]] },
+            ]}
+            orden={{ valor: sortBy, onChange: (v) => setSortBy(v as any), opciones: [["bultosDesc", "Más bultos (mes actual)"], ["importeDesc", "Más importe (mes actual)"], ["deltaBultos", "Δ Bultos (magnitud)"], ["deltaImporte", "Δ Importe (magnitud)"], ["cliente", "Nombre cliente"]] }}
+            resumen={<>{fmtInt(filtered.length)} de {fmtInt(diffRows.length)} tiendas</>}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <div className="max-h-[60vh] overflow-auto">

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { ArrowLeftRight, FileDown, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { traspasoPdf } from "@/lib/almacen-pdf";
 import { notifyEventFn } from "@/lib/notifications.functions";
@@ -287,13 +288,11 @@ export default function TraspasosPage() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Traspasos realizados</h2>
-        <div className="relative w-64">
-          <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar traspaso…" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-      </div>
+      <h2 className="text-lg font-semibold">Traspasos realizados</h2>
+      <BarraHerramientas
+        busqueda={{ valor: q, onChange: setQ, placeholder: "Buscar traspaso…" }}
+        resumen={<>{grouped.length.toLocaleString("es-MX")} traspasos</>}
+      />
 
       <div className="space-y-3">
         {grouped.map((g) => (

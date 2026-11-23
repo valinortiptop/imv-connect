@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 
 export const Route = createFileRoute("/admin/clientes/$id/precios")({
   component: PreciosClientePage,
@@ -147,13 +148,9 @@ function PreciosClientePage() {
             Define precios especiales por producto. Vacío = precio de lista.
           </p>
         </div>
-        <input
-          placeholder="Buscar producto…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="input max-w-xs"
-        />
       </div>
+
+      <BarraHerramientas busqueda={{ valor: filter, onChange: setFilter, placeholder: "Buscar producto…" }} />
 
       {(productos.isLoading || overrides.isLoading) && (
         <p className="text-sm text-muted-foreground">Cargando…</p>

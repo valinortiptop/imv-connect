@@ -64,6 +64,10 @@ export function BarraHerramientas<V extends string>({
   const activos = visibles.filter((f) => !vacio(f));
   const nActivos = activos.length + chipsExtra.length;
   const hayPanel = visibles.length > 0 || !!filtrosExtra;
+  // Si el orden activo viene de un clic en el encabezado y no está en la lista, se muestra igual.
+  const ordenOpciones: [string, string][] = orden
+    ? orden.opciones.some(([v]) => v === orden.valor) ? orden.opciones : [[orden.valor, "Orden de columna"], ...orden.opciones]
+    : [];
   const limpiarTodo = () => { if (onLimpiar) onLimpiar(); else visibles.forEach((f) => f.onChange(f.opciones[0]?.[0] ?? "")); };
 
   const panel = (
@@ -124,7 +128,7 @@ export function BarraHerramientas<V extends string>({
                   {orden ? (
                     <label className="block space-y-1">
                       <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Ordenar por</span>
-                      <SelectCampo valor={orden.valor} onChange={orden.onChange} opciones={orden.opciones} />
+                      <SelectCampo valor={orden.valor} onChange={orden.onChange} opciones={ordenOpciones} />
                     </label>
                   ) : null}
                 </div>
@@ -142,7 +146,7 @@ export function BarraHerramientas<V extends string>({
             <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <select aria-label="Ordenar por" value={orden.valor} onChange={(e) => orden.onChange(e.target.value)}
               className="h-9 max-w-52 rounded-md border bg-background pl-7 pr-2 text-sm outline-none focus:ring-2 focus:ring-ring/40">
-              {orden.opciones.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              {ordenOpciones.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
         ) : null}

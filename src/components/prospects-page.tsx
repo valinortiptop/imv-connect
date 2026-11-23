@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -955,71 +956,49 @@ export default function Prospects({ scopeToMe = false }: { scopeToMe?: boolean }
         </div>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-4 flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[220px]">
-            <Label className="text-xs">{tx("Buscar")}</Label>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Teléfono, nombre, colonia…"
-                className="pl-8"
-              />
-            </div>
-          </div>
-          <div className="w-[200px]">
-            <Label className="text-xs">{tx("Estado")}</Label>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="pending_action">Seguimiento hoy</SelectItem>
-                {(Object.keys(STATUS_LABELS) as ProspectStatus[]).map((s) => (
-                  <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[200px]">
-            <Label className="text-xs">{tx("Municipio")}</Label>
-            <Select value={muniFilter} onValueChange={setMuniFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {municipios.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-[200px]">
-            <Label className="text-xs">{tx("Enriquecimiento")}</Label>
-            <Select value={enrichedFilter} onValueChange={(v) => setEnrichedFilter(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="enriched">
-                  Enriquecidos ({prospects.filter((p) => !!p.enriched_at && p.enrichment_status !== "no_match").length})
-                </SelectItem>
-                <SelectItem value="not_enriched">
-                  Sin enriquecer ({prospects.filter((p) => !p.enriched_at || p.enrichment_status === "no_match").length})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2 pb-1.5">
-            <Checkbox
-              id="mine"
-              checked={mineOnly}
-              onCheckedChange={(v) => setMineOnly(!!v)}
-            />
-            <Label htmlFor="mine" className="text-sm cursor-pointer">Asignados a mí</Label>
-          </div>
-        </CardContent>
-      </Card>
+      <BarraHerramientas
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar teléfono, nombre, colonia…" }}
+        filtros={[
+          {
+            id: "estado",
+            etiqueta: tx("Estado"),
+            valor: statusFilter,
+            onChange: (v) => setStatusFilter(v as any),
+            opciones: [
+              ["all", "Todos"],
+              ["pending_action", "Seguimiento hoy"],
+              ...(Object.keys(STATUS_LABELS) as ProspectStatus[]).map((s) => [s, STATUS_LABELS[s]] as [string, string]),
+            ],
+          },
+          {
+            id: "municipio",
+            etiqueta: tx("Municipio"),
+            valor: muniFilter,
+            onChange: setMuniFilter,
+            opciones: [["all", "Todos"], ...municipios.map((m) => [m, m] as [string, string])],
+          },
+          {
+            id: "enriquecimiento",
+            etiqueta: tx("Enriquecimiento"),
+            valor: enrichedFilter,
+            onChange: (v) => setEnrichedFilter(v as any),
+            opciones: [
+              ["all", "Todos"],
+              ["enriched", `Enriquecidos (${prospects.filter((p) => !!p.enriched_at && p.enrichment_status !== "no_match").length})`],
+              ["not_enriched", `Sin enriquecer (${prospects.filter((p) => !p.enriched_at || p.enrichment_status === "no_match").length})`],
+            ],
+          },
+        ]}
+        chipsExtra={mineOnly ? [{ id: "mine", texto: "Asignados a mí", quitar: () => setMineOnly(false) }] : []}
+        onLimpiar={() => { setStatusFilter("all" as any); setMuniFilter("all"); setEnrichedFilter("all" as any); setMineOnly(false); }}
+        enLinea={
+          <label htmlFor="mine" className="flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-accent">
+            <Checkbox id="mine" checked={mineOnly} onCheckedChange={(v) => setMineOnly(!!v)} />
+            Asignados a mí
+          </label>
+        }
+        resumen={isLoading ? undefined : <>{filtered.length.toLocaleString("es-MX")} de {prospects.length.toLocaleString("es-MX")} prospectos</>}
+      />
 
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden bg-card">

@@ -22,9 +22,9 @@ import { Badge } from "@/components/ui/badge";
 import { GlowCard } from "@/components/ui/spotlight-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+import { BarraHerramientas } from "@/components/barra-herramientas";
 import {
-  BarChart3, Building2, Truck, Search, ArrowUp, ArrowDown, ArrowUpDown, Image as ImageIcon,
+  BarChart3, Building2, Truck, ArrowUp, ArrowDown, ArrowUpDown, Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -277,16 +277,10 @@ export function PartnersAnalisisTab({ dateFrom, dateTo }: Props) {
         </GlowCard>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por clave o producto…"
-          className="pl-9"
-        />
-      </div>
+      <BarraHerramientas
+        busqueda={{ valor: search, onChange: setSearch, placeholder: "Buscar por clave o producto…" }}
+        resumen={<>{sorted.length.toLocaleString("es-MX")} SKU{sorted.length === 1 ? "" : "s"} con movimiento en el rango</>}
+      />
 
       {/* Cross-channel table */}
       <GlowCard>
@@ -295,7 +289,7 @@ export function PartnersAnalisisTab({ dateFrom, dateTo }: Props) {
             <div>
               <h3 className="text-base font-semibold text-foreground">Volúmenes por canal</h3>
               <p className="text-xs text-muted-foreground">
-                {sorted.length} SKU{sorted.length === 1 ? "" : "s"} con movimiento en el rango. Click en una columna para ordenar.
+                Click en una columna para ordenar.
               </p>
             </div>
           </div>
