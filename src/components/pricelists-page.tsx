@@ -449,6 +449,11 @@ export default function PriceLists() {
     return a.localeCompare(b);
   });
 
+  // Mismo orden que en pantalla: marca (prioridad) y luego clave.
+  const enOrden = sortedBrands.flatMap((b) =>
+    [...(grouped.get(b) ?? [])].sort((a, c) => (a.products?.clave ?? "").localeCompare(c.products?.clave ?? "")),
+  );
+
   const totalSaved = filtered.reduce((sum, item) => {
     const catalog = item.products?.sale_price_with_iva ?? 0;
     const diff = catalog - item.price_with_iva;
@@ -755,20 +760,19 @@ export default function PriceLists() {
                 deshabilitado: filtered.length === 0,
                 // PDF con el formato de lista de precios de siempre.
                 onPdf: () => {
-                  const pdfItems = filtered.map((item) => ({
+                  const pdfItems = enOrden.map((item) => ({
                     clave: item.products?.clave ?? "",
                     name: item.products?.name ?? "",
                     brand: item.products?.brand ?? "",
                     price: item.price_with_iva,
                     catalogPrice: item.products?.sale_price_with_iva ?? 0,
-                  })).sort((a, b) => a.clave.localeCompare(b.clave));
+                  }));
                   generatePriceListPDF(currentPL.name, pdfItems);
                 },
                 datos: () => ({
                   columnas: ["Clave", "Producto", "Marca", "Precio lista con IVA (MXN)", "Precio catálogo con IVA (MXN)"],
-                  filas: filtered
-                    .map((item) => [item.products?.clave ?? "", item.products?.name ?? "", item.products?.brand ?? "", item.price_with_iva, item.products?.sale_price_with_iva ?? null] as (string | number | null)[])
-                    .sort((x, y) => String(x[0]).localeCompare(String(y[0]))),
+                  filas: enOrden
+                    .map((item) => [item.products?.clave ?? "", item.products?.name ?? "", item.products?.brand ?? "", item.price_with_iva, item.products?.sale_price_with_iva ?? null] as (string | number | null)[]),
                 }),
               }}
               acciones={<>
