@@ -504,7 +504,7 @@ export default function Tareas() {
 
       {/* Card detail sheet */}
       <Sheet open={!!detailCard} onOpenChange={(o) => !o && setDetailCard(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent expandable className="w-full sm:max-w-lg overflow-y-auto">
           {detailCard && (
             <div className="space-y-6 pt-4">
               <SheetHeader>

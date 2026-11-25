@@ -297,7 +297,7 @@ export function DocumentsHub({ data, refresh }: { data: HubData; refresh: () => 
       )}
 
       <Sheet open={!!openReq} onOpenChange={(o) => !o && setOpenReq(null)}>
-        <SheetContent className="launch-hub w-full overflow-y-auto sm:max-w-2xl">
+        <SheetContent expandable className="launch-hub w-full overflow-y-auto sm:max-w-2xl">
           {(selected || openOtros) && (
             <DocDetail req={selected} docs={openOtros ? otros : docsByReq.get(selected!.id) ?? []} reqs={data.reqs}
               canValidate={data.canValidate} isAdmin={data.isAdmin} uid={data.uid} refresh={refresh} limited={!data.fullAccess}

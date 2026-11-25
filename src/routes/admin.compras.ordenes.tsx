@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BarraHerramientas } from "@/components/barra-herramientas";
+import { OC360Drawer } from "@/components/compras/OC360Drawer";
+import { rowClickProps } from "@/components/shared/Panel360";
 
 export const Route = createFileRoute("/admin/compras/ordenes")({
   component: ComprasPage,
@@ -37,6 +39,7 @@ function ComprasPage() {
   const [filtro, setFiltro] = useState<string>("");
   const [q, setQ] = useState("");
   const [nueva, setNueva] = useState(false);
+  const [abierta, setAbierta] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ordenes_compra"],
@@ -99,7 +102,7 @@ function ComprasPage() {
           </thead>
           <tbody>
             {filtered.map((o) => (
-              <tr key={o.id} className="border-t border-border">
+              <tr key={o.id} {...rowClickProps(() => setAbierta(o.id))} className="border-t border-border cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/60" aria-label={`Abrir ${o.folio}`}>
                 <td className="px-3 py-2 font-mono text-xs">{o.folio}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{o.fecha_emision}</td>
                 <td className="px-3 py-2">{o.laboratorio}</td>
@@ -113,9 +116,9 @@ function ComprasPage() {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <Link to="/admin/compras/$id" params={{ id: o.id }} className="text-xs text-primary hover:underline">
+                  <button type="button" onClick={() => setAbierta(o.id)} className="text-xs text-primary hover:underline">
                     Abrir
-                  </Link>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -129,11 +132,11 @@ function ComprasPage() {
       {/* Card view: mobile */}
       <div className="sm:hidden space-y-2">
         {filtered.map((o) => (
-          <Link
+          <button
+            type="button"
             key={o.id}
-            to="/admin/compras/$id"
-            params={{ id: o.id }}
-            className="block rounded-lg border border-border bg-card p-3 active:bg-muted/40"
+            onClick={() => setAbierta(o.id)}
+            className="block w-full text-left rounded-lg border border-border bg-card p-3 active:bg-muted/40"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -152,7 +155,7 @@ function ComprasPage() {
                 <span className="font-semibold">${Number(o.total).toFixed(2)}</span>
               </span>
             </div>
-          </Link>
+          </button>
         ))}
         {filtered.length === 0 && !isLoading && (
           <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
@@ -168,10 +171,11 @@ function ComprasPage() {
           onSaved={(id) => {
             qc.invalidateQueries({ queryKey: ["ordenes_compra"] });
             setNueva(false);
-            window.location.href = `/admin/compras/${id}`;
+            setAbierta(id);
           }}
         />
       )}
+      <OC360Drawer ocId={abierta} onClose={() => setAbierta(null)} />
     </section>
   );
 }

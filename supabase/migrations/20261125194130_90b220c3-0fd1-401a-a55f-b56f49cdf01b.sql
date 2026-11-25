@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS oc_documents_oc_idx ON public.oc_documents(oc_id);

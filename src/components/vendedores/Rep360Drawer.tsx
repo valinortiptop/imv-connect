@@ -83,7 +83,7 @@ export default function Rep360Drawer({ repId, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent expandable side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <UserSquare2 className="h-5 w-5" /> {rep?.nombre ?? "Vendedor"}

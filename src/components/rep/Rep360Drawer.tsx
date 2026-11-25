@@ -101,7 +101,7 @@ export default function Rep360Drawer({
 
   return (
     <Sheet open={!!repId} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent expandable side="right" className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle className="text-base">{data?.rep?.nombre ?? "Representante"}</SheetTitle>
           <SheetDescription className="text-xs">

@@ -5597,6 +5597,141 @@ export type Database = {
         }
         Relationships: []
       }
+      oc_changes: {
+        Row: {
+          campo: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          oc_id: string
+          valor_anterior: string | null
+          valor_nuevo: string | null
+        }
+        Insert: {
+          campo: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          oc_id: string
+          valor_anterior?: string | null
+          valor_nuevo?: string | null
+        }
+        Update: {
+          campo?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          oc_id?: string
+          valor_anterior?: string | null
+          valor_nuevo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oc_changes_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_changes_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_changes_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_changes_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_changes_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
+          },
+        ]
+      }
+      oc_documents: {
+        Row: {
+          created_at: string
+          id: string
+          mime_type: string | null
+          nombre: string
+          oc_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nombre: string
+          oc_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nombre?: string
+          oc_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oc_documents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_documents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_entradas_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_documents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_notas_credito_proveedor_report"
+            referencedColumns: ["oc_id"]
+          },
+          {
+            foreignKeyName: "oc_documents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_ordenes_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oc_documents_oc_id_fkey"
+            columns: ["oc_id"]
+            isOneToOne: false
+            referencedRelation: "v_trazabilidad_compra"
+            referencedColumns: ["oc_id"]
+          },
+        ]
+      }
       oc_items: {
         Row: {
           cantidad: number

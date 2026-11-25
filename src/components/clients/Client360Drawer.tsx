@@ -114,7 +114,7 @@ export function Client360Drawer({ clientId, open, onOpenChange, onEdit, canEdit 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent expandable side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         {q.isLoading && (
           <div className="space-y-4 pt-6">
             <Skeleton className="h-8 w-2/3" />

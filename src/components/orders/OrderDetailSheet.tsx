@@ -5,6 +5,7 @@ import { useNavigate } from "@/lib/router-compat";
 import { useServerFn } from "@tanstack/react-start";
 import { downloadInvoiceFn, stampInvoiceFn } from "@/lib/facturapi.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -267,6 +268,7 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
   const orderDiscount = Math.min(toNum((order as any)?.discount_amount, 0), totalMXN);
   const orderDiscountReason = (((order as any)?.discount_reason ?? "") as string).trim();
   const totalPagado = totalMXN - totalAjustes - orderDiscount;
+  const [expanded, setExpanded] = useState(false);
   const bultosAjustados = adjustments.reduce((s: number, a: any) => s + (a.quantity ?? 0), 0);
 
 
@@ -280,7 +282,16 @@ export function OrderDetailSheet({ orderId, open, onOpenChange, onEdit, onDelete
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className={cn("overflow-y-auto p-0", expanded ? "max-w-[100vw] sm:max-w-[100vw] w-screen h-[100dvh] max-h-[100dvh] rounded-none" : "max-w-[95vw] sm:max-w-5xl max-h-[90vh]")}>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="absolute right-11 top-4 z-10 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring"
+          aria-label={expanded ? "Reducir vista" : "Expandir vista"}
+          title={expanded ? "Reducir" : "Expandir"}
+        >
+          {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </button>
         <DialogHeader className="px-4 sm:px-4 sm:px-6 pt-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl">
