@@ -15,6 +15,7 @@
  * file balloons by ~1 MB per 10 products.
  */
 import { format } from "date-fns";
+import { fmtCaducidad, type LoteExport } from "@/lib/inventory-lots-export";
 
 /** Shape we need from each inventory row. Keep it permissive — the
  *  Inventory page passes its richer InventoryItem in. */
@@ -27,6 +28,7 @@ export interface ExportInventoryRow {
   stock_committed: number;
   stock_disponible: number;
   stock_incoming: number;
+  lotes?: LoteExport[];
 }
 
 /** Fetch + downscale to a small JPEG base64 (data: URL). Returns null
@@ -124,8 +126,9 @@ export async function downloadInventoryExcel(
   await Promise.all(Array.from({ length: concurrency }, worker));
 
   // Body rows
+  let rowNum = 1;
   rows.forEach((r, i) => {
-    const rowNum = i + 2;
+    rowNum++;
     const row = ws.getRow(rowNum);
     row.height = 50; // tall enough for the 48 px image with padding
     row.getCell("idx").value = i + 1;
@@ -167,6 +170,18 @@ export async function downloadInventoryExcel(
         ext: { width: 48, height: 48 },
         editAs: "oneCell",
       });
+    }
+
+    // Sub-filas de lotes (lote, almacén, caducidad, existencia).
+    for (const l of r.lotes ?? []) {
+      rowNum++;
+      const lr = ws.getRow(rowNum);
+      lr.getCell("clave").value = `↳ Lote ${l.lote || "—"}`;
+      lr.getCell("name").value = `Almacén: ${l.almacen || "—"} · Caducidad: ${fmtCaducidad(l.caducidad)}`;
+      lr.getCell("stock").value = l.cantidad;
+      lr.font = { size: 9, color: { argb: "FF6B7280" } };
+      lr.getCell("clave").alignment = { horizontal: "left", indent: 1 };
+      lr.getCell("stock").alignment = { horizontal: "right" };
     }
   });
 

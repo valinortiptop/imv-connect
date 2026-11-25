@@ -15,6 +15,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, DollarSign, Boxes, SlidersHorizontal,
   Download, Loader2, ChevronRight, ChevronDown as ChevronDownIcon
 } from "lucide-react";
+import { fetchLotesPorProducto, fmtCaducidad } from "@/lib/inventory-lots-export";
 import { ProductLotsPanel } from "@/components/inventory/ProductLotsPanel";
 import { cn } from "@/lib/utils";
 import { StockAdjustmentDialog } from "@/components/StockAdjustmentDialog";
@@ -544,8 +545,10 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
               }
               try {
                 setExporting({ done: 0, total: items.length });
+                const lotes = await fetchLotesPorProducto(items.map((it) => it.id));
                 await downloadInventoryExcel(
                   items.map(it => ({
+                    lotes: lotes.get(it.id) ?? [],
                     clave: it.clave,
                     name: it.name,
                     supplier: it.supplier ?? null,
@@ -567,10 +570,20 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
                 setExporting(null);
               }
             },
-            datos: () => ({
-              columnas: ["Clave", "Producto", "Proveedor", "Existencia", "Comprometido", "Disponible", "Por llegar"],
-              filas: items.map((it) => [it.clave, it.name, it.supplier ?? "", it.stock_actual, it.stock_committed, it.stock_disponible, it.stock_incoming]),
-            }),
+            datos: async () => {
+              const lotes = await fetchLotesPorProducto(items.map((it) => it.id));
+              return {
+                columnas: ["Clave", "Producto", "Proveedor", "Existencia", "Comprometido", "Disponible", "Por llegar"],
+                filas: items.flatMap((it) => [
+                  [it.clave, it.name, it.supplier ?? "", it.stock_actual, it.stock_committed, it.stock_disponible, it.stock_incoming],
+                  ...(lotes.get(it.id) ?? []).map((l) => [
+                    `   - Lote ${l.lote || "—"}`,
+                    `Almacén: ${l.almacen || "—"} · Caducidad: ${fmtCaducidad(l.caducidad)}`,
+                    "", l.cantidad, "", "", "",
+                  ]),
+                ]),
+              };
+            },
           }}
           resumen={<>{items.length.toLocaleString("es-MX")} productos</>}
         />
