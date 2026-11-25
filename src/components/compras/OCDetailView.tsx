@@ -222,11 +222,13 @@ export function OCDetailView({ id, embedded = false }: { id: string; embedded?: 
       {editOpen && (
         <EditOCModal
           oc={oc}
+          items={items}
           onClose={() => setEditOpen(false)}
           onSaved={() => {
             qc.invalidateQueries({ queryKey: ["oc", id] });
             qc.invalidateQueries({ queryKey: ["ordenes_compra"] });
             qc.invalidateQueries({ queryKey: ["oc-changes", id] });
+            qc.invalidateQueries({ queryKey: ["oc-items", id] });
             setEditOpen(false);
           }}
         />
@@ -573,7 +575,13 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
   );
 }
 
-function EditOCModal({ oc, onClose, onSaved }: { oc: OC; onClose: () => void; onSaved: () => void }) {
+type EditRow = { key: string; id: string | null; producto_id: string; cantidad: number; costo_unitario: number; recibida: number };
+
+function EditOCModal({ oc, items, onClose, onSaved }: { oc: OC; items: Item[]; onClose: () => void; onSaved: () => void }) {
+  const [rows, setRows] = useState<EditRow[]>(() => items.map((i) => ({
+    key: i.id, id: i.id, producto_id: i.producto_id, cantidad: Number(i.cantidad), costo_unitario: Number(i.costo_unitario), recibida: Number(i.cantidad_recibida ?? 0),
+  })));
+  const [removed, setRemoved] = useState<string[]>([]);
   const [laboratorioId, setLaboratorioId] = useState(oc.laboratorio_id);
   const [almacenId, setAlmacenId] = useState(oc.almacen_id);
   const [fechaEsperada, setFechaEsperada] = useState(oc.fecha_esperada ?? "");
@@ -588,8 +596,44 @@ function EditOCModal({ oc, onClose, onSaved }: { oc: OC; onClose: () => void; on
     queryKey: ["almacenes-activos"],
     queryFn: async () => (await supabase.from("almacenes").select("id, nombre").eq("activo", true).order("nombre")).data ?? [],
   });
+  const prodsQ = useQuery({
+    queryKey: ["prods-lab", laboratorioId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("productos").select("id, sku, nombre, costo").eq("laboratorio_id", laboratorioId).eq("activo", true).order("nombre");
+      if (error) throw error;
+      return data as { id: string; sku: string | null; nombre: string; costo: number | null }[];
+    },
+  });
+  const prodOptions = (() => {
+    const list = [...(prodsQ.data ?? [])];
+    for (const it of items) if (!list.some((p) => p.id === it.producto_id)) list.push({ id: it.producto_id, sku: it.productos?.sku ?? null, nombre: it.productos?.nombre ?? "Producto", costo: null });
+    return list;
+  })();
+  const upd = (key: string, patch: Partial<EditRow>) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...patch } : x)));
+  const total = rows.reduce((a, r) => a + r.cantidad * r.costo_unitario, 0);
   const save = async () => {
+    for (const r of rows) {
+      if (!r.producto_id) return toast.error("Selecciona el producto en todas las líneas");
+      if (!(r.cantidad > 0)) return toast.error("Las piezas deben ser mayores a 0");
+      if (r.cantidad < r.recibida) return toast.error(`No puedes pedir menos de lo ya recibido (${r.recibida})`);
+      if (!(r.costo_unitario >= 0)) return toast.error("El precio no puede ser negativo");
+    }
     setSaving(true);
+    for (const rid of removed) {
+      const { error } = await supabase.from("oc_items").delete().eq("id", rid);
+      if (error) { setSaving(false); return toast.error(error.message); }
+    }
+    for (const r of rows) {
+      const orig = items.find((i) => i.id === r.id);
+      if (r.id && orig) {
+        if (orig.producto_id === r.producto_id && Number(orig.cantidad) === r.cantidad && Number(orig.costo_unitario) === r.costo_unitario) continue;
+        const { error } = await supabase.from("oc_items").update({ producto_id: r.producto_id, cantidad: r.cantidad, costo_unitario: r.costo_unitario }).eq("id", r.id);
+        if (error) { setSaving(false); return toast.error(error.message); }
+      } else {
+        const { error } = await supabase.from("oc_items").insert({ oc_id: oc.id, producto_id: r.producto_id, cantidad: r.cantidad, costo_unitario: r.costo_unitario });
+        if (error) { setSaving(false); return toast.error(error.message); }
+      }
+    }
     const { error } = await supabase.from("ordenes_compra").update({
       laboratorio_id: laboratorioId,
       almacen_id: almacenId,
@@ -606,7 +650,7 @@ function EditOCModal({ oc, onClose, onSaved }: { oc: OC; onClose: () => void; on
   const field = "mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm";
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 p-4" role="dialog" aria-modal="true" aria-label="Editar orden">
-      <div className="w-full max-w-lg space-y-3 rounded-lg border border-border bg-card p-5 shadow-lg">
+      <div className="max-h-[90vh] w-full max-w-3xl space-y-3 overflow-y-auto rounded-lg border border-border bg-card p-5 shadow-lg">
         <h3 className="text-lg font-semibold">Editar {oc.folio}</h3>
         <label className="block text-sm">Laboratorio
           <select className={field} value={laboratorioId} onChange={(e) => setLaboratorioId(e.target.value)}>
@@ -629,6 +673,38 @@ function EditOCModal({ oc, onClose, onSaved }: { oc: OC; onClose: () => void; on
         <label className="block text-sm">Notas
           <textarea className={field} rows={3} value={notas} onChange={(e) => setNotas(e.target.value)} />
         </label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Productos</h4>
+            <button type="button" className="btn-secondary text-xs" onClick={() => setRows((r) => [...r, { key: crypto.randomUUID(), id: null, producto_id: "", cantidad: 1, costo_unitario: 0, recibida: 0 }])}>+ Agregar producto</button>
+          </div>
+          {rows.length === 0 && <p className="text-sm text-muted-foreground">Sin productos.</p>}
+          {rows.map((r) => (
+            <div key={r.key} className="grid grid-cols-2 gap-2 rounded-md border border-border p-2 sm:grid-cols-[1fr_90px_110px_90px_auto] sm:items-end">
+              <label className="col-span-2 block text-xs sm:col-span-1">Producto
+                <select className={field} value={r.producto_id} disabled={r.recibida > 0} onChange={(e) => {
+                  const p = prodOptions.find((x) => x.id === e.target.value);
+                  upd(r.key, { producto_id: e.target.value, ...(p?.costo != null && !r.id ? { costo_unitario: Number(p.costo) } : {}) });
+                }}>
+                  <option value="">— Selecciona —</option>
+                  {prodOptions.map((p) => <option key={p.id} value={p.id}>{p.nombre}{p.sku ? ` (${p.sku})` : ""}</option>)}
+                </select>
+              </label>
+              <label className="block text-xs">Piezas
+                <input type="number" min={r.recibida || 0} step="1" className={field} value={r.cantidad} onChange={(e) => upd(r.key, { cantidad: Number(e.target.value) })} />
+              </label>
+              <label className="block text-xs">Precio unitario
+                <input type="number" min={0} step="0.01" className={field} value={r.costo_unitario} onChange={(e) => upd(r.key, { costo_unitario: Number(e.target.value) })} />
+              </label>
+              <div className="text-xs">Subtotal<div className="py-2 text-sm font-semibold">${(r.cantidad * r.costo_unitario).toFixed(2)}</div></div>
+              <button type="button" className="btn-secondary text-xs disabled:opacity-50" disabled={r.recibida > 0}
+                title={r.recibida > 0 ? `Ya se recibieron ${r.recibida}` : "Quitar"}
+                onClick={() => { if (r.id) setRemoved((x) => [...x, r.id!]); setRows((x) => x.filter((y) => y.key !== r.key)); }}>Quitar</button>
+              {r.recibida > 0 && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-5">Recibidas: {r.recibida}. No se puede cambiar el producto ni bajar de esa cantidad.</p>}
+            </div>
+          ))}
+          <p className="text-right text-sm text-muted-foreground">Subtotal productos: <span className="font-semibold text-foreground">${total.toFixed(2)}</span></p>
+        </div>
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onClose} className="btn-secondary">Cancelar</button>
           <button onClick={save} disabled={saving} className="btn-primary">{saving ? "Guardando…" : "Guardar"}</button>
