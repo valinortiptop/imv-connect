@@ -62,9 +62,12 @@ export default function NuevaRemisionDialog({
     },
   });
 
+  // Todas las remisiones salen de "Disponible Venta" (fijo, no editable).
   useEffect(() => {
-    if (!almacen && almacenes.length > 0) setAlmacen(almacenes[0].id);
-  }, [almacenes, almacen]);
+    if (remisionId || almacen || almacenes.length === 0) return;
+    const disp = almacenes.find((a) => /disponible/i.test(a.nombre));
+    if (disp) setAlmacen(disp.id);
+  }, [almacenes, almacen, remisionId]);
 
   const { data: pedidos = [] } = useQuery({
     queryKey: ["remision-pedido-search", pedidoQuery],
@@ -167,6 +170,36 @@ export default function NuevaRemisionDialog({
     },
   });
 
+  // Pre-abre un renglón por cada lote con existencia y reparte la cantidad
+  // pedida por caducidad más próxima, sin exceder lo disponible.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (remisionId || batches.length === 0) return;
+    const todo = [...new Set(lines.map((l) => l.producto_id))].filter(
+      (pid) => !expanded[pid] && batches.some((b) => b.producto_id === pid),
+    );
+    if (todo.length === 0) return;
+    setLines((cur) => {
+      let next = cur;
+      for (const pid of todo) {
+        const own = next.filter((l) => l.producto_id === pid);
+        if (own.length !== 1 || own[0].lote) continue;
+        const base = own[0];
+        let rest = Number(base.cantidad || 0);
+        const bs = batches.filter((b) => b.producto_id === pid);
+        const rows: Line[] = bs.map((b, i) => {
+          const take = Math.min(rest, Number(b.cantidad || 0));
+          rest -= take;
+          return { ...base, key: i === 0 ? base.key : `${base.key}-lote-${i}`, lote: b.lote ?? "", caducidad: b.caducidad ?? "", cantidad: take };
+        });
+        const idx = next.findIndex((l) => l.key === base.key);
+        next = [...next.slice(0, idx), ...rows, ...next.slice(idx + 1)];
+      }
+      return next;
+    });
+    setExpanded((e) => ({ ...e, ...Object.fromEntries(todo.map((p) => [p, true])) }));
+  }, [batches, lines, expanded, remisionId]);
+
   /** Agrupa los renglones por producto para visualizar juntos los lotes surtidos. */
   const groups = useMemo(() => {
     const map = new Map<string, { producto_id: string; clave: string; articulo: string; lines: Line[] }>();
@@ -208,9 +241,27 @@ export default function NuevaRemisionDialog({
     if (!almacen) errs.almacen = true;
     if (!remisionId && !pedido) errs.pedido = true;
     if (lines.length === 0) errs.general = "Agrega al menos un producto";
+    const totalPorProducto = new Map<string, number>();
+    lines.forEach((l) => totalPorProducto.set(l.producto_id, (totalPorProducto.get(l.producto_id) ?? 0) + Number(l.cantidad || 0)));
+    if (lines.length > 0 && lines.every((l) => !l.cantidad || l.cantidad <= 0)) errs.general = "Captura al menos una pieza";
     lines.forEach((l) => {
       const le: { cantidad?: boolean; lote?: boolean } = {};
-      if (!l.cantidad || l.cantidad <= 0) le.cantidad = true;
+      if (!l.cantidad || l.cantidad <= 0) {
+        // Un lote en 0 está bien si otro lote del mismo producto surte piezas.
+        if ((totalPorProducto.get(l.producto_id) ?? 0) <= 0) le.cantidad = true;
+        if (le.cantidad) errs.lines[l.key] = le;
+        return;
+      }
+      if (!remisionId) {
+        const st = selectedStock(l);
+        if (st != null && l.cantidad > st) le.cantidad = true;
+        const bsP = batches.filter((b) => b.producto_id === l.producto_id);
+        const disp = bsP.reduce((a, b) => a + Number(b.cantidad || 0), 0);
+        if (bsP.length > 0 && (totalPorProducto.get(l.producto_id) ?? 0) > disp) {
+          le.cantidad = true;
+          errs.general = `No puedes remisionar más piezas de las disponibles (${l.articulo}: ${disp} disp.)`;
+        }
+      }
       const hasBatches = batches.some((b) => b.producto_id === l.producto_id);
       if (hasBatches && !l.lote) le.lote = true;
       if (le.cantidad || le.lote) errs.lines[l.key] = le;
@@ -319,6 +370,8 @@ export default function NuevaRemisionDialog({
           <select
             className={`h-10 rounded-md border bg-background px-3 text-sm ${errors.almacen ? "border-destructive ring-1 ring-destructive" : "border-input"}`}
             value={almacen}
+            disabled
+            aria-label="Almacén de salida (fijo: Disponible Venta)"
             onChange={(e) => setAlmacen(e.target.value)}
           >
             <option value="">Almacén de salida…</option>
@@ -344,7 +397,7 @@ export default function NuevaRemisionDialog({
                     {g.articulo} <span className="text-xs text-muted-foreground">({g.clave})</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Surtido: <span className="font-medium text-foreground">{totalSurtido}</span>
+                    Surtido: <span className={`font-medium ${!remisionId && bs.length > 0 && totalSurtido > totalDisp ? "text-destructive" : "text-foreground"}`}>{totalSurtido}</span>
                     {" · "}
                     {bs.length > 0
                       ? `${bs.length} lote(s) · ${totalDisp} en existencia`
@@ -377,8 +430,14 @@ export default function NuevaRemisionDialog({
                           min="0"
                           className={errors.lines[l.key]?.cantidad ? "border-destructive ring-1 ring-destructive" : undefined}
                           value={l.cantidad}
+                          max={!remisionId ? (selectedStock(l) ?? undefined) : undefined}
                           onChange={(e) => {
-                            const n = Math.max(0, Math.round(Number(e.target.value) || 0));
+                            let n = Math.max(0, Math.round(Number(e.target.value) || 0));
+                            const st = !remisionId ? selectedStock(l) : null;
+                            if (st != null && n > st) {
+                              n = st;
+                              toast.error(`El lote ${l.lote} solo tiene ${st} disponibles`);
+                            }
                             patch(l.key, { cantidad: n });
                           }}
                           placeholder="Cantidad"
