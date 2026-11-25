@@ -18,7 +18,8 @@
  * hours bug would cut off late-evening events in CST.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 import { Link, useSearchParams } from "@/lib/router-compat";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +107,7 @@ function endOfLocalDayUTC(yyyyMmDd: string): string {
 }
 
 export default function Kardex() {
+  const [prod360, setProd360] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
 
   // Read filters from the URL so the page is shareable / bookmarkable
@@ -445,7 +447,15 @@ export default function Kardex() {
                 rows.map((m) => {
                   const isIn = m.delta > 0;
                   return (
-                    <tr key={m.id} className="hover:bg-muted/20">
+                    <tr
+                      key={m.id}
+                      className={cn("hover:bg-muted/30", m.product_id && "cursor-pointer")}
+                      tabIndex={m.product_id ? 0 : undefined}
+                      role={m.product_id ? "button" : undefined}
+                      aria-label={m.product_id ? `Abrir historial de ${m.product_name ?? m.product_clave ?? "producto"}` : undefined}
+                      onClick={() => m.product_id && setProd360(m.product_id)}
+                      onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && m.product_id) { e.preventDefault(); setProd360(m.product_id); } }}
+                    >
                       <td className="py-2 px-3 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                         {format(new Date(m.created_at), "dd MMM yyyy HH:mm", {
                           locale: es,
@@ -530,6 +540,7 @@ export default function Kardex() {
           </Button>
         </div>
       )}
+      <Product360Drawer productId={prod360} open={!!prod360} onOpenChange={(o) => !o && setProd360(null)} initialTab="historial" />
     </div>
   );
 }

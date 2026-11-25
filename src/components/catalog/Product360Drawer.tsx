@@ -21,11 +21,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductFiscalPanel } from "./ProductFiscalPanel";
+import { ProductHistoryPanel } from "./ProductHistoryPanel";
 
 type Props = {
   productId: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  initialTab?: string;
 };
 
 const fmt = (n: number | null | undefined) =>
@@ -40,7 +42,7 @@ const fmt = (n: number | null | undefined) =>
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
-export function Product360Drawer({ productId, open, onOpenChange }: Props) {
+export function Product360Drawer({ productId, open, onOpenChange, initialTab }: Props) {
   const q = useQuery({
     queryKey: ["product-360", productId],
     enabled: !!productId && open,
@@ -167,14 +169,15 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
               </div>
             </div>
 
-            <Tabs defaultValue="general" className="mt-6">
-              <TabsList className="grid w-full grid-cols-6">
+            <Tabs key={productId ?? ""} defaultValue={initialTab ?? "general"} className="mt-6">
+              <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 h-auto">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="precios">Precios</TabsTrigger>
                 <TabsTrigger value="stock">Stock</TabsTrigger>
                 <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
                 <TabsTrigger value="promos">Promos</TabsTrigger>
                 <TabsTrigger value="fiscal">Fiscal</TabsTrigger>
+                <TabsTrigger value="historial">Historial</TabsTrigger>
               </TabsList>
 
               <TabsContent value="general" className="space-y-3 pt-4">
@@ -199,6 +202,10 @@ export function Product360Drawer({ productId, open, onOpenChange }: Props) {
                     <p className="text-sm whitespace-pre-wrap">{p.descripcion}</p>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="historial" className="pt-4">
+                {productId && <ProductHistoryPanel productId={productId} />}
               </TabsContent>
 
               <TabsContent value="fiscal" className="pt-4">
