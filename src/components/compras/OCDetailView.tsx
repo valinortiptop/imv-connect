@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { notifyEventFn } from "@/lib/notifications.functions";
 
 import { Link } from "@tanstack/react-router";
+import { EntityLink, Laboratorio360Drawer, Almacen360Drawer } from "@/components/shared/Entity360";
+import { Product360Drawer } from "@/components/catalog/Product360Drawer";
 
 type OC = {
   id: string;
@@ -48,6 +50,9 @@ export function OCDetailView({ id, embedded = false }: { id: string; embedded?: 
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [recOpen, setRecOpen] = useState(false);
+  const [labOpen, setLabOpen] = useState<string | null>(null);
+  const [almOpen, setAlmOpen] = useState<string | null>(null);
+  const [prodOpen, setProdOpen] = useState<string | null>(null);
 
   const ocQ = useQuery({
     queryKey: ["oc", id],
@@ -114,7 +119,9 @@ export function OCDetailView({ id, embedded = false }: { id: string; embedded?: 
           {!embedded && <Link to="/admin/compras/ordenes" className="text-xs text-muted-foreground hover:underline">← Órdenes</Link>}
           <h1 className={embedded ? "text-xl font-bold" : "text-2xl font-bold"}>{oc.folio}</h1>
           <p className="text-sm text-muted-foreground">
-            {oc.laboratorios?.nombre} → {oc.almacenes?.nombre}
+            <EntityLink onOpen={() => setLabOpen(oc.laboratorio_id)}>{oc.laboratorios?.nombre ?? "Laboratorio"}</EntityLink>
+            {" → "}
+            <EntityLink onOpen={() => setAlmOpen(oc.almacen_id)}>{oc.almacenes?.nombre ?? "Almacén"}</EntityLink>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -166,7 +173,7 @@ export function OCDetailView({ id, embedded = false }: { id: string; embedded?: 
             {items.map((i) => (
               <tr key={i.id} className="border-t border-border">
                 <td className="px-3 py-2">
-                  <div className="font-medium">{i.productos?.nombre}</div>
+                  <EntityLink onOpen={() => setProdOpen(i.producto_id)} className="font-medium">{i.productos?.nombre ?? "Producto"}</EntityLink>
                   <div className="text-xs text-muted-foreground">{i.productos?.sku ?? "—"} · {i.productos?.unidad}</div>
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{Number(i.cantidad)}</td>
@@ -246,6 +253,10 @@ export function OCDetailView({ id, embedded = false }: { id: string; embedded?: 
           }}
         />
       )}
+
+      <Laboratorio360Drawer id={labOpen} onClose={() => setLabOpen(null)} />
+      <Almacen360Drawer id={almOpen} onClose={() => setAlmOpen(null)} />
+      <Product360Drawer productId={prodOpen} open={!!prodOpen} onOpenChange={(o) => !o && setProdOpen(null)} />
 
       {recOpen && (
         <RecibirModal
