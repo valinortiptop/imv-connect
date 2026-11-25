@@ -376,11 +376,12 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const pendientes = items.filter((i) => i.cantidad - i.cantidad_recibida > 0);
-  const [qty, setQty] = useState<Record<string, number>>(
-    Object.fromEntries(pendientes.map((i) => [i.id, i.cantidad - i.cantidad_recibida])),
-  );
   const [lotesByItem, setLotesByItem] = useState<Record<string, LoteRow[]>>(
     Object.fromEntries(pendientes.map((i) => [i.id, [{ lote: "", caducidad: "", cantidad: i.cantidad - i.cantidad_recibida }]])),
+  );
+  // Recibido = suma de piezas capturadas en los lotes (solo informativo).
+  const qty: Record<string, number> = Object.fromEntries(
+    pendientes.map((i) => [i.id, (lotesByItem[i.id] ?? []).reduce((s, l) => s + Math.max(0, Math.trunc(Number(l.cantidad) || 0)), 0)]),
   );
 
   const addLote = (itemId: string) => {
@@ -408,6 +409,8 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
       for (const i of pendientes) {
         const cantidad = qty[i.id] ?? 0;
         if (cantidad <= 0) continue;
+        const pendI = Number(i.cantidad) - Number(i.cantidad_recibida);
+        if (cantidad > pendI) throw new Error(`${i.productos?.nombre}: no puedes recibir más de lo pendiente (${pendI}).`);
         const lotes = (lotesByItem[i.id] ?? []).filter((l) => l.lote || l.caducidad || l.cantidad > 0);
 
         // If user filled any lote data, require sum match cantidad
@@ -470,7 +473,7 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
       <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-card p-6">
         <h2 className="mb-1 text-lg font-semibold">Recibir mercancía</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Puedes registrar múltiples lotes por línea. Si capturas lotes, la suma debe coincidir con la cantidad recibida.
+          Captura las piezas en cada lote; el total a recibir se calcula con la suma de los lotes.
         </p>
         {pendientes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay items pendientes.</p>
@@ -481,7 +484,7 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
               const lotes = lotesByItem[i.id] ?? [];
               const sumLotes = lotes.reduce((s, l) => s + Number(l.cantidad || 0), 0);
               const hasLoteData = lotes.some((l) => l.lote || l.caducidad || l.cantidad > 0);
-              const mismatch = hasLoteData && Math.abs(sumLotes - (qty[i.id] ?? 0)) > 0.001;
+              const mismatch = hasLoteData && sumLotes > pend;
               return (
                 <div key={i.id} className="rounded-md border border-border p-3">
                   <div className="flex items-start justify-between gap-3">
@@ -491,16 +494,10 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
                         Pendiente: {pend} · Costo: ${Number(i.costo_unitario).toFixed(2)}
                       </div>
                     </div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      max={pend}
-                      value={qty[i.id] ?? 0}
-                      onChange={(e) => setQty({ ...qty, [i.id]: Number(e.target.value) })}
-                      className="input w-24 text-right"
-                      placeholder="Cant."
-                    />
+                    <div className="w-24 shrink-0 text-right" aria-label="Piezas a recibir">
+                      <div className="text-[10px] uppercase text-muted-foreground">Recibir</div>
+                      <div className={cn("text-lg font-semibold tabular-nums", (qty[i.id] ?? 0) > pend && "text-rose-600")}>{qty[i.id] ?? 0}</div>
+                    </div>
                   </div>
 
                   <div className="mt-3 space-y-1.5">
@@ -526,10 +523,11 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
                           />
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             min={0}
+                            inputMode="numeric"
                             value={l.cantidad}
-                            onChange={(e) => updateLote(i.id, idx, { cantidad: Number(e.target.value) })}
+                            onChange={(e) => updateLote(i.id, idx, { cantidad: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })}
                             className="input w-24 text-right"
                             placeholder="Cant."
                           />
@@ -561,7 +559,7 @@ function RecibirModal({ ocId, almacenId, items, onClose, onSaved }: {
                       </button>
                       {mismatch && (
                         <span className="text-xs text-rose-600">
-                          Σ lotes = {sumLotes} ≠ recibido {qty[i.id] ?? 0}
+                          Σ lotes = {sumLotes} &gt; pendiente {pend}
                         </span>
                       )}
                     </div>
