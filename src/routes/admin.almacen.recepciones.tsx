@@ -1,16 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import RecepcionesPage from "@/components/almacen/RecepcionesPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// Página unificada en /admin/entradas; se conserva la dirección anterior.
 export const Route = createFileRoute("/admin/almacen/recepciones")({
-  head: () => ({
-    meta: [
-      { title: "Recepciones de almacén · IMV" },
-      { name: "description", content: "Ingresos de mercancía con lote, caducidad y documento PDF por recepción." },
-      { property: "og:title", content: "Recepciones de almacén · IMV" },
-      { property: "og:description", content: "Ingresos de mercancía con lote, caducidad y documento PDF." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: RecepcionesPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/entradas", replace: true });
+  },
 });

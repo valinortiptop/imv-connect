@@ -210,7 +210,7 @@ export default function SupervisorAssignments() {
                     </p>
                     {p.created_at && (
                       <p className="text-[11px] text-muted-foreground">
-                        Creado {new Date(p.created_at).toLocaleDateString("es-MX")}
+                        Creado {new Date(p.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                         {p.source ? ` · ${p.source}` : ""}
                       </p>
                     )}

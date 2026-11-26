@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,7 +148,7 @@ function DevolucionDetail() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 rounded-md border border-border bg-card p-4 text-sm md:grid-cols-4">
-        <div><div className="text-xs text-muted-foreground">Fecha</div><div>{d.fecha}</div></div>
+        <div><div className="text-xs text-muted-foreground">Fecha</div><div>{fmtFechaMx(d.fecha)}</div></div>
         <div><div className="text-xs text-muted-foreground">Motivo</div><div>{d.motivo ?? "—"}</div></div>
         <div><div className="text-xs text-muted-foreground">Subtotal</div><div>${Number(d.subtotal).toFixed(2)}</div></div>
         <div><div className="text-xs text-muted-foreground">Total</div><div className="text-lg font-bold">${Number(d.total).toFixed(2)}</div></div>
@@ -201,7 +202,7 @@ function DevolucionDetail() {
                 {(ncQ.data ?? []).map((nc) => (
                   <tr key={nc.id} className="border-t border-border">
                     <td className="px-3 py-2 font-mono text-xs">{nc.folio}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{nc.fecha}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{fmtFechaMx(nc.fecha)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">${Number(nc.total).toFixed(2)}</td>
                   </tr>
                 ))}

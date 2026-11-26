@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -266,7 +267,7 @@ export default function RemisionesPage() {
                     <Badge variant={g.head.estado === "cancelada" ? "destructive" : "secondary"}>{g.head.estado}</Badge>
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
-                    {g.head.fecha} · Pedido {g.head.pedido_folio ?? "—"} · {g.head.cliente ?? "Sin cliente"} · {g.head.almacen ?? "—"}
+                    {fmtFechaMx(g.head.fecha)} · Pedido {g.head.pedido_folio ?? "—"} · {g.head.cliente ?? "Sin cliente"} · {g.head.almacen ?? "—"}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">

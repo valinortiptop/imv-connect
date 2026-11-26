@@ -14,7 +14,7 @@ const translations = {
   navInventory: { es: "Inventario", en: "Inventory" },
   navInventario: { es: "Almacén", en: "Warehouse" },
   navKardex: { es: "Kardex", en: "Kardex" },
-  navStock: { es: "Entradas", en: "Entries" },
+  navStock: { es: "Entradas de mercancía", en: "Goods receipts" },
   navPromos: { es: "Promociones", en: "Promotions" },
   navPartners: { es: "Partners", en: "Partners" },
   navSales: { es: "Ventas", en: "Sales" },

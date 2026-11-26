@@ -147,7 +147,7 @@ function PedidoDetalle() {
         <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="text-xl sm:text-2xl font-bold font-mono break-all">{data.folio}</h1>
           <span className="text-xs sm:text-sm text-muted-foreground">
-            {new Date(data.created_at).toLocaleString("es-MX")}
+            {new Date(data.created_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
           </span>
         </div>
 

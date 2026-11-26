@@ -203,7 +203,7 @@ function WeeklyPlanRoute() {
                   >
                     <div className="truncate text-sm font-medium hover:underline">{c.nombre}</div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {c.visits} visitas sin pedido · última: {new Date(c.last).toLocaleDateString("es-MX")}
+                      {c.visits} visitas sin pedido · última: {new Date(c.last).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                       {c.zona ? ` · ${c.zona}` : ""}
                     </p>
                   </Link>

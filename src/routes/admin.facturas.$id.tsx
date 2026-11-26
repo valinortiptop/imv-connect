@@ -399,7 +399,7 @@ function FacturaDetalle() {
                     .sort((a, b) => b.fecha.localeCompare(a.fecha))
                     .map((p) => (
                       <tr key={p.id} className="border-t border-border">
-                        <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
+                        <td className="py-2">{new Date(p.fecha).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                         <td className="py-2 text-xs">{p.metodo}</td>
                         <td className="py-2 text-xs text-muted-foreground">{p.referencia ?? "—"}</td>
                         <td className="py-2 text-right font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</td>
@@ -429,7 +429,7 @@ function FacturaDetalle() {
                 .map((p) => (
                   <li key={p.id} className="py-2 first:pt-0">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-sm">{new Date(p.fecha).toLocaleDateString("es-MX")}</span>
+                      <span className="text-sm">{new Date(p.fecha).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</span>
                       <span className="text-sm font-semibold tabular-nums">${Number(p.monto).toFixed(2)}</span>
                     </div>
                     <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
@@ -459,12 +459,12 @@ function FacturaDetalle() {
           <div className="rounded-md border border-border bg-card p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Emisión</span>
-              <span>{new Date(data.fecha_emision).toLocaleDateString("es-MX")}</span>
+              <span>{new Date(data.fecha_emision).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Vencimiento</span>
               <span className={vencida ? "text-destructive font-semibold" : ""}>
-                {new Date(data.fecha_vencimiento).toLocaleDateString("es-MX")}
+                {new Date(data.fecha_vencimiento).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
               </span>
             </div>
             {data.representante && (

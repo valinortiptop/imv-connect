@@ -95,7 +95,7 @@ function AutorizacionesPage() {
               <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sin solicitudes.</td></tr>
             ) : data.map((a: any) => (
               <tr key={a.id} className="border-t border-border align-top">
-                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(a.solicitado_at).toLocaleDateString("es-MX")}</td>
+                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(a.solicitado_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                 <td className="px-2 py-1.5">
                   <Link to="/admin/credito-cobranza/clientes/$id" params={{ id: a.cliente_id }} className="hover:underline">
                     {a.clientes?.nombre_comercial || a.clientes?.razon_social}

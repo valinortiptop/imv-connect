@@ -93,3 +93,24 @@ export function mxDayFromIso(iso: string | null | undefined): string {
   // en-CA formats as YYYY-MM-DD
   return d.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
 }
+
+
+const MX_TZ = "America/Mexico_City";
+
+/** Fecha en formato México dd/mm/aaaa (hora de CDMX). "—" si no hay valor. */
+export function fmtFechaMx(v: string | Date | null | undefined): string {
+  if (!v) return "—";
+  const d = typeof v === "string" ? parseLocalDate(v) : v;
+  if (Number.isNaN(d.getTime())) return String(v);
+  return new Intl.DateTimeFormat("es-MX", { timeZone: MX_TZ, day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+}
+
+/** Fecha y hora en formato México dd/mm/aaaa hh:mm (hora de CDMX). */
+export function fmtFechaHoraMx(v: string | Date | null | undefined): string {
+  if (!v) return "—";
+  const d = typeof v === "string" ? parseLocalDate(v) : v;
+  if (Number.isNaN(d.getTime())) return String(v);
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: MX_TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d);
+}

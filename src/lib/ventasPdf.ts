@@ -78,7 +78,7 @@ export function generateVentasPdf(opts: GenerateOpts): jsPDF {
   doc.setFontSize(11);
   doc.text("Canal: Misceláneas · Zona Metropolitana Poniente", 60, H - 120);
   doc.text("Naucalpan · Tlalnepantla · Atizapán · Huixquilucan · Cuautitlán Izcalli", 60, H - 100);
-  doc.text(`Emitido: ${new Date().toLocaleDateString("es-MX")}`, 60, H - 80);
+  doc.text(`Emitido: ${new Date().toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}`, 60, H - 80);
 
   /* ──────────────── 2. Resumen del mes ──────────────── */
   doc.addPage();

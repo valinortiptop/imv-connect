@@ -178,7 +178,7 @@ export function reportePdf(
 ) {
   const doc = new jsPDF({ unit: "pt", format: "letter", orientation: "landscape" });
   const y = header(doc, title, [
-    `Generado: ${new Date().toLocaleString("es-MX")}   ·   ${body.length} registros`,
+    `Generado: ${new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}   ·   ${body.length} registros`,
     ...meta,
   ]);
   table(doc, y, head, body);

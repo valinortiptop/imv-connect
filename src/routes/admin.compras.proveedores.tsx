@@ -320,7 +320,7 @@ function SupplierDrawer({ lab, onClose, onOpenIncident }: {
                 <div key={i.id} className="rounded-md border border-border p-2 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase">{i.tipo}</span>
-                    <span className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleDateString("es-MX")}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</span>
                   </div>
                   {i.motivo && <p className="mt-1 font-medium">{i.motivo}</p>}
                   {i.notas && <p className="text-xs text-muted-foreground">{i.notas}</p>}

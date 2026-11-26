@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { useState, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "@/lib/router-compat";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -769,7 +770,7 @@ export default function Facturacion() {
                           Pedido {r.order_code ?? r.folio ?? "—"}
                         </span>
                         {r.fecha && (
-                          <span className="text-[10px] text-muted-foreground tabular-nums">{r.fecha}</span>
+                          <span className="text-[10px] text-muted-foreground tabular-nums">{fmtFechaMx(r.fecha)}</span>
                         )}
                         {r.rfc && (
                           <span className="text-[10px] text-muted-foreground font-mono">{r.rfc}</span>

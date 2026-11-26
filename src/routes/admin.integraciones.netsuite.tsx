@@ -197,7 +197,7 @@ function NetsuitePage() {
               {last ? (
                 <div className="text-xs text-muted-foreground space-y-1">
                   <div>
-                    Última: {new Date(last.started_at).toLocaleString()} ·{" "}
+                    Última: {new Date(last.started_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })} ·{" "}
                     <Badge
                       variant={
                         last.status === "ok"
@@ -258,7 +258,7 @@ function NetsuitePage() {
             <tbody>
               {(runsQ.data ?? []).map((r) => (
                 <tr key={r.id} className="border-t border-border/50 align-top">
-                  <td className="px-2 py-1">{new Date(r.started_at).toLocaleString()}</td>
+                  <td className="px-2 py-1">{new Date(r.started_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                   <td className="px-2 py-1">{r.entity}</td>
                   <td className="px-2 py-1">{r.trigger_source}</td>
                   <td className="px-2 py-1">

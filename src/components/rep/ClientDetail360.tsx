@@ -391,7 +391,7 @@ export default function ClientDetail360({ clienteId }: { clienteId: string }) {
               <CardContent className="p-3 text-sm">
                 <div className="flex justify-between">
                   <span className="font-medium">
-                    {new Date(v.check_in_at).toLocaleString("es-MX")}
+                    {new Date(v.check_in_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                   </span>
                   {v.outcome && <Badge variant="outline">{v.outcome}</Badge>}
                 </div>

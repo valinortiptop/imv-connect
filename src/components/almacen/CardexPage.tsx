@@ -1,3 +1,4 @@
+import { fmtFechaMx, fmtFechaHoraMx } from "@/lib/date-utils";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,9 +29,11 @@ type Mov = {
   origen: string | null;
   referencia: string | null;
   notas: string | null;
+  usuario?: string | null;
 };
 
-const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleString("es-MX") : "—");
+const fmtDate = (v: string | null) => fmtFechaHoraMx(v);
+const fmtPz = (n: unknown) => Number(n ?? 0).toLocaleString("es-MX", { maximumFractionDigits: 2 });
 
 /** Highlights the searched term inside a label. */
 function Highlight({ text, term }: { text: string; term: string }) {
@@ -100,19 +103,20 @@ export default function CardexPage() {
     if (!producto) return;
     reportePdf(
       `Cardex de material · ${producto.sku} ${producto.nombre}`,
-      ["Fecha", "Tipo", "Origen", "Almacén", "Lote", "Caducidad", "Cantidad", "Saldo", "Referencia"],
+      ["Fecha", "Tipo", "Origen", "Almacén", "Lote", "Caducidad", "Cantidad", "Saldo", "Referencia", "Usuario"],
       rows.map((r) => [
         fmtDate(r.fecha),
         r.naturaleza,
         r.origen ?? "—",
         r.almacen ?? "—",
         r.lote ?? "—",
-        r.caducidad ?? "—",
-        Number(r.cantidad ?? 0).toFixed(2),
-        Number(r.saldo ?? 0).toFixed(2),
+        fmtFechaMx(r.caducidad),
+        fmtPz(r.cantidad),
+        fmtPz(r.saldo),
         r.referencia ?? "—",
+        r.usuario ?? "—",
       ]),
-      [lote === "todos" ? "Todos los lotes" : `Lote ${lote}`, `Saldo final: ${saldoFinal.toFixed(2)}`],
+      [lote === "todos" ? "Todos los lotes" : `Lote ${lote}`, `Saldo final: ${fmtPz(saldoFinal)}`],
       mode,
     );
   };
@@ -212,6 +216,7 @@ export default function CardexPage() {
                 <th className="px-3 py-2 text-right">Cantidad</th>
                 <th className="px-3 py-2 text-right">Saldo</th>
                 <th className="px-3 py-2 text-left">Referencia</th>
+                <th className="px-3 py-2 text-left">Usuario</th>
               </tr>
             </thead>
             <tbody>
@@ -226,17 +231,18 @@ export default function CardexPage() {
                   <td className="px-3 py-2">{r.origen ?? "—"}</td>
                   <td className="px-3 py-2">{r.almacen ?? "—"}</td>
                   <td className="px-3 py-2">{r.lote ?? "—"}</td>
-                  <td className="px-3 py-2">{r.caducidad ?? "—"}</td>
+                  <td className="px-3 py-2">{fmtFechaMx(r.caducidad)}</td>
                   <td className={`px-3 py-2 text-right ${Number(r.cantidad) < 0 ? "text-destructive" : "text-emerald-600"}`}>
-                    {Number(r.cantidad ?? 0).toFixed(2)}
+                    {fmtPz(r.cantidad)}
                   </td>
-                  <td className="px-3 py-2 text-right font-medium">{Number(r.saldo ?? 0).toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right font-medium">{fmtPz(r.saldo)}</td>
                   <td className="px-3 py-2">{r.referencia ?? r.notas ?? "—"}</td>
+                  <td className="px-3 py-2">{r.usuario ?? "—"}</td>
                 </tr>
               ))}
               {!rows.length && (
                 <tr>
-                  <td className="px-3 py-10 text-center text-muted-foreground" colSpan={9}>
+                  <td className="px-3 py-10 text-center text-muted-foreground" colSpan={10}>
                     {producto ? "Sin movimientos registrados para este producto." : "Selecciona un producto para ver su cardex."}
                   </td>
                 </tr>

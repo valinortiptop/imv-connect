@@ -169,7 +169,7 @@ function ClientesRecomendadosDialog({ producto, onClose }: any) {
                   <span className="tabular-nums text-xs">{Number(c.total_comprado).toFixed(0)} u</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {c.pedidos_count} pedido(s) · última {c.ultima_compra ? new Date(c.ultima_compra).toLocaleDateString("es-MX") : "—"}
+                  {c.pedidos_count} pedido(s) · última {c.ultima_compra ? new Date(c.ultima_compra).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" }) : "—"}
                   {c.representante && ` · ${c.representante}`}
                 </p>
               </div>

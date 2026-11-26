@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -423,7 +424,7 @@ function Historial() {
               <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Sin registros.</td></tr>
             ) : eventos.map((e: any) => (
               <tr key={e.id} className="border-t border-border">
-                <td className="px-3 py-2 whitespace-nowrap">{e.fecha}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{fmtFechaMx(e.fecha)}</td>
                 <td className="px-3 py-2">
                   <div>{e.producto?.nombre ?? "—"}</div>
                   <div className="text-xs text-muted-foreground">{e.producto?.sku ?? ""}</div>

@@ -462,7 +462,7 @@ function GestionesTab({ clienteId }: { clienteId: string }) {
               <tr><td colSpan={3} className="px-2 py-4 text-center text-muted-foreground text-xs">Sin gestiones.</td></tr>
             ) : data.map((g: any) => (
               <tr key={g.id} className="border-t border-border align-top">
-                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(g.created_at).toLocaleDateString("es-MX")}</td>
+                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(g.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                 <td className="px-2 py-1.5 text-xs capitalize">{g.tipo}</td>
                 <td className="px-2 py-1.5 text-xs">
                   <div className="capitalize">{g.resultado || "—"}</div>
@@ -696,7 +696,7 @@ function AutorizacionesTab({ clienteId }: { clienteId: string }) {
               <tr><td colSpan={5} className="px-2 py-4 text-center text-muted-foreground text-xs">Sin solicitudes.</td></tr>
             ) : data.map((a: any) => (
               <tr key={a.id} className="border-t border-border align-top">
-                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(a.solicitado_at).toLocaleDateString("es-MX")}</td>
+                <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(a.solicitado_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                 <td className="px-2 py-1.5 text-xs capitalize">{String(a.tipo).replace(/_/g, " ")}</td>
                 <td className="px-2 py-1.5 text-right font-mono text-xs">
                   {a.monto ? mxn(Number(a.monto)) : ""}{a.dias ? ` · ${a.dias}d` : ""}

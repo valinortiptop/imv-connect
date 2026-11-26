@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -308,7 +309,7 @@ function PolizasPage() {
                       </Link>
                     </td>
                     <td className="px-3 py-2">{TIPO_LABEL[p.tipo] ?? p.tipo}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{p.fecha}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{fmtFechaMx(p.fecha)}</td>
                     <td className="px-3 py-2 truncate max-w-[420px]">{p.concepto || <span className="text-muted-foreground italic">(sin concepto)</span>}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_cargos))}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">{mxn.format(Number(p.total_abonos))}</td>

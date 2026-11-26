@@ -28,5 +28,5 @@ export async function fetchLotesPorProducto(ids: string[]): Promise<Map<string, 
 }
 
 export function fmtCaducidad(c: string | null): string {
-  return c ? new Date(c + "T00:00:00").toLocaleDateString("es-MX") : "Sin fecha";
+  return c ? new Date(c + "T00:00:00").toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" }) : "Sin fecha";
 }

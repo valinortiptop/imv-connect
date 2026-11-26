@@ -118,7 +118,7 @@ function PortalCliente() {
     doc.text(data.cliente.nombre_comercial ?? data.cliente.razon_social, margin, 68);
     doc.setFontSize(9);
     doc.setTextColor(120);
-    doc.text(new Date().toLocaleDateString("es-MX"), margin, 82);
+    doc.text(new Date().toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" }), margin, 82);
     doc.setTextColor(0);
 
     let startY = 100;

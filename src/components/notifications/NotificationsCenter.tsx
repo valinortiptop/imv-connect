@@ -301,7 +301,7 @@ export default function NotificationsCenter() {
                     <p className="mt-1 text-xs text-muted-foreground">{n.description}</p>
                   )}
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                    <span>{new Date(n.created_at).toLocaleString("es-MX")}</span>
+                    <span>{new Date(n.created_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</span>
                     {isAdmin && n.user_id && <span>{userEmail[n.user_id] ?? n.user_id.slice(0, 8)}</span>}
                     {n.route && (
                       <Link to={n.route} className="text-primary hover:underline">Abrir</Link>

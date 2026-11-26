@@ -178,10 +178,10 @@ function UsuariosPage() {
                 <tr key={u.user_id} className="border-t border-border align-top">
                   <td className="px-3 py-2">{u.email}</td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString()}
+                    {new Date(u.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "—"}
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" }) : "—"}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
@@ -232,8 +232,8 @@ function UsuariosPage() {
               <div className="min-w-0">
                 <div className="text-sm font-semibold break-all">{u.email}</div>
                 <div className="text-xs text-muted-foreground">
-                  Alta {new Date(u.created_at).toLocaleDateString()}
-                  {u.last_sign_in_at && <> · último {new Date(u.last_sign_in_at).toLocaleDateString()}</>}
+                  Alta {new Date(u.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
+                  {u.last_sign_in_at && <> · último {new Date(u.last_sign_in_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</>}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1">

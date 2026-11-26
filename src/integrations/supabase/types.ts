@@ -14420,6 +14420,7 @@ export type Database = {
           producto_id: string | null
           referencia: string | null
           tipo: string | null
+          usuario: string | null
         }
         Relationships: [
           {
@@ -16351,6 +16352,7 @@ export type Database = {
         }[]
       }
       undo_movement: { Args: { p_movement_id: string }; Returns: undefined }
+      user_display_name: { Args: { _uid: string }; Returns: string }
       ventas_unified_stats: {
         Args: {
           p_client_id?: string

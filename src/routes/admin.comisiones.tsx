@@ -206,7 +206,7 @@ function ComisionesPage() {
                       {p.comision_pct != null ? `${Number(p.comision_pct).toFixed(2)}%` : "—"}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">${Number(p.comision_monto ?? 0).toFixed(2)}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX")}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                     <td className="px-3 py-2 text-right">
                       <Link to="/admin/pedidos/$id" params={{ id: p.id }} className="text-xs text-primary hover:underline">Ver</Link>
                     </td>
@@ -246,7 +246,7 @@ function ComisionesPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX")}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</div>
               </Link>
             ))}
           </div>

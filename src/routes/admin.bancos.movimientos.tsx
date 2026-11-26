@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -334,7 +335,7 @@ function MovimientosPage() {
               const isIn = ["entrada", "traspaso_in", "interes"].includes(m.tipo);
               return (
                 <tr key={m.id} className="border-t hover:bg-muted/30">
-                  <td className="p-3 whitespace-nowrap">{m.fecha}</td>
+                  <td className="p-3 whitespace-nowrap">{fmtFechaMx(m.fecha)}</td>
                   <td className="p-3 text-xs">
                     {acc ? `${acc.alias}` : "—"}
                     <div className="text-muted-foreground">

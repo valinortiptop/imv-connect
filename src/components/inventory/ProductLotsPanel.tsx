@@ -67,7 +67,7 @@ export function ProductLotsPanel({ productId }: { productId: string }) {
                 <td className="py-1.5 pr-3 font-mono text-xs">{b.lote || "—"}</td>
                 <td className="py-1.5 pr-3 text-muted-foreground">{b.almacenes?.nombre || "—"}</td>
                 <td className={cn("py-1.5 pr-3 tabular-nums", expiryTone(b.caducidad))}>
-                  {b.caducidad ? new Date(b.caducidad + "T00:00:00").toLocaleDateString("es-MX") : "Sin fecha"}
+                  {b.caducidad ? new Date(b.caducidad + "T00:00:00").toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" }) : "Sin fecha"}
                 </td>
                 <td className="py-1.5 text-right tabular-nums font-semibold">
                   {Number(b.cantidad).toLocaleString()}

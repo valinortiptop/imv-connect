@@ -234,7 +234,7 @@ export function SalesHistoryImportDialog({ empresaId, empresaNombre }: Props) {
                     <tbody>
                       {batches.map((b) => (
                         <tr key={b.batch_id} className="border-t border-border/50">
-                          <td className="px-2 py-1">{new Date(b.last).toLocaleString()}</td>
+                          <td className="px-2 py-1">{new Date(b.last).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                           <td className="px-2 py-1">{b.source}</td>
                           <td className="px-2 py-1 text-right">{b.rows.toLocaleString()}</td>
                           <td className="px-2 py-1 text-right">

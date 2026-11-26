@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BarraHerramientas } from "@/components/barra-herramientas";
 import { ArrowLeftRight, FileDown, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { traspasoPdf } from "@/lib/almacen-pdf";
+import { fmtDateShort } from "@/lib/date-utils";
 import { notifyEventFn } from "@/lib/notifications.functions";
 
 type Almacen = { id: string; nombre: string };
@@ -43,7 +45,7 @@ export default function TraspasosPage() {
   const qc = useQueryClient();
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [fecha, setFecha] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" }));
   const [notas, setNotas] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [prodQuery, setProdQuery] = useState("");
@@ -105,6 +107,13 @@ export default function TraspasosPage() {
     );
   }, [rows, q]);
 
+  const addLote = (l: Line) =>
+    setLines((s) => {
+      const i = s.findIndex((x) => x.key === l.key);
+      const nueva: Line = { ...l, key: `${l.producto_id}-${Math.random().toString(36).slice(2, 7)}`, lote: "", caducidad: "", cantidad: 1 };
+      return [...s.slice(0, i + 1), nueva, ...s.slice(i + 1)];
+    });
+
   const addLine = (p: Producto) => {
     setLines((s) => [
       ...s,
@@ -136,6 +145,24 @@ export default function TraspasosPage() {
           cantidad: l.cantidad,
         }));
       if (items.length === 0) throw new Error("Agrega al menos un producto");
+      if (items.some((it) => !Number.isInteger(it.cantidad))) throw new Error("Las piezas deben ser enteras");
+      // Tope por lote: la suma de líneas del mismo lote no puede exceder la existencia en origen.
+      const porLote = new Map<string, { n: number; nombre: string; lote: string }>();
+      for (const l of lines) {
+        if (!l.lote || l.cantidad <= 0) continue;
+        const k = `${l.producto_id}|${l.lote}|${l.caducidad}`;
+        const cur = porLote.get(k) ?? { n: 0, nombre: l.articulo, lote: l.lote };
+        cur.n += l.cantidad;
+        porLote.set(k, cur);
+      }
+      for (const [k, v] of porLote) {
+        const [pid, lote, cad] = k.split("|");
+        const disp = batches
+          .filter((b) => b.producto_id === pid && (b.lote ?? "") === lote && (b.caducidad ?? "") === cad)
+          .reduce((a, b) => a + Number(b.cantidad || 0), 0);
+        if (batches.some((b) => b.producto_id === pid) && v.n > disp)
+          throw new Error(`El lote ${v.lote} de ${v.nombre} solo tiene ${disp} piezas; intentas mover ${v.n}`);
+      }
       const { data, error } = await supabase.rpc("ejecutar_traspaso" as never, {
         _origen: origen,
         _destino: destino,
@@ -257,7 +284,7 @@ export default function TraspasosPage() {
                       <option value="">Lote…</option>
                       {bs.map((b, i) => (
                         <option key={i} value={b.lote ?? ""}>
-                          {b.lote ?? "sin lote"} · {b.caducidad ?? "s/cad"} · {b.cantidad}
+                          {b.lote ?? "sin lote"} · cad. {b.caducidad ? fmtDateShort(b.caducidad) : "s/cad"} · {b.cantidad} pzas
                         </option>
                       ))}
                     </select>
@@ -265,16 +292,40 @@ export default function TraspasosPage() {
                     <Input placeholder="Lote" value={l.lote} onChange={(e) => patch(l.key, { lote: e.target.value })} />
                   )}
                   <Input type="date" value={l.caducidad} onChange={(e) => patch(l.key, { caducidad: e.target.value })} />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={l.cantidad}
-                    onChange={(e) => patch(l.key, { cantidad: Number(e.target.value) })}
-                    placeholder="Cantidad"
-                  />
-                  <Button variant="outline" onClick={() => setLines((s) => s.filter((x) => x.key !== l.key))}>
-                    <Trash2 className="mr-1 h-4 w-4" /> Quitar
-                  </Button>
+                  {(() => {
+                    const b = bs.find((x) => (x.lote ?? "") === l.lote && (x.caducidad ?? "") === l.caducidad);
+                    const max = b ? Number(b.cantidad) : undefined;
+                    const excede = max !== undefined && l.cantidad > max;
+                    return (
+                      <div>
+                        <Input
+                          type="number"
+                          step={1}
+                          min={1}
+                          max={max}
+                          inputMode="numeric"
+                          aria-label="Piezas"
+                          aria-invalid={excede}
+                          value={l.cantidad}
+                          onChange={(e) => patch(l.key, { cantidad: Math.max(0, Math.trunc(Number(e.target.value))) })}
+                          placeholder="Piezas"
+                        />
+                        {max !== undefined && (
+                          <p className={`mt-1 text-xs ${excede ? "text-destructive" : "text-muted-foreground"}`}>
+                            {excede ? `Excede existencia (${max})` : `Disponible: ${max}`}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="h-10" onClick={() => addLote(l)}>
+                      <Plus className="mr-1 h-4 w-4" /> Otro lote
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-10" aria-label="Quitar línea" onClick={() => setLines((s) => s.filter((x) => x.key !== l.key))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -302,7 +353,7 @@ export default function TraspasosPage() {
                 <div>
                   <div className="font-semibold">{g.head.folio}</div>
                   <div className="text-xs text-muted-foreground">
-                    {g.head.fecha} · {g.head.almacen_origen} → {g.head.almacen_destino}
+                    {fmtFechaMx(g.head.fecha)} · {g.head.almacen_origen} → {g.head.almacen_destino}
                   </div>
                 </div>
                 <div className="flex gap-2">

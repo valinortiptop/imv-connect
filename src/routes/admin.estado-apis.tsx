@@ -45,7 +45,7 @@ function EstadoApisPage() {
 
       {data?.checked_at && (
         <p className="text-xs text-muted-foreground">
-          Última verificación: {new Date(data.checked_at).toLocaleString()}
+          Última verificación: {new Date(data.checked_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
         </p>
       )}
 

@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +96,7 @@ export function ProductHistoryPanel({ productId }: { productId: string }) {
                     <td className="px-2 py-1.5 whitespace-nowrap tabular-nums">{fdt(m.created_at)}</td>
                     <td className="px-2 py-1.5">{TIPO[m.tipo] ?? m.tipo}</td>
                     <td className="px-2 py-1.5">{m.almacenes?.nombre ?? "—"}</td>
-                    <td className="px-2 py-1.5 font-mono">{m.lote ?? "—"}{m.caducidad ? ` · ${m.caducidad}` : ""}</td>
+                    <td className="px-2 py-1.5 font-mono">{m.lote ?? "—"}{m.caducidad ? ` · ${fmtFechaMx(m.caducidad)}` : ""}</td>
                     <td className="px-2 py-1.5">{m.referencia ?? m.origen_tipo ?? "—"}{m.notas ? <div className="text-muted-foreground">{m.notas}</div> : null}</td>
                     <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{Number(m.cantidad)}</td>
                   </tr>

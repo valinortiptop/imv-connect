@@ -496,7 +496,7 @@ function ContabilidadElectronicaPage() {
               <div className="text-xs text-muted-foreground pt-1">
                 CSD activo: <span className="font-mono">{csdInfo.no_certificado}</span> ·
                 RFC <span className="font-mono">{csdInfo.rfc}</span> ·
-                vence {new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}
+                vence {new Date(csdInfo.valid_to).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
               </div>
             )}
           </div>
@@ -571,8 +571,8 @@ function CsdSection({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div><Label className="text-[10px] uppercase text-muted-foreground">RFC</Label><div className="font-mono">{csdInfo.rfc}</div></div>
             <div><Label className="text-[10px] uppercase text-muted-foreground">No. certificado</Label><div className="font-mono truncate">{csdInfo.no_certificado}</div></div>
-            <div><Label className="text-[10px] uppercase text-muted-foreground">Vigente desde</Label><div>{new Date(csdInfo.valid_from).toLocaleDateString("es-MX")}</div></div>
-            <div><Label className="text-[10px] uppercase text-muted-foreground">Vence</Label><div className={vencido ? "text-destructive font-medium" : ""}>{new Date(csdInfo.valid_to).toLocaleDateString("es-MX")}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vigente desde</Label><div>{new Date(csdInfo.valid_from).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</div></div>
+            <div><Label className="text-[10px] uppercase text-muted-foreground">Vence</Label><div className={vencido ? "text-destructive font-medium" : ""}>{new Date(csdInfo.valid_to).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</div></div>
           </div>
           <div className="pt-2">
             <Button variant="outline" size="sm" onClick={onDelete}>

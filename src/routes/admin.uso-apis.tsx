@@ -159,7 +159,7 @@ function UsoApisPage() {
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">
               {dataUpdatedAt
-                ? `Actualizado: ${new Date(dataUpdatedAt).toLocaleTimeString()}`
+                ? `Actualizado: ${new Date(dataUpdatedAt).toLocaleTimeString("es-MX", { timeZone: "America/Mexico_City" })}`
                 : null}
             </div>
           </div>
@@ -191,7 +191,7 @@ function UsoApisPage() {
                 {data.items.map((row, i) => (
                   <tr key={i} className="border-t border-border">
                     <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {new Date(row.created_at).toLocaleString()}
+                      {new Date(row.created_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                     </td>
                     <td className="px-3 py-2">{row.provider}</td>
                     <td className="px-3 py-2 text-xs">{row.model ?? "—"}</td>

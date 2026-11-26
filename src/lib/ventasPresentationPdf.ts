@@ -126,7 +126,7 @@ function slideCover(doc: jsPDF, monthLabel: string) {
     60,
     H - 78
   );
-  doc.text(`Emitido: ${new Date().toLocaleDateString("es-MX")}`, 60, H - 56);
+  doc.text(`Emitido: ${new Date().toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}`, 60, H - 56);
 
   slideFooter(doc, monthLabel, 1, 6);
   // override cover footer color for legibility

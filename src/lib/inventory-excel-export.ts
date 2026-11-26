@@ -62,9 +62,10 @@ async function fetchThumbnailBase64(url: string, size = 64): Promise<string | nu
 /** Main entry. Pops a save-as for the generated Inventario YYYY-MM-DD.xlsx */
 export async function downloadInventoryExcel(
   rows: ExportInventoryRow[],
-  options: { fileLabel?: string; onProgress?: (done: number, total: number) => void } = {},
+  options: { fileLabel?: string; includeImages?: boolean; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   if (rows.length === 0) return;
+  const conImagenes = options.includeImages !== false;
 
   // Dynamic import keeps exceljs out of the main bundle.
   const ExcelJS = (await import("exceljs")).default;
@@ -78,7 +79,7 @@ export async function downloadInventoryExcel(
 
   ws.columns = [
     { header: "#",            key: "idx",       width: 5 },
-    { header: "Imagen",       key: "img",       width: 11 },
+    { header: conImagenes ? "Imagen" : "", key: "img", width: conImagenes ? 11 : 2 },
     { header: "Clave",        key: "clave",     width: 14 },
     { header: "Producto",     key: "name",      width: 48 },
     { header: "Proveedor",    key: "supplier",  width: 18 },
@@ -116,7 +117,7 @@ export async function downloadInventoryExcel(
     while (queue.length > 0) {
       const job = queue.shift();
       if (!job) break;
-      if (job.r.image_url) {
+      if (conImagenes && job.r.image_url) {
         thumbnails[job.i] = await fetchThumbnailBase64(job.r.image_url, 64);
       }
       done++;
@@ -130,7 +131,7 @@ export async function downloadInventoryExcel(
   rows.forEach((r, i) => {
     rowNum++;
     const row = ws.getRow(rowNum);
-    row.height = 50; // tall enough for the 48 px image with padding
+    row.height = conImagenes ? 50 : 20; // 48 px image with padding when photos are included
     row.getCell("idx").value = i + 1;
     row.getCell("clave").value = r.clave;
     row.getCell("name").value = r.name;

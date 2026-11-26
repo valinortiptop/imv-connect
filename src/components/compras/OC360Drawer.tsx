@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ function Recepciones({ ocId }: { ocId: string }) {
         <ul className="space-y-2">
           {entradas.map((e) => (
             <li key={e.id} className="rounded-md border border-border p-3 text-sm">
-              <div className="flex flex-wrap justify-between gap-2"><span className="font-mono text-xs">{e.folio ?? "—"}</span><span className="text-xs text-muted-foreground">{e.fecha} · {e.estado}</span></div>
+              <div className="flex flex-wrap justify-between gap-2"><span className="font-mono text-xs">{e.folio ?? "—"}</span><span className="text-xs text-muted-foreground">{fmtFechaMx(e.fecha)} · {e.estado}</span></div>
               {e.factura_proveedor && <div className="text-xs text-muted-foreground">Factura: {e.factura_proveedor}</div>}
               {e.notas && <div className="text-xs">{e.notas}</div>}
             </li>

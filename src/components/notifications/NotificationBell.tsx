@@ -127,7 +127,7 @@ export default function NotificationBell({ centerTo = "/admin/notificaciones" }:
                     <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.description}</p>
                   )}
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    {new Date(n.created_at).toLocaleString("es-MX")}
+                    {new Date(n.created_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                   </p>
                 </div>
               </div>

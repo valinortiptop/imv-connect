@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,7 @@ function CostosPage() {
                   const v = Number(r.variacion_pct);
                   return (
                     <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2 text-xs">{r.fecha}</td>
+                      <td className="px-3 py-2 text-xs">{fmtFechaMx(r.fecha)}</td>
                       <td className="px-3 py-2">
                         <div className="font-medium">{r.productos?.nombre ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{r.productos?.sku ?? ""}</div>
@@ -82,7 +83,7 @@ function CostosPage() {
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground tabular-nums">
-                    <span>{r.fecha}</span>
+                    <span>{fmtFechaMx(r.fecha)}</span>
                     <span>{r.costo_anterior != null ? mxn.format(Number(r.costo_anterior)) : "—"} → {mxn.format(Number(r.costo_unitario))}</span>
                   </div>
                 </div>

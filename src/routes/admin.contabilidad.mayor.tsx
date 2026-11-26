@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -118,7 +119,7 @@ function MayorPage() {
                       <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Sin movimientos.</td></tr>
                     ) : mayor.map((r: any, i: number) => (
                       <tr key={i} className="border-t border-border hover:bg-muted/20">
-                        <td className="px-2 py-1.5 text-xs">{r.fecha}</td>
+                        <td className="px-2 py-1.5 text-xs">{fmtFechaMx(r.fecha)}</td>
                         <td className="px-2 py-1.5 font-mono text-xs">{r.folio}</td>
                         <td className="px-2 py-1.5 truncate max-w-[380px]">{r.concepto}</td>
                         <td className="px-2 py-1.5 text-right font-mono text-xs">{Number(r.cargo) > 0 ? mxn.format(Number(r.cargo)) : ""}</td>
@@ -139,7 +140,7 @@ function MayorPage() {
                   <div key={i} className="rounded-lg border border-border bg-card p-3">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-mono text-xs">{r.folio}</span>
-                      <span className="text-xs text-muted-foreground">{r.fecha}</span>
+                      <span className="text-xs text-muted-foreground">{fmtFechaMx(r.fecha)}</span>
                     </div>
                     {r.concepto && <div className="mt-1 text-xs break-words">{r.concepto}</div>}
                     <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2 text-xs font-mono tabular-nums">

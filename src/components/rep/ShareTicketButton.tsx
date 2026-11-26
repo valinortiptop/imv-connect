@@ -19,7 +19,7 @@ function buildWhatsappText(t: any) {
   lines.push(`*${t.title}*`);
   lines.push(`Cliente: ${t.client.name}`);
   if (t.rep) lines.push(`Atendió: ${t.rep}`);
-  lines.push(`Fecha: ${new Date(t.date).toLocaleDateString("es-MX")}`);
+  lines.push(`Fecha: ${new Date(t.date).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}`);
   if (t.delivery_date) lines.push(`Entrega: ${t.delivery_date}`);
   lines.push("");
   for (const it of t.items) {
@@ -107,7 +107,7 @@ export default function ShareTicketButton({
           {ticket && (
             <div id="printable-ticket" className="space-y-2 text-sm">
               <div className="muted text-xs text-muted-foreground">
-                {new Date(ticket.date).toLocaleDateString("es-MX")}{" "}
+                {new Date(ticket.date).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}{" "}
                 {ticket.delivery_date ? `· Entrega ${ticket.delivery_date}` : ""}
               </div>
               <div>

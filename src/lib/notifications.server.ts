@@ -387,7 +387,7 @@ export const EVENT_MAP: Record<NotificationEvent, EventDef> = {
     roles: ["admin", "almacen", "compras"],
     title: (v) => `Recepción ${s(v.folio)} registrada`,
     description: (v) => `${s(v.almacen)} · ${s(v.piezas)} piezas`,
-    route: () => "/admin/almacen/recepciones",
+    route: () => "/admin/entradas",
   },
   almacen_traspaso: {
     category: "almacen",

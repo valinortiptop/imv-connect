@@ -299,7 +299,7 @@ export function MoveStockDialog({
                   <span>
                     · Caduca{" "}
                     <span className="text-foreground">
-                      {new Date(expirationDate).toLocaleDateString("es-MX")}
+                      {new Date(expirationDate).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                     </span>
                   </span>
                 )}

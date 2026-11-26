@@ -73,8 +73,9 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
   const [stockFilter, setStockFilter] = useState<StockFilter>(isRep ? "disponible" : "all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const [sortKey, setSortKey] = useState<SortKey>("stock_actual");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [conFotos, setConFotos] = useState(false);
   const [dayFilter, setDayFilter] = useState<"all" | string>("all");
   const [exporting, setExporting] = useState<{ done: number; total: number } | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -524,7 +525,12 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
             { id: "almacen", etiqueta: "Almacén", valor: almacenFilter, onChange: setAlmacenFilter, opciones: [["all", "Todos los almacenes"], ...almacenes.map((a) => [a.id, a.nombre] as [string, string])] },
             { id: "stock", etiqueta: "Estado de stock", valor: stockFilter, onChange: (v) => setStockFilter(v as StockFilter), oculto: isRep, opciones: [["all", "Todos"], ["disponible", "Disponible"], ["low_stock", "Stock ajustado"], ["committed", "Con comprometido"]] },
           ]}
-          enLinea={isRep ? (
+          enLinea={<>
+            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-input px-3 text-sm">
+              <input type="checkbox" className="h-4 w-4 accent-primary" checked={conFotos} onChange={(e) => setConFotos(e.target.checked)} />
+              Fotos en Excel
+            </label>
+            {isRep ? (
             <span className="inline-flex h-9 items-center gap-2 rounded-md border border-primary/20 bg-primary/10 px-3 text-sm font-medium text-primary">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -532,7 +538,8 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
               </span>
               Disponible en venta
             </span>
-          ) : undefined}
+          ) : null}
+          </>}
           exportar={{
             titulo: isProjected && projectedLabel ? `Inventario proyectado ${projectedLabel}` : "Inventario",
             deshabilitado: items.length === 0,
@@ -560,6 +567,7 @@ export default function Inventory({ mode = "admin" }: { mode?: "admin" | "rep" }
                   })),
                   {
                     fileLabel: (isProjected ? projectedLabel : todayMx()) ?? undefined,
+                    includeImages: conFotos,
                     onProgress: (done, total) => setExporting({ done, total }),
                   },
                 );

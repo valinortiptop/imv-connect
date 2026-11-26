@@ -113,7 +113,7 @@ export default function AccountSettingsPage() {
           {createdAt && (
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="text-muted-foreground">Creado</span>
-              <span>{new Date(createdAt).toLocaleDateString()}</span>
+              <span>{new Date(createdAt).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</span>
             </div>
           )}
           <div className="flex flex-wrap items-baseline justify-between gap-2">

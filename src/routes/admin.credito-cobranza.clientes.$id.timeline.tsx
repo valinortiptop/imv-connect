@@ -88,7 +88,7 @@ function TimelinePage() {
                       {e.monto != null && <span className="text-xs font-mono text-muted-foreground">{mxn(e.monto)}</span>}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(e.fecha).toLocaleString("es-MX")}
+                      {new Date(e.fecha).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                       {e.detalle && <> · {e.detalle}</>}
                     </div>
                   </li>

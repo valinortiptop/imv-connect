@@ -1097,7 +1097,7 @@ function EmpresaDocumentos({ empresaId }: { empresaId: string }) {
                   <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                     <span>{formatBytes(d.size_bytes)}</span>
                     <span>·</span>
-                    <span>{new Date(d.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(d.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</span>
                   </div>
                   {d.resumen && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">

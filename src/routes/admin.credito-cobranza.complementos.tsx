@@ -67,7 +67,7 @@ function ComplementosPage() {
             <tbody>
               {(data as any[]).map((p) => (
                 <tr key={p.id} className="border-t border-border align-top">
-                  <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(p.fecha).toLocaleDateString("es-MX")}</td>
+                  <td className="px-2 py-1.5 text-xs whitespace-nowrap">{new Date(p.fecha).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}</td>
                   <td className="px-2 py-1.5">{p.factura?.cliente?.nombre_comercial || p.factura?.cliente?.razon_social}</td>
                   <td className="px-2 py-1.5 text-xs">{p.factura?.folio}</td>
                   <td className="px-2 py-1.5 text-right font-mono">{fmtMXN(p.monto)}</td>

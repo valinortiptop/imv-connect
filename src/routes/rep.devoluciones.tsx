@@ -54,7 +54,7 @@ function Page() {
               <CardContent className="pt-0">
                 <div className="flex items-baseline justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {d.folio ?? "—"} · {new Date(d.fecha).toLocaleDateString("es-MX")}
+                    {d.folio ?? "—"} · {new Date(d.fecha).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                   </span>
                   <span className="font-semibold">{fmtMXN(Number(d.total ?? 0))}</span>
                 </div>

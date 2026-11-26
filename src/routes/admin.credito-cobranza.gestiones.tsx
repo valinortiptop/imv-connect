@@ -138,7 +138,7 @@ function GestionesPage() {
               ) : recientes.map((g) => (
                 <tr key={g.id} className="border-t border-border align-top">
                   <td className="px-2 py-1.5 text-xs whitespace-nowrap">
-                    {new Date(g.created_at).toLocaleDateString("es-MX")}
+                    {new Date(g.created_at).toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}
                   </td>
                   <td className="px-2 py-1.5">
                     <Link to="/admin/credito-cobranza/clientes/$id" params={{ id: g.cliente_id }} className="hover:underline text-xs">

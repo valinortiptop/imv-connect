@@ -1,3 +1,4 @@
+import { fmtFechaMx } from "@/lib/date-utils";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -144,7 +145,7 @@ function DiarioPage() {
                     <Link to="/admin/contabilidad/polizas/$id" params={{ id: p.id }} className="font-mono text-sm font-semibold text-primary hover:underline">
                       {p.folio}
                     </Link>
-                    <span className="text-xs text-muted-foreground">{p.fecha}</span>
+                    <span className="text-xs text-muted-foreground">{fmtFechaMx(p.fecha)}</span>
                   </div>
                   {p.concepto && <div className="mt-1 text-xs text-muted-foreground break-words">{p.concepto}</div>}
                   <ul className="mt-2 space-y-1 border-t border-border pt-2">

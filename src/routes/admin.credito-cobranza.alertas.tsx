@@ -78,7 +78,7 @@ function AlertasPage() {
                       <CardTitle className="text-base">{a.titulo}</CardTitle>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {a.clientes?.nombre_comercial || a.clientes?.razon_social} · {new Date(a.created_at).toLocaleString("es-MX")}
+                      {a.clientes?.nombre_comercial || a.clientes?.razon_social} · {new Date(a.created_at).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}
                     </p>
                   </div>
                   <div className="flex gap-2">
