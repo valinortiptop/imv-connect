@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { BarraHerramientas } from "@/components/barra-herramientas";
 import { OC360Drawer } from "@/components/compras/OC360Drawer";
 import { rowClickProps } from "@/components/shared/Panel360";
+import { NuevaOCWizard } from "@/components/compras/NuevaOCWizard";
+import { fmtFecha, fmtMXN, fmtNum } from "@/lib/oc-suggestions";
 
 export const Route = createFileRoute("/admin/compras/ordenes")({
   component: ComprasPage,
@@ -104,12 +106,12 @@ function ComprasPage() {
             {filtered.map((o) => (
               <tr key={o.id} {...rowClickProps(() => setAbierta(o.id))} className="border-t border-border cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:bg-muted/60" aria-label={`Abrir ${o.folio}`}>
                 <td className="px-3 py-2 font-mono text-xs">{o.folio}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">{o.fecha_emision}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">{fmtFecha(o.fecha_emision)}</td>
                 <td className="px-3 py-2">{o.laboratorio}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{o.almacen}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{o.items}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{Number(o.pendiente_unidades)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">${Number(o.total).toFixed(2)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmtNum(Number(o.pendiente_unidades))}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmtMXN(Number(o.total))}</td>
                 <td className="px-3 py-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs ${ESTADOS[o.estado] ?? "bg-muted"}`}>
                     {o.estado}
@@ -149,10 +151,10 @@ function ComprasPage() {
               </span>
             </div>
             <div className="mt-2 flex items-baseline justify-between text-xs">
-              <span className="text-muted-foreground">{o.fecha_emision}</span>
+              <span className="text-muted-foreground">{fmtFecha(o.fecha_emision)}</span>
               <span className="tabular-nums">
-                {o.items} it. · pend {Number(o.pendiente_unidades)} ·{" "}
-                <span className="font-semibold">${Number(o.total).toFixed(2)}</span>
+                {o.items} it. · pend {fmtNum(Number(o.pendiente_unidades))} ·{" "}
+                <span className="font-semibold">{fmtMXN(Number(o.total))}</span>
               </span>
             </div>
           </button>
@@ -166,7 +168,7 @@ function ComprasPage() {
 
 
       {nueva && (
-        <NuevaOCModal
+        <NuevaOCWizard
           onClose={() => setNueva(false)}
           onSaved={(id) => {
             qc.invalidateQueries({ queryKey: ["ordenes_compra"] });
@@ -180,89 +182,3 @@ function ComprasPage() {
   );
 }
 
-function NuevaOCModal({ onClose, onSaved }: { onClose: () => void; onSaved: (id: string) => void }) {
-  const [labId, setLabId] = useState("");
-  const [almId, setAlmId] = useState("");
-  const [fechaEsperada, setFechaEsperada] = useState("");
-  const [notas, setNotas] = useState("");
-
-  const { data: labs } = useQuery({
-    queryKey: ["labs-activos"],
-    queryFn: async () => {
-      const { data } = await supabase.from("laboratorios").select("id, nombre").eq("activo", true).order("nombre");
-      return (data ?? []) as { id: string; nombre: string }[];
-    },
-  });
-  const { data: alms } = useQuery({
-    queryKey: ["almacenes-activos-oc"],
-    queryFn: async () => {
-      const { data } = await supabase.from("almacenes").select("id, nombre, principal").eq("activo", true).order("principal", { ascending: false });
-      return (data ?? []) as { id: string; nombre: string; principal: boolean }[];
-    },
-  });
-
-  const crear = useMutation({
-    mutationFn: async () => {
-      if (!labId) throw new Error("Selecciona laboratorio");
-      if (!almId) throw new Error("Selecciona almacén");
-      const { data: u } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from("ordenes_compra")
-        .insert({
-          laboratorio_id: labId,
-          almacen_id: almId,
-          fecha_esperada: fechaEsperada || null,
-          notas: notas || null,
-          created_by: u.user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      return data.id as string;
-    },
-    onSuccess: (id) => {
-      toast.success("OC creada");
-      onSaved(id);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-md rounded-lg border border-border bg-card p-6">
-
-        <h2 className="mb-3 text-lg font-semibold">Nueva orden de compra</h2>
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm font-medium">Laboratorio</label>
-            <select value={labId} onChange={(e) => setLabId(e.target.value)} className="input mt-1">
-              <option value="">— Selecciona —</option>
-              {labs?.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Almacén destino</label>
-            <select value={almId} onChange={(e) => setAlmId(e.target.value)} className="input mt-1">
-              <option value="">— Selecciona —</option>
-              {alms?.map((a) => <option key={a.id} value={a.id}>{a.nombre}{a.principal ? " (principal)" : ""}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Fecha esperada</label>
-            <input type="date" value={fechaEsperada} onChange={(e) => setFechaEsperada(e.target.value)} className="input mt-1" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Notas</label>
-            <textarea rows={2} maxLength={500} value={notas} onChange={(e) => setNotas(e.target.value)} className="input mt-1" />
-          </div>
-        </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="btn-secondary">Cancelar</button>
-          <button onClick={() => crear.mutate()} disabled={crear.isPending} className="btn-primary">
-            {crear.isPending ? "Creando…" : "Crear"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}

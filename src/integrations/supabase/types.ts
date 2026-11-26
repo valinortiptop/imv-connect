@@ -4559,6 +4559,8 @@ export type Database = {
         Row: {
           activo: boolean
           created_at: string
+          dias_entrega: number | null
+          es_borrador: boolean
           id: string
           id_fiscal_extranjero: string | null
           logo_url: string | null
@@ -4574,6 +4576,8 @@ export type Database = {
         Insert: {
           activo?: boolean
           created_at?: string
+          dias_entrega?: number | null
+          es_borrador?: boolean
           id?: string
           id_fiscal_extranjero?: string | null
           logo_url?: string | null
@@ -4589,6 +4593,8 @@ export type Database = {
         Update: {
           activo?: boolean
           created_at?: string
+          dias_entrega?: number | null
+          es_borrador?: boolean
           id?: string
           id_fiscal_extranjero?: string | null
           logo_url?: string | null
@@ -5736,7 +5742,9 @@ export type Database = {
         Row: {
           cantidad: number
           cantidad_recibida: number
+          costo_lista: number | null
           costo_unitario: number
+          descuento_pct: number
           id: string
           oc_id: string
           producto_id: string
@@ -5745,7 +5753,9 @@ export type Database = {
         Insert: {
           cantidad: number
           cantidad_recibida?: number
+          costo_lista?: number | null
           costo_unitario?: number
+          descuento_pct?: number
           id?: string
           oc_id: string
           producto_id: string
@@ -5754,7 +5764,9 @@ export type Database = {
         Update: {
           cantidad?: number
           cantidad_recibida?: number
+          costo_lista?: number | null
           costo_unitario?: number
+          descuento_pct?: number
           id?: string
           oc_id?: string
           producto_id?: string
@@ -6328,6 +6340,7 @@ export type Database = {
           factura_proveedor_fecha: string | null
           fecha_emision: string
           fecha_esperada: string | null
+          fecha_limite: string | null
           fecha_recepcion: string | null
           folio: string | null
           id: string
@@ -6348,6 +6361,7 @@ export type Database = {
           factura_proveedor_fecha?: string | null
           fecha_emision?: string
           fecha_esperada?: string | null
+          fecha_limite?: string | null
           fecha_recepcion?: string | null
           folio?: string | null
           id?: string
@@ -6368,6 +6382,7 @@ export type Database = {
           factura_proveedor_fecha?: string | null
           fecha_emision?: string
           fecha_esperada?: string | null
+          fecha_limite?: string | null
           fecha_recepcion?: string | null
           folio?: string | null
           id?: string
@@ -8916,6 +8931,7 @@ export type Database = {
           marca: string | null
           margen_bonif_pct: number | null
           margen_normal_pct: number | null
+          multiplo_compra: number
           netsuite_id: string | null
           nombre: string
           objeto_impuesto: boolean
@@ -8965,6 +8981,7 @@ export type Database = {
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
+          multiplo_compra?: number
           netsuite_id?: string | null
           nombre: string
           objeto_impuesto?: boolean
@@ -9014,6 +9031,7 @@ export type Database = {
           marca?: string | null
           margen_bonif_pct?: number | null
           margen_normal_pct?: number | null
+          multiplo_compra?: number
           netsuite_id?: string | null
           nombre?: string
           objeto_impuesto?: boolean
